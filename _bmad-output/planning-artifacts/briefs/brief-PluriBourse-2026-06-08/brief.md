@@ -1,116 +1,116 @@
 ---
-title: "Product Brief: PluriBourse"
+title: "Brief Produit : PluriBourse"
 status: final
 created: 2026-06-08
 updated: 2026-06-08
 ---
 
-# Product Brief: PluriBourse
+# Brief Produit : PluriBourse
 
-## Executive Summary
+## Résumé Exécutif
 
-PluriBourse is a self-hosted, web-based event management platform for associations organizing secondhand sale events — bourse aux jouets, livres, skis, vêtements, or any product type. It covers the full event lifecycle: seller registration, product cataloging with barcode label generation, multi-workstation point-of-sale scanning, and automated seller payout calculation.
+PluriBourse est une plateforme de gestion d'événements auto-hébergée, accessible via navigateur, destinée aux associations organisant des ventes d'occasion — bourse aux jouets, livres, skis, vêtements, ou tout autre type de produits. Elle couvre l'ensemble du cycle de vie de l'événement : inscription des vendeurs, catalogage des articles avec génération d'étiquettes à code-barres, caisse multi-poste avec scanner, et calcul automatisé des reversements vendeurs.
 
-The platform replaces fragile legacy tools with a clean, maintainable system designed to run across multiple workstations via a central server. Each association hosts its own instance, manages its own events under freely named editions, and configures its own commission rate. A detailed installation guide for non-technical users makes deployment accessible without dedicated IT support.
+La plateforme remplace des outils fragiles par un système propre et maintenable, conçu pour fonctionner sur plusieurs postes via un serveur central. Chaque association héberge sa propre instance, gère ses propres événements sous des éditions librement nommées, et configure son propre taux de commission. Un guide d'installation détaillé pour utilisateurs non techniques rend le déploiement accessible sans support informatique dédié.
 
-Built with Spring Boot and Angular, PluriBourse is designed to fit any association running any type of secondhand sale, multiple times per year if needed.
+Construit avec Spring Boot et Angular, PluriBourse est conçu pour s'adapter à toute association organisant n'importe quel type de vente d'occasion, plusieurs fois par an si nécessaire.
 
-## The Problem
+## Le Problème
 
-Associations organizing bourse events may already have working tools — multi-workstation support, volunteer traceability, automatic payout reconciliation. The problem is not what the software does: it is whether anyone can maintain it.
+Les associations qui organisent des bourses disposent parfois d'outils qui fonctionnent — support multi-poste, traçabilité des bénévoles, réconciliation automatique des reversements. Le problème ne porte pas sur ce que le logiciel fait : il porte sur la capacité de quiconque à le maintenir.
 
-Hardcoded file paths mean any infrastructure change breaks the software. Poor or absent documentation means only the original author can diagnose failures. Every edition runs with the risk that a routine system update or a new machine silently breaks the tool, with no safe way to fix it under event-day pressure.
+Des chemins codés en dur signifient que tout changement d'infrastructure casse le logiciel. Une documentation absente ou insuffisante fait de l'auteur original le seul capable de diagnostiquer les pannes. Chaque édition se déroule avec le risque qu'une mise à jour de routine ou une nouvelle machine brise silencieusement l'outil, sans possibilité de le corriger sous la pression du jour J.
 
-The cost is not lost features — it is fragility. A tool no one can maintain is a liability, not an asset.
+Le coût n'est pas la perte de fonctionnalités — c'est la fragilité. Un outil que personne ne peut maintenir est une charge, pas un atout.
 
-## The Solution
+## La Solution
 
-PluriBourse structures each event into three administrator-controlled phases:
+PluriBourse structure chaque événement en trois phases contrôlées par l'administrateur :
 
-**1. Deposit phase** — Volunteers register sellers (creating new profiles or retrieving existing ones by name and email) and catalog each item with a price, category, and table assignment. The app generates Code 128 barcodes, prints adhesive labels on standard label sheets, and produces a deposit slip for each seller listing their items, prices, and expected net payout after commission.
+**1. Phase de dépôt** — Les bénévoles inscrivent les vendeurs (création de nouveaux profils ou récupération d'existants par nom et email) et cataloguent chaque article avec un prix, une catégorie et une affectation de table. L'application génère des codes-barres Code 128, imprime des étiquettes adhésives sur des planches standard et produit un bordereau de dépôt pour chaque vendeur listant ses articles, prix et reversement net attendu après commission.
 
-**2. Sale phase** — Cashiers at up to three simultaneous workstations use USB barcode scanners to record sales. Items are automatically flagged as sold. Buyer invoices are printable via a centralized print endpoint — no printer required at each workstation.
+**2. Phase de vente** — Les caissiers sur jusqu'à trois postes simultanés utilisent des scanners USB à code-barres pour enregistrer les ventes. Les articles sont automatiquement marqués comme vendus. Les factures acheteur sont imprimables via un point d'impression centralisé — aucune imprimante requise à chaque poste.
 
-**3. Post-sale phase** — Per-seller payout documents are generated. When a seller returns to collect their money and unsold items, a volunteer marks them as collected. Reports flag sellers who have not yet returned.
+**3. Phase post-vente** — Des documents de reversement par vendeur sont générés. Lorsqu'un vendeur revient récupérer son argent et ses invendus, un bénévole le marque comme collecté. Les rapports signalent les vendeurs qui ne sont pas encore revenus.
 
-Seller profiles persist across editions so returning sellers are found by name or email without re-entry. Each edition carries a free-form name (e.g. "Bourse de printemps 2026", "Vide-grenier novembre") and is scoped independently — sales, inventory, and reports never bleed across editions.
+Les profils vendeurs persistent d'une édition à l'autre, de sorte que les vendeurs récurrents sont retrouvés par nom ou email sans ressaisie. Chaque édition porte un nom libre (ex. « Bourse de printemps 2026 », « Vide-grenier novembre ») et est cloisonnée indépendamment — ventes, inventaire et rapports ne se mélangent jamais entre éditions.
 
-## Who This Serves
+## À Qui Cela S'adresse
 
-**Administrator (event organizer):** Full platform access. Controls phase transitions, configures the commission rate, manages volunteer accounts, creates and names editions, and generates all reports.
+**Administrateur (organisateur) :** Accès complet à la plateforme. Contrôle les transitions de phase, configure le taux de commission, gère les comptes bénévoles, crée et nomme les éditions, et génère tous les rapports.
 
-**Volunteers (bénévoles):** Individual accounts for basic traceability. Operate both deposit registration and cashier functions at different phases. Interface designed for speed and simplicity — non-technical users working under event-day pressure.
+**Bénévoles :** Comptes individuels pour la traçabilité de base. Opèrent aussi bien l'inscription au dépôt que la caisse selon les phases. Interface conçue pour la rapidité et la simplicité — utilisateurs non techniques travaillant sous la pression du jour J.
 
-**Associations:** Any association running secondhand sale events. Because the platform is self-hosted, each association owns its data and its instance outright — no subscription, no external dependency, no shared infrastructure.
+**Associations :** Toute association organisant des ventes d'occasion. La plateforme étant auto-hébergée, chaque association possède ses données et son instance en propre — pas d'abonnement, pas de dépendance externe, pas d'infrastructure partagée.
 
-**Sellers:** Do not access the application. They interact via paper documents only — a deposit slip at drop-off, a payout document and their unsold items at collection.
+**Vendeurs :** N'accèdent pas à l'application. Ils interagissent uniquement via des documents papier — un bordereau de dépôt à l'arrivée, un document de reversement et leurs invendus à la récupération.
 
-## Scope
+## Périmètre
 
-**In for v1:**
+**Inclus en v1 :**
 
-*Event management*
-- Free-form edition naming; multiple editions per year supported
-- Admin-controlled event phase lifecycle: Deposit → Sale → Post-sale (no rollback)
-- Configurable commission rate per instance (admin settings, default 20%)
+*Gestion des événements*
+- Nommage libre des éditions ; plusieurs éditions par an supportées
+- Cycle de vie des phases contrôlé par l'admin : Dépôt → Vente → Post-vente (sans retour en arrière)
+- Taux de commission configurable par instance (paramètres admin, 20 % par défaut)
 
-*Seller & product management*
-- Seller profile management with cross-edition persistence (name, first name, email)
-- Product registration: price, category, table assignment, per-seller
-- Code 128 barcode generation + label printing on standard adhesive sheets
-- Deposit slip printing per seller (items, prices, expected net payout)
+*Gestion des vendeurs et articles*
+- Gestion des profils vendeurs avec persistance inter-éditions (nom, prénom, email)
+- Inscription des articles : prix, catégorie, affectation de table, par vendeur
+- Génération de codes-barres Code 128 + impression d'étiquettes sur planches adhésives standard
+- Impression de bordereau de dépôt par vendeur (articles, prix, reversement net attendu)
 
-*Point of sale*
-- POS interface with USB barcode scanner support
-- Buyer invoice printing
+*Point de vente*
+- Interface caisse avec support scanner USB à code-barres
+- Impression de factures acheteur
 
-*Post-sale*
-- Seller collection tracking: flag seller as having retrieved payout and unsold items
-- Per-seller payout document
-- Per-seller unsold item return list (item descriptions + table location)
+*Post-vente*
+- Suivi de collecte vendeur : marquage du vendeur ayant récupéré son reversement et ses invendus
+- Document de reversement par vendeur
+- Liste d'invendus à restituer par vendeur (descriptions des articles + emplacement de table)
 
-*Reporting*
-- Daily summary: sold/unsold counts, total revenue, association commission earned
-- Outstanding collections report (sellers who have not returned)
+*Rapports*
+- Bilan journalier : comptages vendus/invendus, chiffre d'affaires total, commission association gagnée
+- Rapport des collectes en attente (vendeurs non encore revenus)
 
-*Infrastructure & access*
-- User accounts: Admin and Bénévole roles
-- Multi-workstation support via central server (up to 3 simultaneous)
-- Centralized print endpoint (all workstations print via server; one shared printer)
-- Detailed installation guide for non-technical users
+*Infrastructure & accès*
+- Comptes utilisateurs : rôles Admin et Bénévole
+- Support multi-poste via serveur central (jusqu'à 3 simultanés)
+- Point d'impression centralisé (tous les postes impriment via le serveur ; une imprimante partagée)
+- Guide d'installation détaillé pour utilisateurs non techniques
 
-**Explicitly out of v1:**
-- Integrated payment processing
-- Seller self-service portal or email/SMS notifications
-- Mobile application
-- Multi-tenant SaaS hosting (each association self-hosts its own instance)
-- Data migration from legacy tools (fresh installation per deployment)
+**Explicitement hors v1 :**
+- Traitement de paiement intégré
+- Portail vendeur en libre-service ou notifications email/SMS
+- Application mobile
+- Hébergement SaaS multi-tenant (chaque association héberge sa propre instance)
+- Migration de données depuis des outils existants (installation fraîche par déploiement)
 
-## Success Criteria
+## Critères de Succès
 
-- All three workstations operate simultaneously without data conflicts
-- Payout calculations match manual verification to the cent
-- Barcode labels scan reliably with standard USB scanners off standard label sheets
-- All documents (deposit slips, invoices, reports) print correctly via the central endpoint from any workstation OS (Linux, macOS, Windows)
-- Admin can open and close phases without incident, with clear state feedback
-- The server runs acceptably on minimum-spec hardware: Raspberry Pi 4 (2 GB RAM) or equivalent — any 64-bit machine with 2 GB RAM and SSD/USB storage
-- The server installs and runs on Linux, macOS, and Windows without code changes
-- A non-technical user can install and configure the platform by following the installation guide alone, without developer assistance
+- Les trois postes fonctionnent simultanément sans conflits de données
+- Les calculs de reversement correspondent à la vérification manuelle au centime près
+- Les étiquettes à code-barres se scannent de façon fiable avec des scanners USB standard sur des planches standard
+- Tous les documents (bordereaux de dépôt, factures, rapports) s'impriment correctement via le point central depuis n'importe quel OS (Linux, macOS, Windows)
+- L'admin peut ouvrir et fermer les phases sans incident, avec un retour d'état clair
+- Le serveur fonctionne de façon acceptable sur du matériel d'entrée de gamme : Raspberry Pi 4 (2 Go RAM) ou équivalent — toute machine 64 bits avec 2 Go RAM et stockage SSD/USB
+- Le serveur s'installe et fonctionne sous Linux, macOS et Windows sans modification du code
+- Un utilisateur non technique peut installer et configurer la plateforme en suivant le guide d'installation seul, sans assistance développeur
 
-## Technical Context
+## Contexte Technique
 
-- **Stack:** Spring Boot (backend) + Angular (frontend)
-- **Architecture:** Self-hosted, central server, browser-based clients (no local install on workstations)
-- **Deployment:** One instance per association; cross-platform (Linux, macOS, Windows); installation guide targets non-technical users
-- **Minimum spec:** Raspberry Pi 4 (2 GB RAM) or equivalent 64-bit machine; SSD/USB storage strongly recommended (microSD unreliable for database writes under event load)
-- **Workstations:** Up to 3 simultaneous; any OS with a modern browser
-- **Barcode scanner compatibility:** USB HID scanners output as keyboard input; the POS scan component handles OS keyboard layout mismatches (AZERTY/QWERTY) transparently via layout-independent key code mapping — no workstation configuration required
-- **Printing:** Centralized endpoint on the server; one shared printer
-- **Barcodes:** Code 128, generated server-side, printable on standard adhesive label sheets
-- **Scale:** ~100 sellers, ~1,700 items per edition; multiple editions per year supported
+- **Stack :** Spring Boot (backend) + Angular (frontend)
+- **Architecture :** Auto-hébergée, serveur central, clients navigateur (pas d'installation locale sur les postes)
+- **Déploiement :** Une instance par association ; multi-plateforme (Linux, macOS, Windows) ; guide d'installation ciblant les utilisateurs non techniques
+- **Spec minimale :** Raspberry Pi 4 (2 Go RAM) ou machine 64 bits équivalente ; stockage SSD/USB fortement recommandé (la carte microSD est peu fiable pour les écritures en base sous charge événementielle)
+- **Postes :** Jusqu'à 3 simultanés ; tout OS avec un navigateur moderne
+- **Compatibilité scanner :** Les scanners USB HID émettent en entrée clavier ; le composant de scan caisse gère les incohérences de disposition clavier (AZERTY/QWERTY) de façon transparente via un mappage de codes touches indépendant de la disposition — aucune configuration de poste requise
+- **Impression :** Point centralisé sur le serveur ; une imprimante partagée
+- **Codes-barres :** Code 128, générés côté serveur, imprimables sur planches adhésives standard
+- **Échelle :** ~100 vendeurs, ~1 700 articles par édition ; plusieurs éditions par an supportées
 
 ## Vision
 
-PluriBourse starts as a tool built for one association's specific needs. Its self-hosted model, configurable commission, free-form edition naming, and product-agnostic design are intentional foundations for a wider reach: any association running any type of secondhand sale event can download, install, and run it independently.
+PluriBourse démarre comme un outil construit pour les besoins spécifiques d'une association. Son modèle auto-hébergé, sa commission configurable, le nommage libre des éditions et sa conception agnostique au type de produit sont des fondations intentionnelles pour une portée plus large : toute association organisant n'importe quel type de vente d'occasion peut le télécharger, l'installer et le faire fonctionner de façon autonome.
 
-The installation guide is as much a product feature as the software itself — it is what turns a working codebase into something an association treasurer can actually deploy on a Saturday afternoon.
+Le guide d'installation est autant une fonctionnalité du produit que le logiciel lui-même — c'est ce qui transforme un code fonctionnel en quelque chose que le trésorier d'une association peut vraiment déployer un samedi après-midi.

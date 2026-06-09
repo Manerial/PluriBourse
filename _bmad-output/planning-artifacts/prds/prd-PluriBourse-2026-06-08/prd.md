@@ -1,334 +1,334 @@
 ---
-title: "PRD: PluriBourse v1"
+title: "PRD : PluriBourse v1"
 status: final
 created: 2026-06-08
 updated: 2026-06-09
 ---
 
-# PRD: PluriBourse v1
+# PRD : PluriBourse v1
 
-## Problem Statement
+## Énoncé du Problème
 
-Associations organizing secondhand sale events (toys, books, skis, clothing, and more) face one of two situations: they manage everything manually on paper or spreadsheets, or they rely on existing software that nobody can maintain.
+Les associations organisant des ventes d'occasion (jouets, livres, skis, vêtements, etc.) se trouvent dans l'une de deux situations : elles gèrent tout manuellement sur papier ou tableur, ou elles s'appuient sur un logiciel existant que personne ne peut maintenir.
 
-In the first case, manual management does not scale: registering sellers, labeling items, running multi-workstation sales, and calculating payouts become unmanageable beyond a certain volume.
+Dans le premier cas, la gestion manuelle ne passe pas à l'échelle : l'inscription des vendeurs, l'étiquetage des articles, la caisse multi-poste et le calcul des reversements deviennent ingérables au-delà d'un certain volume.
 
-In the second case, the software works — until it breaks. Hardcoded file paths fail with any infrastructure change. Absent documentation leaves the original author as the sole person capable of diagnosing failures. Every edition carries the risk that a routine system update or a new machine silently breaks the tool, with no safe way to fix it under event-day pressure.
+Dans le second cas, le logiciel fonctionne — jusqu'à ce qu'il tombe en panne. Des chemins codés en dur échouent au moindre changement d'infrastructure. L'absence de documentation fait de l'auteur original le seul capable de diagnostiquer les pannes. Chaque édition comporte le risque qu'une mise à jour de routine ou une nouvelle machine brise silencieusement l'outil, sans possibilité de le corriger sous la pression du jour J.
 
-In both cases, the cost is the same: a fragile event, volunteers under pressure, and an association that cannot focus on what matters.
+Dans les deux cas, le coût est le même : un événement fragile, des bénévoles sous pression, et une association qui ne peut pas se concentrer sur l'essentiel.
 
 ---
 
-## Vision & Goals
+## Vision & Objectifs
 
 **Vision**
 
-PluriBourse is the reference platform for associations organizing secondhand sales — accessible to anyone who can download a file and follow a guide. Self-hosted, product-agnostic, subscription-free, with no external dependencies: each association owns its instance and its data outright.
+PluriBourse est la plateforme de référence pour les associations organisant des ventes d'occasion — accessible à toute personne capable de télécharger un fichier et de suivre un guide. Auto-hébergée, agnostique au type de produit, sans abonnement, sans dépendances externes : chaque association possède son instance et ses données en propre.
 
-The installation guide is a product in its own right — it is what turns a working codebase into something an association treasurer can deploy on a Saturday afternoon.
+Le guide d'installation est un produit à part entière — c'est ce qui transforme un code fonctionnel en quelque chose que le trésorier d'une association peut déployer un samedi après-midi.
 
-**Goals**
+**Objectifs**
 
-| ID | Goal | Direction Indicator |
+| ID | Objectif | Indicateur d'Orientation |
 |---|---|---|
-| G1 | Cover the complete event lifecycle | All three phases (Deposit → Sale → Post-sale) work end-to-end without technical intervention |
-| G2 | Run on modest hardware | Runs on Raspberry Pi 4 (2 GB RAM) without noticeable degradation under event load |
-| G3 | Deployable by a non-technical user | An association can install and configure the platform without a developer, using the guide alone |
-| G4 | Support multiple independent associations | Each instance is isolated; the model is designed for replication |
-| G5 | Maintainable by the community | Standard stack, well-documented, no exotic dependencies |
+| G1 | Couvrir le cycle de vie complet de l'événement | Les trois phases (Dépôt → Vente → Post-vente) fonctionnent de bout en bout sans intervention technique |
+| G2 | Fonctionner sur du matériel modeste | Tourne sur Raspberry Pi 4 (2 Go RAM) sans dégradation notable sous charge événementielle |
+| G3 | Déployable par un utilisateur non technique | Une association peut installer et configurer la plateforme sans développeur, avec le guide seul |
+| G4 | Supporter plusieurs associations indépendantes | Chaque instance est isolée ; le modèle est conçu pour la réplication |
+| G5 | Maintenable par la communauté | Stack standard, bien documentée, sans dépendances exotiques |
 
 ---
 
-## Users & Roles
+## Utilisateurs & Rôles
 
-| Role | Access | Notes |
+| Rôle | Accès | Notes |
 |---|---|---|
-| **Administrator** | Full | Phase management, commission, editions, volunteer accounts, reports |
-| **Volunteer** | Deposit + Cashier + Settlement | Single role; interface adapts to the active phase. Non-technical users operating under event-day pressure |
-| **Seller** | Out of application | Paper documents only — deposit slip at drop-off, sales summary at collection |
+| **Administrateur** | Complet | Gestion des phases, commission, éditions, comptes bénévoles, rapports |
+| **Bénévole** | Dépôt + Caisse + Reversement | Rôle unique ; l'interface s'adapte à la phase active. Utilisateurs non techniques opérant sous la pression du jour J |
+| **Vendeur** | Hors application | Documents papier uniquement — bordereau de dépôt à l'arrivée, bilan de vente à la récupération |
 
-> An admin cannot operate as a volunteer from their admin account. To handle cashier or deposit duties, the admin creates a dedicated volunteer account.
+> Un admin ne peut pas opérer en tant que bénévole depuis son compte admin. Pour assurer des fonctions de caisse ou de dépôt, l'admin crée un compte bénévole dédié.
 
 ---
 
-## Scope
+## Périmètre
 
-### In — v1
+### Inclus — v1
 
 **Internationalisation**
-- UI in English and French: language configured per user account
-- Printed documents in English or French: language configured at instance level
+- Interface en anglais et français : langue configurée par compte utilisateur
+- Documents imprimés en anglais ou français : langue configurée au niveau de l'instance
 
-**Event Management**
-- Free-form edition naming; multiple editions per year supported
-- Admin-controlled phase lifecycle: Deposit → Sale → Post-sale → Closed
-- Confirmation dialog required for every phase transition (forward or backward)
-- Rollback available one phase at a time; data always preserved
-- Optional post-closure "Clean Edition" action: permanently deletes item records and disables rollback
-- Configurable commission rate per instance (default 20%)
+**Gestion des Événements**
+- Nommage libre des éditions ; plusieurs éditions par an supportées
+- Cycle de vie des phases contrôlé par l'admin : Dépôt → Vente → Post-vente → Clôturé
+- Dialogue de confirmation requis pour toute transition de phase (avant ou arrière)
+- Retour en arrière disponible phase par phase ; données toujours préservées
+- Action optionnelle post-clôture « Nettoyer l'Édition » : supprime définitivement les enregistrements articles et désactive le retour en arrière
+- Taux de commission configurable par instance (défaut 20 %)
 
-**Seller & Product Management**
-- Seller profiles persistent across editions (last name, first name, email, phone)
-- Item registration: name, price, category, complete/incomplete flag
-- Table auto-assigned from category-to-table mapping configured per edition
-- Lot support: indivisible bundles at a single global price, one label per item
-- Code 128 barcode generation and label printing on 57mm thermal adhesive roll
-- Deposit slip printing per seller
+**Gestion des Vendeurs & Articles**
+- Profils vendeurs persistants inter-éditions (nom, prénom, email, téléphone)
+- Inscription des articles : nom, prix, catégorie, indicateur complet/incomplet
+- Table assignée automatiquement selon le mapping catégorie-table configuré par édition
+- Support des lots : ensembles indivisibles à prix global unique, une étiquette par article
+- Génération de codes-barres Code 128 et impression d'étiquettes sur rouleau thermique adhésif 57mm
+- Impression de bordereau de dépôt par vendeur
 
-**Point of Sale**
-- Cashier interface with USB HID barcode scanner support (AZERTY/QWERTY transparent)
-- Shopping basket: multiple items per transaction, one global buyer invoice
-- Buyer invoice printing on demand
+**Point de Vente**
+- Interface caisse avec support scanner USB HID (AZERTY/QWERTY transparent)
+- Panier : plusieurs articles par transaction, une facture acheteur globale
+- Impression de facture acheteur à la demande
 
-**Post-Sale**
-- Seller settlement: volunteer enters cash amount, clicks "Settle"
-- "Not collected" button: full amount owed transferred to association revenue
-- Sales summary per seller: sold items, unsold items with table location, net payout
+**Post-Vente**
+- Reversement vendeur : le bénévole saisit le montant remis en espèces et clique « Reverser »
+- Bouton « Non collecté » : le montant intégral dû est transféré aux recettes de l'association
+- Bilan de vente par vendeur : articles vendus, invendus avec emplacement de table, reversement net
 
-**Reporting**
-- Daily summary (PDF, admin only)
-- Edition summary (PDF, admin only, generated at edition close)
-- Outstanding sellers report (unsettled sellers with phone numbers)
+**Rapports**
+- Bilan journalier (PDF, admin uniquement)
+- Bilan d'édition (PDF, admin uniquement, généré à la clôture)
+- Rapport des vendeurs en attente (vendeurs non reversés avec numéro de téléphone)
 
-**Item Catalog**
-- Filterable, sortable catalog of all items in the active edition (accessible to admin and volunteers)
-- Manual basket entry from catalog (fallback for unreadable barcodes)
+**Catalogue Articles**
+- Catalogue filtrable et triable de tous les articles de l'édition active (accessible à l'admin et aux bénévoles)
+- Ajout manuel au panier depuis le catalogue (solution de repli pour codes-barres illisibles)
 
-**Infrastructure & Access**
-- Admin and Volunteer roles, strictly separated
-- Multi-workstation support (minimum 3 simultaneous)
-- Docker Compose deployment (Spring Boot + MariaDB)
-- Two USB printers connected to server: thermal (labels) + standard (documents)
-- Centralized print endpoint — no printer required on client workstations
-- Installation guide for non-technical users, with OS-specific instructions (Linux, macOS, Windows)
+**Infrastructure & Accès**
+- Rôles Admin et Bénévole, strictement séparés
+- Support multi-poste (minimum 3 simultanés)
+- Déploiement Docker Compose (Spring Boot + MariaDB)
+- Deux imprimantes USB connectées au serveur : thermique (étiquettes) + standard (documents)
+- Point d'impression centralisé — aucune imprimante requise sur les postes clients
+- Guide d'installation pour utilisateurs non techniques, avec instructions spécifiques par OS (Linux, macOS, Windows)
 
-### Out — v1
-- Integrated payment processing
-- Seller self-service portal or email/SMS notifications
-- Mobile application
-- Multi-tenant SaaS hosting
-- Data migration from legacy tools
-- Read-only reporting role
-- Data backup/restore mechanism
-- Per-edition commission rate override
+### Hors — v1
+- Traitement de paiement intégré
+- Portail vendeur en libre-service ou notifications email/SMS
+- Application mobile
+- Hébergement SaaS multi-tenant
+- Migration de données depuis des outils existants
+- Rôle de consultation en lecture seule
+- Mécanisme de sauvegarde/restauration des données
+- Taux de commission modifiable par édition
 
 ---
 
-## Features
+## Fonctionnalités
 
 ### F1 — Internationalisation (EN/FR)
 
-*Cross-cutting foundation — to be implemented before and in parallel with all other features.*
+*Fondation transversale — à implémenter avant et en parallèle de toutes les autres fonctionnalités.*
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-001 | The user interface is available in English and French. |
-| FR-002 | The default UI language is detected from the browser on first access and stored in the user account preferences. |
-| FR-003 | Each user can change their language preference in account settings. |
-| FR-004 | All UI text is externalized — no UI text is hardcoded in the source code. |
-| FR-005 | The language of all printed documents (deposit slips, buyer invoices, sales summaries, reports) is configured at the instance level by the admin. |
-| FR-006 | The document language setting is instance-wide and applies to all editions. |
-| FR-007 | The document language setting is modifiable by the admin at any time. |
+| FR-001 | L'interface utilisateur est disponible en anglais et en français. |
+| FR-002 | La langue par défaut de l'interface est détectée depuis le navigateur au premier accès et stockée dans les préférences du compte utilisateur. |
+| FR-003 | Chaque utilisateur peut modifier sa préférence de langue dans les paramètres du compte. |
+| FR-004 | Tout le texte de l'interface est externalisé — aucun texte d'interface n'est codé en dur dans le code source. |
+| FR-005 | La langue de tous les documents imprimés (bordereaux de dépôt, factures acheteur, bilans de vente, rapports) est configurée au niveau de l'instance par l'admin. |
+| FR-006 | Le paramètre de langue des documents s'applique à toute l'instance et à toutes les éditions. |
+| FR-007 | Le paramètre de langue des documents est modifiable par l'admin à tout moment. |
 
 ---
 
-### F2 — Edition Management & Event Lifecycle
+### F2 — Gestion des Éditions & Cycle de Vie
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-008 | The admin can create an edition with a free-form name (e.g. "Bourse de printemps 2026", "Vide-grenier novembre"). |
-| FR-009 | Multiple editions can be created per year. |
-| FR-010 | Only one edition can be active at a time. |
-| FR-011 | Every phase transition — forward or backward — requires explicit admin confirmation via a dialog. |
-| FR-012 | The active phase of the current edition is displayed clearly to all connected users. |
-| FR-013 | The admin triggers edition closure via a "Close Edition" button in Post-sale phase. All documents are generated as PDFs in both languages (EN and FR). The edition becomes read-only. Item records remain in the database until the admin explicitly triggers the Clean action. |
-| FR-088 | Post-closure, the admin can trigger a **"Clean Edition"** action that permanently deletes item records from the database. After cleaning, rollback to Post-sale is permanently disabled for this edition. This action requires explicit confirmation. |
-| FR-014 | An archived edition cannot be deleted. |
-| FR-015 | Each edition's data is strictly isolated — items, sales, and reports never bleed across editions. |
-| FR-016 | The commission rate is configured at instance setup (default 20%) and is modifiable by the admin until the Deposit phase starts. Once the Deposit phase is active, the rate is frozen for that edition. It applies to all items in the edition. |
-| FR-080 | When creating a new edition, the admin can either configure categories and the category-to-table mapping from scratch, or copy the structure from an existing edition. |
-| FR-082 | The admin can roll back the active phase one step at a time: Closed → Post-sale, Post-sale → Sale, Sale → Deposit. Data recorded in the rolled-back phase is preserved — nothing is deleted. Rollback from Closed is only available before the Clean Edition action has been triggered (FR-088). |
+| FR-008 | L'admin peut créer une édition avec un nom libre (ex. « Bourse de printemps 2026 », « Vide-grenier novembre »). |
+| FR-009 | Plusieurs éditions peuvent être créées par an. |
+| FR-010 | Une seule édition peut être active à la fois. |
+| FR-011 | Toute transition de phase — avant ou arrière — nécessite une confirmation explicite de l'admin via un dialogue. |
+| FR-012 | La phase active de l'édition courante est affichée clairement à tous les utilisateurs connectés. |
+| FR-013 | L'admin déclenche la clôture de l'édition via un bouton « Clôturer l'Édition » en phase Post-vente. Tous les documents sont générés en PDF dans les deux langues (EN et FR). L'édition passe en lecture seule. Les enregistrements articles restent en base jusqu'à ce que l'admin déclenche explicitement l'action Nettoyer. |
+| FR-088 | Après clôture, l'admin peut déclencher une action **« Nettoyer l'Édition »** qui supprime définitivement les enregistrements articles de la base de données. Après nettoyage, le retour en arrière vers Post-vente est définitivement désactivé pour cette édition. Cette action nécessite une confirmation explicite. |
+| FR-014 | Une édition archivée ne peut pas être supprimée. |
+| FR-015 | Les données de chaque édition sont strictement cloisonnées — articles, ventes et rapports ne se mélangent jamais entre éditions. |
+| FR-016 | Le taux de commission est configuré à l'installation de l'instance (défaut 20 %) et modifiable par l'admin jusqu'au démarrage de la phase de Dépôt. Une fois la phase de Dépôt active, le taux est gelé pour cette édition. Il s'applique à tous les articles de l'édition. |
+| FR-080 | Lors de la création d'une nouvelle édition, l'admin peut soit configurer les catégories et le mapping catégorie-table depuis zéro, soit copier la structure d'une édition existante. |
+| FR-082 | L'admin peut revenir en arrière d'une phase à la fois : Clôturé → Post-vente, Post-vente → Vente, Vente → Dépôt. Les données enregistrées dans la phase annulée sont préservées — rien n'est supprimé. Le retour depuis Clôturé n'est disponible qu'avant le déclenchement de l'action Nettoyer l'Édition (FR-088). |
 
 ---
 
-### F3 — Seller & Product Management (Deposit Phase)
+### F3 — Gestion des Vendeurs & Articles (Phase de Dépôt)
 
-#### Admin Pre-configuration
+#### Pré-configuration Admin
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-017 | The admin configures the list of item categories per edition. |
-| FR-018 | The admin configures the category-to-table mapping per edition (e.g. board games → tables 1, 2, 3; books → tables 4, 5). Tables are identified by number. |
+| FR-017 | L'admin configure la liste des catégories d'articles par édition. |
+| FR-018 | L'admin configure le mapping catégorie-table par édition (ex. jeux de société → tables 1, 2, 3 ; livres → tables 4, 5). Les tables sont identifiées par numéro. |
 
-#### Seller Registration
+#### Inscription des Vendeurs
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-019 | Seller profiles persist across editions. Mandatory fields: last name, first name, email, phone number. |
-| FR-020 | The volunteer searches for an existing seller by name or email. If not found, a new profile is created. |
-| FR-021 | The admin can delete a seller profile (GDPR right to erasure). Deletion anonymizes last name, first name, email, phone number, and item descriptions across all editions. Product categories are retained. |
+| FR-019 | Les profils vendeurs persistent inter-éditions. Champs obligatoires : nom, prénom, email, numéro de téléphone. |
+| FR-020 | Le bénévole recherche un vendeur existant par nom ou email. S'il n'est pas trouvé, un nouveau profil est créé. |
+| FR-021 | L'admin peut supprimer un profil vendeur (droit à l'effacement RGPD). La suppression anonymise le nom, le prénom, l'email, le numéro de téléphone et les descriptions d'articles dans toutes les éditions. Les catégories de produits sont conservées. |
 
-#### Item Registration
+#### Inscription des Articles
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-022 | For each item, the volunteer enters: name/description, price, category, complete/incomplete flag, and a comment if incomplete. |
-| FR-023 | The table is automatically assigned by the system based on the edition's category-to-table mapping. |
-| FR-024 | An item can be corrected or deleted only during the Deposit phase. |
-| FR-025 | The complete/incomplete flag and its comment are modifiable in any phase. |
+| FR-022 | Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire si incomplet. |
+| FR-023 | La table est assignée automatiquement par le système selon le mapping catégorie-table de l'édition. |
+| FR-024 | Un article ne peut être corrigé ou supprimé qu'en phase de Dépôt. |
+| FR-025 | L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases. |
 
 #### Lots
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-043 | A volunteer can create a lot by assigning a name and a global price, then adding multiple items to it. |
-| FR-044 | Each item in a lot has its own name/description and receives its own label. |
-| FR-045 | A lot item label displays, in addition to standard fields: "Lot price: X€" in place of an individual price, and "Indivisible lot: X/N" (X = item position, N = total items in lot). |
+| FR-043 | Un bénévole peut créer un lot en lui assignant un nom et un prix global, puis en y ajoutant plusieurs articles. |
+| FR-044 | Chaque article du lot possède son propre nom/description et reçoit sa propre étiquette. |
+| FR-045 | L'étiquette d'un article de lot affiche, en plus des champs standard : « Prix du lot : X€ » en lieu et place d'un prix individuel, et « Lot indivisible : X/N » (X = position de l'article, N = nombre total d'articles dans le lot). |
 
-#### Printing
+#### Impression
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-026 | A unique Code 128 barcode is generated server-side for each registered item. |
-| FR-027 | The item label displays centered: Code 128 barcode graphic, human-readable barcode number, item name (wraps to multiple lines if needed), price, category, table number, incompleteness indicator if applicable. The seller name does not appear (GDPR). |
-| FR-028 | The system triggers label printing automatically when a volunteer validates a seller's deposit. |
-| FR-029 | Print jobs are queued server-side and executed sequentially. |
-| FR-030 | The printed roll follows this format per seller: [seller separator: seller name + edition] → [item label] → [item separator] → [item label] → … |
-| FR-031 | A deposit slip is printable per seller: item list, unit prices, and expected net payout after commission. |
-| FR-032 | The thermal ticket width is configurable in admin settings (default: 57mm). |
+| FR-026 | Un code-barres Code 128 unique est généré côté serveur pour chaque article inscrit. |
+| FR-027 | L'étiquette article affiche centré : graphique du code-barres Code 128, numéro de code-barres lisible, nom de l'article (retour à la ligne si nécessaire), prix, catégorie, numéro de table, indicateur d'incomplétude si applicable. Le nom du vendeur n'apparaît pas (RGPD). |
+| FR-028 | Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur. |
+| FR-029 | Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement. |
+| FR-030 | Le rouleau imprimé suit ce format par vendeur : [séparateur vendeur : nom vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → … |
+| FR-031 | Un bordereau de dépôt est imprimable par vendeur : liste des articles, prix unitaires et reversement net attendu après commission. |
+| FR-032 | La largeur du ticket thermique est configurable dans les paramètres admin (défaut : 57mm). |
 
 ---
 
-### F4 — Point of Sale (Sale Phase)
+### F4 — Point de Vente (Phase de Vente)
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-033 | The cashier interface allows sales via USB HID barcode scanner. |
-| FR-034 | The scan component handles AZERTY/QWERTY keyboard layout differences transparently via key code mapping — no workstation configuration required. |
-| FR-035 | Each scanned item is added to the current buyer's basket. The system displays the item name and price. |
-| FR-036 | Scanning an already-sold item displays an explicit error message. The item is not added to the basket. |
-| FR-037 | Scanning an incomplete item displays an informative warning to the cashier, including the detail of what is missing. The item can still be sold. |
-| FR-038 | The cashier can remove one or more individual items from the basket before payment validation. |
-| FR-039 | Payment validation marks all basket items as sold and closes the transaction. No modification is possible after this step — no returns or exchanges. |
-| FR-040 | After validation, a buyer invoice is printable on demand via the centralized print endpoint. |
-| FR-041 | The invoice displays: item list, unit prices, total, association name, edition name, date. A lot appears as a single line (lot name, lot price). |
-| FR-042 | The application supports a minimum of 3 simultaneous cashier workstations without data conflicts. The effective limit depends on server configuration. |
+| FR-033 | L'interface caisse permet les ventes via scanner USB HID à code-barres. |
+| FR-034 | Le composant de scan gère les différences de disposition clavier AZERTY/QWERTY de façon transparente via le mappage de codes touches — aucune configuration de poste requise. |
+| FR-035 | Chaque article scanné est ajouté au panier de l'acheteur courant. Le système affiche le nom et le prix de l'article. |
+| FR-036 | Scanner un article déjà vendu affiche un message d'erreur explicite. L'article n'est pas ajouté au panier. |
+| FR-037 | Scanner un article incomplet affiche un avertissement informatif au caissier, incluant le détail de ce qui manque. L'article peut tout de même être vendu. |
+| FR-038 | Le caissier peut retirer un ou plusieurs articles individuels du panier avant la validation du paiement. |
+| FR-039 | La validation du paiement marque tous les articles du panier comme vendus et clôt la transaction. Aucune modification n'est possible après cette étape — pas de retour ni d'échange. |
+| FR-040 | Après validation, une facture acheteur est imprimable à la demande via le point d'impression centralisé. |
+| FR-041 | La facture affiche : liste des articles, prix unitaires, total, nom de l'association, nom de l'édition, date. Un lot apparaît sur une ligne unique (nom du lot, prix du lot). |
+| FR-042 | L'application supporte un minimum de 3 postes caisse simultanés sans conflits de données. La limite effective dépend de la configuration du serveur. |
 
-#### Lots at POS
+#### Lots en Caisse
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-046 | Scanning an item belonging to a lot displays the lot name in red with a "X/N scanned" counter. |
-| FR-047 | The system blocks payment validation until the lot is complete (all N items scanned). |
-| FR-048 | Once complete, the lot is sold at its global lot price. |
-| FR-081 | If a cashier cannot complete a lot (item not found), they can remove the entire lot from the basket. All already-scanned items of the lot are removed. |
+| FR-046 | Scanner un article appartenant à un lot affiche le nom du lot en rouge avec un compteur « X/N scanné(s) ». |
+| FR-047 | Le système bloque la validation du paiement tant que le lot n'est pas complet (tous les N articles scannés). |
+| FR-048 | Une fois complet, le lot est vendu à son prix global de lot. |
+| FR-081 | Si un caissier ne peut pas compléter un lot (article introuvable), il peut retirer le lot entier du panier. Tous les articles du lot déjà scannés sont retirés. |
 
 ---
 
-### F5 — Post-Sale & Payouts
+### F5 — Post-Vente & Reversements
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-049 | In Post-sale phase, a **sales summary** ("Bilan de vente") is printable per seller. |
-| FR-050 | The sales summary contains: sold items (name, unit price), unsold items (name, category, table number), gross total, commission deducted, net amount to pay out. A lot appears as a single line (lot name, lot price). |
-| FR-051 | To settle a seller, the volunteer enters the cash amount handed over and clicks "Settle". The seller's status changes to **Settled**. |
-| FR-052 | If a seller does not wish to collect their payout, a **"Not collected"** button enters the full amount owed into the association's revenue. |
-| FR-053 | Unsettled sellers are identifiable in the application, with their phone number visible for contact. |
+| FR-049 | En phase Post-vente, un **bilan de vente** est imprimable par vendeur. |
+| FR-050 | Le bilan de vente contient : articles vendus (nom, prix unitaire), invendus (nom, catégorie, numéro de table), total brut, commission déduite, montant net à reverser. Un lot apparaît sur une ligne unique (nom du lot, prix du lot). |
+| FR-051 | Pour reverser un vendeur, le bénévole saisit le montant en espèces remis et clique « Reverser ». Le statut du vendeur passe à **Reversé**. |
+| FR-052 | Si un vendeur ne souhaite pas récupérer son reversement, un bouton **« Non collecté »** enregistre le montant intégral dû comme recette de l'association. |
+| FR-053 | Les vendeurs non reversés sont identifiables dans l'application, avec leur numéro de téléphone visible pour les contacter. |
 
 ---
 
-### F6 — Reporting
+### F6 — Rapports
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-054 | A **daily summary** is generatable by the admin at any time during the Sale phase. It covers the current calendar day. It contains: number of items sold/unsold for the day, daily revenue, daily commission earned by the association. |
-| FR-055 | An **edition summary** is generated at edition closure. It contains: total items sold/unsold, total gross revenue, total commission earned by the association. |
-| FR-056 | An **outstanding sellers report** lists unsettled sellers with their phone number. |
-| FR-057 | All reports are generated as PDF. |
-| FR-058 | Reports are accessible to the admin only. |
-| FR-059 | Archived editions display aggregate metrics and seller profiles in read-only mode. Item-level detail is accessible only through the PDF documents generated at closure. |
+| FR-054 | Un **bilan journalier** est générable par l'admin à tout moment pendant la phase de Vente. Il couvre le jour calendaire courant. Il contient : nombre d'articles vendus/invendus pour la journée, chiffre d'affaires journalier, commission journalière gagnée par l'association. |
+| FR-055 | Un **bilan d'édition** est généré à la clôture de l'édition. Il contient : total des articles vendus/invendus, chiffre d'affaires brut total, commission totale gagnée par l'association. |
+| FR-056 | Un **rapport des vendeurs en attente** liste les vendeurs non reversés avec leur numéro de téléphone. |
+| FR-057 | Tous les rapports sont générés en PDF. |
+| FR-058 | Les rapports sont accessibles à l'admin uniquement. |
+| FR-059 | Les éditions archivées affichent les métriques agrégées et les profils vendeurs en lecture seule. Le détail au niveau article n'est accessible que via les documents PDF générés à la clôture. |
 
 ---
 
-### F7 — User Accounts & Access Control
+### F7 — Comptes Utilisateurs & Contrôle d'Accès
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-060 | The admin creates, modifies, and deactivates volunteer accounts. The admin can reset a volunteer's password. |
-| FR-061 | There is one admin account per instance. |
-| FR-062 | At first launch, the admin account is initialized with Admin/Admin credentials. The admin is forced to change their password on first login. |
-| FR-063 | If the admin loses their password, a command run on the server generates a temporary password. The admin is forced to change it on next login. |
-| FR-064 | Admin and Volunteer roles are strictly separated. An admin cannot access volunteer interfaces from their admin account. |
-| FR-065 | The volunteer interface adapts to the active phase: deposit in Deposit phase, cashier in Sale phase, settlement in Post-sale phase. In Post-sale phase, the volunteer can print a seller's sales summary to group their unsold items before handover. |
-| FR-066 | Sessions do not expire automatically. |
-| FR-067 | Each account stores a UI language preference (EN/FR), detected from the browser on account creation, modifiable in account settings. |
+| FR-060 | L'admin crée, modifie et désactive les comptes bénévoles. L'admin peut réinitialiser le mot de passe d'un bénévole. |
+| FR-061 | Il y a un seul compte admin par instance. |
+| FR-062 | Au premier lancement, le compte admin est initialisé avec les identifiants Admin/Admin. L'admin est forcé de changer son mot de passe à la première connexion. |
+| FR-063 | Si l'admin perd son mot de passe, une commande exécutée sur le serveur génère un mot de passe temporaire. L'admin est forcé de le changer à la prochaine connexion. |
+| FR-064 | Les rôles Admin et Bénévole sont strictement séparés. Un admin ne peut pas accéder aux interfaces bénévole depuis son compte admin. |
+| FR-065 | L'interface bénévole s'adapte à la phase active : dépôt en phase Dépôt, caisse en phase Vente, reversement en phase Post-vente. En phase Post-vente, le bénévole peut imprimer le bilan de vente d'un vendeur pour regrouper ses invendus avant la remise. |
+| FR-066 | Les sessions n'expirent pas automatiquement. |
+| FR-067 | Chaque compte stocke une préférence de langue d'interface (EN/FR), détectée depuis le navigateur à la création du compte, modifiable dans les paramètres du compte. |
 
 ---
 
-### F8 — Infrastructure & Deployment
+### F8 — Infrastructure & Déploiement
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-068 | The server runs on Linux, macOS, and Windows without code changes. |
-| FR-069 | Minimum specification: Raspberry Pi 4 (2 GB RAM) or equivalent 64-bit machine. SSD/USB storage strongly recommended — microSD is unreliable for database writes under event load. |
-| FR-070 | The application is deployed via Docker Compose (Spring Boot app + MariaDB) — a single `docker-compose.yml` file. Data is stored in persistent Docker volumes. |
-| FR-071 | Updates are applied with two commands: `docker compose pull && docker compose up -d`. Persistent data is preserved. |
-| FR-072 | Client workstations access the application via browser — no local installation required on workstations. |
-| FR-073 | An admin settings page centralizes instance configuration: association name, commission rate, document language, thermal ticket width. |
-| FR-074 | The installation guide is exhaustive and targets non-technical users. It covers: Docker installation, startup, initial configuration, admin password reset procedure, and update procedure. Instructions are provided per OS (Linux, macOS, Windows) — commands and procedures are platform-specific. |
+| FR-068 | Le serveur fonctionne sous Linux, macOS et Windows sans modification du code. |
+| FR-069 | Spec minimale : Raspberry Pi 4 (2 Go RAM) ou machine 64 bits équivalente. Stockage SSD/USB fortement recommandé — la carte microSD est peu fiable pour les écritures en base sous charge événementielle. |
+| FR-070 | L'application est déployée via Docker Compose (application Spring Boot + MariaDB) — un seul fichier `docker-compose.yml`. Les données sont stockées dans des volumes Docker persistants. |
+| FR-071 | Les mises à jour s'appliquent avec deux commandes : `docker compose pull && docker compose up -d`. Les données persistantes sont préservées. |
+| FR-072 | Les postes clients accèdent à l'application via navigateur — aucune installation locale requise sur les postes. |
+| FR-073 | Une page de paramètres admin centralise la configuration de l'instance : nom de l'association, taux de commission, langue des documents, largeur du ticket thermique. |
+| FR-074 | Le guide d'installation est exhaustif et cible les utilisateurs non techniques. Il couvre : installation de Docker, démarrage, configuration initiale, procédure de réinitialisation du mot de passe admin, et procédure de mise à jour. Les instructions sont fournies par OS (Linux, macOS, Windows) — commandes et procédures sont spécifiques à chaque plateforme. |
 
 ---
 
-### F9 — Print Infrastructure
+### F9 — Infrastructure d'Impression
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-075 | All printing is routed through the central server — no printer is required on client workstations. |
-| FR-076 | **Thermal printer** (item labels): connected to the server via USB. Ticket width: see FR-032. See FR-029 for print queue behavior. |
-| FR-077 | **Standard printer** (A4 documents): connected to the server via USB. PDF generated server-side, sent directly to the printer without preview. |
-| FR-078 | A user triggers printing from the interface; the request is processed by the server with no action required on the client workstation. |
-| FR-079 | In case of a print error (printer offline, paper jam, out of paper), the user is notified in the interface with an explicit message. |
+| FR-075 | Toute impression est routée via le serveur central — aucune imprimante requise sur les postes clients. |
+| FR-076 | **Imprimante thermique** (étiquettes articles) : connectée au serveur via USB. Largeur du ticket : voir FR-032. Voir FR-029 pour le comportement de la file d'impression. |
+| FR-077 | **Imprimante standard** (documents A4) : connectée au serveur via USB. PDF généré côté serveur, envoyé directement à l'imprimante sans aperçu. |
+| FR-078 | Un utilisateur déclenche l'impression depuis l'interface ; la requête est traitée par le serveur sans action requise sur le poste client. |
+| FR-079 | En cas d'erreur d'impression (imprimante hors ligne, bourrage papier, manque de papier), l'utilisateur est notifié dans l'interface avec un message explicite. |
 
 ---
 
-### F10 — Item Catalog
+### F10 — Catalogue Articles
 
-*Available during all phases of the active edition.*
+*Disponible pendant toutes les phases de l'édition active.*
 
-| ID | Requirement |
+| ID | Exigence |
 |---|---|
-| FR-083 | A filterable, sortable item catalog is accessible to both admin and volunteers during all phases of the active edition. |
-| FR-084 | The catalog can be filtered by: name/description, barcode number, category, table, sold/unsold status, complete/incomplete flag, seller name. |
-| FR-085 | The catalog can be sorted by any visible column. |
-| FR-086 | The catalog displays items from the active edition only. Item-level data is not available on editions where the Clean action has been triggered. |
-| FR-087 | During the Sale phase, a volunteer can add an item from the catalog directly to the current basket — fallback for unreadable or damaged barcodes. The system prevents adding an item that is already sold or already present in the current basket. |
-| FR-089 | Commission applies normally to items sold with an incomplete flag. The sale price and commission rate are unchanged by the item's completeness status. |
-| FR-090 | If the admin triggers a phase transition while a volunteer has an active basket, the system cancels the basket and displays an explicit error message to the volunteer. |
+| FR-083 | Un catalogue d'articles filtrable et triable est accessible à l'admin et aux bénévoles pendant toutes les phases de l'édition active. |
+| FR-084 | Le catalogue peut être filtré par : nom/description, numéro de code-barres, catégorie, table, statut vendu/invendu, indicateur complet/incomplet, nom du vendeur. |
+| FR-085 | Le catalogue peut être trié par n'importe quelle colonne visible. |
+| FR-086 | Le catalogue affiche les articles de l'édition active uniquement. Les données au niveau article ne sont pas disponibles sur les éditions où l'action Nettoyer a été déclenchée. |
+| FR-087 | En phase de Vente, un bénévole peut ajouter un article du catalogue directement au panier courant — solution de repli pour les codes-barres illisibles ou endommagés. Le système empêche l'ajout d'un article déjà vendu ou déjà présent dans le panier courant. |
+| FR-089 | La commission s'applique normalement aux articles vendus avec l'indicateur incomplet. Le prix de vente et le taux de commission ne sont pas modifiés par l'état de complétude de l'article. |
+| FR-090 | Si l'admin déclenche une transition de phase alors qu'un bénévole a un panier actif, le système annule le panier et affiche un message d'erreur explicite au bénévole. |
 
 ---
 
-## Non-Functional Requirements
+## Exigences Non Fonctionnelles
 
-| ID | Category | Requirement |
+| ID | Catégorie | Exigence |
 |---|---|---|
-| NFR-001 | Performance | The application is usable on a Raspberry Pi 4 (2 GB RAM) without noticeable degradation under event load (3 simultaneous workstations, ~1,700 items). |
-| NFR-002 | Concurrency | Simultaneous operations from multiple workstations (scanning, data entry, printing) do not generate data conflicts. |
-| NFR-003 | Financial Accuracy | Payout calculations (price − commission) are accurate to the cent for each seller and for edition totals. |
-| NFR-004 | Browser Compatibility | The interface works on any modern browser (Chrome, Firefox, Edge, Safari) on any OS. |
-| NFR-005 | Scanner Compatibility | USB HID scanners function without configuration, regardless of the workstation keyboard layout (AZERTY/QWERTY). |
-| NFR-006 | Reliability | No data loss occurs on unexpected browser close or client workstation failure. |
-| NFR-007 | GDPR | Seller personal data (last name, first name, email, phone) is deletable on request. Anonymized data in archived editions does not allow re-identification. |
+| NFR-001 | Performance | L'application est utilisable sur un Raspberry Pi 4 (2 Go RAM) sans dégradation notable sous charge événementielle (3 postes simultanés, ~1 700 articles). |
+| NFR-002 | Concurrence | Les opérations simultanées depuis plusieurs postes (scan, saisie de données, impression) ne génèrent pas de conflits de données. |
+| NFR-003 | Exactitude Financière | Les calculs de reversement (prix − commission) sont exacts au centime pour chaque vendeur et pour les totaux d'édition. |
+| NFR-004 | Compatibilité Navigateur | L'interface fonctionne sur tout navigateur moderne (Chrome, Firefox, Edge, Safari) sur tout OS. |
+| NFR-005 | Compatibilité Scanner | Les scanners USB HID fonctionnent sans configuration, quelle que soit la disposition clavier du poste (AZERTY/QWERTY). |
+| NFR-006 | Fiabilité | Aucune perte de données ne survient lors d'une fermeture inattendue du navigateur ou d'une défaillance d'un poste client. |
+| NFR-007 | RGPD | Les données personnelles vendeur (nom, prénom, email, téléphone) sont supprimables sur demande. Les données anonymisées dans les éditions archivées ne permettent pas la réidentification. |
 
 ---
 
-## Success Metrics
+## Métriques de Succès
 
-| ID | Success Metric | Counter-Metric |
+| ID | Métrique de Succès | Contre-Métrique |
 |---|---|---|
-| SM-1 | 3 cashier workstations operate simultaneously without data conflicts | No noticeable latency on the cashier side due to locks or synchronization |
-| SM-2 | Payout calculations match manual verification to the cent | No commission applied incorrectly on a lot or an incomplete item |
-| SM-3 | Thermal labels scan reliably with a standard USB scanner | Total print time for a complete seller deposit does not exceed 2 minutes |
-| SM-4 | All PDF documents print correctly from any workstation OS (Linux, macOS, Windows) | No truncated or misformatted document depending on the triggering workstation's OS |
-| SM-5 | Admin opens and closes phases without incident, with clear state feedback | No accidental phase transition due to an ambiguous interface |
-| SM-6 | Server runs without noticeable degradation on Raspberry Pi 4 (2 GB RAM) under event load | Memory usage does not exceed 80% under normal event conditions |
-| SM-7 | A non-technical user installs and configures the instance alone, guide in hand, without developer assistance | The guide requires no prior knowledge of Docker or the command line beyond the literal instructions |
+| SM-1 | 3 postes caisse fonctionnent simultanément sans conflits de données | Pas de latence notable côté caisse due aux verrous ou à la synchronisation |
+| SM-2 | Les calculs de reversement correspondent à la vérification manuelle au centime près | Aucune commission appliquée incorrectement sur un lot ou un article incomplet |
+| SM-3 | Les étiquettes thermiques se scannent de façon fiable avec un scanner USB standard | Le temps d'impression total pour un dépôt vendeur complet ne dépasse pas 2 minutes |
+| SM-4 | Tous les documents PDF s'impriment correctement depuis n'importe quel OS de poste (Linux, macOS, Windows) | Aucun document tronqué ou mal formaté selon l'OS du poste déclencheur |
+| SM-5 | L'admin ouvre et ferme les phases sans incident, avec un retour d'état clair | Aucune transition de phase accidentelle due à une interface ambiguë |
+| SM-6 | Le serveur fonctionne sans dégradation notable sur Raspberry Pi 4 (2 Go RAM) sous charge événementielle | L'utilisation mémoire ne dépasse pas 80 % dans les conditions normales d'événement |
+| SM-7 | Un utilisateur non technique installe et configure l'instance seul, guide en main, sans assistance développeur | Le guide ne nécessite aucune connaissance préalable de Docker ou de la ligne de commande au-delà des instructions littérales |

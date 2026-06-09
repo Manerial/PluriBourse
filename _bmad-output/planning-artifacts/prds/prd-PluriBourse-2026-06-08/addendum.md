@@ -1,6 +1,6 @@
 # Addendum — PluriBourse PRD
 
-Created: 2026-06-08
+Créé : 2026-06-08
 
 ---
 

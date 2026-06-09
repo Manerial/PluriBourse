@@ -1,136 +1,136 @@
-# PRD Coverage Review — PluriBourse UX
-Date: 2026-06-09
-Reviewer: PRD Coverage Lens
+# Revue de Couverture PRD — UX PluriBourse
+Date : 2026-06-09
+Relecteur : Lens Couverture PRD
 
 ---
 
-## Summary
+## Résumé
 
-EXPERIENCE.md covers the core operational flows (deposit, POS, settlement, phase transitions) solidly and its component inventory aligns well with the PRD. However, several UI-surfaced requirements are absent or significantly underspecified: seller GDPR anonymization, deposit-slip and invoice printing triggers, catalog-to-basket fallback, the admin Settings page, multi-language support in the UI itself, and the phase rollback flow. These gaps are not cosmetic — each one corresponds to a user-facing screen or interaction that will need to be designed.
-
----
-
-## Findings
-
-### PASS — Phase lifecycle coverage
-
-All five phases (Inscription is pre-app, then Deposit → Sale → Post-sale → Closed) are represented. EXPERIENCE.md's IA table maps each Bénévole surface to the correct phase. The phase chip update via SSE (`phase-changed`) is specified for the topbar. Flow 4 demonstrates the forward transition with dialog and SSE broadcast. Rollback is mentioned in the PRD (FR-082) but is only partially covered — see CONCERN below.
-
-### PASS — Core POS flows (FR-033 through FR-048, FR-081, FR-090)
-
-Scanner input behavior, AZERTY/QWERTY transparency, basket management, lot grouping with X/N counter, blocked validation on incomplete lots, lot removal (FR-081), and basket cancellation on phase change (FR-090) are all specified in the Component Patterns and State Patterns sections, with Flow 2 providing the narrative walkthrough. This is the strongest area of coverage.
-
-### PASS — User role coverage (Admin / Volunteer)
-
-The two-role model is correctly reflected in the IA (separate routes, sidebar Admin-only, topbar role badge). FR-064 (admin cannot act as volunteer) is acknowledged in the Foundation section. The phase-adaptive Bénévole interface (FR-065) is covered by the IA table. FR-061 (single admin account) has no direct UX surface, so no gap there.
-
-### PASS — Post-sale settlement core (FR-049 through FR-053)
-
-Flow 3 covers the "Not collected" path with the correct confirmation dialog and irreversibility language. Unsettled seller list with phone number (FR-053) is represented. The settlement amount entry by the volunteer (FR-051) is implied by Flow 3 but not explicitly designed as a component — acceptable at spine level.
-
-### PASS — Accessibility floor and tone
-
-WCAG 2.2 AA, focus trap, aria-live for scanner, aria-label on phase chip, and 44×44px minimum targets are all specified. Voice and Tone section is thorough and directly addresses the volunteer-under-pressure context.
-
-### PASS — Component patterns for printing feedback (FR-079)
-
-The imprimante-hors-ligne toast pattern is defined in both State Patterns and Component Patterns, with the correct behavior (persistent toast, rejouable action). Covers FR-079.
+EXPERIENCE.md couvre solidement les flux opérationnels principaux (dépôt, POS, reversement, transitions de phase) et son inventaire de composants s'aligne bien avec le PRD. Cependant, plusieurs exigences à interface utilisateur sont absentes ou significativement sous-spécifiées : l'anonymisation RGPD des vendeurs, les déclencheurs d'impression du bordereau de dépôt et de la facture, le repli catalogue-vers-panier, la page Paramètres admin, le support multilingue dans l'interface elle-même, et le flux de retour en arrière de phase. Ces lacunes ne sont pas cosmétiques — chacune correspond à un écran ou une interaction utilisateur qui devra être conçu.
 
 ---
 
-### CONCERN — Phase rollback flow (FR-082)
+## Constats
 
-FR-082 specifies that rollback (Closed → Post-sale → Sale → Deposit) is available one step at a time and requires confirmation. EXPERIENCE.md defines `/admin/editions/:id/phase` as the surface and shows the forward transition in Flow 4, but there is no specification of what the rollback trigger looks like, whether the same dialog pattern applies, or how the UI signals that rollback from Closed is unavailable after Clean Edition (FR-088). The Clean Edition action is mentioned in State Patterns (Phase Clôturée), but the combined rollback-disabled-after-clean state is not covered.
+### PASS — Couverture du cycle de vie des phases
 
-### CONCERN — Seller GDPR anonymization (FR-021)
+Les cinq phases (Inscription est pré-application, puis Dépôt → Vente → Post-vente → Clôturé) sont représentées. La table IA de EXPERIENCE.md mappe chaque surface Bénévole à la phase correcte. La mise à jour de la puce de phase via SSE (`phase-changed`) est spécifiée pour la topbar. Le Flux 4 démontre la transition avant avec dialog et diffusion SSE. Le retour en arrière est mentionné dans le PRD (FR-082) mais n'est que partiellement couvert — voir PRÉOCCUPATION ci-dessous.
 
-FR-021 requires the admin to be able to delete a seller profile, which triggers anonymization across all editions (name, email, phone, item descriptions). This is a distinct destructive action with significant consequences. EXPERIENCE.md does not specify a UI surface for it: no mention on the `/admin/sellers/:id` fiche, no confirmation dialog spec, no explanation of what the anonymized fiche looks like post-action. The general "confirmation dialog for destructive actions" rule exists in Interaction Primitives but the specific trigger and post-state for GDPR deletion are absent.
+### PASS — Flux POS principaux (FR-033 à FR-048, FR-081, FR-090)
 
-### CONCERN — Deposit slip printing trigger (FR-031)
+Le comportement du champ scanner, la transparence AZERTY/QWERTY, la gestion du panier, le regroupement des lots avec compteur X/N, la validation bloquée sur les lots incomplets, la suppression de lot (FR-081) et l'annulation du panier lors d'un changement de phase (FR-090) sont tous spécifiés dans les sections Patrons de Composants et Patterns d'État, avec le Flux 2 fournissant le parcours narratif. C'est le domaine de couverture le plus solide.
 
-FR-031 requires a printable deposit slip per seller showing the item list, unit prices, and expected net payout. Flow 1 describes automatic label printing after deposit validation but does not mention deposit slip printing. It is unclear from EXPERIENCE.md whether the deposit slip prints automatically alongside the labels, or whether it requires a manual trigger on the seller fiche. This distinction affects the Dépôt form design. The Printing interaction primitive in EXPERIENCE.md (explicit button → spinner → toast) implies it is manual, but this is not confirmed for the deposit slip specifically.
+### PASS — Couverture des rôles utilisateurs (Admin / Bénévole)
 
-### CONCERN — Buyer invoice printing trigger (FR-040, FR-041)
+Le modèle à deux rôles est correctement reflété dans l'IA (routes séparées, sidebar Admin uniquement, badge de rôle topbar). FR-064 (l'admin ne peut pas agir en tant que bénévole) est reconnu dans la section Foundation. L'interface Bénévole adaptative à la phase (FR-065) est couverte par la table IA. FR-061 (compte admin unique) n'a pas de surface UX directe, donc pas de lacune ici.
 
-FR-040 specifies that after payment validation, a buyer invoice is printable "on demand." FR-041 specifies its content. EXPERIENCE.md does not describe where in the POS interface the invoice print button appears (in the basket after validation? on a post-transaction screen?), nor what the post-validation state of the POS looks like before the basket resets. This is a gap in the POS flow specification.
+### PASS — Cœur du reversement post-vente (FR-049 à FR-053)
 
-### CONCERN — Catalog-to-basket manual entry (FR-087)
+Le Flux 3 couvre le chemin « Non collecté » avec le dialog de confirmation correct et le langage d'irréversibilité. La liste des vendeurs non reversés avec numéro de téléphone (FR-053) est représentée. La saisie du montant du reversement par le bénévole (FR-051) est sous-entendue par le Flux 3 mais pas explicitement conçue comme composant — acceptable au niveau spine.
 
-FR-087 is a critical fallback for unreadable barcodes: a volunteer can add an item directly from the catalog to the current basket. EXPERIENCE.md references this briefly in the Scope section ("Manual basket entry from catalog (fallback for unreadable barcodes)") and lists `/volunteer/catalog` as available in all phases, but never specifies the interaction: Is there an "Add to basket" button on the catalog row that only appears during Sale phase? Does it open the POS view? Does the catalog need the active basket context? This flow has no corresponding Key Flow and no component pattern.
+### PASS — Plancher d'accessibilité et ton
 
-### CONCERN — Admin Settings page content (FR-073, FR-032, FR-005 through FR-007)
+WCAG 2.2 AA, piège focus, aria-live pour le scanner, aria-label sur la puce de phase, et cibles minimum 44×44 px sont tous spécifiés. La section Voix et Ton est approfondie et adresse directement le contexte du bénévole sous pression d'événement.
 
-FR-073 specifies that an admin settings page centralizes: association name, commission rate, document language, and thermal ticket width. FR-032 makes ticket width configurable. FR-005–FR-007 define instance-level document language. EXPERIENCE.md lists `/admin/settings` in the IA table but provides no specification of the page content, field layout, or which settings are editable at which phase (e.g., commission rate frozen after Deposit starts — FR-016). This page needs a component or form spec.
+### PASS — Patrons de composants pour le retour d'impression (FR-079)
 
-### CONCERN — Commission rate freeze UX (FR-016)
-
-FR-016 states the commission rate is modifiable until Deposit phase starts, then frozen for that edition. This implies a conditional edit state on the Settings or Edition detail page. EXPERIENCE.md notes that `/admin/editions/:id/categories` is "éditable" before Deposit and "read-only" after, but does not extend this pattern to the commission rate field. No visual treatment (disabled field, explanatory inline message) is specified.
-
-### CONCERN — Initial admin setup and forced password change (FR-062)
-
-FR-062 specifies that on first launch the admin logs in with Admin/Admin and is forced to change their password. This is a first-run UX flow with its own screen or modal. EXPERIENCE.md does not cover it. While it is a one-time flow, it is the first thing a deploying association will encounter.
-
-### CONCERN — Language preference per account (FR-003, FR-067)
-
-FR-003 and FR-067 require each account to store a UI language preference, modifiable in account settings. `/account` is listed in the shared IA but EXPERIENCE.md provides no specification of what the account page contains. Language switching is foundational to the ngx-translate requirement — it needs at minimum a surface spec.
-
-### CONCERN — Non-functional requirements — performance perception (NFR-001)
-
-NFR-001 requires no noticeable degradation on Raspberry Pi 4 under event load. EXPERIENCE.md specifies skeleton rows for loading states (good), but does not address perceived performance considerations specific to low-hardware contexts: no lazy loading strategy mentioned, no specification of maximum acceptable latency for scanner feedback, no guidance on debounce or request throttling for the catalog filters. These are UX-adjacent technical decisions that should be at least flagged in the spine.
-
-### CONCERN — NFR-002 — Concurrent workstation conflict communication
-
-NFR-002 and FR-042 require that simultaneous operations from 3+ workstations produce no conflicts. EXPERIENCE.md handles the already-sold item case (FR-036) and the basket cancellation on phase change (FR-090) via SSE. However, it does not address what happens when two cashiers scan the same item simultaneously at the exact same moment — the SSE `phase-changed` event is documented, but no equivalent `item-sold` conflict event is specified for the scanner result zone. The inline error "Article déjà vendu sur un autre poste" appears in Voice and Tone as a message example but its triggering mechanism and timing (is it synchronous on scan? asynchronous via SSE?) is not specified in Component Patterns.
+Le patron toast imprimante-hors-ligne est défini à la fois dans Patterns d'État et Patrons de Composants, avec le comportement correct (toast persistant, action rejouable). Couvre FR-079.
 
 ---
 
-### FAIL — Outstanding sellers report UI surface (FR-056)
+### PRÉOCCUPATION — Flux de retour en arrière de phase (FR-082)
 
-FR-056 defines an "outstanding sellers report" listing unsettled sellers with their phone number, generated as PDF (FR-057). The `/admin/reports` route is in the IA, accessible in Post-sale and Closed phases. However, EXPERIENCE.md does not specify how reports are triggered, listed, or downloaded. There is no component pattern for the Reports page: no mention of a "Generate" button, no download mechanism, no distinction between the daily summary (FR-054, Sale phase only), the edition summary (FR-055, generated at close via FR-013), and the outstanding sellers report (FR-056). Three distinct reports with different triggers and lifecycles are collapsed into a single IA entry with no behavioral specification.
+FR-082 spécifie que le retour en arrière (Clôturé → Post-vente → Vente → Dépôt) est disponible phase par phase et nécessite une confirmation. EXPERIENCE.md définit `/admin/editions/:id/phase` comme surface et montre la transition avant dans le Flux 4, mais il n'y a aucune spécification de ce à quoi ressemble le déclencheur de retour en arrière, si le même patron de dialog s'applique, ni comment l'interface signale que le retour en arrière depuis Clôturé est indisponible après Nettoyer l'Édition (FR-088). L'action Nettoyer l'Édition est mentionnée dans les Patterns d'État (Phase Clôturée), mais l'état retour-en-arrière-désactivé-après-nettoyage n'est pas couvert.
 
-### FAIL — Archived edition read-only view and post-Clean state (FR-059, FR-086, FR-088)
+### PRÉOCCUPATION — Anonymisation RGPD des vendeurs (FR-021)
 
-FR-059 specifies that archived editions display aggregate metrics and seller profiles in read-only mode; item-level detail is only available in PDF. FR-086 adds that if Clean has been triggered, item-level data is not available in the catalog. FR-088 defines Clean Edition as a permanent action. EXPERIENCE.md mentions the "Phase Clôturée" state in State Patterns (read-only banner, "Nettoyer l'édition" button) but does not specify: what the archived edition detail page looks like, what aggregate metrics are displayed, how seller profiles appear without item detail, or how the catalog handles the post-Clean state (empty? hidden? message?). This is effectively an entire screen family absent from the spine.
+FR-021 exige que l'admin puisse supprimer un profil vendeur, ce qui déclenche l'anonymisation dans toutes les éditions (nom, email, téléphone, descriptions d'articles). C'est une action destructive distincte avec des conséquences significatives. EXPERIENCE.md ne spécifie pas de surface UI pour cela : aucune mention sur la fiche `/admin/sellers/:id`, pas de spec de dialog de confirmation, pas d'explication de ce à quoi ressemble la fiche anonymisée post-action. La règle générale « dialog de confirmation pour les actions destructives » existe dans les Primitives d'Interaction, mais le déclencheur spécifique et le post-état pour la suppression RGPD sont absents.
 
-### FAIL — Sales summary (bilan de vente) print trigger in Post-sale (FR-049, FR-050, FR-065)
+### PRÉOCCUPATION — Déclencheur d'impression du bordereau de dépôt (FR-031)
 
-FR-049 and FR-065 specify that in Post-sale phase, a volunteer can print a seller's sales summary to group their unsold items before handover. This is a primary Post-sale volunteer action — arguably more frequent than settlement itself. Flow 3 (settlement) is the only Post-sale key flow and it does not mention printing. The sales summary print button on the settlement list or seller fiche is completely absent from EXPERIENCE.md.
+FR-031 exige un bordereau de dépôt imprimable par vendeur affichant la liste des articles, les prix unitaires et le reversement net attendu. Le Flux 1 décrit l'impression automatique des étiquettes après la validation du dépôt mais ne mentionne pas l'impression du bordereau. Il n'est pas clair d'après EXPERIENCE.md si le bordereau de dépôt s'imprime automatiquement avec les étiquettes, ou s'il nécessite un déclencheur manuel sur la fiche vendeur. Cette distinction affecte la conception du formulaire de dépôt. La primitive d'interaction Impression dans EXPERIENCE.md (bouton explicite → spinner → toast) implique qu'il est manuel, mais cela n'est pas confirmé pour le bordereau de dépôt spécifiquement.
+
+### PRÉOCCUPATION — Déclencheur d'impression de la facture acheteur (FR-040, FR-041)
+
+FR-040 spécifie qu'après la validation du paiement, une facture acheteur est imprimable « à la demande ». FR-041 en spécifie le contenu. EXPERIENCE.md ne décrit pas où dans l'interface de la caisse le bouton d'impression de facture apparaît (dans le panier après validation ? sur un écran post-transaction ?), ni à quoi ressemble l'état post-validation de la caisse avant la réinitialisation du panier. C'est une lacune dans la spécification du flux POS.
+
+### PRÉOCCUPATION — Ajout manuel au panier depuis le catalogue (FR-087)
+
+FR-087 est un repli critique pour les codes-barres illisibles : un bénévole peut ajouter un article directement depuis le catalogue au panier courant. EXPERIENCE.md référence cela brièvement dans la section Périmètre (« Ajout manuel au panier depuis le catalogue (repli codes-barres illisibles) ») et liste `/volunteer/catalog` comme disponible dans toutes les phases, mais ne spécifie jamais l'interaction : y a-t-il un bouton « Ajouter au panier » sur la ligne du catalogue qui n'apparaît que pendant la phase Vente ? Cela ouvre-t-il la vue POS ? Le catalogue a-t-il besoin du contexte du panier actif ? Ce flux n'a pas de Flux Clé correspondant et pas de patron de composant.
+
+### PRÉOCCUPATION — Contenu de la page Paramètres admin (FR-073, FR-032, FR-005 à FR-007)
+
+FR-073 spécifie qu'une page de paramètres admin centralise : nom de l'association, taux de commission, langue des documents et largeur du ticket thermique. FR-032 rend la largeur du ticket configurable. FR-005–FR-007 définissent la langue des documents au niveau de l'instance. EXPERIENCE.md liste `/admin/settings` dans la table IA mais ne fournit aucune spécification du contenu de la page, de la disposition des champs, ni de quels paramètres sont modifiables à quelle phase (ex. taux de commission gelé après le démarrage du Dépôt — FR-016). Cette page nécessite une spec de composant ou de formulaire.
+
+### PRÉOCCUPATION — UX du gel du taux de commission (FR-016)
+
+FR-016 stipule que le taux de commission est modifiable jusqu'au démarrage de la phase Dépôt, puis gelé pour cette édition. Cela implique un état d'édition conditionnel sur la page Paramètres ou Détail de l'édition. EXPERIENCE.md note que `/admin/editions/:id/categories` est « éditable » avant le Dépôt et « en lecture seule » après, mais n'étend pas ce patron au champ du taux de commission. Aucun traitement visuel (champ désactivé, message inline explicatif) n'est spécifié.
+
+### PRÉOCCUPATION — Configuration initiale admin et changement de mot de passe forcé (FR-062)
+
+FR-062 spécifie qu'au premier lancement, l'admin se connecte avec Admin/Admin et est forcé de changer son mot de passe. Il s'agit d'un flux de premier lancement avec son propre écran ou modal. EXPERIENCE.md ne le couvre pas. Bien qu'il s'agisse d'un flux ponctuel, c'est la première chose qu'une association déployant rencontrera.
+
+### PRÉOCCUPATION — Préférence de langue par compte (FR-003, FR-067)
+
+FR-003 et FR-067 exigent que chaque compte stocke une préférence de langue d'interface, modifiable dans les paramètres du compte. `/account` est listé dans l'IA partagée mais EXPERIENCE.md ne fournit aucune spécification du contenu de la page de compte. Le changement de langue est fondamental à l'exigence ngx-translate — il nécessite au minimum une spec de surface.
+
+### PRÉOCCUPATION — Exigences non fonctionnelles — perception des performances (NFR-001)
+
+NFR-001 exige aucune dégradation notable sur Raspberry Pi 4 sous charge événementielle. EXPERIENCE.md spécifie des lignes de squelette pour les états de chargement (bien), mais n'aborde pas les considérations de performance perçue spécifiques aux contextes de matériel bas de gamme : aucune stratégie de chargement paresseux mentionnée, aucune spécification de latence maximale acceptable pour le retour du scanner, aucune orientation sur l'anti-rebond ou la limitation des requêtes pour les filtres du catalogue. Ce sont des décisions techniques adjacentes à l'UX qui devraient au moins être signalées dans la spine.
+
+### PRÉOCCUPATION — NFR-002 — Communication des conflits entre postes concurrents
+
+NFR-002 et FR-042 exigent que les opérations simultanées depuis 3+ postes ne produisent pas de conflits. EXPERIENCE.md gère le cas article-déjà-vendu (FR-036) et l'annulation du panier lors d'un changement de phase (FR-090) via SSE. Cependant, il n'aborde pas ce qui se passe lorsque deux caissiers scannent le même article simultanément au même moment exact — l'événement SSE `phase-changed` est documenté, mais aucun événement `item-sold` équivalent pour les conflits n'est spécifié pour la zone de résultat du scanner. Le message d'erreur inline « Article déjà vendu sur un autre poste » apparaît dans Voix et Ton comme exemple de message, mais son mécanisme de déclenchement et son timing (est-il synchrone au scan ? asynchrone via SSE ?) ne sont pas spécifiés dans les Patrons de Composants.
 
 ---
 
-## Recommendations
+### ÉCHEC — Surface UI du rapport des vendeurs en attente (FR-056)
 
-Ordered by priority. Blockers (FAIL items) first.
+FR-056 définit un « rapport des vendeurs en attente » listant les vendeurs non reversés avec leur numéro de téléphone, généré en PDF (FR-057). La route `/admin/reports` est dans l'IA, accessible en phases Post-vente et Clôturé. Cependant, EXPERIENCE.md ne spécifie pas comment les rapports sont déclenchés, listés ou téléchargés. Il n'y a pas de patron de composant pour la page Rapports : aucune mention d'un bouton « Générer », aucun mécanisme de téléchargement, aucune distinction entre le bilan journalier (FR-054, phase Vente uniquement), le bilan d'édition (FR-055, généré à la clôture via FR-013), et le rapport des vendeurs en attente (FR-056). Trois rapports distincts avec des déclencheurs et des cycles de vie différents sont réduits à une seule entrée IA sans spécification comportementale.
 
-### 1. [BLOCKER] Specify the Reports page (FR-054, FR-055, FR-056, FR-057, FR-058)
-Add a component pattern and at minimum a wireframe description for `/admin/reports`. Define the three report types, their generation triggers (on-demand button vs. automatic at close), their access phases, and the download mechanism (PDF download link / in-browser open / auto-print). This is a three-report surface, not a single route.
+### ÉCHEC — Vue en lecture seule de l'édition archivée et état post-Nettoyage (FR-059, FR-086, FR-088)
 
-### 2. [BLOCKER] Specify the archived edition view and post-Clean catalog state (FR-059, FR-086, FR-088)
-Add a description of the archived edition detail page: aggregate metrics displayed, seller profile read-only view without item detail, and catalog behavior after Clean. Define what "Nettoyer l'édition" button triggers and what the post-Clean UI state looks like (disabled catalog entry? empty catalog with explanatory message?).
+FR-059 spécifie que les éditions archivées affichent les métriques agrégées et les profils vendeurs en mode lecture seule ; le détail au niveau article n'est disponible qu'en PDF. FR-086 ajoute que si Nettoyer a été déclenché, les données au niveau article ne sont pas disponibles dans le catalogue. FR-088 définit Nettoyer l'Édition comme une action permanente. EXPERIENCE.md mentionne l'état « Phase Clôturée » dans les Patterns d'État (bannière lecture seule, bouton « Nettoyer l'édition »), mais ne spécifie pas : à quoi ressemble la page de détail de l'édition archivée, quelles métriques agrégées sont affichées, comment les profils vendeurs apparaissent sans détail article, ni comment le catalogue gère l'état post-Nettoyage (vide ? masqué ? message ?). C'est en pratique toute une famille d'écrans absente de la spine.
 
-### 3. [BLOCKER] Add a Post-sale Key Flow covering sales summary printing (FR-049, FR-050, FR-065)
-Flow 3 only covers settlement. Add Flow 5 (or extend Flow 3) to show the volunteer printing a seller's sales summary before handing over unsold items. Specify where the print trigger appears: on the settlement list row, or only on the seller fiche.
+### ÉCHEC — Déclencheur d'impression du bilan de vente en post-vente (FR-049, FR-050, FR-065)
 
-### 4. Specify the admin Settings page content and editable states (FR-073, FR-016, FR-032, FR-005)
-Add a form spec for `/admin/settings`: fields (association name, commission rate, document language, thermal ticket width), their edit conditions (commission rate disabled after Deposit start with explanatory message), and how document language relates to printed output language.
+FR-049 et FR-065 spécifient qu'en phase Post-vente, un bénévole peut imprimer le bilan de vente d'un vendeur pour regrouper ses invendus avant la remise. C'est une action bénévole principale en Post-vente — sans doute plus fréquente que le reversement lui-même. Le Flux 3 (reversement) est le seul flux clé Post-vente et il ne mentionne pas l'impression. Le bouton d'impression du bilan de vente sur la liste de reversement ou la fiche vendeur est complètement absent de EXPERIENCE.md.
 
-### 5. Add catalog-to-basket Key Flow (FR-087)
-Add a short flow showing how a volunteer accesses the catalog during Sale phase, locates an unreadable item, and adds it to the active basket. Specify whether "Add to basket" is contextually visible only during Sale phase, and how the volunteer returns to the POS after the action.
+---
 
-### 6. Specify GDPR seller deletion (FR-021)
-On the `/admin/sellers/:id` fiche, document the delete/anonymize action: confirmation dialog content (consequences: anonymization across all editions, irreversible), and the post-anonymization state of the fiche (grayed-out placeholder data vs. removed entry).
+## Recommandations
 
-### 7. Specify deposit slip and buyer invoice print triggers (FR-031, FR-040, FR-041)
-Clarify in the deposit form flow whether the deposit slip prints automatically with labels (alongside FR-028) or is triggered manually. Clarify what the POS state looks like after transaction validation and where the invoice print button appears.
+Ordonnées par priorité. Bloquants (éléments ÉCHEC) en premier.
 
-### 8. Cover the rollback flow and rollback-disabled-after-Clean state (FR-082, FR-088)
-On `/admin/editions/:id/phase`, specify what rollback buttons look like, that the same confirmation dialog pattern applies, and how the UI communicates that rollback from Closed is permanently unavailable after Clean Edition.
+### 1. [BLOQUANT] Spécifier la page Rapports (FR-054, FR-055, FR-056, FR-057, FR-058)
+Ajouter un patron de composant et au minimum une description de maquette pour `/admin/reports`. Définir les trois types de rapports, leurs déclencheurs de génération (bouton à la demande vs. automatique à la clôture), leurs phases d'accès, et le mécanisme de téléchargement (lien de téléchargement PDF / ouverture dans le navigateur / impression automatique). C'est une surface à trois rapports, pas une simple route.
 
-### 9. Specify the `/account` page (FR-003, FR-067)
-Add minimal spec for the account settings page: language preference selector (EN/FR), how it applies immediately without page reload (ngx-translate runtime switch), and any other user-editable fields.
+### 2. [BLOQUANT] Spécifier la vue de l'édition archivée et l'état du catalogue post-Nettoyage (FR-059, FR-086, FR-088)
+Ajouter une description de la page de détail de l'édition archivée : métriques agrégées affichées, vue en lecture seule du profil vendeur sans détail article, et comportement du catalogue après Nettoyage. Définir ce que déclenche le bouton « Nettoyer l'édition » et à quoi ressemble l'état UI post-Nettoyage (entrée catalogue désactivée ? catalogue vide avec message explicatif ?).
 
-### 10. Add first-run forced password change flow (FR-062)
-Specify the Admin/Admin first-login flow: is it a redirect to a dedicated change-password screen, or an in-place modal on `/admin`? What prevents navigating away before the password is changed?
+### 3. [BLOQUANT] Ajouter un Flux Clé Post-vente couvrant l'impression du bilan de vente (FR-049, FR-050, FR-065)
+Le Flux 3 ne couvre que le reversement. Ajouter le Flux 5 (ou étendre le Flux 3) pour montrer le bénévole imprimant le bilan de vente d'un vendeur avant de remettre les invendus. Spécifier où apparaît le déclencheur d'impression : sur la ligne de la liste de reversement, ou uniquement sur la fiche vendeur.
 
-### 11. Clarify concurrent scan conflict delivery mechanism (NFR-002, FR-036)
-In the Scanner input component pattern, specify whether the "already sold" error for a concurrent scan is a synchronous HTTP error response (most likely) or an async SSE push — and how the POS handles the case where two workstations succeed at scanning the same item within the same request window.
+### 4. Spécifier le contenu et les états modifiables de la page Paramètres admin (FR-073, FR-016, FR-032, FR-005)
+Ajouter une spec de formulaire pour `/admin/settings` : champs (nom de l'association, taux de commission, langue des documents, largeur du ticket thermique), leurs conditions de modification (taux de commission désactivé après le démarrage du Dépôt avec message explicatif), et comment la langue des documents est liée à la langue de sortie des documents imprimés.
+
+### 5. Ajouter un Flux Clé catalogue-vers-panier (FR-087)
+Ajouter un flux court montrant comment un bénévole accède au catalogue pendant la phase Vente, localise un article illisible, et l'ajoute au panier actif. Spécifier si « Ajouter au panier » n'est visible de façon contextuelle que pendant la phase Vente, et comment le bénévole retourne à la caisse POS après l'action.
+
+### 6. Spécifier la suppression RGPD du vendeur (FR-021)
+Sur la fiche `/admin/sellers/:id`, documenter l'action supprimer/anonymiser : contenu du dialog de confirmation (conséquences : anonymisation dans toutes les éditions, irréversible), et l'état post-anonymisation de la fiche (données en placeholder grisées vs. entrée supprimée).
+
+### 7. Spécifier les déclencheurs d'impression du bordereau de dépôt et de la facture acheteur (FR-031, FR-040, FR-041)
+Clarifier dans le flux du formulaire de dépôt si le bordereau de dépôt s'imprime automatiquement avec les étiquettes (aux côtés de FR-028) ou est déclenché manuellement. Clarifier à quoi ressemble l'état de la caisse POS après la validation de la transaction et où apparaît le bouton d'impression de facture.
+
+### 8. Couvrir le flux de retour en arrière et l'état retour-en-arrière-désactivé-après-Nettoyage (FR-082, FR-088)
+Sur `/admin/editions/:id/phase`, spécifier à quoi ressemblent les boutons de retour en arrière, que le même patron de dialog de confirmation s'applique, et comment l'interface communique que le retour en arrière depuis Clôturé est définitivement indisponible après Nettoyer l'Édition.
+
+### 9. Spécifier la page `/account` (FR-003, FR-067)
+Ajouter une spec minimale pour la page de paramètres du compte : sélecteur de préférence de langue (EN/FR), comment il s'applique immédiatement sans rechargement de page (changement de langue à l'exécution ngx-translate), et tous les autres champs modifiables par l'utilisateur.
+
+### 10. Ajouter le flux de changement de mot de passe forcé au premier lancement (FR-062)
+Spécifier le flux de première connexion Admin/Admin : est-ce une redirection vers un écran de changement de mot de passe dédié, ou un modal en place sur `/admin` ? Qu'est-ce qui empêche de naviguer ailleurs avant que le mot de passe soit changé ?
+
+### 11. Clarifier le mécanisme de livraison des conflits de scan concurrent (NFR-002, FR-036)
+Dans le patron du composant Champ scanner, spécifier si l'erreur « déjà vendu » pour un scan concurrent est une réponse d'erreur HTTP synchrone (très probable) ou un push SSE asynchrone — et comment la caisse gère le cas où deux postes réussissent à scanner le même article dans la même fenêtre de requête.

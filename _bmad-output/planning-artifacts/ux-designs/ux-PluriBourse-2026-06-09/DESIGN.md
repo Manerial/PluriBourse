@@ -3,7 +3,7 @@ name: PluriBourse
 status: final
 updated: 2026-06-09
 colors:
-  # Light theme — coral primary
+  # Thème clair — corail primaire
   primary: '#C44626'
   on-primary: '#FFFFFF'
   primary-container: '#FFF4EE'
@@ -23,7 +23,7 @@ colors:
   on-error: '#FFFFFF'
   error-container: '#FFDAD6'
   on-error-container: '#410002'
-  # Dark theme
+  # Thème sombre
   primary-dark: '#F07040'
   on-primary-dark: '#1A0A05'
   primary-container-dark: '#4A2010'

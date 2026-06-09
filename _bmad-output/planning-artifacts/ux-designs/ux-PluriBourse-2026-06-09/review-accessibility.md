@@ -1,201 +1,201 @@
-# Accessibility Review — PluriBourse UX
-Date: 2026-06-09
-Reviewer: Accessibility Lens
+# Revue Accessibilité — UX PluriBourse
+Date : 2026-06-09
+Relecteur : Lens Accessibilité
 
 ---
 
-## Summary
+## Résumé
 
-The spines demonstrate genuine accessibility intent: focus trapping in dialogs, `aria-live` on the scanner result zone, hover-only affordance ban, and a 44 × 44 px minimum target size all reflect deliberate WCAG thinking. However, three real failures exist — the input border and list-row hover change both fall well below the 3:1 UI-component threshold (SC 1.4.11), `on-surface-variant` on `surface-variant` fails the 4.5:1 normal-text threshold (SC 1.4.3), and the dark-mode outline border is unusably low contrast — and several significant gaps remain unaddressed, including focus restoration after dialog close, the scanner refocus loop as a potential keyboard trap, `aria-live` coverage for toasts and the phase chip SSE update, and WCAG 2.2-specific target-size and focus-appearance requirements.
-
----
-
-## Findings
-
-### PASS — Color contrast: primary on white (SC 1.4.3, 1.4.11)
-
-`#C44626` on white computes to **4.94:1** (EXPERIENCE.md states 4.6:1, which is slightly understated but the actual ratio passes). This covers normal text (button labels, active sidebar text) and UI component boundaries where primary is used as a border/indicator. Passes AA.
-
-### PASS — Color contrast: dark-mode primary on dark surface (SC 1.4.3)
-
-`#F07040` on `#1A0C06` computes to **6.46:1**. EXPERIENCE.md states 5.2:1 — again understated, but the real ratio gives a comfortable AA pass. This covers dark-mode body text and active elements.
-
-### PASS — Color contrast: primary-container token pairings (SC 1.4.3)
-
-`on-primary-container` (`#8C2910`) on `primary-container` (`#FFF4EE`) = **7.96:1**. Covers phase chip, warning status chip, secondary button labels, and admin role badge. All pass at the normal-text threshold, which matters because `label-sm` (12 px/600) does not qualify as WCAG "large text" (which requires 18 pt/24 px normal or 14 pt/18.67 px bold — 12 px bold is 9 pt).
-
-### PASS — Color contrast: success and error status chips (SC 1.4.3)
-
-Success chip: `#166534` on `#F0FDF4` = **6.81:1**. Error chip: `#410002` on `#FFDAD6` = **13.26:1**. Both well above the 4.5:1 threshold for the 12 px bold label-sm text used.
-
-### PASS — Color contrast: sidebar inactive text (SC 1.4.3)
-
-The semi-transparent `rgba(245, 238, 234, 0.65)` composited over `#2A100A` produces approximately `rgb(173, 160, 155)`, giving **7.07:1** against the sidebar background. Passes AA.
-
-### PASS — Color contrast: body text and on-surface tokens (SC 1.4.3)
-
-`on-surface` (`#1A0A05`) on `surface` (`#FFFBF9`) = **18.74:1**. `on-surface-dark` (`#F5EAE4`) on `surface-dark` (`#1A0C06`) = **16.17:1**. Both are excellent.
-
-### PASS — Focus trap in dialogs (SC 2.1.2)
-
-EXPERIENCE.md explicitly specifies: "Focus piégé dans le dialog (accessibilité). Focus initial sur le bouton d'annulation (action sûre)." Placing initial focus on the safe/cancel action is best practice and correct.
-
-### PASS — Keyboard activation primitives (SC 2.1.1)
-
-Tab/Shift+Tab, Enter/Space for buttons and links, Escape for dialogs and popovers are all specified. The explicit ban on hover-only affordances is correct and removes a whole class of keyboard-inaccessibility failures.
-
-### PASS — Aria labeling for interactive elements (SC 4.1.2)
-
-Phase chip: `aria-label="Phase actuelle : Dépôt"` avoids the pitfall of exposing only the pill text to screen readers. Scanner input: `aria-label="Scanner ou saisir un code-barres"` is correct. Decorative icons: `aria-hidden="true"` is specified.
-
-### PASS — Icon role clarity (SC 1.1.1)
-
-Decorative icons carry `aria-hidden="true"`; meaningful icons must be accompanied by a visible text label or `aria-label`. This rule is stated, though enforcement in implementation will require code review.
-
-### PASS — Empty-state design (SC 3.3.2 spirit)
-
-Every empty state must offer an action — this prevents dead-ends and is consistent with providing guidance when an expected list is absent, which aids users relying on clear prompts.
+Les spines témoignent d'une intention réelle en matière d'accessibilité : piégeage du focus dans les dialogs, `aria-live` sur la zone de résultat du scanner, interdiction des affordances au survol uniquement, et taille minimale de cible 44 × 44 px — tout cela reflète une pensée WCAG délibérée. Cependant, trois échecs réels existent — la bordure de champ de saisie et le changement de survol sur les lignes de liste passent bien en dessous du seuil 3:1 pour les composants UI (SC 1.4.11), `on-surface-variant` sur `surface-variant` échoue au seuil 4,5:1 pour le texte normal (SC 1.4.3), et la bordure de contour en mode sombre est d'un contraste inutilisable — et plusieurs lacunes significatives restent non traitées, notamment la restauration du focus après fermeture de dialog, la boucle de refocus du scanner comme piège clavier potentiel, la couverture `aria-live` pour les toasts et la mise à jour SSE de la puce de phase, ainsi que les exigences WCAG 2.2 spécifiques à la taille de cible et à l'apparence du focus.
 
 ---
 
-### CONCERN — Focus restoration after dialog close is unspecified (SC 2.4.3)
+## Constats
 
-EXPERIENCE.md specifies focus trap on dialog open and initial focus on the cancel button, but says nothing about where focus returns when the dialog closes (whether by Escape, "Annuler", or "Confirmer"). WCAG SC 2.4.3 (Focus Order) requires that focus is restored to a meaningful, predictable location — almost always the element that triggered the dialog. Without this being specified, implementations risk returning focus to the top of the page or to an undefined location, which disorients screen reader and keyboard users.
+### PASS — Contraste des couleurs : primaire sur blanc (SC 1.4.3, 1.4.11)
 
-**Required addition:** "On dialog close (any trigger), return focus to the element that opened the dialog."
+`#C44626` sur blanc donne **4,94:1** (EXPERIENCE.md indique 4,6:1, légèrement sous-estimé, mais le ratio réel passe). Cela couvre le texte normal (labels de boutons, texte actif de la sidebar) et les limites des composants UI où le primaire est utilisé comme bordure/indicateur. Passe AA.
 
-### CONCERN — Scanner refocus loop may constitute a keyboard trap (SC 2.1.2)
+### PASS — Contraste des couleurs : primaire mode sombre sur surface sombre (SC 1.4.3)
 
-EXPERIENCE.md specifies that the POS scanner input "remet le focus automatiquement après 500ms d'inactivité clavier." SC 2.1.2 prohibits keyboard traps: users must be able to move focus away from any component using standard keys. An aggressive auto-refocus to the scanner input could prevent a keyboard-only user from reaching the basket line items, the "Retirer le lot entier" button, or the "Valider" button without a mouse click.
+`#F07040` sur `#1A0C06` donne **6,46:1**. EXPERIENCE.md indique 5,2:1 — encore sous-estimé, mais le ratio réel offre une marge AA confortable. Couvre le texte principal et les éléments actifs en mode sombre.
 
-The 500 ms inactivity threshold may be insufficient for users who navigate slowly. A better approach: refocus the scanner only when the user presses a designated key (e.g., F2, or a visible "Retour au scanner" button), or suppress auto-refocus while keyboard navigation is in progress (detected by `keydown` events that are not scanner input).
+### PASS — Contraste des couleurs : pairages de tokens `primary-container` (SC 1.4.3)
 
-**WCAG SC reference:** 2.1.2 No Keyboard Trap.
+`on-primary-container` (`#8C2910`) sur `primary-container` (`#FFF4EE`) = **7,96:1**. Couvre la puce de phase, la puce de statut avertissement, les labels de bouton secondaire et le badge de rôle admin. Tous passent au seuil de texte normal, ce qui importe car `label-sm` (12 px/600) ne qualifie pas comme « grand texte » WCAG (qui requiert 18 pt/24 px normal ou 14 pt/18,67 px gras — 12 px gras correspond à 9 pt).
 
-### CONCERN — `aria-live` coverage is incomplete for toasts and SSE updates (SC 4.1.3)
+### PASS — Contraste des couleurs : puces de statut succès et erreur (SC 1.4.3)
 
-The scanner result area carries `aria-live="polite"` which is correct. However, the following dynamic updates have no specified live-region announcement:
+Puce succès : `#166534` sur `#F0FDF4` = **6,81:1**. Puce erreur : `#410002` sur `#FFDAD6` = **13,26:1**. Les deux sont bien au-dessus du seuil 4,5:1 pour le texte `label-sm` 12 px gras utilisé.
 
-1. **Toast messages** — success confirmations ("Dépôt enregistré.", "Vendeur réglé.") and persistent error toasts ("L'imprimante ne répond pas.") are positioned bottom-right and appear dynamically. Without an `aria-live` region, screen reader users receive no announcement.
-2. **Phase chip SSE update** — when the phase changes via server-sent event, the chip text updates (with a 150 ms fade). The chip has an `aria-label` but there is no specification that an `aria-live` region announces the change. Screen reader users currently in the middle of a workflow will not hear that the phase changed.
-3. **Basket POS SSE cancellation** — the "La phase a changé. Votre panier a été annulé." toast is persistent, but the basket content change (items cleared) also needs an announcement independent of the toast.
+### PASS — Contraste des couleurs : texte inactif de la sidebar (SC 1.4.3)
 
-**WCAG SC reference:** 4.1.3 Status Messages (Level AA).
+Le `rgba(245, 238, 234, 0.65)` semi-transparent composité sur `#2A100A` produit approximativement `rgb(173, 160, 155)`, donnant **7,07:1** contre le fond de la sidebar. Passe AA.
 
-### CONCERN — Tab order anomaly: sidebar → content → topbar (SC 2.4.3)
+### PASS — Contraste des couleurs : texte principal et tokens `on-surface` (SC 1.4.3)
 
-EXPERIENCE.md states tab order as "Sidebar → contenu principal → topbar actions (ordre DOM correspondant)." Placing the topbar last in DOM order (and thus last in tab order) is unusual: the topbar is visually at the top, and users expect `Tab` from the last interactive element of the topbar to enter the sidebar or the main content — not to require tabbing through the entire page first. If the topbar is truly last in DOM, a keyboard user starting from the phase chip will need to tab through potentially dozens of sidebar and content elements to reach the profile icon.
+`on-surface` (`#1A0A05`) sur `surface` (`#FFFBF9`) = **18,74:1**. `on-surface-dark` (`#F5EAE4`) sur `surface-dark` (`#1A0C06`) = **16,17:1**. Les deux sont excellents.
 
-**Required:** Verify that the topbar landmark is reachable early in the focus sequence — either via a skip link or by placing it first in DOM order. Consider a "Skip to main content" link as first focusable element (see SC 2.4.1 below).
+### PASS — Piégeage du focus dans les dialogs (SC 2.1.2)
 
-**WCAG SC reference:** 2.4.3 Focus Order.
+EXPERIENCE.md spécifie explicitement : « Focus piégé dans le dialog (accessibilité). Focus initial sur le bouton d'annulation (action sûre). » Placer le focus initial sur l'action sûre/annuler est une bonne pratique et correct.
 
-### CONCERN — No skip navigation link specified (SC 2.4.1)
+### PASS — Primitives d'activation clavier (SC 2.1.1)
 
-The Admin layout has a persistent 200 px sidebar with six navigation links. Without a "Skip to main content" link as the first focusable element, keyboard and screen reader users must tab through all sidebar items on every page load or navigation event. WCAG SC 2.4.1 (Bypass Blocks, Level A) requires a mechanism to skip repeated navigation.
+Tab/Shift+Tab, Entrée/Espace pour les boutons et liens, Échap pour les dialogs et popovers sont tous spécifiés. L'interdiction explicite des affordances au survol uniquement est correcte et élimine toute une classe d'échecs d'inaccessibilité au clavier.
 
-**Required addition:** A visually hidden skip link `<a href="#main-content">Skip to main content</a>` as the first element in the DOM, visible on focus.
+### PASS — Labellisation `aria` des éléments interactifs (SC 4.1.2)
 
-### CONCERN — Page title updates on navigation are underdefined (SC 2.4.2)
+Puce de phase : `aria-label="Phase actuelle : Dépôt"` évite le piège d'exposer uniquement le texte de la puce aux lecteurs d'écran. Champ scanner : `aria-label="Scanner ou saisir un code-barres"` est correct. Icônes décoratives : `aria-hidden="true"` est spécifié.
 
-EXPERIENCE.md states "`<title>` mis à jour" at each navigation, which is correct in principle. However, the spec does not define the title pattern (e.g., "Vendeurs — PluriBourse" vs "PluriBourse — Vendeurs"), nor whether Angular's router integration is handled via a title strategy. Without an Angular `TitleStrategy` implementation, `<title>` will not update on SPA navigation. This needs to be a concrete implementation requirement, not just a statement.
+### PASS — Clarté du rôle des icônes (SC 1.1.1)
 
-**WCAG SC reference:** 2.4.2 Page Titled.
+Les icônes décoratives portent `aria-hidden="true"` ; les icônes significatives doivent être accompagnées d'un label visible ou d'un `aria-label`. Cette règle est posée, bien que son application lors de l'implémentation nécessitera une revue de code.
 
-### CONCERN — List count announced via `aria-label` is fragile (SC 1.3.1)
+### PASS — Conception des états vides (esprit SC 3.3.2)
 
-The spec states "Listes annoncées avec leur nombre d'éléments via `aria-label`." Using `aria-label` on a `<ul>` or `<table>` to convey count is acceptable, but if the list is live (count changes with filters), the `aria-label` must also be updated dynamically. With scroll-based loading ("scroll infini si nécessaire"), the count in the `aria-label` becomes stale as items load. No mechanism for updating it is specified.
-
-**WCAG SC reference:** 1.3.1 Info and Relationships.
-
-### CONCERN — Sidebar item target size at small padding (SC 2.5.8 / WCAG 2.2)
-
-DESIGN.md specifies sidebar items with `padding: '8px 12px'` and `font: body-md (14px/400)`. A single line of 14 px text with 8 px vertical padding gives an effective height of approximately 14 × 1.5 (line height) + 16 px = 37 px. This is below the stated 44 × 44 px minimum target size. While WCAG 2.2 SC 2.5.8 (Minimum Target Size, AA) allows for exceptions when spacing compensates, the spec does not specify whether sidebar items have sufficient spacing between them to satisfy the offset exception. This needs explicit clarification.
-
-### CONCERN — Icon-only buttons in POS basket lack accessible names (SC 4.1.2)
-
-The POS basket specifies "Suppression individuelle par icône `close` sur chaque ligne." An icon-only button with no visible label requires an `aria-label` to be keyboard/screen-reader accessible. The spec does not state what the accessible name should be (e.g., `aria-label="Retirer [article name] du panier"`). Without the article name in the label, all close buttons would be announced identically ("Fermer" × N), making it impossible to distinguish them without visual context.
-
-**WCAG SC reference:** 4.1.2 Name, Role, Value.
-
-### CONCERN — Error announcement mechanism for form fields is incomplete (SC 3.3.1)
-
-"Erreurs de formulaire annoncées via `aria-describedby`" is the right technique, but `aria-describedby` links are static — they connect a field to an element that already exists. Inline validation on `blur` means error elements are injected dynamically. The spec does not address whether the error container element pre-exists in the DOM (hidden until needed) or is injected. If injected, `aria-describedby` will not work unless the reference is added to the input at the same time the error element appears. Angular Material's form field handles this correctly if used as intended, but the spec should note this constraint explicitly.
-
-**WCAG SC reference:** 3.3.1 Error Identification.
+Chaque état vide doit proposer une action — cela évite les impasses et est cohérent avec le fait de fournir une aide lorsqu'une liste attendue est absente, ce qui aide les utilisateurs s'appuyant sur des repères clairs.
 
 ---
 
-### FAIL — Input border contrast against surface is critically low (SC 1.4.11)
+### PRÉOCCUPATION — Restauration du focus après fermeture de dialog non spécifiée (SC 2.4.3)
 
-DESIGN.md specifies input border as `1.5px solid {colors.outline}` = `#EDE0D8` on surface `#FFFBF9`. Computed contrast: **1.26:1**. WCAG SC 1.4.11 (Non-text Contrast, Level AA) requires **3:1** for the visual indicator of UI components, including input field borders.
+EXPERIENCE.md spécifie le piégeage du focus à l'ouverture du dialog et le focus initial sur le bouton Annuler, mais ne dit rien sur l'endroit où le focus revient à la fermeture (que ce soit via Échap, « Annuler » ou « Confirmer »). La SC 2.4.3 WCAG (Ordre du focus) exige que le focus soit rétabli à un emplacement significatif et prévisible — presque toujours l'élément qui a ouvert le dialog. Sans cette spécification, les implémentations risquent de renvoyer le focus en haut de la page ou vers un emplacement indéfini, ce qui désoriente les utilisateurs de lecteurs d'écran et de navigation au clavier.
 
-This is a real failure. The border is nearly invisible against the beige-white surface. At this ratio, users with low vision, cataracts, or in high-ambient-light environments will struggle to identify input fields.
+**Ajout requis :** « À la fermeture du dialog (quelle que soit la cause), rétablir le focus sur l'élément qui a ouvert le dialog. »
 
-**Fix:** Darken the outline token. `#78716C` (`on-surface-variant`) on `#FFFBF9` yields 4.18:1, which passes as a UI component boundary. Alternatively, use a background-fill approach (slightly offset surface-variant fill) to differentiate inputs from the page surface without relying on a thin border — Angular Material's filled input variant does this.
+### PRÉOCCUPATION — La boucle de refocus du scanner peut constituer un piège clavier (SC 2.1.2)
 
-### FAIL — `on-surface-variant` on `surface-variant` fails normal-text threshold (SC 1.4.3)
+EXPERIENCE.md spécifie que le champ scanner de la caisse « remet le focus automatiquement après 500 ms d'inactivité clavier ». La SC 2.1.2 interdit les pièges clavier : les utilisateurs doivent pouvoir déplacer le focus depuis n'importe quel composant avec les touches standard. Un refocus automatique agressif vers le champ scanner pourrait empêcher un utilisateur naviguant au clavier seul d'atteindre les lignes du panier, le bouton « Retirer le lot entier » ou le bouton « Valider » sans clic souris.
 
-Multiple components use `on-surface-variant` (`#78716C`) as text on `surface-variant` (`#F5EEEA`) backgrounds:
+Le seuil de 500 ms d'inactivité peut être insuffisant pour les utilisateurs qui naviguent lentement. Une meilleure approche : refocaliser le scanner uniquement lorsque l'utilisateur appuie sur une touche dédiée (ex. F2 ou un bouton visible « Retour au scanner »), ou supprimer le refocus automatique pendant une navigation au clavier en cours (détectée par des événements `keydown` qui ne sont pas des saisies de scanner).
 
-- **List rows** (`list-row` component: text on `surface-variant` background)
-- **Role badge (Bénévole)**: `on-surface-variant` on `surface-variant`
-- **Ghost button**: `on-surface-variant` on transparent (≈ surface `#FFFBF9`) = 4.66:1 — this one passes
+**Référence SC WCAG :** 2.1.2 Pas de piège clavier.
 
-Computed ratio for `#78716C` on `#F5EEEA`: **4.18:1**. This fails the 4.5:1 threshold for SC 1.4.3 (Contrast Minimum, Level AA) for normal-sized text. The role badge uses `label-sm` (12 px/600 = 9 pt bold), which is not large text, so the lower 3:1 large-text threshold does not apply.
+### PRÉOCCUPATION — Couverture `aria-live` incomplète pour les toasts et les mises à jour SSE (SC 4.1.3)
 
-**Fix:** Darken `on-surface-variant` to approximately `#6B6461` or slightly increase contrast. Alternatively, use `on-surface` (`#1A0A05`) for text within `surface-variant` list rows if visual hierarchy allows.
+La zone de résultat du scanner porte `aria-live="polite"` ce qui est correct. Cependant, les mises à jour dynamiques suivantes n'ont aucune annonce de région live spécifiée :
 
-### FAIL — Dark-mode input/outline border contrast is critically low (SC 1.4.11)
+1. **Messages toast** — les confirmations de succès (« Dépôt enregistré. », « Vendeur réglé. ») et les toasts d'erreur persistants (« L'imprimante ne répond pas. ») sont positionnés en bas à droite et apparaissent dynamiquement. Sans région `aria-live`, les utilisateurs de lecteurs d'écran ne reçoivent aucune annonce.
+2. **Mise à jour SSE de la puce de phase** — lorsque la phase change via un événement Server-Sent, le texte de la puce se met à jour (avec un fondu de 150 ms). La puce a un `aria-label` mais aucune spécification n'indique qu'une région `aria-live` annonce le changement. Les utilisateurs de lecteurs d'écran en cours de workflow n'entendront pas que la phase a changé.
+3. **Annulation SSE du panier caisse** — le toast persistant « La phase a changé. Votre panier a été annulé. » est persistant, mais le changement de contenu du panier (articles supprimés) nécessite également une annonce indépendante du toast.
 
-DESIGN.md defines `outline-dark: '#5C3828'` on `surface-dark: '#1A0C06'`. Computed contrast: **1.87:1**. WCAG SC 1.4.11 requires 3:1 for UI component boundaries. This is a dark-mode parallel of the light-mode input border failure.
+**Référence SC WCAG :** 4.1.3 Messages de statut (Niveau AA).
 
-**Fix:** Lighten the dark-mode outline token. `on-surface-variant-dark` (`#C8B5AE`) on `surface-dark` achieves 8.80:1 and would work as a border color, though it may be too prominent. A value around `#7A5040` would target 3:1+.
+### PRÉOCCUPATION — Anomalie d'ordre de tabulation : sidebar → contenu → topbar (SC 2.4.3)
+
+EXPERIENCE.md indique l'ordre de tabulation comme « Sidebar → contenu principal → topbar actions (ordre DOM correspondant). » Placer la topbar en dernier dans l'ordre DOM (et donc en dernier dans l'ordre de tabulation) est inhabituel : la topbar est visuellement en haut, et les utilisateurs s'attendent à ce que Tab depuis le dernier élément interactif de la topbar entre dans la sidebar ou le contenu principal — pas à devoir tabuler sur toute la page d'abord. Si la topbar est vraiment en dernier dans le DOM, un utilisateur clavier partant de la puce de phase devra tabuler à travers potentiellement des dizaines d'éléments de sidebar et de contenu pour atteindre l'icône de profil.
+
+**Requis :** Vérifier que le repère topbar est accessible tôt dans la séquence de focus — soit via un lien d'évitement, soit en le plaçant en premier dans l'ordre DOM. Envisager un lien « Aller au contenu principal » comme premier élément focalisable (voir SC 2.4.1 ci-dessous).
+
+**Référence SC WCAG :** 2.4.3 Ordre du focus.
+
+### PRÉOCCUPATION — Aucun lien de saut de navigation spécifié (SC 2.4.1)
+
+La mise en page Admin dispose d'une sidebar persistante de 200 px avec six liens de navigation. Sans lien « Aller au contenu principal » comme premier élément focalisable, les utilisateurs clavier et lecteurs d'écran doivent tabuler à travers tous les éléments de la sidebar à chaque chargement de page ou événement de navigation. La SC 2.4.1 WCAG (Ignorer des blocs, Niveau A) exige un mécanisme pour sauter la navigation répétée.
+
+**Ajout requis :** Un lien d'évitement visuellement masqué `<a href="#main-content">Aller au contenu principal</a>` comme premier élément dans le DOM, visible au focus.
+
+### PRÉOCCUPATION — Mises à jour du titre de page à la navigation sous-définies (SC 2.4.2)
+
+EXPERIENCE.md indique « `<title>` mis à jour » à chaque navigation, ce qui est correct en principe. Cependant, la spec ne définit pas le modèle de titre (ex. « Vendeurs — PluriBourse » vs « PluriBourse — Vendeurs »), ni si l'intégration du routeur Angular est gérée via une `TitleStrategy`. Sans implémentation Angular `TitleStrategy`, le `<title>` ne sera pas mis à jour lors de la navigation SPA. Cela doit être une exigence d'implémentation concrète, pas simplement une déclaration.
+
+**Référence SC WCAG :** 2.4.2 Titre de la page.
+
+### PRÉOCCUPATION — Le comptage de liste annoncé via `aria-label` est fragile (SC 1.3.1)
+
+La spec indique « Listes annoncées avec leur nombre d'éléments via `aria-label`. » Utiliser `aria-label` sur un `<ul>` ou `<table>` pour transmettre le comptage est acceptable, mais si la liste est dynamique (le comptage change avec les filtres), le `aria-label` doit également être mis à jour dynamiquement. Avec le chargement par défilement (« scroll infini si nécessaire »), le comptage dans le `aria-label` devient obsolète au fur et à mesure que les éléments se chargent. Aucun mécanisme de mise à jour n'est spécifié.
+
+**Référence SC WCAG :** 1.3.1 Information et relations.
+
+### PRÉOCCUPATION — Taille de cible des éléments de sidebar avec un padding réduit (SC 2.5.8 / WCAG 2.2)
+
+DESIGN.md spécifie des éléments de sidebar avec `padding: '8px 12px'` et `font: body-md (14px/400)`. Une ligne de texte 14 px avec 8 px de padding vertical donne une hauteur effective d'environ 14 × 1,5 (hauteur de ligne) + 16 px = 37 px. C'est en dessous de la taille minimale de cible 44 × 44 px spécifiée. Bien que la SC 2.5.8 WCAG 2.2 (Taille minimale de cible, AA) autorise des exceptions lorsque l'espacement compense, la spec ne précise pas si les éléments de la sidebar ont un espacement suffisant entre eux pour satisfaire l'exception de décalage. Cela nécessite une clarification explicite.
+
+### PRÉOCCUPATION — Les boutons icône seuls dans le panier caisse manquent de noms accessibles (SC 4.1.2)
+
+Le panier caisse spécifie « Suppression individuelle par icône `close` sur chaque ligne. » Un bouton icône seul sans label visible nécessite un `aria-label` pour être accessible au clavier et aux lecteurs d'écran. La spec ne précise pas quel doit être le nom accessible (ex. `aria-label="Retirer [nom de l'article] du panier"`). Sans le nom de l'article dans le label, tous les boutons de suppression seraient annoncés de façon identique (« Fermer » × N), rendant impossible leur distinction sans contexte visuel.
+
+**Référence SC WCAG :** 4.1.2 Nom, rôle, valeur.
+
+### PRÉOCCUPATION — Le mécanisme d'annonce des erreurs de formulaire est incomplet (SC 3.3.1)
+
+« Erreurs de formulaire annoncées via `aria-describedby` » est la bonne technique, mais les liens `aria-describedby` sont statiques — ils connectent un champ à un élément qui existe déjà. La validation inline au `blur` signifie que les éléments d'erreur sont injectés dynamiquement. La spec n'aborde pas si le conteneur d'erreur existe préalablement dans le DOM (masqué jusqu'au besoin) ou s'il est injecté. S'il est injecté, `aria-describedby` ne fonctionnera pas sauf si la référence est ajoutée à l'input au même moment où l'élément d'erreur apparaît. Le champ de formulaire Angular Material gère cela correctement s'il est utilisé tel que prévu, mais la spec devrait noter cette contrainte explicitement.
+
+**Référence SC WCAG :** 3.3.1 Identification des erreurs.
 
 ---
 
-## Recommendations
+### ÉCHEC — Le contraste de la bordure de champ de saisie contre la surface est critiquement bas (SC 1.4.11)
 
-Ordered by priority. Items 1–3 are blockers for WCAG 2.2 AA conformance.
+DESIGN.md spécifie la bordure de saisie comme `1.5px solid {colors.outline}` = `#EDE0D8` sur surface `#FFFBF9`. Contraste calculé : **1,26:1**. La SC 1.4.11 WCAG (Contraste non textuel, Niveau AA) requiert **3:1** pour l'indicateur visuel des composants UI, y compris les bordures de champs de saisie.
 
-**1. [BLOCKER] Fix input border contrast — light mode (SC 1.4.11)**
-Replace `outline: #EDE0D8` with a value that achieves ≥ 3:1 against `#FFFBF9`. Suggested: `#9E8F89` (3.05:1) as minimum, `#78716C` (4.18:1) for comfortable compliance. Update the `input.border` component token in DESIGN.md accordingly.
+C'est un échec réel. La bordure est pratiquement invisible sur la surface beige-blanc. À ce ratio, les utilisateurs malvoyants, avec des cataractes ou dans des environnements très lumineux auront du mal à identifier les champs de saisie.
 
-**2. [BLOCKER] Fix input/outline border contrast — dark mode (SC 1.4.11)**
-Replace `outline-dark: #5C3828` with a value achieving ≥ 3:1 against `#1A0C06`. Suggested: `#8A5A44` (~3.2:1). Update DESIGN.md.
+**Correction :** Assombrir le token `outline`. `#78716C` (`on-surface-variant`) sur `#FFFBF9` donne 4,18:1, ce qui passe comme limite de composant UI. Alternativement, utiliser une approche de remplissage par fond (fond `surface-variant` légèrement décalé) pour différencier les inputs de la surface de la page sans dépendre d'une bordure fine — la variante d'input rempli d'Angular Material fait cela.
 
-**3. [BLOCKER] Fix `on-surface-variant` on `surface-variant` text contrast (SC 1.4.3)**
-The 4.18:1 ratio fails for the role badge (Bénévole) and list-row body text. Either darken `on-surface-variant` from `#78716C` to ≈ `#6B6461` (4.5:1+ on surface-variant) or use `on-surface` for text within surface-variant containers. Update both DESIGN.md tokens and verify all component uses.
+### ÉCHEC — `on-surface-variant` sur `surface-variant` échoue au seuil de texte normal (SC 1.4.3)
 
-**4. [HIGH] Specify focus restoration on dialog close (SC 2.4.3)**
-Add to EXPERIENCE.md dialog pattern: "On dialog close (any trigger — Annuler, Echap, or confirm), return focus to the element that triggered the dialog."
+Plusieurs composants utilisent `on-surface-variant` (`#78716C`) comme texte sur des fonds `surface-variant` (`#F5EEEA`) :
 
-**5. [HIGH] Add skip navigation link (SC 2.4.1)**
-Specify a visually hidden, focus-visible skip link as the first DOM element: `<a class="skip-link" href="#main-content">Skip to main content</a>`. Required for Admin layout with its persistent sidebar.
+- **Lignes de liste** (composant `list-row` : texte sur fond `surface-variant`)
+- **Badge de rôle (Bénévole)** : `on-surface-variant` sur `surface-variant`
+- **Bouton ghost** : `on-surface-variant` sur transparent (≈ surface `#FFFBF9`) = 4,66:1 — celui-ci passe
 
-**6. [HIGH] Specify `aria-live` for toast notifications (SC 4.1.3)**
-Add to EXPERIENCE.md: "Toast container carries `role='status'` and `aria-live='polite'` for success toasts; `role='alert'` and `aria-live='assertive'` for persistent system-error toasts." This ensures screen readers announce toast messages without requiring visual monitoring.
+Ratio calculé pour `#78716C` sur `#F5EEEA` : **4,18:1**. Cela échoue au seuil 4,5:1 pour la SC 1.4.3 (Contraste minimum, Niveau AA) pour le texte de taille normale. Le badge de rôle utilise `label-sm` (12 px/600 = 9 pt gras), qui n'est pas du grand texte, donc le seuil abaissé de 3:1 pour le grand texte ne s'applique pas.
 
-**7. [HIGH] Specify `aria-live` for phase chip SSE update (SC 4.1.3)**
-Add to EXPERIENCE.md: "When the phase changes via SSE, an `aria-live='polite'` region (may be visually hidden) announces 'Phase changée : [nouvelle phase].'" The chip `aria-label` update alone is insufficient — screen readers do not re-read elements whose `aria-label` changes silently.
+**Correction :** Assombrir `on-surface-variant` à environ `#6B6461` ou augmenter légèrement le contraste. Alternativement, utiliser `on-surface` (`#1A0A05`) pour le texte dans les lignes de liste `surface-variant` si la hiérarchie visuelle le permet.
 
-**8. [HIGH] Resolve scanner auto-refocus keyboard trap risk (SC 2.1.2)**
-Replace the 500 ms inactivity auto-refocus with an explicit "Return to scanner" interaction (a labeled button or dedicated hotkey). If auto-refocus is retained for operational reasons, add a documented exception mechanism (e.g., pressing Tab twice, or a visible "Pause scanner" toggle) that temporarily disables it, allowing keyboard users to navigate the basket.
+### ÉCHEC — Le contraste de la bordure de saisie/contour en mode sombre est critiquement bas (SC 1.4.11)
 
-**9. [MEDIUM] Define accessible names for POS basket close buttons (SC 4.1.2)**
-Add to EXPERIENCE.md: "Each article close button in the POS basket carries `aria-label='Retirer [article name] du panier'`." This makes each button distinguishable in screen reader listings.
+DESIGN.md définit `outline-dark: '#5C3828'` sur `surface-dark: '#1A0C06'`. Contraste calculé : **1,87:1**. La SC 1.4.11 WCAG requiert 3:1 pour les limites de composants UI. Il s'agit d'un parallèle mode sombre de l'échec de bordure de saisie en mode clair.
 
-**10. [MEDIUM] Verify sidebar item minimum height (SC 2.5.8)**
-Either increase sidebar item `padding` from `8px 12px` to `12px 12px` (yielding ≈ 44 px effective height for 14 px body-md text), or explicitly document that gap spacing between items satisfies the SC 2.5.8 offset exception.
+**Correction :** Éclaircir le token `outline` en mode sombre. `on-surface-variant-dark` (`#C8B5AE`) sur `surface-dark` atteint 8,80:1 et fonctionnerait comme couleur de bordure, bien qu'il puisse être trop proéminent. Une valeur autour de `#7A5040` ciblerait 3:1+.
 
-**11. [MEDIUM] Specify `TitleStrategy` implementation for SPA page titles (SC 2.4.2)**
-Add implementation note to EXPERIENCE.md: "Angular `TitleStrategy` must be implemented to update `<title>` on each route. Pattern: '[Surface name] — PluriBourse'."
+---
 
-**12. [LOW] Clarify `aria-label` update strategy for filtered/loading lists (SC 1.3.1)**
-Specify that the `aria-label` count on list containers is updated reactively (via Angular binding) on each filter change or load event, and acknowledge that count accuracy during scroll-load is approximate ("X articles affichés").
+## Recommandations
 
-**13. [LOW] Clarify error injection pattern for `aria-describedby` (SC 3.3.1)**
-Note in EXPERIENCE.md: "Inline error containers are pre-rendered with empty content and `aria-live='polite'`; they are populated on validation, not injected. This ensures `aria-describedby` links remain valid." Angular Material's `<mat-error>` handles this correctly if used consistently.
+Ordonnées par priorité. Les points 1–3 sont des bloquants pour la conformité WCAG 2.2 AA.
 
-**14. [LOW] Verify focus-visible style meets WCAG 2.2 SC 2.4.11 (Focus Appearance)**
-WCAG 2.2 added SC 2.4.11 (Focus Appearance, Level AA): focus indicator must have a minimum area of the perimeter of the unfocused component, with at least 3:1 contrast between focused and unfocused states. The spec states "Focus ring hérité du token `{colors.primary}`" — verify that the Angular Material focus ring implementation meets the 2 px minimum and area requirements, not just the color requirement.
+**1. [BLOQUANT] Corriger le contraste de la bordure de saisie — mode clair (SC 1.4.11)**
+Remplacer `outline: #EDE0D8` par une valeur atteignant ≥ 3:1 contre `#FFFBF9`. Suggestion : `#9E8F89` (3,05:1) comme minimum, `#78716C` (4,18:1) pour une conformité confortable. Mettre à jour le token de composant `input.border` dans DESIGN.md en conséquence.
+
+**2. [BLOQUANT] Corriger le contraste de la bordure de saisie/contour — mode sombre (SC 1.4.11)**
+Remplacer `outline-dark: #5C3828` par une valeur atteignant ≥ 3:1 contre `#1A0C06`. Suggestion : `#8A5A44` (~3,2:1). Mettre à jour DESIGN.md.
+
+**3. [BLOQUANT] Corriger le contraste du texte `on-surface-variant` sur `surface-variant` (SC 1.4.3)**
+Le ratio 4,18:1 échoue pour le badge de rôle (Bénévole) et le texte principal des lignes de liste. Soit assombrir `on-surface-variant` de `#78716C` à ≈ `#6B6461` (4,5:1+ sur surface-variant), soit utiliser `on-surface` pour le texte dans les conteneurs surface-variant. Mettre à jour les tokens DESIGN.md et vérifier tous les usages de composants.
+
+**4. [ÉLEVÉ] Spécifier la restauration du focus à la fermeture du dialog (SC 2.4.3)**
+Ajouter au patron dialog de EXPERIENCE.md : « À la fermeture du dialog (quelle que soit la cause — Annuler, Échap ou confirmer), rétablir le focus sur l'élément qui a déclenché le dialog. »
+
+**5. [ÉLEVÉ] Ajouter un lien de saut de navigation (SC 2.4.1)**
+Spécifier un lien d'évitement visuellement masqué, visible au focus, comme premier élément DOM : `<a class="skip-link" href="#main-content">Aller au contenu principal</a>`. Requis pour la mise en page Admin avec sa sidebar persistante.
+
+**6. [ÉLEVÉ] Spécifier `aria-live` pour les notifications toast (SC 4.1.3)**
+Ajouter à EXPERIENCE.md : « Le conteneur de toast porte `role='status'` et `aria-live='polite'` pour les toasts de succès ; `role='alert'` et `aria-live='assertive'` pour les toasts d'erreur système persistants. » Cela garantit que les lecteurs d'écran annoncent les messages toast sans nécessiter une surveillance visuelle.
+
+**7. [ÉLEVÉ] Spécifier `aria-live` pour la mise à jour SSE de la puce de phase (SC 4.1.3)**
+Ajouter à EXPERIENCE.md : « Lorsque la phase change via SSE, une région `aria-live='polite'` (peut être visuellement masquée) annonce "Phase changée : [nouvelle phase]." » La seule mise à jour de `aria-label` de la puce est insuffisante — les lecteurs d'écran ne relisent pas les éléments dont le `aria-label` change silencieusement.
+
+**8. [ÉLEVÉ] Résoudre le risque de piège clavier du refocus automatique du scanner (SC 2.1.2)**
+Remplacer le refocus automatique après 500 ms d'inactivité par une interaction explicite « Retour au scanner » (un bouton avec label ou une touche de raccourci dédiée). Si le refocus automatique est conservé pour des raisons opérationnelles, ajouter un mécanisme d'exception documenté (ex. appuyer deux fois sur Tab, ou un bouton visible « Pause scanner ») qui le désactive temporairement, permettant aux utilisateurs clavier de naviguer dans le panier.
+
+**9. [MOYEN] Définir les noms accessibles pour les boutons de suppression du panier caisse (SC 4.1.2)**
+Ajouter à EXPERIENCE.md : « Chaque bouton de suppression d'article dans le panier caisse porte `aria-label='Retirer [nom de l'article] du panier'`. » Cela rend chaque bouton distinguable dans les listes des lecteurs d'écran.
+
+**10. [MOYEN] Vérifier la hauteur minimale des éléments de la sidebar (SC 2.5.8)**
+Soit augmenter le `padding` des éléments de sidebar de `8px 12px` à `12px 12px` (donnant ≈ 44 px de hauteur effective pour du texte `body-md` 14 px), soit documenter explicitement que l'espacement entre les éléments satisfait l'exception de décalage de la SC 2.5.8.
+
+**11. [MOYEN] Spécifier l'implémentation `TitleStrategy` pour les titres de page SPA (SC 2.4.2)**
+Ajouter une note d'implémentation à EXPERIENCE.md : « Angular `TitleStrategy` doit être implémenté pour mettre à jour `<title>` à chaque route. Modèle : "[Nom de la surface] — PluriBourse". »
+
+**12. [FAIBLE] Clarifier la stratégie de mise à jour `aria-label` pour les listes filtrées/en chargement (SC 1.3.1)**
+Spécifier que le comptage `aria-label` sur les conteneurs de liste est mis à jour de façon réactive (via liaison Angular) à chaque changement de filtre ou événement de chargement, et reconnaître que la précision du comptage pendant le chargement par défilement est approximative (« X articles affichés »).
+
+**13. [FAIBLE] Clarifier le patron d'injection d'erreur pour `aria-describedby` (SC 3.3.1)**
+Noter dans EXPERIENCE.md : « Les conteneurs d'erreur inline sont pré-rendus avec un contenu vide et `aria-live='polite'` ; ils sont remplis à la validation, pas injectés. Cela garantit que les liens `aria-describedby` restent valides. » `<mat-error>` d'Angular Material gère cela correctement s'il est utilisé de façon cohérente.
+
+**14. [FAIBLE] Vérifier que le style `focus-visible` satisfait la SC 2.4.11 WCAG 2.2 (Apparence du focus)**
+WCAG 2.2 a ajouté la SC 2.4.11 (Apparence du focus, Niveau AA) : l'indicateur de focus doit avoir une superficie minimale égale au périmètre du composant sans focus, avec au moins 3:1 de contraste entre les états avec et sans focus. La spec indique « Focus ring hérité du token `{colors.primary}` » — vérifier que l'implémentation du focus ring d'Angular Material satisfait les exigences de 2 px minimum et de superficie, pas seulement l'exigence de couleur.

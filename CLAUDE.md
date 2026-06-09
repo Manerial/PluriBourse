@@ -7,7 +7,8 @@ Stack: Spring Boot (backend) + Angular (frontend), deployed via Docker Compose w
 
 ## Language
 - Code (variables, methods, classes, packages): English
-- Comments and documentation: English
+- Code comments and JavaDoc: English
+- Project documentation (planning artifacts, PRD, architecture, epics, UX docs): French
 
 ## Architecture
 

@@ -13,99 +13,97 @@ user_name: 'Manerial'
 date: '2026-06-09'
 ---
 
-# Architecture Decision Document
+# Document de Décisions d'Architecture
 
-_This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
+_Ce document se construit de manière collaborative à travers une découverte étape par étape. Les sections sont ajoutées au fur et à mesure que nous travaillons ensemble sur chaque décision architecturale._
 
-## Project Context Analysis
+## Analyse du Contexte Projet
 
-### Requirements Overview
+### Vue d'Ensemble des Exigences
 
-**Functional Requirements:**
+**Exigences Fonctionnelles :**
 
-89 functional requirements across 10 feature groups (F1–F10). The system is organized around an event lifecycle state machine that drives all behaviors:
+89 exigences fonctionnelles réparties en 10 groupes de fonctionnalités (F1–F10). Le système est organisé autour d'une machine à états du cycle de vie d'une édition qui gouverne tous les comportements :
 
-- **F1 — Internationalisation (7 FRs):** Cross-cutting foundation. Dual-layer i18n: ngx-translate for UI, Spring MessageSource for printed documents. Language per user account (UI) and per instance (documents).
-- **F2 — Edition Management (12 FRs):** Admin-controlled phase lifecycle (Deposit → Sale → Post-sale → Closed). One active edition at a time. Phase rollback supported. Optional destructive "Clean Edition" action.
-- **F3 — Seller & Product Management (18 FRs):** Cross-edition seller profiles. Item registration with auto table assignment. Code 128 barcode generation. Thermal label + deposit slip printing via ESC/POS queue. Lot support.
-- **F4 — Point of Sale (13 FRs):** USB HID scanner with AZERTY/QWERTY transparent handling. Basket management with lot integrity enforcement. Buyer invoice printing. Phase-transition basket cancellation (FR-090).
-- **F5 — Post-Sale & Payouts (5 FRs):** Seller settlement workflow. "Not collected" path transferring payout to association revenue. Sales summary per seller.
-- **F6 — Reporting (6 FRs):** Daily summary, edition summary, outstanding sellers report — all PDF, admin only.
-- **F7 — User Accounts & Access Control (8 FRs):** Strict Admin/Volunteer role separation. Single admin account per instance. Phase-driven volunteer interface.
-- **F8 — Infrastructure & Deployment (7 FRs):** Cross-platform Docker Compose. Raspberry Pi 4 target. Non-technical installation guide.
-- **F9 — Print Infrastructure (5 FRs):** Centralized server-side print endpoint. Thermal (ESC/POS) + A4 (PDF) printers via USB. Sequential print queue. Error feedback to UI.
-- **F10 — Item Catalog (8 FRs):** Filterable/sortable catalog across all phases. Catalog-to-basket fallback for unreadable barcodes.
+- **F1 — Internationalisation (7 EFs) :** Fondation transversale. i18n en double couche : ngx-translate pour l'interface, Spring MessageSource pour les documents imprimés. Langue par compte utilisateur (interface) et par instance (documents).
+- **F2 — Gestion des Éditions (12 EFs) :** Cycle de vie des phases contrôlé par l'administrateur (Dépôt → Vente → Post-vente → Clôturé). Une seule édition active à la fois. Retour arrière de phase supporté. Action optionnelle destructrice « Nettoyer l'Édition ».
+- **F3 — Gestion des Vendeurs & Articles (18 EFs) :** Profils vendeurs multi-éditions. Enregistrement des articles avec affectation de table automatique. Génération de codes-barres Code 128. Impression d'étiquettes thermiques + bordereau de dépôt via file d'attente ESC/POS. Prise en charge des lots.
+- **F4 — Point de Vente (13 EFs) :** Scanner USB HID avec gestion transparente AZERTY/QWERTY. Gestion du panier avec respect de l'intégrité des lots. Impression de facture acheteur. Annulation du panier lors d'une transition de phase (FR-090).
+- **F5 — Post-Vente & Reversements (5 EFs) :** Flux de règlement vendeur. Chemin « non récupéré » transférant le reversement en recette de l'association. Récapitulatif des ventes par vendeur.
+- **F6 — Rapports (6 EFs) :** Récapitulatif journalier, récapitulatif d'édition, rapport des vendeurs en attente — tous en PDF, administrateur uniquement.
+- **F7 — Comptes Utilisateurs & Contrôle d'Accès (8 EFs) :** Séparation stricte des rôles Administrateur/Bénévole. Un seul compte administrateur par instance. Interface bénévole pilotée par la phase.
+- **F8 — Infrastructure & Déploiement (7 EFs) :** Docker Compose multiplateforme. Cible Raspberry Pi 4. Guide d'installation non technique.
+- **F9 — Infrastructure d'Impression (5 EFs) :** Point d'impression centralisé côté serveur. Imprimantes thermiques (ESC/POS) + A4 (PDF) via USB. File d'attente d'impression séquentielle. Retour d'erreur vers l'interface.
+- **F10 — Catalogue Articles (8 EFs) :** Catalogue filtrable/triable sur toutes les phases. Repli catalogue-vers-panier pour les codes-barres illisibles.
 
-**Non-Functional Requirements:**
+**Exigences Non Fonctionnelles :**
 
-| ID | Category | Architectural Impact |
+| ID | Catégorie | Impact Architectural |
 |---|---|---|
-| NFR-001 | Performance | Must run on RPi 4 (2 GB RAM) under event load (~1,700 items, 3 workstations) |
-| NFR-002 | Concurrency | Simultaneous POS operations must not generate data conflicts |
-| NFR-003 | Financial Accuracy | All monetary calculations in BigDecimal — no float/double |
-| NFR-004 | Browser Compatibility | Any modern browser, any OS — pure REST + SPA, no browser-specific APIs |
-| NFR-005 | Scanner Compatibility | USB HID transparent layout handling in the Angular scan component |
-| NFR-006 | Reliability | No data loss on browser close — server-side transaction boundaries |
-| NFR-007 | GDPR | PII anonymization on seller deletion across all editions; no PII in logs |
+| NFR-001 | Performance | Doit fonctionner sur RPi 4 (2 Go RAM) sous charge événementielle (~1 700 articles, 3 postes) |
+| NFR-002 | Concurrence | Les opérations POS simultanées ne doivent pas générer de conflits de données |
+| NFR-003 | Exactitude Financière | Tous les calculs monétaires en BigDecimal — jamais float/double |
+| NFR-004 | Compatibilité Navigateur | Tout navigateur moderne, tout OS — REST pur + SPA, sans API spécifiques au navigateur |
+| NFR-005 | Compatibilité Scanner | Gestion transparente du mapping de touches USB HID dans le composant Angular de scan |
+| NFR-006 | Fiabilité | Aucune perte de données à la fermeture du navigateur — limites de transaction côté serveur |
+| NFR-007 | RGPD | Anonymisation des DCP à la suppression du vendeur sur toutes les éditions ; aucune DCP dans les journaux |
 
-**Scale & Complexity:**
+**Échelle & Complexité :**
 
-- Primary domain: Full-stack web, backend-heavy
-- Complexity level: **Medium** — modest data volume (~100 sellers, ~1,700 items/edition), significant functional complexity (state machine, print infrastructure, concurrency, GDPR, PDF generation)
-- Estimated architectural modules: ~8–10 distinct bounded contexts
+- Domaine principal : Application web full-stack, orientée backend
+- Niveau de complexité : **Moyen** — volume de données modeste (~100 vendeurs, ~1 700 articles/édition), complexité fonctionnelle significative (machine à états, infrastructure d'impression, concurrence, RGPD, génération PDF)
+- Modules architecturaux estimés : ~8–10 contextes délimités distincts
 
-### Technical Constraints & Dependencies
+### Contraintes Techniques & Dépendances
 
-| Constraint | Decision | Source |
+| Contrainte | Décision | Source |
 |---|---|---|
 | Backend | Spring Boot | Brief / CLAUDE.md |
-| Frontend | Angular (standalone components, Signals) | CLAUDE.md |
-| Database | MariaDB + Docker Compose | PRD Addendum |
-| Thermal printing | ESC/POS protocol, `escpos-coffee` library candidate | PRD Addendum |
-| i18n — UI | ngx-translate (JSON files) | PRD Addendum |
-| i18n — Documents | Spring MessageSource (.properties files) | PRD Addendum |
-| Financial calculations | BigDecimal — never float/double | CLAUDE.md |
-| DB migrations | Liquibase | CLAUDE.md |
-| Target hardware | Raspberry Pi 4 (2 GB RAM), SSD/USB storage | PRD NFR-001 |
+| Frontend | Angular (composants standalone, Signals) | CLAUDE.md |
+| Base de données | MariaDB + Docker Compose | Addendum PRD |
+| Impression thermique | Protocole ESC/POS, bibliothèque candidate `escpos-coffee` | Addendum PRD |
+| i18n — Interface | ngx-translate (fichiers JSON) | Addendum PRD |
+| i18n — Documents | Spring MessageSource (fichiers .properties) | Addendum PRD |
+| Calculs financiers | BigDecimal — jamais float/double | CLAUDE.md |
+| Migrations BDD | Liquibase | CLAUDE.md |
+| Matériel cible | Raspberry Pi 4 (2 Go RAM), stockage SSD/USB | PRD NFR-001 |
 
-### Cross-Cutting Concerns Identified
+### Préoccupations Transversales Identifiées
 
-
-
-1. **Phase state machine** — drives UI rendering, business rule enforcement, and access control across all modules
-2. **Authentication & role separation** — Admin/Volunteer strictly separated; volunteer interface adapts to active phase
-3. **Concurrency management** — item "sold" state must be conflict-free across simultaneous POS workstations
-4. **Server-side print queue** — sequential, centralized, two independent queues (thermal / A4)
-5. **Financial accuracy** — BigDecimal propagates through item pricing, commission, payout calculation, and all reports
-6. **GDPR compliance** — PII lifecycle management (anonymization, not deletion of records); no PII in logs
-7. **i18n (dual layer)** — UI language per user account; document language per instance
+1. **Machine à états de phase** — pilote le rendu de l'interface, l'application des règles métier et le contrôle d'accès dans tous les modules
+2. **Authentification & séparation des rôles** — Administrateur/Bénévole strictement séparés ; l'interface bénévole s'adapte à la phase active
+3. **Gestion de la concurrence** — l'état « vendu » d'un article doit être sans conflit entre les postes POS simultanés
+4. **File d'attente d'impression côté serveur** — séquentielle, centralisée, deux files indépendantes (thermique / A4)
+5. **Exactitude financière** — BigDecimal se propage à travers la tarification des articles, la commission, le calcul du reversement et tous les rapports
+6. **Conformité RGPD** — gestion du cycle de vie des DCP (anonymisation, pas suppression des enregistrements) ; aucune DCP dans les journaux
+7. **i18n (double couche)** — langue de l'interface par compte utilisateur ; langue des documents par instance
 
 ---
 
-## Starter Template Evaluation
+## Évaluation du Modèle de Démarrage
 
-### Primary Technology Domain
+### Domaine Technologique Principal
 
-Full-stack web application — backend-heavy. Stack decided upfront: Spring Boot (backend) + Angular (frontend), MariaDB, Docker Compose.
+Application web full-stack — orientée backend. Stack décidée en amont : Spring Boot (backend) + Angular (frontend), MariaDB, Docker Compose.
 
-### Scaffolding Tools
+### Outils de Génération de Squelette
 
-| Layer | Tool | Command |
+| Couche | Outil | Commande |
 |---|---|---|
-| Backend | Spring Initializr | `start.spring.io` or Spring Boot CLI |
+| Backend | Spring Initializr | `start.spring.io` ou Spring Boot CLI |
 | Frontend | Angular CLI | `ng new pluribourse-frontend` |
-| Infrastructure | Manual | Custom `docker-compose.yml` |
+| Infrastructure | Manuel | `docker-compose.yml` personnalisé |
 
-### Selected Versions
+### Versions Sélectionnées
 
-| Technology | Version | Rationale |
+| Technologie | Version | Justification |
 |---|---|---|
-| Java | **21** (LTS) | Virtual threads (Project Loom) reduce memory pressure under concurrent POS load on RPi 4; LTS supported until 2031 |
-| Spring Boot | **4.0.6** | Latest stable; Spring Framework 7, Spring Security 7, Hibernate 7 |
-| Angular | **21** (LTS) | Angular 22 released June 3, 2026 — too fresh for `jest-preset-angular` ecosystem stability; LTS supported until May 2027 |
-| Build tool | **Maven** | Zero-surprise builds; well-known to Java expert; `pom.xml` readable; JaCoCo + Failsafe coverage setup exhaustively documented |
+| Java | **21** (LTS) | Les threads virtuels (Project Loom) réduisent la pression mémoire sous charge POS concurrente sur RPi 4 ; LTS supporté jusqu'en 2031 |
+| Spring Boot | **4.0.6** | Dernière version stable ; Spring Framework 7, Spring Security 7, Hibernate 7 |
+| Angular | **21** (LTS) | Angular 22 sorti le 3 juin 2026 — trop récent pour la stabilité de l'écosystème `jest-preset-angular` ; LTS supporté jusqu'en mai 2027 |
+| Outil de build | **Maven** | Builds prévisibles ; bien connu des experts Java ; `pom.xml` lisible ; configuration JaCoCo + Failsafe exhaustivement documentée |
 
-### Backend Initialization (Spring Initializr)
+### Initialisation Backend (Spring Initializr)
 
 ```
 Group:      org.pluribourse
@@ -124,40 +122,40 @@ Dependencies:
   - Validation
 ```
 
-**Manually added post-init:**
-- MapStruct (not available in Initializr)
-- OpenPDF 3.0.0 (LGPL 2.1 + MPL 1.1) — PDF generation
-- escpos-coffee or equivalent — ESC/POS thermal printing
+**Ajouté manuellement après initialisation :**
+- MapStruct (non disponible dans Initializr)
+- OpenPDF 3.0.0 (LGPL 2.1 + MPL 1.1) — génération PDF
+- escpos-coffee ou équivalent — impression thermique ESC/POS
 
-### Frontend Initialization (Angular CLI)
+### Initialisation Frontend (Angular CLI)
 
 ```bash
 ng new pluribourse-frontend --standalone --routing --style=scss
 ```
 
-**Manually added post-init:**
+**Ajouté manuellement après initialisation :**
 - @ngx-translate/core + @ngx-translate/http-loader — i18n
-- @angular/material — UI component library (MIT)
+- @angular/material — bibliothèque de composants UI (MIT)
 
-### Architectural Decisions Provided by Starters
+### Décisions Architecturales Apportées par les Modèles de Démarrage
 
-**Language & Runtime:** Java 21 with Maven wrapper; TypeScript strict mode (Angular default)
+**Langage & Runtime :** Java 21 avec Maven wrapper ; mode strict TypeScript (défaut Angular)
 
-**Styling:** SCSS — flexibility for theming Angular Material
+**Styles :** SCSS — flexibilité pour le theming Angular Material
 
-**Build Tooling:** Maven (backend) + Angular CLI / esbuild (frontend)
+**Outillage de Build :** Maven (backend) + Angular CLI / esbuild (frontend)
 
-**Testing Framework:** JUnit 5 + Mockito (Spring Boot default); Jest + Angular CDK Testing Harnesses (configured post-init per CLAUDE.md)
+**Framework de Test :** JUnit 5 + Mockito (défaut Spring Boot) ; Jest + Angular CDK Testing Harnesses (configuré après initialisation selon CLAUDE.md)
 
-**Code Organization:** Standard Spring Boot layered structure (Controller → Service → Repository); Angular standalone components with feature-based folder structure
+**Organisation du Code :** Structure en couches standard Spring Boot (Contrôleur → Service → Référentiel) ; composants Angular standalone avec structure de répertoires par fonctionnalité
 
-**Development Experience:** Spring Boot DevTools hot reload; Angular CLI dev server with HMR
+**Expérience de Développement :** Rechargement à chaud Spring Boot DevTools ; serveur de développement Angular CLI avec HMR
 
-### License Compliance
+### Conformité des Licences
 
-All selected dependencies use permissive or weak-copyleft licenses. Project policy: no AGPL, no GPL copyleft.
+Toutes les dépendances sélectionnées utilisent des licences permissives ou faiblement copyleft. Politique du projet : pas d'AGPL, pas de GPL copyleft.
 
-| Dependency | License |
+| Dépendance | Licence |
 |---|---|
 | Spring Boot / Spring Framework | Apache 2.0 |
 | Angular + Angular Material | MIT |
@@ -168,199 +166,199 @@ All selected dependencies use permissive or weak-copyleft licenses. Project poli
 | OpenPDF 3.0.0 | LGPL 2.1 + MPL 1.1 |
 | ngx-translate | MIT |
 
-> iText 7 (AGPL) was explicitly rejected — even in open-source use it requires mentioning iText in every generated PDF's metadata. OpenPDF is the drop-in alternative with no such obligation.
+> iText 7 (AGPL) a été explicitement rejeté — même en utilisation open-source, il impose de mentionner iText dans les métadonnées de chaque PDF généré. OpenPDF est l'alternative directe sans cette obligation.
 
-**Note:** Project initialization (Spring Initializr + `ng new`) should be the first implementation story.
-
----
-
-## Core Architectural Decisions
-
-### Decision Priority Analysis
-
-**Critical Decisions (Block Implementation):**
-- Session management strategy (affects all secured endpoints)
-- POS concurrency model (affects item sale integrity)
-- Phase change notification mechanism (affects all active-phase UIs)
-
-**Important Decisions (Shape Architecture):**
-- Print queue implementation (affects F9 reliability)
-- Barcode generation library (affects F3 label generation)
-- API documentation tooling (affects developer experience)
-
-**Deferred Decisions (Post-v1):**
-- Backup/restore mechanism (explicitly out of scope v1)
-- Per-edition commission override (out of scope v1)
-- Testcontainers CI pipeline setup (can be added incrementally)
+**Remarque :** L'initialisation du projet (Spring Initializr + `ng new`) devrait constituer la première story d'implémentation.
 
 ---
 
-### Authentication & Security
+## Décisions Architecturales Fondamentales
 
-| Decision | Choice | Rationale |
+### Analyse des Priorités de Décision
+
+**Décisions Critiques (Bloquent l'Implémentation) :**
+- Stratégie de gestion de session (affecte tous les points d'entrée sécurisés)
+- Modèle de concurrence POS (affecte l'intégrité des ventes d'articles)
+- Mécanisme de notification de changement de phase (affecte toutes les interfaces en phase active)
+
+**Décisions Importantes (Façonnent l'Architecture) :**
+- Implémentation de la file d'attente d'impression (affecte la fiabilité F9)
+- Bibliothèque de génération de codes-barres (affecte la génération d'étiquettes F3)
+- Outillage de documentation API (affecte l'expérience développeur)
+
+**Décisions Reportées (Post-v1) :**
+- Mécanisme de sauvegarde/restauration (explicitement hors périmètre v1)
+- Override de commission par édition (hors périmètre v1)
+- Configuration du pipeline CI avec Testcontainers (peut être ajouté de manière incrémentale)
+
+---
+
+### Authentification & Sécurité
+
+| Décision | Choix | Justification |
 |---|---|---|
-| Auth mechanism | Spring Security (form-based, stateful sessions) | Single-instance deployment, no JWT complexity needed, FR-066 (no session expiry) |
-| Session storage | **Spring Session JDBC** (MariaDB) | Sessions survive container restarts during events — critical in a 4–6h live event context |
-| Session expiry | None (FR-066) | Configured explicitly: `server.servlet.session.timeout=-1` |
-| Password encoding | BCrypt (Spring Security default) | Industry standard, no additional config |
-| Admin password reset | CLI command generating a temporary password (FR-063) | Spring Boot `CommandLineRunner` or custom CLI script; forces password change on next login |
-| Role model | Three roles: `ADMIN`, `VOLUNTEER`, `SELLER` — strictly separated | `SELLER` reserved in v1 (no UI, no public endpoints); link `User ↔ SellerProfile` via nullable FK ready for v2 portal |
-| SELLER scope v1 | `Role.SELLER` déclaré, FK `users.seller_profile_id` nullable | Aucun endpoint public, aucune UI, aucune inscription — tout est bloqué à 403 via Spring Security |
-| SELLER scope v2 | Portail d'inscription public, sélection de créneaux de dépôt | Nécessite : HTTPS, reverse proxy, ouverture réseau — hors périmètre v1 |
+| Mécanisme d'auth | Spring Security (basé sur formulaire, sessions avec état) | Déploiement mono-instance, pas besoin de complexité JWT, FR-066 (pas d'expiration de session) |
+| Stockage de session | **Spring Session JDBC** (MariaDB) | Les sessions survivent aux redémarrages du conteneur pendant les événements — critique dans un contexte d'événement en direct de 4–6h |
+| Expiration de session | Aucune (FR-066) | Configuré explicitement : `server.servlet.session.timeout=-1` |
+| Encodage du mot de passe | BCrypt (défaut Spring Security) | Standard de l'industrie, aucune configuration supplémentaire |
+| Réinitialisation du mot de passe admin | Commande CLI générant un mot de passe temporaire (FR-063) | Spring Boot `CommandLineRunner` ou script CLI personnalisé ; impose le changement de mot de passe à la prochaine connexion |
+| Modèle de rôles | Trois rôles : `ADMIN`, `VOLUNTEER`, `SELLER` — strictement séparés | `SELLER` réservé en v1 (pas d'interface, pas de points d'entrée publics) ; lien `User ↔ SellerProfile` via FK nullable prête pour le portail v2 |
+| Périmètre SELLER v1 | `Role.SELLER` déclaré, FK `users.seller_profile_id` nullable | Aucun point d'entrée public, aucune interface, aucune inscription — tout est bloqué à 403 via Spring Security |
+| Périmètre SELLER v2 | Portail d'inscription public, sélection de créneaux de dépôt | Nécessite : HTTPS, reverse proxy, ouverture réseau — hors périmètre v1 |
 
 ---
 
-### Data Architecture
+### Architecture des Données
 
-| Decision | Choice | Rationale |
+| Décision | Choix | Justification |
 |---|---|---|
-| ORM | Spring Data JPA + Hibernate 7 | Provided by Spring Boot 4.0.6 |
-| Migrations | Liquibase | Declared in CLAUDE.md; version-controlled schema |
-| Seller PII | Stored in dedicated fields, anonymizable on request (FR-021) | Anonymization replaces values, does not delete rows — preserves referential integrity across editions |
-| Financial values | `BigDecimal` throughout — never `float`/`double` | Declared in CLAUDE.md; NFR-003 (cent-level accuracy) |
-| Edition isolation | `edition_id` foreign key on all transactional entities | Items, sales, baskets, reports scoped to edition |
-| Caching | None for v1 | Data volume is modest (~1,700 items); MariaDB on SSD/USB is sufficient |
-| User language preference | `preferredLanguage` field on `User` entity (DB-backed, `enum {EN, FR}`) | FR-067 — stored on account, applied on login via ngx-translate; not browser-local |
+| ORM | Spring Data JPA + Hibernate 7 | Fourni par Spring Boot 4.0.6 |
+| Migrations | Liquibase | Déclaré dans CLAUDE.md ; schéma versionné |
+| DCP Vendeur | Stockées dans des champs dédiés, anonymisables sur demande (FR-021) | L'anonymisation remplace les valeurs, ne supprime pas les lignes — préserve l'intégrité référentielle entre les éditions |
+| Valeurs financières | `BigDecimal` partout — jamais `float`/`double` | Déclaré dans CLAUDE.md ; NFR-003 (précision au centime) |
+| Isolation par édition | Clé étrangère `edition_id` sur toutes les entités transactionnelles | Articles, ventes, paniers, rapports limités à l'édition |
+| Cache | Aucun pour la v1 | Volume de données modeste (~1 700 articles) ; MariaDB sur SSD/USB est suffisant |
+| Préférence de langue utilisateur | Champ `preferredLanguage` sur l'entité `User` (persisté en BDD, `enum {EN, FR}`) | FR-067 — stocké sur le compte, appliqué à la connexion via ngx-translate ; pas local au navigateur |
 
 ---
 
-### Concurrency — POS (Point of Sale)
+### Concurrence — POS (Point de Vente)
 
-| Decision | Choice | Rationale |
+| Décision | Choix | Justification |
 |---|---|---|
-| Locking strategy | **Optimistic locking** (`@Version` on `Item` entity) | Low contention expected across 3 workstations; no held locks, no deadlocks |
-| Safety net | DB `UNIQUE` constraint on sold item state | Secondary guarantee at the database level |
-| Conflict scenario | Item manually entered into two baskets simultaneously | Detected at **payment validation** (not at scan time) |
-| Conflict UX | Backend returns 409 with list of conflicting items; Angular displays explicit message; volunteer removes conflicting items and re-validates | No automatic retry — manual resolution by volunteer |
-| Test requirement | Integration test with two concurrent `TransactionTemplate`s + **Testcontainers (MariaDB)** in CI | H2 locking behaviour differs from MariaDB; real DB required for this test |
+| Stratégie de verrouillage | **Verrouillage optimiste** (`@Version` sur l'entité `Item`) | Faible contention attendue sur 3 postes ; pas de verrous maintenus, pas d'interblocages |
+| Filet de sécurité | Contrainte `UNIQUE` en BDD sur l'état vendu d'un article | Garantie secondaire au niveau de la base de données |
+| Scénario de conflit | Article saisi manuellement dans deux paniers simultanément | Détecté à la **validation du paiement** (pas au moment du scan) |
+| UX de conflit | Le backend retourne 409 avec la liste des articles conflictuels ; Angular affiche un message explicite ; le bénévole retire les articles conflictuels et revalide | Pas de réessai automatique — résolution manuelle par le bénévole |
+| Exigence de test | Test d'intégration avec deux `TransactionTemplate`s concurrents + **Testcontainers (MariaDB)** en CI | Le comportement de verrouillage de H2 diffère de MariaDB ; une vraie BDD est requise pour ce test |
 
 ---
 
-### Phase Change Notification (FR-090)
+### Notification de Changement de Phase (FR-090)
 
-| Decision | Choice | Rationale |
+| Décision | Choix | Justification |
 |---|---|---|
-| Mechanism | **Server-Sent Events (SSE)** | Server-push only (no bidirectional need); simpler than WebSocket; `EventSource` auto-reconnects per RFC 8895; plain HTTP (no proxy issues on venue LAN) |
-| Spring implementation | `SseEmitter` per connected client | Emitters managed in a thread-safe registry; closed on phase change after event is sent |
-| Angular implementation | `EventSource` wrapped in an Angular service | Testable with `jest.fn()`; reconnect handled natively |
-| Trigger | Phase transition (any direction) triggers SSE event to all connected clients | Volunteer's active basket cancelled if phase changes mid-transaction (FR-090) |
+| Mécanisme | **Server-Sent Events (SSE)** | Envoi serveur uniquement (pas besoin de bidirectionnel) ; plus simple que WebSocket ; `EventSource` se reconnecte automatiquement selon la RFC 8895 ; HTTP simple (pas de problèmes de proxy sur le réseau local de la salle) |
+| Implémentation Spring | `SseEmitter` par client connecté | Émetteurs gérés dans un registre thread-safe ; fermés après l'envoi de l'événement lors du changement de phase |
+| Implémentation Angular | `EventSource` encapsulé dans un service Angular | Testable avec `jest.fn()` ; reconnexion gérée nativement |
+| Déclencheur | La transition de phase (dans n'importe quelle direction) déclenche un événement SSE vers tous les clients connectés | Le panier actif du bénévole est annulé si la phase change en cours de transaction (FR-090) |
 
 ---
 
-### Print Infrastructure
+### Infrastructure d'Impression
 
-| Decision | Choice | Rationale |
+| Décision | Choix | Justification |
 |---|---|---|
-| Queue implementation | **In-memory `LinkedBlockingQueue`** (one per printer type) | Simple, no extra infrastructure; at-most-once delivery acceptable |
-| Delivery guarantee | At-most-once | Acceptable: all print jobs are re-triggerable from the UI (FR-078); data source always available in DB |
-| Queue injection | Constructor-injected (not static) | Enables bounded queue in tests to verify backpressure behaviour |
-| Error handling | Printer errors surface to UI via SSE or polling response (FR-079) | User notified; can retry manually |
-| Thermal printer | ESC/POS via `escpos-coffee` (or equivalent) — sequential jobs | One queue, one consumer thread |
-| A4/document printer | PDF generated by OpenPDF 3.0.0 → sent to USB printer | One queue, one consumer thread |
+| Implémentation de la file | **`LinkedBlockingQueue` en mémoire** (une par type d'imprimante) | Simple, pas d'infrastructure supplémentaire ; livraison au-plus-une fois acceptable |
+| Garantie de livraison | Au-plus-une fois | Acceptable : tous les travaux d'impression sont redéclenchables depuis l'interface (FR-078) ; source de données toujours disponible en BDD |
+| Injection de la file | Injectée par constructeur (pas statique) | Permet une file bornée dans les tests pour vérifier le comportement sous contre-pression |
+| Gestion des erreurs | Les erreurs d'imprimante remontent vers l'interface via SSE ou réponse de polling (FR-079) | Utilisateur notifié ; peut réessayer manuellement |
+| Imprimante thermique | ESC/POS via `escpos-coffee` (ou équivalent) — travaux séquentiels | Une file, un thread consommateur |
+| Imprimante A4/document | PDF généré par OpenPDF 3.0.0 → envoyé à l'imprimante USB | Une file, un thread consommateur |
 
 ---
 
 ### API & Communication
 
-| Decision | Choice | Rationale |
+| Décision | Choix | Justification |
 |---|---|---|
-| API style | REST (JSON) | Standard, well-supported by Spring MVC and Angular HttpClient |
-| API documentation | **Springdoc OpenAPI** (Apache 2.0) — enabled in `dev`, disabled in `prod` | Auto-generated from annotations; OpenAPI snapshot in CI catches contract regressions |
-| Error handling | `@ControllerAdvice` + RFC 7807 Problem Details | Standardised error responses; machine-readable for Angular error handling |
-| Validation | Bean Validation (`jakarta.validation`) on DTOs | Fail-fast at controller boundary |
-| CORS | Configured for `localhost` only (single-server deployment) | No cross-origin requests from external domains |
+| Style API | REST (JSON) | Standard, bien supporté par Spring MVC et Angular HttpClient |
+| Documentation API | **Springdoc OpenAPI** (Apache 2.0) — activé en `dev`, désactivé en `prod` | Auto-générée depuis les annotations ; snapshot OpenAPI en CI détecte les régressions de contrat |
+| Gestion des erreurs | `@ControllerAdvice` + RFC 7807 Problem Details | Réponses d'erreur standardisées ; lisibles par machine pour la gestion d'erreurs Angular |
+| Validation | Bean Validation (`jakarta.validation`) sur les DTOs | Échec rapide à la frontière du contrôleur |
+| CORS | Configuré pour `localhost` uniquement (déploiement mono-serveur) | Pas de requêtes cross-origin depuis des domaines externes |
 
 ---
 
-### Frontend Architecture
+### Architecture Frontend
 
-| Decision | Choice | Rationale |
+| Décision | Choix | Justification |
 |---|---|---|
-| State management | Angular Signals (no NgRx) | Declared in CLAUDE.md; reactive state without NgRx boilerplate; composable with `computed()` |
-| Component model | Standalone components | Declared in CLAUDE.md (latest Angular pattern) |
-| HTTP | Angular `HttpClient` | Standard; testable with `HttpClientTestingModule` |
-| i18n | ngx-translate (runtime switching, no build-per-locale) | Declared in PRD addendum; JSON files `en.json` / `fr.json` |
-| UI components | Angular Material (MIT) | Idiomatic Angular patterns; CDK Testing Harnesses for robust component tests |
-| Scanner input | USB HID → keyboard events captured in Angular component | AZERTY/QWERTY handled via key code mapping (FR-034); no workstation config required |
+| Gestion d'état | Angular Signals (pas de NgRx) | Déclaré dans CLAUDE.md ; état réactif sans le boilerplate NgRx ; composable avec `computed()` |
+| Modèle de composants | Composants standalone | Déclaré dans CLAUDE.md (dernier patron Angular) |
+| HTTP | Angular `HttpClient` | Standard ; testable avec `HttpClientTestingModule` |
+| i18n | ngx-translate (commutation à l'exécution, pas de build par locale) | Déclaré dans l'addendum PRD ; fichiers JSON `en.json` / `fr.json` |
+| Composants UI | Angular Material (MIT) | Patrons Angular idiomatiques ; CDK Testing Harnesses pour des tests de composants robustes |
+| Saisie scanner | USB HID → événements clavier capturés dans le composant Angular | AZERTY/QWERTY géré via le mapping des codes de touches (FR-034) ; aucune configuration du poste requise |
 
 ---
 
-### Infrastructure & Deployment
+### Infrastructure & Déploiement
 
-| Decision | Choice | Rationale |
+| Décision | Choix | Justification |
 |---|---|---|
-| Deployment | Docker Compose (`docker-compose.yml`) — single file | Declared in PRD addendum; `docker compose up -d` / `docker compose pull && up -d` |
-| Logging | SLF4J + Logback (Spring Boot default) — **no PII in logs** | NFR-007 + CLAUDE.md constraint; seller names, emails, phones never logged |
-| Monitoring | None for v1 | Out of scope; Raspberry Pi target, single-event usage |
-| CI/CD | None for v1 | Hobby/community project; updates applied manually |
+| Déploiement | Docker Compose (`docker-compose.yml`) — fichier unique | Déclaré dans l'addendum PRD ; `docker compose up -d` / `docker compose pull && up -d` |
+| Journalisation | SLF4J + Logback (défaut Spring Boot) — **aucune DCP dans les journaux** | NFR-007 + contrainte CLAUDE.md ; noms, emails, téléphones des vendeurs jamais journalisés |
+| Monitoring | Aucun pour la v1 | Hors périmètre ; cible Raspberry Pi, usage mono-événement |
+| CI/CD | Aucun pour la v1 | Projet communautaire/hobby ; mises à jour appliquées manuellement |
 
 ---
 
-### Decision Impact Analysis
+### Analyse d'Impact des Décisions
 
-**Implementation Sequence (suggested order):**
-1. Project scaffolding (Spring Initializr + `ng new`) + Docker Compose baseline
-2. Liquibase schema + core entities (Edition, Seller, Item, User)
+**Séquence d'Implémentation (ordre suggéré) :**
+1. Génération du squelette du projet (Spring Initializr + `ng new`) + socle Docker Compose
+2. Schéma Liquibase + entités principales (Edition, Seller, Item, User)
 3. Spring Security + Spring Session JDBC
-4. i18n foundation (ngx-translate + Spring MessageSource)
-5. Feature development (F2 → F3 → F4 → F5 → F6 → F7 → F9 → F10)
+4. Fondation i18n (ngx-translate + Spring MessageSource)
+5. Développement des fonctionnalités (F2 → F3 → F4 → F5 → F6 → F7 → F9 → F10)
 
-**Cross-Component Dependencies:**
-- Phase state machine (F2) must be implemented before F3, F4, F5, F10 — it governs all business rules
-- Spring Session JDBC requires Liquibase migration before any auth feature
-- SSE emitter registry must be in place before phase transition endpoints (F2)
-- Print queue consumers must be initialised as Spring beans before F3/F4 printing features
-- Testcontainers (MariaDB) CI test required before F4 POS concurrency story ships
+**Dépendances Entre Composants :**
+- La machine à états de phase (F2) doit être implémentée avant F3, F4, F5, F10 — elle gouverne toutes les règles métier
+- Spring Session JDBC nécessite une migration Liquibase avant toute fonctionnalité d'authentification
+- Le registre des émetteurs SSE doit être en place avant les points d'entrée de transition de phase (F2)
+- Les consommateurs de la file d'impression doivent être initialisés en tant que beans Spring avant les fonctionnalités d'impression F3/F4
+- Le test CI Testcontainers (MariaDB) est requis avant la livraison de la story de concurrence POS F4
 
 ---
 
-## Implementation Patterns & Consistency Rules
+## Patrons d'Implémentation & Règles de Cohérence
 
-### Naming Patterns
+### Patrons de Nommage
 
-**Backend — Database**
+**Backend — Base de Données**
 
-| Element | Convention | Example |
+| Élément | Convention | Exemple |
 |---|---|---|
-| Table names | `snake_case`, plural | `seller_profiles`, `editions`, `items`, `print_jobs` |
-| Column names | `snake_case` | `last_name`, `edition_id`, `is_complete` |
-| Foreign keys | `{entity}_id` | `seller_id`, `edition_id` |
-| Indexes | `idx_{table}_{column}` | `idx_items_edition_id` |
+| Noms de tables | `snake_case`, pluriel | `seller_profiles`, `editions`, `items`, `print_jobs` |
+| Noms de colonnes | `snake_case` | `last_name`, `edition_id`, `is_complete` |
+| Clés étrangères | `{entité}_id` | `seller_id`, `edition_id` |
+| Index | `idx_{table}_{colonne}` | `idx_items_edition_id` |
 
 **Backend — Java**
 
-| Element | Convention | Example |
+| Élément | Convention | Exemple |
 |---|---|---|
-| Package structure | `org.pluribourse.{feature}.{layer}` | `org.pluribourse.seller.service` |
-| Feature packages | singular noun | `edition`, `seller`, `item`, `pos`, `payout`, `report`, `user`, `print` |
-| Class names | `PascalCase` | `SellerService`, `ItemController` |
-| Method/field names | `camelCase` | `findByEditionId`, `isComplete` |
-| DTO suffix | `Dto` | `SellerDto`, `ItemDto` |
-| Mapper suffix | `Mapper` | `SellerMapper`, `ItemMapper` |
+| Structure des packages | `org.pluribourse.{fonctionnalité}.{couche}` | `org.pluribourse.seller.service` |
+| Packages de fonctionnalité | nom au singulier | `edition`, `seller`, `item`, `pos`, `payout`, `report`, `user`, `print` |
+| Noms de classes | `PascalCase` | `SellerService`, `ItemController` |
+| Noms de méthodes/champs | `camelCase` | `findByEditionId`, `isComplete` |
+| Suffixe DTO | `Dto` | `SellerDto`, `ItemDto` |
+| Suffixe Mapper | `Mapper` | `SellerMapper`, `ItemMapper` |
 
-**Backend — REST API**
+**Backend — API REST**
 
-| Element | Convention | Example |
+| Élément | Convention | Exemple |
 |---|---|---|
-| URL prefix | `/api/` — no versioning | `/api/sellers`, `/api/editions` |
-| Resource names | `kebab-case`, plural | `/api/seller-profiles`, `/api/print-jobs` |
-| Route parameters | `{id}` | `/api/sellers/{id}` |
-| Query parameters | `camelCase` | `?editionId=1&sortBy=name` |
+| Préfixe URL | `/api/` — pas de versionnage | `/api/sellers`, `/api/editions` |
+| Noms de ressources | `kebab-case`, pluriel | `/api/seller-profiles`, `/api/print-jobs` |
+| Paramètres de route | `{id}` | `/api/sellers/{id}` |
+| Paramètres de requête | `camelCase` | `?editionId=1&sortBy=name` |
 
 **Frontend — Angular**
 
-| Element | Convention | Example |
+| Élément | Convention | Exemple |
 |---|---|---|
-| File names | `kebab-case` | `seller-list.component.ts`, `edition.service.ts` |
-| Class names | `PascalCase` | `SellerListComponent`, `EditionService` |
-| Signal names | `camelCase` | `sellers = signal([])`, `isLoading = signal(false)` |
-| i18n keys | dot-notation, 3 levels max | `seller.list.empty`, `pos.basket.item-already-sold` |
+| Noms de fichiers | `kebab-case` | `seller-list.component.ts`, `edition.service.ts` |
+| Noms de classes | `PascalCase` | `SellerListComponent`, `EditionService` |
+| Noms de signals | `camelCase` | `sellers = signal([])`, `isLoading = signal(false)` |
+| Clés i18n | notation pointée, 3 niveaux max | `seller.list.empty`, `pos.basket.item-already-sold` |
 
 ---
 
-### Structure Patterns
+### Patrons de Structure
 
-**Backend — Package Organisation**
+**Backend — Organisation des Packages**
 
 ```
 org.pluribourse.
@@ -371,13 +369,13 @@ org.pluribourse.
 │   ├── entity/       Edition.java
 │   ├── dto/          EditionDto.java, CreateEditionDto.java
 │   └── mapper/       EditionMapper.java
-├── seller/           (same pattern)
-├── item/             (same pattern)
-├── pos/              (same pattern)
-├── payout/           (same pattern)
-├── report/           (same pattern)
-├── user/             (same pattern)
-├── print/            (same pattern)
+├── seller/           (même patron)
+├── item/             (même patron)
+├── pos/              (même patron)
+├── payout/           (même patron)
+├── report/           (même patron)
+├── user/             (même patron)
+├── print/            (même patron)
 └── shared/
     ├── exception/    GlobalExceptionHandler.java, BusinessException.java
     ├── security/     SecurityConfig.java, SessionConfig.java
@@ -385,7 +383,7 @@ org.pluribourse.
     └── config/       OpenApiConfig.java, JacksonConfig.java
 ```
 
-**Frontend — Folder Organisation**
+**Frontend — Organisation des Répertoires**
 
 ```
 src/
@@ -410,7 +408,7 @@ src/
 │       ├── edition.model.ts
 │       ├── seller.model.ts
 │       ├── item.model.ts
-│       └── page.model.ts         (Spring Page<T> shape)
+│       └── page.model.ts         (forme Spring Page<T>)
 └── assets/
     └── i18n/
         ├── en.json
@@ -419,13 +417,13 @@ src/
 
 ---
 
-### Format Patterns
+### Patrons de Format
 
-**API Responses**
+**Réponses API**
 
-- **Simple response**: direct object or array — no wrapper
-- **Paginated/filtered response**: Spring `Page<T>` — `{content: [...], page: {size, number, totalElements, totalPages}}`
-- **Error response**: RFC 7807 Problem Details
+- **Réponse simple** : objet ou tableau direct — pas d'enveloppe
+- **Réponse paginée/filtrée** : Spring `Page<T>` — `{content: [...], page: {size, number, totalElements, totalPages}}`
+- **Réponse d'erreur** : RFC 7807 Problem Details
 
 ```json
 {
@@ -439,10 +437,10 @@ src/
 
 **Pagination — JPageFlow**
 
-Standard tool for all paginated/filtered list endpoints:
+Outil standard pour tous les points d'entrée de listes paginées/filtrées :
 
 ```java
-// Service pattern
+// Patron de service
 Page<ItemDto> result = FilterService.filterData(
     itemRepository.findByEditionId(editionId),
     filterDto,
@@ -450,61 +448,61 @@ Page<ItemDto> result = FilterService.filterData(
 );
 ```
 
-> ⚠️ **Known issue**: `BigDecimal` sort (e.g. by price) is broken in JPageFlow v1.5.0 — comparator falls back to alphabetical string comparison. Fix required in library before price-sorting is implemented. Tests will fail until patched.
+> ⚠️ **Problème connu** : Le tri par `BigDecimal` (ex. par prix) est défaillant dans JPageFlow v1.5.0 — le comparateur se replie sur la comparaison alphabétique de chaînes. Correction requise dans la bibliothèque avant l'implémentation du tri par prix. Les tests échoueront jusqu'au correctif.
 
-**Data Formats**
+**Formats de Données**
 
-| Type | Format | Example |
+| Type | Format | Exemple |
 |---|---|---|
-| JSON field names | `camelCase` | `lastName`, `editionId` |
+| Noms de champs JSON | `camelCase` | `lastName`, `editionId` |
 | Dates | ISO 8601 date | `"2026-06-09"` |
-| Datetimes | ISO 8601 with Z | `"2026-06-09T14:30:00Z"` |
-| Monetary values | JSON number (BigDecimal serialised) | `12.50` |
-| Booleans | `true` / `false` | `"isComplete": false` |
+| Datetimes | ISO 8601 avec Z | `"2026-06-09T14:30:00Z"` |
+| Valeurs monétaires | nombre JSON (BigDecimal sérialisé) | `12.50` |
+| Booléens | `true` / `false` | `"isComplete": false` |
 
 ---
 
-### Communication Patterns
+### Patrons de Communication
 
-**SSE Events**
+**Événements SSE**
 
-| Event | Name | Payload |
+| Événement | Nom | Charge utile |
 |---|---|---|
-| Phase transition | `phase-changed` | `{editionId, newPhase, previousPhase}` |
-| Basket cancelled | `basket-cancelled` | `{reason: "phase-changed"}` |
+| Transition de phase | `phase-changed` | `{editionId, newPhase, previousPhase}` |
+| Panier annulé | `basket-cancelled` | `{reason: "phase-changed"}` |
 
-- Event names: `kebab-case`
-- Payload: JSON
-- Angular: `EventSource` wrapped in `PhaseService`, exposed as `Signal<Phase>`
+- Noms d'événements : `kebab-case`
+- Charge utile : JSON
+- Angular : `EventSource` encapsulé dans `PhaseService`, exposé en tant que `Signal<Phase>`
 
-**Angular State Management**
+**Gestion d'État Angular**
 
 ```typescript
-// Signal pattern — local state
+// Patron Signal — état local
 sellers = signal<Seller[]>([]);
 isLoading = signal(false);
 
-// Computed — derived state
+// Computed — état dérivé
 sellerCount = computed(() => this.sellers().length);
 
-// No NgRx — no stores, no actions, no reducers
+// Pas de NgRx — pas de stores, pas d'actions, pas de reducers
 ```
 
 ---
 
-### Process Patterns
+### Patrons de Processus
 
-**Error Handling**
+**Gestion des Erreurs**
 
-- Backend: `@ControllerAdvice` catches all exceptions, returns RFC 7807
-- `BusinessException` (runtime) for domain rule violations → mapped to 4xx
-- Angular: HTTP errors caught in service, exposed via Signal or re-thrown to component
-- No silent swallowing of errors — always surface to user or log
+- Backend : `@ControllerAdvice` intercepte toutes les exceptions, retourne RFC 7807
+- `BusinessException` (runtime) pour les violations de règles métier → mappée en 4xx
+- Angular : erreurs HTTP interceptées dans le service, exposées via Signal ou propagées au composant
+- Pas de suppression silencieuse des erreurs — toujours remonter vers l'utilisateur ou journaliser
 
-**Loading States**
+**États de Chargement**
 
 ```typescript
-// Per-component pattern
+// Patron par composant
 isLoading = signal(false);
 
 async loadSellers() {
@@ -516,49 +514,49 @@ async loadSellers() {
 
 **Validation**
 
-- Server-side: Bean Validation (`@NotNull`, `@Size`, etc.) on all DTOs — mandatory
-- Client-side: Angular reactive form validators — convenience only, not trusted
+- Côté serveur : Bean Validation (`@NotNull`, `@Size`, etc.) sur tous les DTOs — obligatoire
+- Côté client : Validateurs de formulaires réactifs Angular — commodité uniquement, non fiables
 
-**i18n Keys**
+**Clés i18n**
 
-- Max 3 levels: `feature.section.key`
-- Shared business terms aligned between `en.json` and `messages_en.properties`
-- Examples: `seller.label`, `edition.phase.deposit`, `pos.basket.lot-incomplete`, `report.daily.title`
-
----
-
-### Enforcement Guidelines
-
-**All implementations MUST:**
-- Use `FilterService.filterData()` (JPageFlow) for any paginated/filterable list endpoint
-- Return RFC 7807 Problem Details for all error responses
-- Use `BigDecimal` for all monetary values — never `float` or `double`
-- Use ISO 8601 for all date/datetime serialisation
-- Never log PII (seller name, email, phone) — use seller ID in logs
-- Follow the `org.pluribourse.{feature}.{layer}` package structure
-- Place Angular files under `components/`, `services/`, or `models/` accordingly
-- Use `signal()` / `computed()` for Angular state — no imperative `BehaviorSubject` patterns
-- Block all `SELLER`-role requests with 403 in v1 — `SecurityConfig.java` must deny all authenticated SELLER requests; no SELLER endpoints or UI until v2 portal
+- Maximum 3 niveaux : `fonctionnalité.section.clé`
+- Termes métier partagés alignés entre `en.json` et `messages_en.properties`
+- Exemples : `seller.label`, `edition.phase.deposit`, `pos.basket.lot-incomplete`, `report.daily.title`
 
 ---
 
-## Project Structure & Boundaries
+### Directives d'Application
 
-### Repository Layout
+**Toutes les implémentations DOIVENT :**
+- Utiliser `FilterService.filterData()` (JPageFlow) pour tout point d'entrée de liste paginée/filtrable
+- Retourner RFC 7807 Problem Details pour toutes les réponses d'erreur
+- Utiliser `BigDecimal` pour toutes les valeurs monétaires — jamais `float` ou `double`
+- Utiliser ISO 8601 pour toute sérialisation de date/datetime
+- Ne jamais journaliser les DCP (nom, email, téléphone du vendeur) — utiliser l'ID vendeur dans les journaux
+- Respecter la structure de packages `org.pluribourse.{fonctionnalité}.{couche}`
+- Placer les fichiers Angular sous `components/`, `services/`, ou `models/` selon leur nature
+- Utiliser `signal()` / `computed()` pour l'état Angular — pas de patrons `BehaviorSubject` impératifs
+- Bloquer toutes les requêtes de rôle `SELLER` avec 403 en v1 — `SecurityConfig.java` doit refuser toutes les requêtes SELLER authentifiées ; pas de points d'entrée ni d'interface SELLER avant le portail v2
+
+---
+
+## Structure du Projet & Frontières
+
+### Organisation du Référentiel
 
 ```
-PluriBourse/                          ← monorepo root
+PluriBourse/                          ← racine du monorepo
 ├── docker-compose.yml
 ├── docker-compose.dev.yml
 ├── .env.example
 ├── CLAUDE.md
-├── pluribourse-backend/              ← Spring Boot module
-└── pluribourse-frontend/             ← Angular module
+├── pluribourse-backend/              ← module Spring Boot
+└── pluribourse-frontend/             ← module Angular
 ```
 
 ---
 
-### Backend — Complete Directory Structure
+### Backend — Structure de Répertoires Complète
 
 ```
 pluribourse-backend/
@@ -640,7 +638,7 @@ pluribourse-backend/
     │       ├── messages_fr.properties            ← F1
     │       └── db/changelog/
     │           ├── db.changelog-master.xml
-    │           ├── 001-core-schema.xml             (users.seller_profile_id nullable FK)
+    │           ├── 001-core-schema.xml             (users.seller_profile_id FK nullable)
     │           ├── 002-spring-session.xml
     │           ├── 003-category-table-mapping.xml
     │           └── 004-instance-config.xml       ← FR-073
@@ -657,7 +655,7 @@ pluribourse-backend/
 
 ---
 
-### Frontend — Complete Directory Structure
+### Frontend — Structure de Répertoires Complète
 
 ```
 pluribourse-frontend/
@@ -718,7 +716,7 @@ pluribourse-frontend/
     │       ├── item.model.ts
     │       ├── basket.model.ts
     │       ├── user.model.ts
-    │       └── page.model.ts         (Spring Page<T> TypeScript shape)
+    │       └── page.model.ts         (forme TypeScript de Spring Page<T>)
     └── assets/
         └── i18n/
             ├── en.json               ← F1
@@ -727,188 +725,188 @@ pluribourse-frontend/
 
 ---
 
-### Feature → Structure Mapping
+### Correspondance Fonctionnalité → Structure
 
-| Feature | Backend packages | Frontend |
+| Fonctionnalité | Packages backend | Frontend |
 |---|---|---|
 | F1 — i18n | `resources/messages_*.properties` | `assets/i18n/*.json`, `app.config.ts` |
-| F2 — Éditions & lifecycle | `edition/` + `shared/sse/` | `components/edition/`, `services/phase.service.ts` |
+| F2 — Éditions & cycle de vie | `edition/` + `shared/sse/` | `components/edition/`, `services/phase.service.ts` |
 | F3 — Vendeurs & articles | `seller/`, `item/`, `print/` | `components/seller/`, `services/seller+item` |
 | F4 — POS | `pos/` | `components/pos/`, `services/pos.service.ts` |
 | F5 — Post-vente & reversements | `payout/` | `components/payout/` |
-| F6 — Reporting | `report/` (OpenPDF) | `components/report/` |
+| F6 — Rapports | `report/` (OpenPDF) | `components/report/` |
 | F7 — Comptes utilisateurs | `user/` (+ `cli/AdminPasswordResetRunner`), `shared/security/` | `components/user/`, `services/auth.service.ts` |
-| F8 (admin settings) — Config instance | `shared/instanceconfig/` | `components/admin/`, `services/instance-config.service.ts` |
+| F8 (paramètres admin) — Config instance | `shared/instanceconfig/` | `components/admin/`, `services/instance-config.service.ts` |
 | F8 — Infrastructure | `docker-compose.yml`, `application.properties`, Liquibase | — |
 | F9 — Impression | `print/` (BlockingQueue + ESC/POS + OpenPDF) | `services/print.service.ts` |
 | F10 — Catalogue articles | `item/controller/ItemCatalogController.java` | `components/catalog/` |
 
 ---
 
-### Integration Boundaries
+### Frontières d'Intégration
 
-**API Boundary (Backend ↔ Frontend)**
-- All communication via REST JSON over HTTP
-- Base URL: `/api/`
-- Auth: session cookie (Spring Security, `JSESSIONID` stored in MariaDB via Spring Session JDBC)
-- SSE endpoint: `GET /api/sse/events` — phase change notifications
-- Print endpoint: `POST /api/print/{type}` — triggers server-side print job
+**Frontière API (Backend ↔ Frontend)**
+- Toute communication via REST JSON sur HTTP
+- URL de base : `/api/`
+- Auth : cookie de session (Spring Security, `JSESSIONID` stocké dans MariaDB via Spring Session JDBC)
+- Point d'entrée SSE : `GET /api/sse/events` — notifications de changement de phase
+- Point d'entrée d'impression : `POST /api/print/{type}` — déclenche un travail d'impression côté serveur
 
-**Data Boundary (Service ↔ Repository)**
-- Entities never leave the `service/` layer — always mapped to DTOs via MapStruct
-- `FilterService.filterData()` (JPageFlow) operates on DTO lists, not entities
+**Frontière de Données (Service ↔ Référentiel)**
+- Les entités ne quittent jamais la couche `service/` — toujours mappées en DTOs via MapStruct
+- `FilterService.filterData()` (JPageFlow) opère sur des listes de DTOs, pas sur des entités
 
-**Print Boundary**
-- `PrintQueueService` owns two `LinkedBlockingQueue` instances (thermal / document)
-- `ThermalPrintService` and `DocumentPrintService` are queue consumers running on dedicated threads
-- No direct print call from controllers — always via `PrintQueueService`
+**Frontière d'Impression**
+- `PrintQueueService` possède deux instances `LinkedBlockingQueue` (thermique / document)
+- `ThermalPrintService` et `DocumentPrintService` sont des consommateurs de file s'exécutant sur des threads dédiés
+- Pas d'appel d'impression direct depuis les contrôleurs — toujours via `PrintQueueService`
 
-**Data Flow — POS Sale**
+**Flux de Données — Vente POS**
 ```
 Angular scanner.component
   → POST /api/pos/baskets/{id}/items (scan)
   → BasketController → BasketService
-  → ItemRepository (check sold status)
-  ← ScanResultDto (item added or error)
+  → ItemRepository (vérification état vendu)
+  ← ScanResultDto (article ajouté ou erreur)
 
 Angular basket.component
   → POST /api/pos/baskets/{id}/validate
   → BasketController → SaleService
-  → Item @Version optimistic lock → Sale persisted
-  ← 200 OK or 409 (conflict list)
-  → POST /api/print/invoice (optional)
+  → Item @Version verrouillage optimiste → Sale persisté
+  ← 200 OK ou 409 (liste de conflits)
+  → POST /api/print/invoice (optionnel)
   → PrintQueueService → DocumentPrintService
 ```
 
-**Data Flow — Phase Transition**
+**Flux de Données — Transition de Phase**
 ```
 Admin phase-controls.component
   → PUT /api/editions/{id}/phase
   → EditionController → EditionService
-  → Edition.phase updated
+  → Edition.phase mis à jour
   → SseEmitterRegistry.broadcast("phase-changed", payload)
-  → All connected EventSource clients receive event
-  → Angular phase.service updates Signal<Phase>
-  → Components react (basket cancelled if active)
+  → Tous les clients EventSource connectés reçoivent l'événement
+  → Angular phase.service met à jour Signal<Phase>
+  → Les composants réagissent (panier annulé si actif)
 ```
 
 ---
 
-## Architecture Validation Results
+## Résultats de Validation de l'Architecture
 
-### Coherence Validation ✅
+### Validation de Cohérence ✅
 
-**Decision Compatibility:**
-All technology choices are mutually compatible. Spring Boot 4.0.6 / Java 21 / Angular 21 / MariaDB / OpenPDF 3.0.0 / ZXing / Liquibase / MapStruct / Lombok operate without conflicts. One runtime note: JPageFlow declares `spring-data-commons:3.5.5` as a dependency; Spring Boot 4.0.6's BOM overrides this to Spring Data 4.x at runtime — no conflict expected, but verify on first build.
+**Compatibilité des Décisions :**
+Tous les choix technologiques sont mutuellement compatibles. Spring Boot 4.0.6 / Java 21 / Angular 21 / MariaDB / OpenPDF 3.0.0 / ZXing / Liquibase / MapStruct / Lombok fonctionnent sans conflits. Une note d'exécution : JPageFlow déclare `spring-data-commons:3.5.5` comme dépendance ; le BOM de Spring Boot 4.0.6 écrase cela avec Spring Data 4.x à l'exécution — pas de conflit attendu, mais à vérifier lors du premier build.
 
-**Pattern Consistency:**
-Implementation patterns are fully aligned with architectural decisions: JPageFlow for all paginated endpoints, RFC 7807 for all errors, SSE for phase notification, Signals for Angular state, BigDecimal for all monetary values.
+**Cohérence des Patrons :**
+Les patrons d'implémentation sont pleinement alignés avec les décisions architecturales : JPageFlow pour tous les points d'entrée paginés, RFC 7807 pour toutes les erreurs, SSE pour la notification de phase, Signals pour l'état Angular, BigDecimal pour toutes les valeurs monétaires.
 
-**Structure Alignment:**
-Project structure supports all architectural decisions. Layered backend (Controller → Service → Repository) enforced via package layout. Angular type-based structure (`components/`, `services/`, `models/`) consistent with standalone component model.
+**Alignement de la Structure :**
+La structure du projet supporte toutes les décisions architecturales. Backend en couches (Contrôleur → Service → Référentiel) appliqué via l'organisation des packages. Structure Angular par type (`components/`, `services/`, `models/`) cohérente avec le modèle de composants standalone.
 
 ---
 
-### Requirements Coverage Validation ✅
+### Validation de la Couverture des Exigences ✅
 
-**Feature Coverage:**
+**Couverture des Fonctionnalités :**
 
-| Feature group | Covered by |
+| Groupe de fonctionnalités | Couvert par |
 |---|---|
 | F1 — i18n | `messages_*.properties` + `assets/i18n/*.json` + ngx-translate |
-| F2 — Edition lifecycle | `edition/` + `shared/sse/` + `phase.service.ts` |
-| F3 — Seller & items | `seller/`, `item/`, `print/` |
-| F4 — POS | `pos/` + optimistic locking + SSE basket cancellation |
-| F5 — Post-sale | `payout/` |
-| F6 — Reporting | `report/` + OpenPDF 3.0.0 |
-| F7 — Users & auth | `user/` + Spring Security + Spring Session JDBC |
+| F2 — Cycle de vie des éditions | `edition/` + `shared/sse/` + `phase.service.ts` |
+| F3 — Vendeurs & articles | `seller/`, `item/`, `print/` |
+| F4 — POS | `pos/` + verrouillage optimiste + annulation de panier SSE |
+| F5 — Post-vente | `payout/` |
+| F6 — Rapports | `report/` + OpenPDF 3.0.0 |
+| F7 — Utilisateurs & auth | `user/` + Spring Security + Spring Session JDBC |
 | F8 — Infrastructure | Docker Compose + Liquibase + `application.properties` |
-| F9 — Print | `print/` + `LinkedBlockingQueue` + ESC/POS + OpenPDF |
-| F10 — Catalog | `item/controller/ItemCatalogController` + JPageFlow |
+| F9 — Impression | `print/` + `LinkedBlockingQueue` + ESC/POS + OpenPDF |
+| F10 — Catalogue | `item/controller/ItemCatalogController` + JPageFlow |
 
-**Non-Functional Requirements:**
+**Exigences Non Fonctionnelles :**
 
-| NFR | Addressed by |
+| NFR | Traité par |
 |---|---|
-| NFR-001 Performance (RPi 4) | Java 21 virtual threads; lean stack; no caching complexity |
-| NFR-002 Concurrency | Optimistic locking (`@Version`) + DB unique constraint + Testcontainers CI |
-| NFR-003 Financial accuracy | BigDecimal policy — enforced at pattern level |
-| NFR-004 Browser compatibility | REST + SPA; no browser-specific APIs |
-| NFR-005 Scanner compatibility | Angular key-code mapping in `scanner.component.ts` |
-| NFR-006 Reliability | Server-side transactions; Spring Session JDBC (sessions survive restart) |
-| NFR-007 GDPR | Anonymization on seller delete; no PII in logs — enforced in patterns |
+| NFR-001 Performance (RPi 4) | Threads virtuels Java 21 ; stack légère ; pas de complexité de cache |
+| NFR-002 Concurrence | Verrouillage optimiste (`@Version`) + contrainte unique BDD + CI Testcontainers |
+| NFR-003 Exactitude financière | Politique BigDecimal — appliquée au niveau des patrons |
+| NFR-004 Compatibilité navigateur | REST + SPA ; pas d'APIs spécifiques au navigateur |
+| NFR-005 Compatibilité scanner | Mapping de codes de touches Angular dans `scanner.component.ts` |
+| NFR-006 Fiabilité | Transactions côté serveur ; Spring Session JDBC (sessions survivent au redémarrage) |
+| NFR-007 RGPD | Anonymisation à la suppression du vendeur ; aucune DCP dans les journaux — appliqué dans les patrons |
 
 ---
 
-### Gap Analysis Results
+### Résultats de l'Analyse des Écarts
 
-**Gaps identified and resolved during validation:**
+**Écarts identifiés et résolus lors de la validation :**
 
-| Gap | Priority | Resolution |
+| Écart | Priorité | Résolution |
 |---|---|---|
-| Missing `InstanceConfig` entity (FR-073) | Critical | Added `shared/instanceconfig/` package + Liquibase `004-instance-config.xml` |
-| Admin password reset CLI (FR-063) | Important | Added `user/cli/AdminPasswordResetRunner.java` — Spring Boot `CommandLineRunner` triggered via `--reset-admin-password` arg |
+| Entité `InstanceConfig` manquante (FR-073) | Critique | Ajout du package `shared/instanceconfig/` + Liquibase `004-instance-config.xml` |
+| CLI de réinitialisation du mot de passe admin (FR-063) | Important | Ajout de `user/cli/AdminPasswordResetRunner.java` — Spring Boot `CommandLineRunner` déclenché via l'argument `--reset-admin-password` |
 
-**Remaining known issue (deferred):**
+**Problème connu restant (reporté) :**
 
-| Item | Status | Action |
+| Élément | Statut | Action |
 |---|---|---|
-| JPageFlow `BigDecimal` sort bug | Deferred — known | Fix in library before implementing price-based sort; test will fail until patched |
+| Bug de tri `BigDecimal` dans JPageFlow | Reporté — connu | Corriger dans la bibliothèque avant d'implémenter le tri par prix ; le test échouera jusqu'au correctif |
 
 ---
 
-### Architecture Completeness Checklist
+### Liste de Contrôle de Complétude Architecturale
 
-**Requirements Analysis**
-- [x] Project context thoroughly analyzed
-- [x] Scale and complexity assessed (~100 sellers, ~1,700 items, 3 POS workstations)
-- [x] Technical constraints identified (RPi 4, Docker Compose, license policy)
-- [x] Cross-cutting concerns mapped (phase state machine, i18n, GDPR, concurrency, print queue)
+**Analyse des Exigences**
+- [x] Contexte du projet analysé en profondeur
+- [x] Échelle et complexité évaluées (~100 vendeurs, ~1 700 articles, 3 postes POS)
+- [x] Contraintes techniques identifiées (RPi 4, Docker Compose, politique de licences)
+- [x] Préoccupations transversales cartographiées (machine à états de phase, i18n, RGPD, concurrence, file d'impression)
 
-**Architectural Decisions**
-- [x] Critical decisions documented with versions (Java 21, Spring Boot 4.0.6, Angular 21, OpenPDF 3.0.0)
-- [x] Technology stack fully specified
-- [x] Integration patterns defined (SSE, REST, JPageFlow, Spring Session JDBC)
-- [x] Performance considerations addressed (virtual threads, in-memory queue, no caching)
+**Décisions Architecturales**
+- [x] Décisions critiques documentées avec versions (Java 21, Spring Boot 4.0.6, Angular 21, OpenPDF 3.0.0)
+- [x] Stack technologique entièrement spécifiée
+- [x] Patrons d'intégration définis (SSE, REST, JPageFlow, Spring Session JDBC)
+- [x] Considérations de performance adressées (threads virtuels, file en mémoire, pas de cache)
 
-**Implementation Patterns**
-- [x] Naming conventions established (snake_case DB, camelCase JSON, kebab-case Angular files)
-- [x] Structure patterns defined (feature sub-packages backend, type-based Angular)
-- [x] Communication patterns specified (SSE events, RFC 7807 errors, JPageFlow pagination)
-- [x] Process patterns documented (loading states, error handling, validation, i18n keys)
+**Patrons d'Implémentation**
+- [x] Conventions de nommage établies (snake_case BDD, camelCase JSON, kebab-case fichiers Angular)
+- [x] Patrons de structure définis (sous-packages par fonctionnalité backend, Angular par type)
+- [x] Patrons de communication spécifiés (événements SSE, erreurs RFC 7807, pagination JPageFlow)
+- [x] Patrons de processus documentés (états de chargement, gestion d'erreurs, validation, clés i18n)
 
-**Project Structure**
-- [x] Complete directory structure defined (backend + frontend)
-- [x] Component boundaries established (shared/, feature packages, print boundary)
-- [x] Integration points mapped (API boundary, SSE, print queue, data flows)
-- [x] Requirements to structure mapping complete (F1–F10 + NFR-001–007)
-
----
-
-### Architecture Readiness Assessment
-
-**Overall Status: READY FOR IMPLEMENTATION**
-
-**Confidence level: High**
-
-**Key strengths:**
-- "Boring by design" stack — well-documented, maintainable, no exotic dependencies
-- All licenses permissive or weak-copyleft (MIT, Apache 2.0, LGPL) — no AGPL
-- Concurrency model explicitly tested via Testcontainers
-- Print queue failure mode documented and accepted
-- Phase state machine is the architectural spine — all features hang off it clearly
-
-**Areas for future enhancement (post-v1):**
-- JPageFlow BigDecimal fix (patch before price-sort feature)
-- Testcontainers CI pipeline (can be added incrementally)
-- Backup/restore mechanism (explicitly deferred to v2)
-- Per-edition commission override (out of scope v1)
+**Structure du Projet**
+- [x] Structure de répertoires complète définie (backend + frontend)
+- [x] Frontières des composants établies (shared/, packages de fonctionnalités, frontière d'impression)
+- [x] Points d'intégration cartographiés (frontière API, SSE, file d'impression, flux de données)
+- [x] Correspondance exigences-structure complète (F1–F10 + NFR-001–007)
 
 ---
 
-### Implementation Handoff
+### Évaluation de la Maturité Architecturale
 
-**First implementation story:** Project scaffolding
+**Statut Global : PRÊT POUR L'IMPLÉMENTATION**
+
+**Niveau de confiance : Élevé**
+
+**Points forts clés :**
+- Stack « ennuyeuse par conception » — bien documentée, maintenable, pas de dépendances exotiques
+- Toutes les licences sont permissives ou faiblement copyleft (MIT, Apache 2.0, LGPL) — pas d'AGPL
+- Modèle de concurrence explicitement testé via Testcontainers
+- Mode de défaillance de la file d'impression documenté et accepté
+- La machine à états de phase est la colonne vertébrale architecturale — toutes les fonctionnalités s'y accrochent clairement
+
+**Axes d'amélioration futurs (post-v1) :**
+- Correctif BigDecimal de JPageFlow (appliquer avant la fonctionnalité de tri par prix)
+- Pipeline CI Testcontainers (peut être ajouté de manière incrémentale)
+- Mécanisme de sauvegarde/restauration (explicitement reporté à la v2)
+- Override de commission par édition (hors périmètre v1)
+
+---
+
+### Passation pour l'Implémentation
+
+**Première story d'implémentation :** Génération du squelette du projet
 ```bash
 # Backend
 spring init --boot-version=4.0.6 --java-version=21 --build=maven \
@@ -919,12 +917,12 @@ spring init --boot-version=4.0.6 --java-version=21 --build=maven \
 ng new pluribourse-frontend --standalone --routing --style=scss
 ```
 
-**AI Agent Guidelines:**
-- Follow all architectural decisions exactly as documented — no local optimisations
-- Use `FilterService.filterData()` (JPageFlow) for every paginated/filterable endpoint
-- Never use `float` or `double` for monetary values — `BigDecimal` only
-- Never log PII — use entity IDs in logs
-- Return RFC 7807 Problem Details for all error responses
-- Follow `org.pluribourse.{feature}.{layer}` package structure strictly
-- Use `signal()` / `computed()` for Angular state — no `BehaviorSubject`
-- Refer to this document for all architectural questions before making local decisions
+**Directives pour l'Agent IA :**
+- Respecter scrupuleusement toutes les décisions architecturales telles que documentées — pas d'optimisations locales
+- Utiliser `FilterService.filterData()` (JPageFlow) pour chaque point d'entrée paginé/filtrable
+- Ne jamais utiliser `float` ou `double` pour les valeurs monétaires — `BigDecimal` uniquement
+- Ne jamais journaliser les DCP — utiliser les IDs d'entités dans les journaux
+- Retourner RFC 7807 Problem Details pour toutes les réponses d'erreur
+- Respecter strictement la structure de packages `org.pluribourse.{fonctionnalité}.{couche}`
+- Utiliser `signal()` / `computed()` pour l'état Angular — pas de `BehaviorSubject`
+- Se référer à ce document pour toute question architecturale avant de prendre des décisions locales

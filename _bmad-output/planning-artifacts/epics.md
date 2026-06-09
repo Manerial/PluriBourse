@@ -1,4 +1,4 @@
-﻿---
+---
 stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
   - '_bmad-output/planning-artifacts/prds/prd-PluriBourse-2026-06-08/prd.md'
@@ -8,1295 +8,1293 @@ inputDocuments:
   - '_bmad-output/planning-artifacts/ux-designs/ux-PluriBourse-2026-06-09/EXPERIENCE.md'
 ---
 
-# PluriBourse - Epic Breakdown
+# PluriBourse - Découpage en Épics
 
-## Overview
+## Vue d'ensemble
 
-This document provides the complete epic and story breakdown for PluriBourse, decomposing the requirements from the PRD, UX Design, and Architecture into implementable stories.
+Ce document présente le découpage complet en épics et en stories pour PluriBourse, en décomposant les exigences issues du PRD, du Design UX et de l'Architecture en stories implémentables.
 
-## Requirements Inventory
+## Inventaire des exigences
 
-### Functional Requirements
+### Exigences fonctionnelles
 
-**F1 â€” Internationalisation (EN/FR)**
-- FR-001: The user interface is available in English and French.
-- FR-002: The default UI language is detected from the browser on first access and stored in the user account preferences.
-- FR-003: Each user can change their language preference in account settings.
-- FR-004: All UI text is externalized â€” no UI text is hardcoded in the source code.
-- FR-005: The language of all printed documents is configured at the instance level by the admin.
-- FR-006: The document language setting is instance-wide and applies to all editions.
-- FR-007: The document language setting is modifiable by the admin at any time.
+**F1 — Internationalisation (EN/FR)**
+- FR-001 : L'interface utilisateur est disponible en anglais et en français.
+- FR-002 : La langue par défaut de l'interface est détectée à partir du navigateur lors du premier accès et enregistrée dans les préférences du compte utilisateur.
+- FR-003 : Chaque utilisateur peut modifier sa préférence de langue dans les paramètres de son compte.
+- FR-004 : Tous les textes de l'interface sont externalisés — aucun texte n'est codé en dur dans le code source.
+- FR-005 : La langue des documents imprimés est configurée au niveau de l'instance par l'administrateur.
+- FR-006 : Le paramètre de langue des documents s'applique à l'ensemble de l'instance et à toutes les éditions.
+- FR-007 : Le paramètre de langue des documents est modifiable par l'administrateur à tout moment.
 
-**F2 â€” Edition Management & Event Lifecycle**
-- FR-008: The admin can create an edition with a free-form name.
-- FR-009: Multiple editions can be created per year.
-- FR-010: Only one edition can be active at a time.
-- FR-011: Every phase transition â€” forward or backward â€” requires explicit admin confirmation via a dialog.
-- FR-012: The active phase of the current edition is displayed clearly to all connected users.
-- FR-013: The admin triggers edition closure via "Close Edition" in Post-sale phase. All documents are generated as PDFs in both languages. The edition becomes read-only.
-- FR-014: An archived edition cannot be deleted.
-- FR-015: Each edition's data is strictly isolated.
-- FR-016: The commission rate is configured at instance setup (default 20%), modifiable by the admin until the Deposit phase starts, then frozen for that edition.
-- FR-080: When creating a new edition, the admin can copy categories and table mapping from an existing edition.
-- FR-082: The admin can roll back the active phase one step at a time. Data preserved. Rollback from Closed unavailable after Clean Edition.
-- FR-088: Post-closure, the admin can trigger "Clean Edition" â€” permanently deletes item records. Requires explicit confirmation. Disables rollback to Post-sale.
+**F2 — Gestion des éditions et cycle de vie des événements**
+- FR-008 : L'administrateur peut créer une édition avec un nom libre.
+- FR-009 : Plusieurs éditions peuvent être créées par année.
+- FR-010 : Une seule édition peut être active à la fois.
+- FR-011 : Toute transition de phase — vers l'avant ou vers l'arrière — nécessite une confirmation explicite de l'administrateur via une boîte de dialogue.
+- FR-012 : La phase active de l'édition en cours est affichée clairement à tous les utilisateurs connectés.
+- FR-013 : L'administrateur déclenche la clôture de l'édition via « Clôturer l'édition » en phase Post-vente. Tous les documents sont générés en PDF dans les deux langues. L'édition passe en lecture seule.
+- FR-014 : Une édition archivée ne peut pas être supprimée.
+- FR-015 : Les données de chaque édition sont strictement isolées.
+- FR-016 : Le taux de commission est configuré lors de la mise en place de l'instance (20 % par défaut), modifiable par l'administrateur jusqu'au démarrage de la phase Dépôt, puis figé pour cette édition.
+- FR-080 : Lors de la création d'une nouvelle édition, l'administrateur peut copier les catégories et la correspondance tables depuis une édition existante.
+- FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les données sont préservées. Le retour arrière depuis l'état Clôturé est désactivé après le Nettoyage de l'édition.
+- FR-088 : Après clôture, l'administrateur peut déclencher le « Nettoyage de l'édition » — supprime définitivement les enregistrements d'articles. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
 
-**F3 â€” Seller & Product Management (Deposit Phase)**
-- FR-017: The admin configures the list of item categories per edition.
-- FR-018: The admin configures the category-to-table mapping per edition.
-- FR-019: Seller profiles persist across editions. Mandatory fields: last name, first name, email, phone number.
-- FR-020: The volunteer searches for an existing seller by name or email. If not found, a new profile is created.
-- FR-021: The admin can delete a seller profile (GDPR). Deletion anonymizes PII across all editions.
-- FR-022: For each item, the volunteer enters: name/description, price, category, complete/incomplete flag, and a comment if incomplete.
-- FR-023: The table is automatically assigned by the system based on the edition's category-to-table mapping.
-- FR-024: An item can be corrected or deleted only during the Deposit phase.
-- FR-025: The complete/incomplete flag and its comment are modifiable in any phase.
-- FR-026: A unique Code 128 barcode is generated server-side for each registered item.
-- FR-027: The item label displays: Code 128 barcode graphic, human-readable barcode number, item name, price, category, table number, incompleteness indicator if applicable. No seller name (GDPR).
-- FR-028: The system triggers label printing automatically when a volunteer validates a seller's deposit.
-- FR-029: Print jobs are queued server-side and executed sequentially.
-- FR-030: The printed roll follows: [seller separator: seller name + edition] â†’ [item label] â†’ [item separator] â†’ [item label] â†’ â€¦
-- FR-031: A deposit slip is printable per seller: item list, unit prices, expected net payout after commission.
-- FR-032: The thermal ticket width is configurable in admin settings (default: 57mm).
-- FR-043: A volunteer can create a lot by assigning a name and a global price, then adding multiple items to it.
-- FR-044: Each item in a lot has its own name/description and receives its own label.
-- FR-045: A lot item label displays: "Lot price: Xâ‚¬" in place of individual price, and "Indivisible lot: X/N".
+**F3 — Gestion des vendeurs et des articles (Phase Dépôt)**
+- FR-017 : L'administrateur configure la liste des catégories d'articles par édition.
+- FR-018 : L'administrateur configure la correspondance catégorie-table par édition.
+- FR-019 : Les profils vendeurs persistent d'une édition à l'autre. Champs obligatoires : nom, prénom, adresse e-mail, numéro de téléphone.
+- FR-020 : Le bénévole recherche un vendeur existant par nom ou e-mail. Si aucun résultat, un nouveau profil est créé.
+- FR-021 : L'administrateur peut supprimer un profil vendeur (RGPD). La suppression anonymise les données personnelles dans toutes les éditions.
+- FR-022 : Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire si incomplet.
+- FR-023 : La table est automatiquement assignée par le système selon la correspondance catégorie-table de l'édition.
+- FR-024 : Un article ne peut être corrigé ou supprimé que durant la phase Dépôt.
+- FR-025 : L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases.
+- FR-026 : Un code-barres Code 128 unique est généré côté serveur pour chaque article enregistré.
+- FR-027 : L'étiquette d'article affiche : graphique Code 128, numéro de code-barres lisible, nom de l'article, prix, catégorie, numéro de table, indicateur d'incomplétude si applicable. Aucun nom de vendeur (RGPD).
+- FR-028 : Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur.
+- FR-029 : Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.
+- FR-030 : Le rouleau imprimé suit le format : [séparateur vendeur : nom du vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …
+- FR-031 : Un bordereau de dépôt est imprimable par vendeur : liste des articles, prix unitaires, reversement net attendu après commission.
+- FR-032 : La largeur du ticket thermique est configurable dans les paramètres administrateur (défaut : 57 mm).
+- FR-043 : Un bénévole peut créer un lot en lui attribuant un nom et un prix global, puis en ajoutant plusieurs articles.
+- FR-044 : Chaque article d'un lot possède son propre nom/description et reçoit sa propre étiquette.
+- FR-045 : L'étiquette d'un article de lot affiche : « Prix du lot : X€ » à la place du prix individuel, et « Lot indivisible : X/N ».
 
-**F4 â€” Point of Sale (Sale Phase)**
-- FR-033: The cashier interface allows sales via USB HID barcode scanner.
-- FR-034: The scan component handles AZERTY/QWERTY keyboard layout differences transparently via key code mapping.
-- FR-035: Each scanned item is added to the current buyer's basket. System displays item name and price.
-- FR-036: Scanning an already-sold item displays an explicit error message. Item not added to basket.
-- FR-037: Scanning an incomplete item displays an informative warning. Item can still be sold.
-- FR-038: The cashier can remove one or more individual items from the basket before payment validation.
-- FR-039: Payment validation marks all basket items as sold and closes the transaction. No modification after.
-- FR-040: After validation, a buyer invoice is printable on demand.
-- FR-041: The invoice displays: item list, unit prices, total, association name, edition name, date. A lot appears as a single line.
-- FR-042: The application supports a minimum of 3 simultaneous cashier workstations without data conflicts.
-- FR-046: Scanning an item belonging to a lot displays the lot name in red with "X/N scanned" counter.
-- FR-047: The system blocks payment validation until the lot is complete (all N items scanned).
-- FR-048: Once complete, the lot is sold at its global lot price.
-- FR-081: If a cashier cannot complete a lot, they can remove the entire lot from the basket.
-- FR-090: If the admin triggers a phase transition while a volunteer has an active basket, the system cancels the basket and displays an explicit error message.
+**F4 — Point de vente (Phase Vente)**
+- FR-033 : L'interface caissier permet les ventes via un scanner code-barres USB HID.
+- FR-034 : Le composant de scan gère de manière transparente les différences de disposition de clavier AZERTY/QWERTY via une correspondance de codes de touches.
+- FR-035 : Chaque article scanné est ajouté au panier de l'acheteur courant. Le système affiche le nom et le prix de l'article.
+- FR-036 : Le scan d'un article déjà vendu affiche un message d'erreur explicite. L'article n'est pas ajouté au panier.
+- FR-037 : Le scan d'un article incomplet affiche un avertissement informatif. L'article peut tout de même être vendu.
+- FR-038 : Le caissier peut retirer un ou plusieurs articles du panier avant la validation du paiement.
+- FR-039 : La validation du paiement marque tous les articles du panier comme vendus et clôt la transaction. Aucune modification n'est possible après.
+- FR-040 : Après validation, une facture acheteur est imprimable à la demande.
+- FR-041 : La facture affiche : liste des articles, prix unitaires, total, nom de l'association, nom de l'édition, date. Un lot apparaît sur une seule ligne.
+- FR-042 : L'application supporte un minimum de 3 postes caissiers simultanés sans conflits de données.
+- FR-046 : Le scan d'un article appartenant à un lot affiche le nom du lot en rouge avec un compteur « X/N scannés ».
+- FR-047 : Le système bloque la validation du paiement tant que le lot n'est pas complet (tous les N articles scannés).
+- FR-048 : Une fois complet, le lot est vendu à son prix global.
+- FR-081 : Si un caissier ne peut pas compléter un lot, il peut retirer l'ensemble du lot du panier.
+- FR-090 : Si l'administrateur déclenche une transition de phase pendant qu'un bénévole a un panier actif, le système annule le panier et affiche un message d'erreur explicite.
 
-**F5 â€” Post-Sale & Payouts**
-- FR-049: In Post-sale phase, a sales summary ("Bilan de vente") is printable per seller.
-- FR-050: The sales summary contains: sold items, unsold items with table location, gross total, commission, net payout. A lot appears as a single line.
-- FR-051: To settle a seller, the volunteer enters the cash amount and clicks "Settle". Status changes to Settled.
-- FR-052: "Not collected" button transfers the full amount owed to association revenue.
-- FR-053: Unsettled sellers are identifiable with their phone number visible.
+**F5 — Post-vente et reversements**
+- FR-049 : En phase Post-vente, un bilan de vente est imprimable par vendeur.
+- FR-050 : Le bilan de vente contient : articles vendus, articles invendus avec emplacement de table, total brut, commission, reversement net. Un lot apparaît sur une seule ligne.
+- FR-051 : Pour solder un vendeur, le bénévole saisit le montant en espèces et clique sur « Solder ». Le statut passe à Soldé.
+- FR-052 : Le bouton « Non réclamé » transfère l'intégralité du montant dû en recettes de l'association.
+- FR-053 : Les vendeurs non soldés sont identifiables avec leur numéro de téléphone visible.
 
-**F6 â€” Reporting**
-- FR-054: A daily summary is generatable by the admin during Sale phase. Covers current calendar day: items sold/unsold, revenue, commission.
-- FR-055: An edition summary is generated at edition closure: total items sold/unsold, gross revenue, total commission.
-- FR-056: An outstanding sellers report lists unsettled sellers with phone number.
-- FR-057: All reports are generated as PDF.
-- FR-058: Reports are accessible to the admin only.
-- FR-059: Archived editions display aggregate metrics and seller profiles in read-only mode. Item-level detail via PDF only.
+**F6 — Rapports**
+- FR-054 : Un bilan journalier est générable par l'administrateur en phase Vente. Couvre la journée calendaire en cours : articles vendus/invendus, recettes, commission.
+- FR-055 : Un bilan d'édition est généré à la clôture de l'édition : total des articles vendus/invendus, recettes brutes totales, commission totale.
+- FR-056 : Un rapport des vendeurs non soldés liste les vendeurs avec leur numéro de téléphone.
+- FR-057 : Tous les rapports sont générés en PDF.
+- FR-058 : Les rapports sont accessibles à l'administrateur uniquement.
+- FR-059 : Les éditions archivées affichent les métriques agrégées et les profils vendeurs en lecture seule. Le détail au niveau des articles est accessible via PDF uniquement.
 
-**F7 â€” User Accounts & Access Control**
-- FR-060: The admin creates, modifies, and deactivates volunteer accounts. Admin can reset a volunteer's password.
-- FR-061: There is one admin account per instance.
-- FR-062: At first launch, the admin account is initialized with Admin/Admin credentials. Admin is forced to change password on first login.
-- FR-063: If the admin loses their password, a command run on the server generates a temporary password. Admin forced to change it on next login.
-- FR-064: Admin and Volunteer roles are strictly separated. Admin cannot access volunteer interfaces.
-- FR-065: The volunteer interface adapts to the active phase. In Post-sale, volunteer can print sales summary.
-- FR-066: Sessions do not expire automatically.
-- FR-067: Each account stores a UI language preference (EN/FR), detected from browser on creation, modifiable in settings.
+**F7 — Comptes utilisateurs et contrôle d'accès**
+- FR-060 : L'administrateur crée, modifie et désactive les comptes bénévoles. L'administrateur peut réinitialiser le mot de passe d'un bénévole.
+- FR-061 : Il existe un seul compte administrateur par instance.
+- FR-062 : Au premier lancement, le compte administrateur est initialisé avec les identifiants Admin/Admin. L'administrateur est forcé de changer son mot de passe à la première connexion.
+- FR-063 : Si l'administrateur perd son mot de passe, une commande exécutée sur le serveur génère un mot de passe temporaire. L'administrateur est forcé de le changer à la connexion suivante.
+- FR-064 : Les rôles Administrateur et Bénévole sont strictement séparés. L'administrateur ne peut pas accéder aux interfaces bénévoles.
+- FR-065 : L'interface bénévole s'adapte à la phase active. En Post-vente, le bénévole peut imprimer le bilan de vente.
+- FR-066 : Les sessions n'expirent pas automatiquement.
+- FR-067 : Chaque compte mémorise une préférence de langue d'interface (EN/FR), détectée depuis le navigateur à la création, modifiable dans les paramètres.
 
-**F8 â€” Infrastructure & Deployment**
-- FR-068: The server runs on Linux, macOS, and Windows without code changes.
-- FR-069: Minimum specification: Raspberry Pi 4 (2 GB RAM). SSD/USB storage strongly recommended.
-- FR-070: The application is deployed via Docker Compose (Spring Boot + MariaDB). Data in persistent Docker volumes.
-- FR-071: Updates applied with: `docker compose pull && docker compose up -d`. Data preserved.
-- FR-072: Client workstations access the application via browser â€” no local installation required.
-- FR-073: An admin settings page centralizes instance configuration: association name, commission rate, document language, thermal ticket width.
-- FR-074: The installation guide targets non-technical users. Covers Docker installation, startup, initial configuration, password reset, and update procedure per OS (Linux, macOS, Windows).
+**F8 — Infrastructure et déploiement**
+- FR-068 : Le serveur fonctionne sur Linux, macOS et Windows sans modification du code.
+- FR-069 : Configuration minimale : Raspberry Pi 4 (2 Go de RAM). Stockage SSD/USB fortement recommandé.
+- FR-070 : L'application est déployée via Docker Compose (Spring Boot + MariaDB). Les données sont dans des volumes Docker persistants.
+- FR-071 : Les mises à jour s'appliquent avec : `docker compose pull && docker compose up -d`. Les données sont préservées.
+- FR-072 : Les postes clients accèdent à l'application via un navigateur — aucune installation locale requise.
+- FR-073 : Une page de paramètres administrateur centralise la configuration de l'instance : nom de l'association, taux de commission, langue des documents, largeur du ticket thermique.
+- FR-074 : Le guide d'installation cible les utilisateurs non techniques. Couvre l'installation de Docker, le démarrage, la configuration initiale, la réinitialisation du mot de passe et la procédure de mise à jour par OS (Linux, macOS, Windows).
 
-**F9 â€” Print Infrastructure**
-- FR-075: All printing is routed through the central server â€” no printer required on client workstations.
-- FR-076: Thermal printer (item labels): connected via USB. Sequential print queue.
-- FR-077: Standard printer (A4 documents): connected via USB. PDF sent directly to printer without preview.
-- FR-078: A user triggers printing from the interface; processed by server, no action required on client.
-- FR-079: In case of print error, the user is notified in the interface with an explicit message.
+**F9 — Infrastructure d'impression**
+- FR-075 : Toute l'impression est acheminée via le serveur central — aucune imprimante n'est requise sur les postes clients.
+- FR-076 : Imprimante thermique (étiquettes articles) : connectée en USB. File d'attente séquentielle.
+- FR-077 : Imprimante standard (documents A4) : connectée en USB. Le PDF est envoyé directement à l'imprimante sans aperçu.
+- FR-078 : Un utilisateur déclenche l'impression depuis l'interface ; traité par le serveur, aucune action requise côté client.
+- FR-079 : En cas d'erreur d'impression, l'utilisateur est notifié dans l'interface avec un message explicite.
 
-**F10 â€” Item Catalog**
-- FR-083: A filterable, sortable item catalog is accessible to admin and volunteers during all phases of the active edition.
-- FR-084: Catalog filtered by: name/description, barcode number, category, table, sold/unsold status, complete/incomplete flag, seller name.
-- FR-085: Catalog sortable by any visible column.
-- FR-086: Catalog displays items from active edition only. Not available after Clean Edition action.
-- FR-087: During Sale phase, a volunteer can add an item from catalog directly to current basket (fallback for unreadable barcodes). Prevents adding already-sold or already-in-basket items.
-- FR-089: Commission applies normally to items sold with incomplete flag.
+**F10 — Catalogue articles**
+- FR-083 : Un catalogue articles filtrable et triable est accessible aux administrateurs et aux bénévoles durant toutes les phases de l'édition active.
+- FR-084 : Catalogue filtré par : nom/description, numéro de code-barres, catégorie, table, statut vendu/invendu, indicateur complet/incomplet, nom du vendeur.
+- FR-085 : Catalogue triable par n'importe quelle colonne visible.
+- FR-086 : Le catalogue affiche uniquement les articles de l'édition active. Non disponible après l'action Nettoyage de l'édition.
+- FR-087 : En phase Vente, un bénévole peut ajouter un article du catalogue directement au panier courant (solution de secours pour les codes-barres illisibles). Empêche l'ajout d'articles déjà vendus ou déjà dans le panier.
+- FR-089 : La commission s'applique normalement aux articles vendus avec l'indicateur incomplet.
 
-### NonFunctional Requirements
+### Exigences non fonctionnelles
 
-- NFR-001: Performance â€” application is usable on Raspberry Pi 4 (2 GB RAM) without noticeable degradation under event load (3 simultaneous workstations, ~1,700 items).
-- NFR-002: Concurrency â€” simultaneous operations from multiple workstations do not generate data conflicts.
-- NFR-003: Financial Accuracy â€” payout calculations accurate to the cent. All monetary values use BigDecimal â€” never float or double.
-- NFR-004: Browser Compatibility â€” interface works on any modern browser (Chrome, Firefox, Edge, Safari) on any OS.
-- NFR-005: Scanner Compatibility â€” USB HID scanners function without configuration, regardless of keyboard layout (AZERTY/QWERTY).
-- NFR-006: Reliability â€” no data loss on unexpected browser close or client workstation failure.
-- NFR-007: GDPR â€” seller personal data deletable on request. Anonymized data in archived editions must not allow re-identification. No PII in application logs.
+- NFR-001 : Performance — l'application est utilisable sur Raspberry Pi 4 (2 Go de RAM) sans dégradation notable sous la charge d'un événement (3 postes simultanés, ~1 700 articles).
+- NFR-002 : Concurrence — les opérations simultanées depuis plusieurs postes ne génèrent pas de conflits de données.
+- NFR-003 : Précision financière — les calculs de reversement sont précis au centime. Toutes les valeurs monétaires utilisent BigDecimal — jamais float ou double.
+- NFR-004 : Compatibilité navigateurs — l'interface fonctionne sur tout navigateur moderne (Chrome, Firefox, Edge, Safari) sur tout système d'exploitation.
+- NFR-005 : Compatibilité scanners — les scanners USB HID fonctionnent sans configuration, quelle que soit la disposition du clavier (AZERTY/QWERTY).
+- NFR-006 : Fiabilité — aucune perte de données en cas de fermeture inattendue du navigateur ou de défaillance d'un poste client.
+- NFR-007 : RGPD — les données personnelles des vendeurs sont supprimables sur demande. Les données anonymisées dans les éditions archivées ne doivent pas permettre la réidentification. Aucune donnée personnelle dans les logs applicatifs.
 
-### Additional Requirements
+### Exigences complémentaires
 
-Architecture-derived requirements that impact implementation:
+Exigences issues de l'architecture ayant un impact sur l'implémentation :
 
-- ARCH-001: Project scaffolding is the first implementation story â€” Spring Initializr (Spring Boot 4.0.6, Java 21, Maven) + `ng new pluribourse-frontend --standalone --routing --style=scss`.
-- ARCH-002: Spring Session JDBC (MariaDB) for session persistence â€” sessions must survive container restarts during events.
-- ARCH-003: Optimistic locking (`@Version` on `Item` entity) + DB UNIQUE constraint on sold item state for POS concurrency. Conflict detected at payment validation, returns 409 with conflicting item list.
-- ARCH-004: Testcontainers (MariaDB) integration test required for POS concurrency before F4 ships â€” H2 locking behavior differs from MariaDB.
-- ARCH-005: JPageFlow (`FilterService.filterData()`) for all paginated/filterable list endpoints. Known bug: BigDecimal sort broken in v1.5.0 â€” fix required before price-sort feature.
-- ARCH-006: Liquibase migrations: 4 initial changesets â€” 001-core-schema (users + seller_profile_id nullable FK), 002-spring-session, 003-category-table-mapping, 004-instance-config.
-- ARCH-007: MapStruct for all entityâ†”DTO mapping (manually added post Spring Initializr, not in Initializr UI).
-- ARCH-008: OpenPDF 3.0.0 (LGPL) for all PDF generation. iText 7 (AGPL) explicitly rejected.
-- ARCH-009: escpos-coffee (or equivalent) for ESC/POS thermal printing. Two independent LinkedBlockingQueue instances (thermal / A4) â€” at-most-once delivery, re-triggerable from UI.
-- ARCH-010: ZXing for Code 128 barcode generation (Apache 2.0).
-- ARCH-011: Role `SELLER` declared in the codebase and blocked at 403 in v1 via `SecurityConfig`. No SELLER endpoints or UI until v2.
-- ARCH-012: SSE (`SseEmitterRegistry`) must be initialized before phase transition endpoints. Events: `phase-changed` (payload: editionId, newPhase, previousPhase) and `basket-cancelled`.
-- ARCH-013: RFC 7807 Problem Details for all error responses via `@ControllerAdvice`.
-- ARCH-014: Springdoc OpenAPI enabled in `dev` profile only, disabled in `prod`.
-- ARCH-015: Cross-component build order â€” Phase state machine (F2) must be implemented before F3, F4, F5, F10. Spring Session JDBC requires Liquibase migration before any auth feature. Print queue consumers must be Spring beans before F3/F4 printing.
-- ARCH-016: ESC/POS label format: seller separator â†’ item label (Code 128 bitmap, barcode number, name, price, category, table, incompleteness indicator) â†’ item separator â†’ â€¦
+- ARCH-001 : La mise en place du squelette de projet est la première story d'implémentation — Spring Initializr (Spring Boot 4.0.6, Java 21, Maven) + `ng new pluribourse-frontend --standalone --routing --style=scss`.
+- ARCH-002 : Spring Session JDBC (MariaDB) pour la persistance des sessions — les sessions doivent survivre aux redémarrages du conteneur pendant les événements.
+- ARCH-003 : Verrouillage optimiste (`@Version` sur l'entité `Item`) + contrainte UNIQUE en base sur l'état article vendu pour la concurrence au POS. Le conflit est détecté à la validation du paiement, retourne un 409 avec la liste des articles en conflit.
+- ARCH-004 : Un test d'intégration Testcontainers (MariaDB) pour la concurrence POS est requis avant la livraison de F4 — le comportement de verrouillage H2 diffère de MariaDB.
+- ARCH-005 : JPageFlow (`FilterService.filterData()`) pour tous les endpoints de listes paginées/filtrables. Bug connu : le tri BigDecimal est cassé en v1.5.0 — correctif requis avant la fonctionnalité de tri par prix.
+- ARCH-006 : Migrations Liquibase : 4 changesets initiaux — 001-core-schema (users + FK nullable seller_profile_id), 002-spring-session, 003-category-table-mapping, 004-instance-config.
+- ARCH-007 : MapStruct pour toute la correspondance entité↔DTO (ajouté manuellement après Spring Initializr, absent de l'interface Initializr).
+- ARCH-008 : OpenPDF 3.0.0 (LGPL) pour toute la génération de PDF. iText 7 (AGPL) explicitement rejeté.
+- ARCH-009 : escpos-coffee (ou équivalent) pour l'impression thermique ESC/POS. Deux instances indépendantes de `LinkedBlockingQueue` (thermique / A4) — livraison au plus une fois, redéclenchable depuis l'interface.
+- ARCH-010 : ZXing pour la génération de codes-barres Code 128 (Apache 2.0).
+- ARCH-011 : Le rôle `SELLER` est déclaré dans le code et bloqué en 403 dans la v1 via `SecurityConfig`. Aucun endpoint ni interface SELLER jusqu'à la v2.
+- ARCH-012 : SSE (`SseEmitterRegistry`) doit être initialisé avant les endpoints de transition de phase. Événements : `phase-changed` (payload : editionId, newPhase, previousPhase) et `basket-cancelled`.
+- ARCH-013 : RFC 7807 Problem Details pour toutes les réponses d'erreur via `@ControllerAdvice`.
+- ARCH-014 : Springdoc OpenAPI activé dans le profil `dev` uniquement, désactivé en `prod`.
+- ARCH-015 : Ordre de build inter-composants — la machine à états des phases (F2) doit être implémentée avant F3, F4, F5, F10. Spring Session JDBC nécessite la migration Liquibase avant toute fonctionnalité d'authentification. Les consommateurs de la file d'impression doivent être des beans Spring avant l'impression F3/F4.
+- ARCH-016 : Format d'étiquette ESC/POS : séparateur vendeur → étiquette article (bitmap Code 128, numéro de code-barres, nom, prix, catégorie, table, indicateur d'incomplétude) → séparateur article → …
 
-### UX Design Requirements
+### Exigences UX Design
 
-- UX-DR1: Implement Angular Material 3 global theme with all DESIGN.md design tokens: coral primary (`#C44626` light / `#F07040` dark), warm beige surfaces (`#FFFBF9` light / `#1A0C06` dark), sidebar-bg (`#2A100A`), semantic status colors (success green `#166534`/`#F0FDF4`, warning coral-container, error red `#BA1A1A`/`#FFDAD6`), elevation tokens (3 levels), shape/rounded tokens (5 levels: 4/8/12/20/999px), spacing scale (base-4: 4/8/16/24/32/48/64px).
-- UX-DR2: Implement DM Sans font (Google Fonts, SIL OFL) with 8-level typography scale â€” display (32px/700) to label-sm (12px/600 uppercase). Minimum font size 12px enforced.
-- UX-DR3: Implement `AppLayoutComponent` with fixed topbar (56px height) + optional sidebar (200px width, admin only, non-collapsable in v1) + content zone (24px padding, max 640px for forms, unlimited for tables).
-- UX-DR4: Implement phase chip component (topbar center): pill rounded-full, primary-container background, â— coral indicator, real-time SSE update with 150ms fade transition. Clickable admin (â†’ phase control page), non-clickable volunteer. aria-label "Phase actuelle : [phase]".
-- UX-DR5: Implement role badge component (topbar right): pill rounded-full, admin style (primary-container), volunteer style (surface-variant), label-sm uppercase.
-- UX-DR6: Implement confirm dialog component: rounded-xl, elevation level-3, 50% dark overlay, title + consequence description + confirm button + cancel (ghost) button, focus trapped, initial focus on cancel button, Echap closes.
-- UX-DR7: Implement inline notification component: primary-container background, 3px left border coral, Material Symbols `warning` icon, appears below triggering element in flow (not toast), persists until resolution.
-- UX-DR8: Implement toast component: bottom-right position, success (4s auto-dismiss), error system (persistent until interaction), max 1 simultaneous toast.
-- UX-DR9: Implement sidebar navigation component (admin only): dark background sidebar-bg `#2A100A`, flat navigation (no submenus), sections separated by label-sm uppercase labels ("Ã‰dition active" / "Gestion"), active item determined by current route (primary coral background + white text), Material Symbols 18px icons.
-- UX-DR10: Implement scanner input component: auto-focused on caisse open, auto-refocus after 500ms keyboard inactivity, AZERTY/QWERTY key code mapping, Enter/`\n` triggers processing, no debounce, aria-label "Scanner ou saisir un code-barres", aria-live="polite" on scan result zone.
-- UX-DR11: Implement filterable/sortable list pattern with `MatPaginator` (default page size 50), column header click sorting (â†‘â†“ indicator), inline filters above list. Used by item catalog and vendor list.
-- UX-DR12: Implement skeleton loading state (3â€“5 Angular Material skeleton rows) for lists during initial data load. No global spinner.
-- UX-DR13: Implement empty state component: centered Material Symbol icon + descriptive phrase + primary action button. Always offers an exit. Used by vendor list, catalog, results filtered empty (with "Clear filters" action).
-- UX-DR14: Implement basket POS component: item list with name + unit price, individual remove button (close icon per line), lot grouping (lot header in red with "X/N scannÃ©s" counter + lot subtotal, no individual item price), "Retirer le lot entier" button from first lot item, "Valider" blocked if lot incomplete, basket auto-cleared on SSE basket-cancelled.
-- UX-DR15: Implement deposit form flow (volunteer): seller search by name/email â†’ "CrÃ©er un profil" if not found â†’ item registration (name, price, category selector, complete/incomplete checkbox + comment field) with auto-assigned table display. Autofocus on seller search field on page load.
-- UX-DR16: Implement categories & tables admin component: editable mode before Deposit phase starts, read-only after. On new edition: "Copy from existing edition" (edition selector dropdown) or "Configure manually" option.
-- UX-DR17: Implement reports admin page with phase-conditional content sections: daily summary section (Sale phase only, refresh button), synthesis section (Post-sale + Closed, read-only), CSV export buttons (catalog + payouts, Post-sale + Closed, direct download no dialog), printable outstanding sellers list (Post-sale, opens browser print view).
-- UX-DR18: Implement "Clean Edition" action: secondary error-color button, irreversible confirmation dialog ("Supprimer tous les articles de cette Ã©dition. Cette action est irrÃ©versible."), post-clean empty state "Ã‰dition nettoyÃ©e â€” aucun article." without action, button disappears after clean. Button visible only if items still exist.
-- UX-DR19: Implement print button feedback pattern: spinner in button during queue submission, success toast (4s), persistent error toast if printer offline with "Fermer" button. Always re-triggerable.
-- UX-DR20: Implement WCAG 2.2 AA accessibility floor: focus rings on all interactive elements (never suppressed), tab order following visual reading order, focus trap in confirmation dialogs, screen reader announcements via aria-live/aria-label/aria-describedby, 44Ã—44px minimum touch targets, decorative icons aria-hidden="true", semantic icons with accompanying text or aria-label.
-- UX-DR21: Implement phase transition handling in volunteer POS interface: SSE `basket-cancelled` event â†’ persistent toast "La phase a changÃ©. Votre panier a Ã©tÃ© annulÃ©." â†’ basket cleared â†’ scanner disabled until page reload.
-- UX-DR22: Implement settlement/payout print button on volunteer settlement list (per vendor row, after settlement) and on admin vendor detail page. Spinner feedback during queue, toast on result.
+- UX-DR1 : Implémenter le thème global Angular Material 3 avec tous les tokens de design du fichier DESIGN.md : primaire corail (`#C44626` clair / `#F07040` sombre), surfaces beige chaud (`#FFFBF9` clair / `#1A0C06` sombre), fond de la barre latérale (`#2A100A`), couleurs de statut sémantiques (succès vert `#166534`/`#F0FDF4`, avertissement corail-container, erreur rouge `#BA1A1A`/`#FFDAD6`), tokens d'élévation (3 niveaux), tokens de forme/arrondi (5 niveaux : 4/8/12/20/999px), échelle d'espacement (base-4 : 4/8/16/24/32/48/64px).
+- UX-DR2 : Implémenter la police DM Sans (Google Fonts, SIL OFL) avec une échelle typographique à 8 niveaux — display (32px/700) à label-sm (12px/600 majuscules). Taille de police minimale de 12px imposée.
+- UX-DR3 : Implémenter `AppLayoutComponent` avec une barre supérieure fixe (hauteur 56px) + barre latérale optionnelle (largeur 200px, admin uniquement, non rétractable en v1) + zone de contenu (padding 24px, max 640px pour les formulaires, illimité pour les tableaux).
+- UX-DR4 : Implémenter le composant chip de phase (centre de la barre supérieure) : pill arrondie, fond primary-container, indicateur ● corail, mise à jour en temps réel via SSE avec transition de fondu 150ms. Cliquable pour l'admin (→ page de contrôle de phase), non cliquable pour le bénévole. aria-label « Phase actuelle : [phase] ».
+- UX-DR5 : Implémenter le composant badge de rôle (droite de la barre supérieure) : pill arrondie, style admin (primary-container), style bénévole (surface-variant), label-sm majuscules.
+- UX-DR6 : Implémenter le composant boîte de dialogue de confirmation : rounded-xl, élévation niveau 3, superposition sombre à 50%, titre + description des conséquences + bouton confirmer + bouton annuler (ghost), focus piégé, focus initial sur le bouton annuler, Échap ferme la fenêtre.
+- UX-DR7 : Implémenter le composant notification inline : fond primary-container, bordure gauche de 3px corail, icône Material Symbols `warning`, apparaît sous l'élément déclencheur dans le flux (pas de toast), persiste jusqu'à résolution.
+- UX-DR8 : Implémenter le composant toast : position bas-droite, succès (auto-fermeture 4s), système d'erreur (persistant jusqu'à interaction), max 1 toast simultané.
+- UX-DR9 : Implémenter le composant de navigation latérale (admin uniquement) : fond sombre sidebar-bg `#2A100A`, navigation plate (sans sous-menus), sections séparées par des labels label-sm en majuscules (« Édition active » / « Gestion »), élément actif déterminé par la route courante (fond corail primaire + texte blanc), icônes Material Symbols 18px.
+- UX-DR10 : Implémenter le composant de saisie scanner : auto-focus à l'ouverture de la caisse, re-focus automatique après 500ms d'inactivité clavier, correspondance de codes de touches AZERTY/QWERTY, Entrée/`\n` déclenche le traitement, pas de debounce, aria-label « Scanner ou saisir un code-barres », aria-live="polite" sur la zone de résultat du scan.
+- UX-DR11 : Implémenter le pattern liste filtrable/triable avec `MatPaginator` (taille de page par défaut 50), tri par clic sur l'en-tête de colonne (indicateur ↑↓), filtres inline au-dessus de la liste. Utilisé par le catalogue articles et la liste vendeurs.
+- UX-DR12 : Implémenter l'état de chargement squelette (3–5 lignes squelettes Angular Material) pour les listes lors du chargement initial des données. Pas de spinner global.
+- UX-DR13 : Implémenter le composant état vide : icône Material Symbol centrée + phrase descriptive + bouton d'action primaire. Propose toujours une sortie. Utilisé par la liste vendeurs, le catalogue, les résultats filtrés vides (avec action « Effacer les filtres »).
+- UX-DR14 : Implémenter le composant panier POS : liste d'articles avec nom + prix unitaire, bouton de suppression individuel (icône fermer par ligne), regroupement par lot (en-tête de lot en rouge avec compteur « X/N scannés » + sous-total du lot, sans prix individuel par article), bouton « Retirer le lot entier » depuis le premier article du lot, « Valider » bloqué si lot incomplet, panier auto-vidé sur événement SSE basket-cancelled.
+- UX-DR15 : Implémenter le flux formulaire de dépôt (bénévole) : recherche vendeur par nom/email → « Créer un profil » si introuvable → enregistrement d'article (nom, prix, sélecteur de catégorie, case à cocher complet/incomplet + champ commentaire) avec affichage de la table auto-assignée. Autofocus sur le champ de recherche vendeur au chargement de la page.
+- UX-DR16 : Implémenter le composant admin catégories & tables : mode éditable avant le démarrage de la phase Dépôt, lecture seule après. Sur nouvelle édition : option « Copier depuis une édition existante » (liste déroulante de sélection d'édition) ou « Configurer manuellement ».
+- UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue), liste des vendeurs non soldés imprimable (Post-vente, ouvre la vue d'impression du navigateur).
+- UX-DR18 : Implémenter l'action « Nettoyage de l'édition » : bouton secondaire couleur d'erreur, boîte de dialogue de confirmation irréversible (« Supprimer tous les articles de cette édition. Cette action est irréversible. »), état vide post-nettoyage « Édition nettoyée — aucun article. » sans action, bouton disparaît après le nettoyage. Bouton visible uniquement si des articles existent encore.
+- UX-DR19 : Implémenter le pattern de retour visuel du bouton d'impression : spinner dans le bouton pendant la soumission à la file d'attente, toast de succès (4s), toast d'erreur persistant si l'imprimante est hors ligne avec bouton « Fermer ». Toujours redéclenchable.
+- UX-DR20 : Implémenter le socle d'accessibilité WCAG 2.2 AA : anneaux de focus sur tous les éléments interactifs (jamais supprimés), ordre de tabulation suivant l'ordre de lecture visuel, piège de focus dans les boîtes de dialogue de confirmation, annonces pour lecteurs d'écran via aria-live/aria-label/aria-describedby, cibles tactiles minimales de 44×44px, icônes décoratives aria-hidden="true", icônes sémantiques avec texte accompagnateur ou aria-label.
+- UX-DR21 : Implémenter la gestion des transitions de phase dans l'interface POS bénévole : événement SSE `basket-cancelled` → toast persistant « La phase a changé. Votre panier a été annulé. » → panier vidé → scanner désactivé jusqu'au rechargement de la page.
+- UX-DR22 : Implémenter le bouton d'impression bilan/reversement sur la liste de solde bénévole (par ligne vendeur, après solde) et sur la page de détail vendeur admin. Retour visuel spinner pendant la file d'attente, toast sur le résultat.
 
-### FR Coverage Map
+### Carte de couverture FR
 
-- FR-001: Epic 1 â€” i18n UI available in EN/FR
-- FR-002: Epic 1 â€” Browser language detection â†’ user preference
-- FR-003: Epic 1 â€” User can change language preference in account settings
-- FR-004: Epic 1 â€” All UI text externalized (no hardcoded strings)
-- FR-005: Epic 1 â€” Document language configured at instance level
-- FR-006: Epic 1 â€” Document language is instance-wide
-- FR-007: Epic 1 â€” Document language modifiable by admin
-- FR-008: Epic 2 â€” Admin creates edition with free-form name
-- FR-009: Epic 2 â€” Multiple editions per year
-- FR-010: Epic 2 â€” Only one active edition at a time
-- FR-011: Epic 2 â€” Phase transition requires confirmation dialog
-- FR-012: Epic 2 â€” Active phase displayed to all users
-- FR-013: Epic 2 â€” Edition closure generates PDFs, edition becomes read-only
-- FR-014: Epic 2 â€” Archived edition cannot be deleted
-- FR-015: Epic 2 â€” Edition data strictly isolated
-- FR-016: Epic 2 â€” Commission rate frozen once Deposit phase starts
-- FR-017: Epic 3 â€” Admin configures item categories per edition
-- FR-018: Epic 3 â€” Admin configures category-to-table mapping
-- FR-019: Epic 3 â€” Seller profiles persist across editions
-- FR-020: Epic 3 â€” Volunteer searches/creates seller profiles
-- FR-021: Epic 3 â€” Admin can delete seller profile (GDPR anonymization)
-- FR-022: Epic 3 â€” Volunteer enters item details
-- FR-023: Epic 3 â€” Table auto-assigned from category mapping
-- FR-024: Epic 3 â€” Item correctable/deletable during Deposit phase only
-- FR-025: Epic 3 â€” Complete/incomplete flag modifiable in any phase
-- FR-026: Epic 3 â€” Code 128 barcode generated server-side per item
-- FR-027: Epic 3 â€” Item label format (barcode, name, price, category, table, incompleteness)
-- FR-028: Epic 3 â€” Labels printed automatically on deposit validation
-- FR-029: Epic 3 â€” Print jobs queued sequentially server-side
-- FR-030: Epic 3 â€” Thermal roll format: seller separator â†’ item labels
-- FR-031: Epic 3 â€” Deposit slip printable per seller
-- FR-032: Epic 3 â€” Thermal ticket width configurable (default 57mm)
-- FR-033: Epic 4 â€” Cashier interface with USB HID scanner
-- FR-034: Epic 4 â€” AZERTY/QWERTY transparent handling via key code mapping
-- FR-035: Epic 4 â€” Scanned item added to basket with name and price
-- FR-036: Epic 4 â€” Already-sold item scan: error message, not added
-- FR-037: Epic 4 â€” Incomplete item scan: warning, still sellable
-- FR-038: Epic 4 â€” Cashier can remove items from basket before validation
-- FR-039: Epic 4 â€” Payment validation marks items sold, closes transaction
-- FR-040: Epic 4 â€” Buyer invoice printable on demand after validation
-- FR-041: Epic 4 â€” Invoice format: item list, prices, total, association, edition, date
-- FR-042: Epic 4 â€” Minimum 3 simultaneous cashier workstations without conflicts
-- FR-043: Epic 3 â€” Volunteer can create a lot with global price + multiple items
-- FR-044: Epic 3 â€” Each lot item has its own name and label
-- FR-045: Epic 3 â€” Lot item label shows lot price and "Indivisible lot: X/N"
-- FR-046: Epic 4 â€” Scanning lot item shows lot name in red + "X/N scanned" counter
-- FR-047: Epic 4 â€” Validation blocked until lot is complete
-- FR-048: Epic 4 â€” Complete lot sold at global lot price
-- FR-049: Epic 5 â€” Sales summary printable per seller in Post-sale phase
-- FR-050: Epic 5 â€” Sales summary: sold items, unsold items + table, gross total, commission, net payout
-- FR-051: Epic 5 â€” Volunteer settles seller: enters cash amount, clicks Settle
-- FR-052: Epic 5 â€” "Not collected" button transfers payout to association revenue
-- FR-053: Epic 5 â€” Unsettled sellers identifiable with phone number
-- FR-054: Epic 5 â€” Daily summary generatable by admin during Sale phase
-- FR-055: Epic 5 â€” Edition summary generated at edition closure
-- FR-056: Epic 5 â€” Outstanding sellers report (unsettled + phone number)
-- FR-057: Epic 5 â€” All reports generated as PDF
-- FR-058: Epic 5 â€” Reports accessible to admin only
-- FR-059: Epic 5 â€” Archived editions: aggregate metrics read-only, item detail via PDF only
-- FR-060: Epic 1 â€” Admin creates/modifies/deactivates volunteer accounts, resets passwords
-- FR-061: Epic 1 â€” One admin account per instance
-- FR-062: Epic 1 â€” First launch: Admin/Admin credentials, force password change
-- FR-063: Epic 1 â€” Admin password reset via server CLI command
-- FR-064: Epic 1 â€” Admin/Volunteer roles strictly separated
-- FR-065: Epic 1 â€” Volunteer interface adapts to active phase
-- FR-066: Epic 1 â€” Sessions do not expire automatically
-- FR-067: Epic 1 â€” Each account stores UI language preference (EN/FR)
-- FR-068: Epic 1 â€” Server runs on Linux, macOS, Windows without code changes
-- FR-069: Epic 1 â€” Minimum spec: Raspberry Pi 4 (2 GB RAM)
-- FR-070: Epic 1 â€” Deployed via Docker Compose, data in persistent volumes
-- FR-071: Epic 1 â€” Updates via `docker compose pull && docker compose up -d`
-- FR-072: Epic 1 â€” Client workstations access via browser, no local install
-- FR-073: Epic 1 â€” Admin settings page: association name, commission rate, doc language, ticket width
-- FR-074: Epic 1 â€” Installation guide for non-technical users, per OS (Linux/macOS/Windows)
-- FR-075: Epic 3 â€” All printing routed through central server
-- FR-076: Epic 3 â€” Thermal printer (labels) via USB, sequential queue
-- FR-077: Epic 3 â€” Standard printer (A4) via USB, PDF sent directly
-- FR-078: Epic 3 â€” User triggers printing; no action required on client
-- FR-079: Epic 3 â€” Print error: explicit user notification in UI
-- FR-080: Epic 2 â€” New edition can copy categories/table mapping from existing edition
-- FR-081: Epic 4 â€” Cashier can remove entire lot from basket
-- FR-082: Epic 2 â€” Admin can roll back phase one step at a time, data preserved
-- FR-083: Epic 6 â€” Filterable/sortable item catalog accessible during all phases
-- FR-084: Epic 6 â€” Catalog filters: name, barcode, category, table, sold/unsold, complete/incomplete, seller
-- FR-085: Epic 6 â€” Catalog sortable by any visible column
-- FR-086: Epic 6 â€” Catalog shows active edition only; not available after Clean Edition
-- FR-087: Epic 6 â€” During Sale phase: add item from catalog to basket (scanner fallback)
-- FR-088: Epic 2 â€” "Clean Edition" permanently deletes item records; disables rollback to Post-sale
-- FR-089: Epic 5 â€” Commission applies normally to items sold with incomplete flag
-- FR-090: Epic 4 â€” Phase transition while basket active: basket cancelled, explicit message to volunteer
+- FR-001 : Epic 1 — Interface i18n disponible en EN/FR
+- FR-002 : Epic 1 — Détection de la langue navigateur → préférence utilisateur
+- FR-003 : Epic 1 — L'utilisateur peut modifier sa préférence de langue dans les paramètres
+- FR-004 : Epic 1 — Tous les textes de l'interface externalisés (aucune chaîne codée en dur)
+- FR-005 : Epic 1 — Langue des documents configurée au niveau de l'instance
+- FR-006 : Epic 1 — Langue des documents applicable à l'ensemble de l'instance
+- FR-007 : Epic 1 — Langue des documents modifiable par l'admin
+- FR-008 : Epic 2 — L'admin crée une édition avec un nom libre
+- FR-009 : Epic 2 — Plusieurs éditions par année
+- FR-010 : Epic 2 — Une seule édition active à la fois
+- FR-011 : Epic 2 — La transition de phase nécessite une boîte de dialogue de confirmation
+- FR-012 : Epic 2 — Phase active affichée à tous les utilisateurs
+- FR-013 : Epic 2 — La clôture de l'édition génère des PDF, l'édition passe en lecture seule
+- FR-014 : Epic 2 — Une édition archivée ne peut pas être supprimée
+- FR-015 : Epic 2 — Données d'édition strictement isolées
+- FR-016 : Epic 2 — Taux de commission figé dès le démarrage de la phase Dépôt
+- FR-017 : Epic 3 — L'admin configure les catégories d'articles par édition
+- FR-018 : Epic 3 — L'admin configure la correspondance catégorie-table
+- FR-019 : Epic 3 — Les profils vendeurs persistent d'une édition à l'autre
+- FR-020 : Epic 3 — Le bénévole recherche/crée des profils vendeurs
+- FR-021 : Epic 3 — L'admin peut supprimer un profil vendeur (anonymisation RGPD)
+- FR-022 : Epic 3 — Le bénévole saisit les détails de l'article
+- FR-023 : Epic 3 — Table auto-assignée depuis la correspondance de catégorie
+- FR-024 : Epic 3 — Article corrigeable/supprimable uniquement en phase Dépôt
+- FR-025 : Epic 3 — Indicateur complet/incomplet modifiable dans toutes les phases
+- FR-026 : Epic 3 — Code-barres Code 128 généré côté serveur par article
+- FR-027 : Epic 3 — Format d'étiquette article (code-barres, nom, prix, catégorie, table, incomplétude)
+- FR-028 : Epic 3 — Étiquettes imprimées automatiquement à la validation du dépôt
+- FR-029 : Epic 3 — Travaux d'impression mis en file d'attente séquentiellement côté serveur
+- FR-030 : Epic 3 — Format du rouleau thermique : séparateur vendeur → étiquettes articles
+- FR-031 : Epic 3 — Bordereau de dépôt imprimable par vendeur
+- FR-032 : Epic 3 — Largeur du ticket thermique configurable (défaut 57 mm)
+- FR-033 : Epic 4 — Interface caissier avec scanner USB HID
+- FR-034 : Epic 4 — Gestion transparente AZERTY/QWERTY via correspondance de codes de touches
+- FR-035 : Epic 4 — Article scanné ajouté au panier avec nom et prix
+- FR-036 : Epic 4 — Scan article déjà vendu : message d'erreur, non ajouté
+- FR-037 : Epic 4 — Scan article incomplet : avertissement, toujours vendable
+- FR-038 : Epic 4 — Le caissier peut retirer des articles du panier avant validation
+- FR-039 : Epic 4 — La validation du paiement marque les articles vendus, clôt la transaction
+- FR-040 : Epic 4 — Facture acheteur imprimable à la demande après validation
+- FR-041 : Epic 4 — Format de la facture : liste articles, prix, total, association, édition, date
+- FR-042 : Epic 4 — Minimum 3 postes caissiers simultanés sans conflits
+- FR-043 : Epic 3 — Le bénévole peut créer un lot avec un prix global + plusieurs articles
+- FR-044 : Epic 3 — Chaque article d'un lot a son propre nom et étiquette
+- FR-045 : Epic 3 — L'étiquette d'un article de lot affiche le prix du lot et « Lot indivisible : X/N »
+- FR-046 : Epic 4 — Le scan d'un article de lot affiche le nom du lot en rouge + compteur « X/N scannés »
+- FR-047 : Epic 4 — Validation bloquée jusqu'à ce que le lot soit complet
+- FR-048 : Epic 4 — Lot complet vendu au prix global du lot
+- FR-049 : Epic 5 — Bilan de vente imprimable par vendeur en phase Post-vente
+- FR-050 : Epic 5 — Bilan de vente : articles vendus, invendus + table, total brut, commission, reversement net
+- FR-051 : Epic 5 — Le bénévole solde le vendeur : saisit le montant en espèces, clique Solder
+- FR-052 : Epic 5 — Le bouton « Non réclamé » transfère le reversement en recettes de l'association
+- FR-053 : Epic 5 — Vendeurs non soldés identifiables avec numéro de téléphone
+- FR-054 : Epic 5 — Bilan journalier générable par l'admin en phase Vente
+- FR-055 : Epic 5 — Bilan d'édition généré à la clôture de l'édition
+- FR-056 : Epic 5 — Rapport des vendeurs non soldés (non soldés + numéro de téléphone)
+- FR-057 : Epic 5 — Tous les rapports générés en PDF
+- FR-058 : Epic 5 — Rapports accessibles à l'admin uniquement
+- FR-059 : Epic 5 — Éditions archivées : métriques agrégées en lecture seule, détail articles via PDF uniquement
+- FR-060 : Epic 1 — L'admin crée/modifie/désactive les comptes bénévoles, réinitialise les mots de passe
+- FR-061 : Epic 1 — Un seul compte admin par instance
+- FR-062 : Epic 1 — Premier lancement : identifiants Admin/Admin, changement de mot de passe forcé
+- FR-063 : Epic 1 — Réinitialisation du mot de passe admin via commande CLI serveur
+- FR-064 : Epic 1 — Rôles Admin/Bénévole strictement séparés
+- FR-065 : Epic 1 — Interface bénévole adaptée à la phase active
+- FR-066 : Epic 1 — Les sessions n'expirent pas automatiquement
+- FR-067 : Epic 1 — Chaque compte mémorise une préférence de langue d'interface (EN/FR)
+- FR-068 : Epic 1 — Serveur fonctionnel sur Linux, macOS, Windows sans modification du code
+- FR-069 : Epic 1 — Configuration minimale : Raspberry Pi 4 (2 Go de RAM)
+- FR-070 : Epic 1 — Déployé via Docker Compose, données dans des volumes persistants
+- FR-071 : Epic 1 — Mises à jour via `docker compose pull && docker compose up -d`
+- FR-072 : Epic 1 — Postes clients accèdent via navigateur, aucune installation locale
+- FR-073 : Epic 1 — Page paramètres admin : nom de l'association, taux de commission, langue des documents, largeur du ticket
+- FR-074 : Epic 1 — Guide d'installation pour utilisateurs non techniques, par OS (Linux/macOS/Windows)
+- FR-075 : Epic 3 — Toute l'impression acheminée via le serveur central
+- FR-076 : Epic 3 — Imprimante thermique (étiquettes) via USB, file d'attente séquentielle
+- FR-077 : Epic 3 — Imprimante standard (A4) via USB, PDF envoyé directement
+- FR-078 : Epic 3 — L'utilisateur déclenche l'impression ; aucune action requise côté client
+- FR-079 : Epic 3 — Erreur d'impression : notification explicite à l'utilisateur dans l'interface
+- FR-080 : Epic 2 — Nouvelle édition peut copier catégories/correspondance tables depuis une édition existante
+- FR-081 : Epic 4 — Le caissier peut retirer l'ensemble d'un lot du panier
+- FR-082 : Epic 2 — L'admin peut revenir en arrière d'une phase à la fois, données préservées
+- FR-083 : Epic 6 — Catalogue articles filtrable/triable accessible durant toutes les phases
+- FR-084 : Epic 6 — Filtres du catalogue : nom, code-barres, catégorie, table, vendu/invendu, complet/incomplet, vendeur
+- FR-085 : Epic 6 — Catalogue triable par n'importe quelle colonne visible
+- FR-086 : Epic 6 — Catalogue affiche l'édition active uniquement ; indisponible après Nettoyage de l'édition
+- FR-087 : Epic 6 — En phase Vente : ajout d'un article depuis le catalogue au panier (solution de secours scanner)
+- FR-088 : Epic 2 — « Nettoyage de l'édition » supprime définitivement les enregistrements d'articles ; désactive le retour arrière vers Post-vente
+- FR-089 : Epic 5 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
+- FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
 
-## Epic List
+## Liste des épics
 
-### Epic 1: Application Foundation, Auth & i18n
-Admins and volunteers can deploy the application, log in with appropriate roles, manage user accounts, configure the instance, and use the application in their preferred language (EN/FR). All shared UI components and the Angular Material design system are in place.
+### Epic 1 : Fondation applicative, Authentification & i18n
+Les administrateurs et les bénévoles peuvent déployer l'application, se connecter avec les rôles appropriés, gérer les comptes utilisateurs, configurer l'instance et utiliser l'application dans leur langue préférée (EN/FR). Tous les composants partagés et le système de design Angular Material sont en place.
 
-**FRs covered:** FR-001â€“007, FR-060â€“067, FR-068â€“074
-**Architecture:** ARCH-001, ARCH-002, ARCH-006, ARCH-007, ARCH-011, ARCH-013, ARCH-014
-**UX:** UX-DR1, UX-DR2, UX-DR3, UX-DR5, UX-DR6, UX-DR7, UX-DR8, UX-DR9, UX-DR12, UX-DR13, UX-DR20
+**FR couvertes :** FR-001–007, FR-060–067, FR-068–074
+**Architecture :** ARCH-001, ARCH-002, ARCH-006, ARCH-007, ARCH-011, ARCH-013, ARCH-014
+**UX :** UX-DR1, UX-DR2, UX-DR3, UX-DR5, UX-DR6, UX-DR7, UX-DR8, UX-DR9, UX-DR12, UX-DR13, UX-DR20
 
-### Epic 2: Edition Lifecycle Management
-Admins can create editions, drive the full phase lifecycle (Deposit â†’ Sale â†’ Post-sale â†’ Closed), roll back phases, and close/clean editions. All connected users see the active phase in real-time via SSE.
+### Epic 2 : Gestion du cycle de vie des éditions
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
-**FRs covered:** FR-008â€“016, FR-080, FR-082, FR-088
-**Architecture:** ARCH-012, ARCH-015 (phase machine prerequisite)
-**UX:** UX-DR4, UX-DR18
+**FR couvertes :** FR-008–016, FR-080, FR-082, FR-088
+**Architecture :** ARCH-012, ARCH-015 (prérequis machine de phases)
+**UX :** UX-DR4, UX-DR18
 
-### Epic 3: Seller Registration & Deposit
-Volunteers can register sellers and all their items (including lots) with automatic table assignment, and print labels and deposit slips via the centralized thermal printer.
+### Epic 3 : Enregistrement des vendeurs & Dépôt
+Les bénévoles peuvent enregistrer les vendeurs et tous leurs articles (y compris les lots) avec assignation automatique de table, et imprimer les étiquettes et bordereaux de dépôt via l'imprimante thermique centralisée.
 
-**FRs covered:** FR-017â€“032, FR-043â€“045, FR-075â€“079
-**Architecture:** ARCH-003, ARCH-008, ARCH-009, ARCH-010, ARCH-015 (print queue prerequisite), ARCH-016
-**UX:** UX-DR15, UX-DR16, UX-DR19, UX-DR22
+**FR couvertes :** FR-017–032, FR-043–045, FR-075–079
+**Architecture :** ARCH-003, ARCH-008, ARCH-009, ARCH-010, ARCH-015 (prérequis file d'impression), ARCH-016
+**UX :** UX-DR15, UX-DR16, UX-DR19, UX-DR22
 
-### Epic 4: Point of Sale
-Volunteers can scan items with a USB barcode scanner, manage baskets with full lot support, complete sales, and print buyer invoices â€” safely across multiple simultaneous workstations.
+### Epic 4 : Point de vente
+Les bénévoles peuvent scanner des articles avec un scanner code-barres USB, gérer les paniers avec prise en charge complète des lots, finaliser les ventes et imprimer les factures acheteurs — en toute sécurité sur plusieurs postes simultanés.
 
-**FRs covered:** FR-033â€“042, FR-046â€“048, FR-081, FR-090
-**Architecture:** ARCH-003 (concurrency validation), ARCH-004
-**UX:** UX-DR10, UX-DR14, UX-DR21
+**FR couvertes :** FR-033–042, FR-046–048, FR-081, FR-090
+**Architecture :** ARCH-003 (validation concurrence), ARCH-004
+**UX :** UX-DR10, UX-DR14, UX-DR21
 
-### Epic 5: Post-Sale, Payouts & Reporting
-Volunteers can settle sellers and process payouts. Admins can generate daily and edition summary reports as PDFs, identify unsettled sellers, and officially close editions.
+### Epic 5 : Post-vente, Reversements & Rapports
+Les bénévoles peuvent solder les vendeurs et traiter les reversements. Les administrateurs peuvent générer des rapports de bilan journaliers et d'édition en PDF, identifier les vendeurs non soldés et clôturer officiellement les éditions.
 
-**FRs covered:** FR-049â€“059, FR-089
-**UX:** UX-DR17, UX-DR22
+**FR couvertes :** FR-049–059, FR-089
+**UX :** UX-DR17, UX-DR22
 
-### Epic 6: Item Catalog
-Admins and volunteers can browse, search, and filter all items in the active edition across all phases. During Sale phase, volunteers can add items directly to the basket from the catalog as a scanner fallback.
+### Epic 6 : Catalogue articles
+Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases. En phase Vente, les bénévoles peuvent ajouter des articles directement au panier depuis le catalogue en tant que solution de secours au scanner.
 
-**FRs covered:** FR-083â€“087
-**Architecture:** ARCH-005
-**UX:** UX-DR11
+**FR couvertes :** FR-083–087
+**Architecture :** ARCH-005
+**UX :** UX-DR11
 
 ---
 
-## Epic 1: Application Foundation, Auth & i18n
+## Epic 1 : Fondation applicative, Authentification & i18n
 
-Admins and volunteers can deploy the application, log in with appropriate roles, manage user accounts, configure the instance, and use the application in their preferred language (EN/FR). All shared UI components and the Angular Material design system are in place.
+Les administrateurs et les bénévoles peuvent déployer l'application, se connecter avec les rôles appropriés, gérer les comptes utilisateurs, configurer l'instance et utiliser l'application dans leur langue préférée (EN/FR). Tous les composants partagés et le système de design Angular Material sont en place.
 
-### Story 1.1: Project Scaffolding & Docker Compose Baseline
+### Story 1.1 : Mise en place du squelette de projet & baseline Docker Compose
 
-As a developer,
-I want the full technology stack initialized with Docker Compose and a running development environment,
-So that feature development can begin on a stable, reproducible foundation.
+En tant que développeur,
+je veux que la pile technologique complète soit initialisée avec Docker Compose et un environnement de développement fonctionnel,
+afin que le développement des fonctionnalités puisse démarrer sur une base stable et reproductible.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the repository is cloned
-**When** `docker compose up -d` is run
-**Then** the Spring Boot app starts and responds at `/actuator/health`
-**And** the Angular dev server starts at `http://localhost:4200`
-**And** the MariaDB container runs with a persistent volume
+**Étant donné** que le dépôt est cloné
+**Quand** `docker compose up -d` est exécuté
+**Alors** l'application Spring Boot démarre et répond sur `/actuator/health`
+**Et** le serveur de développement Angular démarre sur `http://localhost:4200`
+**Et** le conteneur MariaDB tourne avec un volume persistant
 
-**Given** the Spring Boot app starts
-**When** Liquibase migrations run
-**Then** the `users` table exists with all fields including `preferred_language` and nullable `seller_profile_id` FK
-**And** Spring Session JDBC tables exist
-**And** a default admin account (username: "Admin", BCrypt hash of "Admin") is seeded
+**Étant donné** que l'application Spring Boot démarre
+**Quand** les migrations Liquibase s'exécutent
+**Alors** la table `users` existe avec tous les champs, y compris `preferred_language` et la FK nullable `seller_profile_id`
+**Et** les tables Spring Session JDBC existent
+**Et** un compte administrateur par défaut (username : « Admin », hash BCrypt de « Admin ») est initialisé
 
-**Given** the application returns an error
-**When** any endpoint produces a 4xx or 5xx
-**Then** the response follows RFC 7807 Problem Details format (`type`, `title`, `status`, `detail`, `instance`)
+**Étant donné** que l'application retourne une erreur
+**Quand** un endpoint produit un code 4xx ou 5xx
+**Alors** la réponse suit le format RFC 7807 Problem Details (`type`, `title`, `status`, `detail`, `instance`)
 
-**Given** the `dev` Spring profile is active
-**When** `/swagger-ui.html` is accessed
-**Then** the Springdoc OpenAPI UI is available
+**Étant donné** que le profil Spring `dev` est actif
+**Quand** `/swagger-ui.html` est accédé
+**Alors** l'interface Springdoc OpenAPI est disponible
 
-**Given** the `prod` Spring profile is active
-**When** `/swagger-ui.html` is accessed
-**Then** a 404 is returned
+**Étant donné** que le profil Spring `prod` est actif
+**Quand** `/swagger-ui.html` est accédé
+**Alors** un 404 est retourné
 
-### Story 1.2: Spring Security Authentication & Role-Based Access Control
+### Story 1.2 : Authentification Spring Security & Contrôle d'accès basé sur les rôles
 
-As an admin,
-I want to log in with my credentials and have role-enforced access to admin pages,
-So that the application is secure and admin/volunteer interfaces are strictly separated from the start.
+En tant qu'administrateur,
+je veux me connecter avec mes identifiants et bénéficier d'un accès aux pages admin restreint par rôle,
+afin que l'application soit sécurisée et que les interfaces admin/bénévole soient strictement séparées dès le départ.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the application is freshly deployed
-**When** any user navigates to a protected route
-**Then** they are redirected to `/login`
+**Étant donné** que l'application vient d'être déployée
+**Quand** un utilisateur quelconque accède à une route protégée
+**Alors** il est redirigé vers `/login`
 
-**Given** the admin submits "Admin" / "Admin" on first login
-**When** authentication succeeds
-**Then** the system redirects immediately to a mandatory password-change page
-**And** access to all other pages is blocked until the password is changed
-**And** the session is stored in the `spring_session` MariaDB table
+**Étant donné** que l'admin soumet « Admin » / « Admin » à la première connexion
+**Quand** l'authentification réussit
+**Alors** le système redirige immédiatement vers une page de changement de mot de passe obligatoire
+**Et** l'accès à toutes les autres pages est bloqué jusqu'au changement de mot de passe
+**Et** la session est stockée dans la table MariaDB `spring_session`
 
-**Given** a session is established
-**When** the server container is restarted
-**Then** the session survives and the user remains logged in (FR-066)
+**Étant donné** qu'une session est établie
+**Quand** le conteneur serveur est redémarré
+**Alors** la session survit et l'utilisateur reste connecté (FR-066)
 
-**Given** a VOLUNTEER attempts to access `/admin/*`
-**When** the request is processed
-**Then** a 403 is returned
+**Étant donné** qu'un BÉNÉVOLE tente d'accéder à `/admin/*`
+**Quand** la requête est traitée
+**Alors** un 403 est retourné
 
-**Given** any request from a user with role SELLER
-**When** processed by Spring Security
-**Then** a 403 is returned regardless of the endpoint
+**Étant donné** toute requête d'un utilisateur avec le rôle SELLER
+**Quand** traitée par Spring Security
+**Alors** un 403 est retourné quel que soit l'endpoint
 
-**Given** an admin logs out
-**When** `/logout` is called
-**Then** the session is invalidated in the database
+**Étant donné** qu'un admin se déconnecte
+**Quand** `/logout` est appelé
+**Alors** la session est invalidée en base de données
 
-### Story 1.3: Volunteer Account Management
+### Story 1.3 : Gestion des comptes bénévoles
 
-As an admin,
-I want to create, modify, deactivate volunteer accounts, and reset their passwords,
-So that I control who has access to the application during the event.
+En tant qu'administrateur,
+je veux créer, modifier, désactiver les comptes bénévoles et réinitialiser leurs mots de passe,
+afin de contrôler qui a accès à l'application pendant l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the admin navigates to `/admin/users`
-**When** the page loads
-**Then** all volunteer accounts are listed with name, status (active/inactive), and role badge
+**Étant donné** que l'admin navigue vers `/admin/users`
+**Quand** la page se charge
+**Alors** tous les comptes bénévoles sont listés avec nom, statut (actif/inactif) et badge de rôle
 
-**Given** the admin fills in first name, last name, username, and password for a new volunteer
-**When** the form is submitted
-**Then** a VOLUNTEER account is created and the volunteer can log in immediately
+**Étant donné** que l'admin renseigne prénom, nom, identifiant et mot de passe pour un nouveau bénévole
+**Quand** le formulaire est soumis
+**Alors** un compte BÉNÉVOLE est créé et le bénévole peut se connecter immédiatement
 
-**Given** the admin resets a volunteer's password
-**When** the reset is submitted
-**Then** the volunteer's password is updated
-**And** the volunteer is forced to change it on next login
+**Étant donné** que l'admin réinitialise le mot de passe d'un bénévole
+**Quand** la réinitialisation est soumise
+**Alors** le mot de passe du bénévole est mis à jour
+**Et** le bénévole est forcé de le changer à la prochaine connexion
 
-**Given** the admin deactivates a volunteer account
-**When** that volunteer attempts to log in
-**Then** login is rejected with a clear "Account disabled" message
+**Étant donné** que l'admin désactive un compte bénévole
+**Quand** ce bénévole tente de se connecter
+**Alors** la connexion est refusée avec un message clair « Compte désactivé »
 
-**Given** one admin account already exists
-**When** the admin attempts to create a second admin account
-**Then** the system rejects it with an explicit error (FR-061: one admin per instance)
+**Étant donné** qu'un compte admin existe déjà
+**Quand** l'admin tente de créer un second compte admin
+**Alors** le système le refuse avec une erreur explicite (FR-061 : un seul admin par instance)
 
-### Story 1.4: Admin Password Recovery CLI
+### Story 1.4 : Récupération du mot de passe admin via CLI
 
-As an admin who has forgotten their password,
-I want to reset it via a server-side command,
-So that I can regain access without developer intervention or direct database manipulation.
+En tant qu'administrateur ayant oublié son mot de passe,
+je veux le réinitialiser via une commande côté serveur,
+afin de récupérer l'accès sans intervention de développeur ni manipulation directe de la base de données.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the admin has forgotten their password
-**When** they run the app with the `--reset-admin-password` argument
-**Then** a new temporary password (12+ chars, alphanumeric) is printed to the console
-**And** the admin account password is updated in the database (BCrypt)
-**And** a force-password-change flag is set on the account
+**Étant donné** que l'admin a oublié son mot de passe
+**Quand** il lance l'application avec l'argument `--reset-admin-password`
+**Alors** un nouveau mot de passe temporaire (12+ caractères, alphanumérique) est affiché dans la console
+**Et** le mot de passe du compte admin est mis à jour en base de données (BCrypt)
+**Et** un indicateur de changement de mot de passe forcé est positionné sur le compte
 
-**Given** the temporary password has been generated
-**When** the admin logs in with it
-**Then** they are immediately redirected to the mandatory password-change page
-**And** they cannot access any other page until the password is changed
+**Étant donné** que le mot de passe temporaire a été généré
+**Quand** l'admin se connecte avec ce mot de passe
+**Alors** il est immédiatement redirigé vers la page de changement de mot de passe obligatoire
+**Et** il ne peut accéder à aucune autre page tant que le mot de passe n'a pas été changé
 
-### Story 1.5: Instance Configuration & Admin Settings Page
+### Story 1.5 : Configuration de l'instance & Page de paramètres admin
 
-As an admin,
-I want to configure the instance settings in a dedicated page,
-So that the application reflects my association's identity and operational parameters.
+En tant qu'administrateur,
+je veux configurer les paramètres de l'instance dans une page dédiée,
+afin que l'application reflète l'identité et les paramètres opérationnels de mon association.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the admin navigates to `/admin/settings`
-**When** the page loads
-**Then** the current configuration is displayed: association name, commission rate (default 20%), document language (EN/FR), thermal ticket width (default 57mm)
+**Étant donné** que l'admin navigue vers `/admin/settings`
+**Quand** la page se charge
+**Alors** la configuration courante est affichée : nom de l'association, taux de commission (défaut 20 %), langue des documents (EN/FR), largeur du ticket thermique (défaut 57 mm)
 
-**Given** the admin updates the association name and saves
-**When** the server restarts
-**Then** the association name is preserved (persisted in DB)
+**Étant donné** que l'admin met à jour le nom de l'association et sauvegarde
+**Quand** le serveur redémarre
+**Alors** le nom de l'association est préservé (persisté en base de données)
 
-**Given** the admin sets the commission rate to 15% and saves
-**When** the value is stored
-**Then** the stored value is a BigDecimal `15.00` (not float or double)
+**Étant donné** que l'admin définit le taux de commission à 15 % et sauvegarde
+**Quand** la valeur est stockée
+**Alors** la valeur stockée est un BigDecimal `15.00` (ni float ni double)
 
-**Given** the admin sets document language to "FR"
-**When** a PDF is later generated
-**Then** the PDF content uses entries from `messages_fr.properties`
+**Étant donné** que l'admin définit la langue des documents sur « FR »
+**Quand** un PDF est ultérieurement généré
+**Alors** le contenu du PDF utilise les entrées de `messages_fr.properties`
 
-**Given** the admin changes the thermal ticket width and saves
-**When** a print job is later sent
-**Then** the new width (BigDecimal, mm) is used for that print job
+**Étant donné** que l'admin modifie la largeur du ticket thermique et sauvegarde
+**Quand** un travail d'impression est ultérieurement envoyé
+**Alors** la nouvelle largeur (BigDecimal, mm) est utilisée pour ce travail d'impression
 
-### Story 1.6: User Language Preference & i18n Infrastructure
+### Story 1.6 : Préférence de langue utilisateur & Infrastructure i18n
 
-As a user,
-I want the application to display in my preferred language (English or French),
-So that I can work comfortably in my native language during the event.
+En tant qu'utilisateur,
+je veux que l'application s'affiche dans ma langue préférée (anglais ou français),
+afin de travailler confortablement dans ma langue maternelle pendant l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a new user accesses the app for the first time with browser language `fr`
-**When** the page loads
-**Then** the interface displays in French
-**And** `preferredLanguage: FR` is stored on their user account
+**Étant donné** qu'un nouvel utilisateur accède à l'application pour la première fois avec la langue navigateur `fr`
+**Quand** la page se charge
+**Alors** l'interface s'affiche en français
+**Et** `preferredLanguage: FR` est enregistré sur son compte utilisateur
 
-**Given** a new user's browser is set to English or any unsupported language
-**When** the page loads
-**Then** the interface displays in English and `preferredLanguage: EN` is stored
+**Étant donné** que le navigateur d'un nouvel utilisateur est configuré en anglais ou dans une langue non prise en charge
+**Quand** la page se charge
+**Alors** l'interface s'affiche en anglais et `preferredLanguage: EN` est enregistré
 
-**Given** a logged-in user goes to `/account` and selects the other language
-**When** they save the preference
-**Then** the interface switches to the selected language immediately (no page reload)
-**And** the preference survives logout and login
+**Étant donné** qu'un utilisateur connecté accède à `/account` et sélectionne l'autre langue
+**Quand** il sauvegarde la préférence
+**Alors** l'interface bascule immédiatement dans la langue sélectionnée (sans rechargement de page)
+**Et** la préférence survit à la déconnexion et à la reconnexion
 
-**Given** any page renders
-**When** any visible text is inspected
-**Then** all text originates from `en.json` or `fr.json` translation keys â€” no hardcoded strings (FR-004)
-**And** i18n keys follow the `feature.section.key` format (max 3 levels)
+**Étant donné** que n'importe quelle page s'affiche
+**Quand** un texte visible est inspecté
+**Alors** tout le texte provient de clés de traduction `en.json` ou `fr.json` — aucune chaîne codée en dur (FR-004)
+**Et** les clés i18n suivent le format `feature.section.key` (3 niveaux maximum)
 
-**Given** a PDF document is generated
-**When** the instance document language is "FR"
-**Then** all document text uses entries from `messages_fr.properties`
+**Étant donné** qu'un document PDF est généré
+**Quand** la langue des documents de l'instance est « FR »
+**Alors** tous les textes du document utilisent les entrées de `messages_fr.properties`
 
-### Story 1.7: Angular Material Design System & Application Layout
+### Story 1.7 : Système de design Angular Material & Mise en page applicative
 
-As a user navigating the application,
-I want a consistent, role-adapted visual design with clear navigation,
-So that I can find what I need instantly under event-day pressure.
+En tant qu'utilisateur naviguant dans l'application,
+je veux un design visuel cohérent et adapté à mon rôle avec une navigation claire,
+afin de trouver instantanément ce dont j'ai besoin sous la pression d'une journée d'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** any authenticated user loads any page
-**When** the page renders
-**Then** the topbar (56px) is visible with logo left, role badge top-right, phase chip center (static at this stage)
-**And** the DM Sans font and coral primary `#C44626` are applied consistently
+**Étant donné** qu'un utilisateur authentifié charge n'importe quelle page
+**Quand** la page s'affiche
+**Alors** la barre supérieure (56px) est visible avec le logo à gauche, le badge de rôle en haut à droite, et le chip de phase au centre (statique à ce stade)
+**Et** la police DM Sans et le corail primaire `#C44626` sont appliqués de manière cohérente
 
-**Given** an admin is logged in
-**When** any admin page loads
-**Then** the sidebar (200px, background `#2A100A`) is shown with sections "Edition active" / "Gestion" and flat navigation links
-**And** the currently active route is highlighted in coral (`#C44626` background, white text)
+**Étant donné** qu'un admin est connecté
+**Quand** une page admin se charge
+**Alors** la barre latérale (200px, fond `#2A100A`) est affichée avec les sections « Édition active » / « Gestion » et des liens de navigation plats
+**Et** la route active courante est mise en évidence en corail (fond `#C44626`, texte blanc)
 
-**Given** a volunteer is logged in
-**When** any volunteer page loads
-**Then** no sidebar is shown
+**Étant donné** qu'un bénévole est connecté
+**Quand** une page bénévole se charge
+**Alors** aucune barre latérale n'est affichée
 
-**Given** an action button is rendered as a primary action
-**When** the button appears
-**Then** it uses the coral filled style
-**And** at most one primary (filled coral) button appears per visible section
+**Étant donné** qu'un bouton est rendu en tant qu'action principale
+**Quand** le bouton apparaît
+**Alors** il utilise le style rempli corail
+**Et** au plus un bouton primaire (rempli corail) apparaît par section visible
 
-**Given** the Angular Material theme is applied
-**When** rendered in Chrome, Firefox, Edge, or Safari on Linux/macOS/Windows
-**Then** colors, typography, elevation, and rounded corners match the DESIGN.md token specifications
+**Étant donné** que le thème Angular Material est appliqué
+**Quand** rendu dans Chrome, Firefox, Edge ou Safari sur Linux/macOS/Windows
+**Alors** les couleurs, la typographie, l'élévation et les coins arrondis correspondent aux spécifications des tokens du fichier DESIGN.md
 
-### Story 1.8: Shared UI Components â€” Dialogs, Notifications & Accessibility
+### Story 1.8 : Composants UI partagés — Boîtes de dialogue, Notifications & Accessibilité
 
-As a user performing operations in the application,
-I want clear feedback, accessible confirmations, and helpful empty states,
-So that I can act confidently without making accidental mistakes under pressure.
+En tant qu'utilisateur effectuant des opérations dans l'application,
+je veux des retours clairs, des confirmations accessibles et des états vides utiles,
+afin d'agir en confiance sans faire d'erreurs accidentelles sous pression.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** an irreversible action is triggered
-**When** the confirm dialog appears
-**Then** it shows a title, consequence description, confirm button, and cancel (ghost) button
-**And** focus is trapped inside the dialog
-**And** initial focus is on the cancel button
-**And** pressing Echap closes the dialog without acting
+**Étant donné** qu'une action irréversible est déclenchée
+**Quand** la boîte de dialogue de confirmation apparaît
+**Alors** elle affiche un titre, une description des conséquences, un bouton de confirmation et un bouton annuler (ghost)
+**Et** le focus est piégé à l'intérieur de la boîte de dialogue
+**Et** le focus initial est sur le bouton annuler
+**Et** appuyer sur Échap ferme la boîte de dialogue sans agir
 
-**Given** a successful operation completes
-**When** the result is returned
-**Then** a success toast appears bottom-right for 4 seconds then disappears automatically
-**And** at most one toast is visible at any time
+**Étant donné** qu'une opération réussie se termine
+**Quand** le résultat est retourné
+**Alors** un toast de succès apparaît en bas à droite pendant 4 secondes puis disparaît automatiquement
+**Et** au plus un toast est visible à tout moment
 
-**Given** a system error occurs (printer offline, network failure)
-**When** surfaced to the user
-**Then** a persistent error toast appears bottom-right with a "Fermer" button that must be clicked to dismiss
+**Étant donné** qu'une erreur système survient (imprimante hors ligne, panne réseau)
+**Quand** elle est remontée à l'utilisateur
+**Alors** un toast d'erreur persistant apparaît en bas à droite avec un bouton « Fermer » qui doit être cliqué pour le fermer
 
-**Given** a business error occurs inline within a workflow
-**When** the error is triggered
-**Then** an inline notification appears directly below the triggering element (not a toast)
-**And** it persists until the error is resolved or a new action is taken
+**Étant donné** qu'une erreur métier survient de manière inline dans un flux de travail
+**Quand** l'erreur est déclenchée
+**Alors** une notification inline apparaît directement sous l'élément déclencheur (pas un toast)
+**Et** elle persiste jusqu'à ce que l'erreur soit résolue ou qu'une nouvelle action soit entreprise
 
-**Given** a list is loading initial data
-**When** the API request is in progress
-**Then** 3-5 skeleton rows are displayed and no global spinner blocks the interface
+**Étant donné** qu'une liste charge ses données initiales
+**Quand** la requête API est en cours
+**Alors** 3 à 5 lignes squelettes sont affichées et aucun spinner global ne bloque l'interface
 
-**Given** a list has no items
-**When** the empty state renders
-**Then** a centered Material icon, descriptive message, and primary action button (where applicable) are shown
+**Étant donné** qu'une liste ne contient aucun élément
+**Quand** l'état vide s'affiche
+**Alors** une icône Material centrée, un message descriptif et un bouton d'action primaire (le cas échéant) sont affichés
 
-**Given** any element is focused via keyboard Tab
-**When** focus lands on any button, link, or input
-**Then** a visible focus ring (coral primary, never suppressed) is shown
-**And** all interactive elements have a minimum 44x44px touch target
-**And** decorative icons have `aria-hidden="true"`
-**And** semantic icons have an `aria-label` or visible text label
+**Étant donné** qu'un élément reçoit le focus via la touche Tab
+**Quand** le focus se pose sur un bouton, un lien ou un champ de saisie
+**Alors** un anneau de focus visible (corail primaire, jamais supprimé) est affiché
+**Et** tous les éléments interactifs ont une cible tactile minimale de 44×44px
+**Et** les icônes décoratives ont `aria-hidden="true"`
+**Et** les icônes sémantiques ont un `aria-label` ou un libellé textuel visible
 
 ---
 
-## Epic 2: Edition Lifecycle Management
+## Epic 2 : Gestion du cycle de vie des éditions
 
-Admins can create editions, drive the full phase lifecycle (Deposit -> Sale -> Post-sale -> Closed), roll back phases, and close/clean editions. All connected users see the active phase in real-time via SSE.
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
-### Story 2.1: Edition CRUD & Commission Rate Configuration
+### Story 2.1 : CRUD d'édition & Configuration du taux de commission
 
-As an admin,
-I want to create and manage editions with a free-form name and configurable commission rate,
-So that each event is properly identified and financially configured before sellers arrive.
+En tant qu'administrateur,
+je veux créer et gérer des éditions avec un nom libre et un taux de commission configurable,
+afin que chaque événement soit correctement identifié et configuré financièrement avant l'arrivée des vendeurs.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the admin navigates to `/admin/editions`
-**When** the page loads
-**Then** all editions are listed with name, creation date, and current phase
+**Étant donné** que l'admin navigue vers `/admin/editions`
+**Quand** la page se charge
+**Alors** toutes les éditions sont listées avec nom, date de création et phase courante
 
-**Given** the admin fills in an edition name and submits
-**When** the form is submitted
-**Then** a new edition is created with phase "Deposit" and commission rate 20% (default)
+**Étant donné** que l'admin renseigne un nom d'édition et soumet
+**Quand** le formulaire est soumis
+**Alors** une nouvelle édition est créée avec la phase « Dépôt » et un taux de commission de 20 % (défaut)
 
-**Given** no active edition exists
-**When** the admin activates an edition
-**Then** it becomes the active edition
+**Étant donné** qu'aucune édition active n'existe
+**Quand** l'admin active une édition
+**Alors** elle devient l'édition active
 
-**Given** one edition is already active
-**When** the admin attempts to activate a second edition
-**Then** the system rejects it with an explicit error (FR-010)
+**Étant donné** qu'une édition est déjà active
+**Quand** l'admin tente d'activer une seconde édition
+**Alors** le système le refuse avec une erreur explicite (FR-010)
 
-**Given** an edition is in Deposit phase (not yet started)
-**When** the admin changes the commission rate to 15%
-**Then** the rate is saved as BigDecimal `15.00`
+**Étant donné** qu'une édition est en phase Dépôt (pas encore démarrée)
+**Quand** l'admin change le taux de commission à 15 %
+**Alors** le taux est enregistré sous forme de BigDecimal `15.00`
 
-**Given** an edition has entered Deposit phase
-**When** the admin attempts to modify the commission rate
-**Then** the system rejects it with an explicit error (FR-016: rate frozen once Deposit starts)
+**Étant donné** qu'une édition est entrée en phase Dépôt
+**Quand** l'admin tente de modifier le taux de commission
+**Alors** le système le refuse avec une erreur explicite (FR-016 : taux figé une fois le Dépôt démarré)
 
-**Given** an archived edition exists
-**When** the admin attempts to delete it
-**Then** the system rejects the deletion (FR-014)
+**Étant donné** qu'une édition archivée existe
+**Quand** l'admin tente de la supprimer
+**Alors** le système refuse la suppression (FR-014)
 
-### Story 2.2: Phase Lifecycle Control & Confirmation Dialogs
+### Story 2.2 : Contrôle du cycle de phases & Boîtes de dialogue de confirmation
 
-As an admin,
-I want to advance or roll back the edition phase with explicit confirmation,
-So that phase transitions are intentional and their consequences are clearly communicated.
+En tant qu'administrateur,
+je veux avancer ou reculer la phase de l'édition avec une confirmation explicite,
+afin que les transitions de phase soient intentionnelles et que leurs conséquences soient clairement communiquées.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the admin is on `/admin/editions/:id/phase`
-**When** the page loads
-**Then** the current phase is clearly displayed with available forward and backward transition buttons
+**Étant donné** que l'admin est sur `/admin/editions/:id/phase`
+**Quand** la page se charge
+**Alors** la phase courante est clairement affichée avec les boutons de transition disponibles vers l'avant et vers l'arrière
 
-**Given** the admin clicks a phase transition button
-**When** the confirm dialog appears
-**Then** it names the destination phase and describes the main consequence
-**And** two buttons are shown: confirm (primary) and cancel (ghost)
+**Étant donné** que l'admin clique sur un bouton de transition de phase
+**Quand** la boîte de dialogue de confirmation apparaît
+**Alors** elle indique la phase de destination et décrit la principale conséquence
+**Et** deux boutons sont affichés : confirmer (primaire) et annuler (ghost)
 
-**Given** the admin confirms a forward phase transition
-**When** the transition completes
-**Then** the edition phase is updated in the database
-**And** the phase chip in the topbar reflects the new phase for all users
+**Étant donné** que l'admin confirme une transition de phase vers l'avant
+**Quand** la transition se termine
+**Alors** la phase de l'édition est mise à jour en base de données
+**Et** le chip de phase dans la barre supérieure reflète la nouvelle phase pour tous les utilisateurs
 
-**Given** the admin confirms a rollback transition
-**When** the transition completes
-**Then** the phase is rolled back one step
-**And** all data recorded in the rolled-back phase is preserved (FR-082)
+**Étant donné** que l'admin confirme un retour arrière de phase
+**Quand** la transition se termine
+**Alors** la phase revient d'un cran en arrière
+**Et** toutes les données enregistrées dans la phase annulée sont préservées (FR-082)
 
-**Given** an edition has been closed and Clean Edition was triggered
-**When** the admin views the phase control page
-**Then** the rollback from Closed button is absent (FR-082: rollback disabled after Clean)
+**Étant donné** qu'une édition a été clôturée et que le Nettoyage de l'édition a été déclenché
+**Quand** l'admin consulte la page de contrôle des phases
+**Alors** le bouton de retour arrière depuis Clôturée est absent (FR-082 : retour arrière désactivé après nettoyage)
 
-**Given** a phase transition completes
-**When** the server processes it
-**Then** an SSE event `phase-changed` is broadcast with `{editionId, newPhase, previousPhase}`
+**Étant donné** qu'une transition de phase se termine
+**Quand** le serveur la traite
+**Alors** un événement SSE `phase-changed` est diffusé avec `{editionId, newPhase, previousPhase}`
 
-### Story 2.3: Edition Categories & Table Mapping
+### Story 2.3 : Catégories de l'édition & Correspondance des tables
 
-As an admin,
-I want to configure item categories and their table assignments per edition,
-So that items are automatically routed to the correct tables during deposit.
+En tant qu'administrateur,
+je veux configurer les catégories d'articles et leurs attributions de tables par édition,
+afin que les articles soient automatiquement dirigés vers les bonnes tables lors du dépôt.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the admin opens a new edition's categories page `/admin/editions/:id/categories`
-**When** the page loads
-**Then** the categories list is empty and editable
-**And** an option "Copy from existing edition" is available with an edition selector dropdown
+**Étant donné** que l'admin ouvre la page des catégories d'une nouvelle édition `/admin/editions/:id/categories`
+**Quand** la page se charge
+**Alors** la liste des catégories est vide et modifiable
+**Et** une option « Copier depuis une édition existante » est disponible avec une liste déroulante de sélection d'édition
 
-**Given** the admin selects "Copy from existing edition" and confirms
-**When** the copy completes
-**Then** all categories and table mappings from the selected edition are applied to the new edition (FR-080)
+**Étant donné** que l'admin sélectionne « Copier depuis une édition existante » et confirme
+**Quand** la copie se termine
+**Alors** toutes les catégories et correspondances de tables de l'édition sélectionnée sont appliquées à la nouvelle édition (FR-080)
 
-**Given** the admin adds a category (e.g. "Jouets") assigned to tables 1, 2, 3
-**When** saved
-**Then** items in that category will be auto-assigned to tables 1-3
+**Étant donné** que l'admin ajoute une catégorie (ex. « Jouets ») assignée aux tables 1, 2, 3
+**Quand** sauvegardée
+**Alors** les articles de cette catégorie seront auto-assignés aux tables 1-3
 
-**Given** the edition has not yet entered Deposit phase
-**When** the admin edits categories and table mapping
-**Then** edits are saved immediately
+**Étant donné** que l'édition n'a pas encore démarré la phase Dépôt
+**Quand** l'admin modifie les catégories et la correspondance des tables
+**Alors** les modifications sont sauvegardées immédiatement
 
-**Given** the edition has entered Deposit phase
-**When** the admin opens the categories page
-**Then** the page is read-only with a banner indicating "Categories locked"
+**Étant donné** que l'édition est entrée en phase Dépôt
+**Quand** l'admin ouvre la page des catégories
+**Alors** la page est en lecture seule avec une bannière indiquant « Catégories verrouillées »
 
-### Story 2.4: Real-Time Phase Notification via SSE
+### Story 2.4 : Notification de phase en temps réel via SSE
 
-As a volunteer,
-I want to see the active phase update in real-time in the topbar without refreshing,
-So that I always know which interface I should be using without manual page reloads.
+En tant que bénévole,
+je veux voir la phase active se mettre à jour en temps réel dans la barre supérieure sans rechargement de page,
+afin de toujours savoir quelle interface utiliser sans recharger manuellement la page.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a volunteer is logged in and connected
-**When** the admin transitions the edition to Sale phase
-**Then** the phase chip in the volunteer topbar updates within 2 seconds
-**And** the chip uses a 150ms fade transition
+**Étant donné** qu'un bénévole est connecté et actif
+**Quand** l'admin fait passer l'édition en phase Vente
+**Alors** le chip de phase dans la barre supérieure du bénévole se met à jour en moins de 2 secondes
+**Et** le chip utilise une transition de fondu de 150ms
 
-**Given** the Angular app initializes
-**When** a user logs in
-**Then** `PhaseService` opens an `EventSource` connection to `GET /api/sse/events`
-**And** the current phase is loaded as a `Signal<Phase>` from an initial REST call
+**Étant donné** que l'application Angular s'initialise
+**Quand** un utilisateur se connecte
+**Alors** `PhaseService` ouvre une connexion `EventSource` vers `GET /api/sse/events`
+**Et** la phase courante est chargée sous forme de `Signal<Phase>` depuis un appel REST initial
 
-**Given** the SSE connection is interrupted
-**When** connectivity is restored
-**Then** `EventSource` auto-reconnects without requiring user action
+**Étant donné** que la connexion SSE est interrompue
+**Quand** la connectivité est rétablie
+**Alors** `EventSource` se reconnecte automatiquement sans action de l'utilisateur
 
-**Given** an admin transitions a phase
-**When** the SSE event is broadcast
-**Then** all connected clients receive the `phase-changed` event
-**And** the `SseEmitterRegistry` closes the emitter after broadcasting
+**Étant donné** qu'un admin effectue une transition de phase
+**Quand** l'événement SSE est diffusé
+**Alors** tous les clients connectés reçoivent l'événement `phase-changed`
+**Et** le `SseEmitterRegistry` ferme l'émetteur après la diffusion
 
-### Story 2.5: Edition Closure & Clean Edition
+### Story 2.5 : Clôture de l'édition & Nettoyage de l'édition
 
-As an admin,
-I want to officially close an edition and optionally clean its item records,
-So that the edition is properly archived and storage can be freed after the event.
+En tant qu'administrateur,
+je veux clôturer officiellement une édition et optionnellement nettoyer ses enregistrements d'articles,
+afin que l'édition soit correctement archivée et que le stockage puisse être libéré après l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the edition is in Post-sale phase
-**When** the admin clicks "Close Edition" and confirms
-**Then** the edition phase changes to "Closed" and becomes read-only
-**And** edition summary PDFs are generated in both EN and FR (FR-013)
+**Étant donné** que l'édition est en phase Post-vente
+**Quand** l'admin clique sur « Clôturer l'édition » et confirme
+**Alors** la phase de l'édition passe à « Clôturée » et devient en lecture seule
+**Et** les PDF de bilan d'édition sont générés en EN et FR (FR-013)
 
-**Given** the edition is Closed and item records exist
-**When** the admin views the edition detail
-**Then** a "Clean Edition" button is visible (secondary error-color style)
+**Étant donné** que l'édition est Clôturée et que des enregistrements d'articles existent
+**Quand** l'admin consulte le détail de l'édition
+**Alors** un bouton « Nettoyer l'édition » est visible (style secondaire couleur erreur)
 
-**Given** the admin clicks "Clean Edition" and confirms
-**When** the action completes
-**Then** all item records for that edition are permanently deleted
-**And** the "Clean Edition" button disappears
-**And** the catalog shows "Edition cleaned - no items." empty state
-**And** rollback from Closed is permanently disabled for this edition (FR-088)
+**Étant donné** que l'admin clique sur « Nettoyer l'édition » et confirme
+**Quand** l'action se termine
+**Alors** tous les enregistrements d'articles de cette édition sont définitivement supprimés
+**Et** le bouton « Nettoyer l'édition » disparaît
+**Et** le catalogue affiche l'état vide « Édition nettoyée — aucun article. »
+**Et** le retour arrière depuis Clôturée est définitivement désactivé pour cette édition (FR-088)
 
-**Given** a Closed edition has been cleaned
-**When** the admin views the edition
-**Then** aggregate metrics (total sales, revenue, commission) remain visible in read-only mode (FR-059)
+**Étant donné** qu'une édition Clôturée a été nettoyée
+**Quand** l'admin consulte l'édition
+**Alors** les métriques agrégées (total des ventes, recettes, commission) restent visibles en lecture seule (FR-059)
 
 ---
 
-## Epic 3: Seller Registration & Deposit
+## Epic 3 : Enregistrement des vendeurs & Dépôt
 
-Volunteers can register sellers and all their items (including lots) with automatic table assignment, and print labels and deposit slips via the centralized thermal printer.
+Les bénévoles peuvent enregistrer les vendeurs et tous leurs articles (y compris les lots) avec assignation automatique de table, et imprimer les étiquettes et bordereaux de dépôt via l'imprimante thermique centralisée.
 
-### Story 3.1: Seller Profile Management
+### Story 3.1 : Gestion des profils vendeurs
 
-As a volunteer,
-I want to search for existing sellers and register new seller profiles,
-So that sellers can be associated with their items without re-entering their information each edition.
+En tant que bénévole,
+je veux rechercher des vendeurs existants et enregistrer de nouveaux profils vendeurs,
+afin que les vendeurs puissent être associés à leurs articles sans ressaisir leurs informations à chaque édition.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the volunteer is on the deposit page `/volunteer/deposit`
-**When** the page loads
-**Then** the seller search field receives focus automatically
+**Étant donné** que le bénévole est sur la page de dépôt `/volunteer/deposit`
+**Quand** la page se charge
+**Alors** le champ de recherche vendeur reçoit le focus automatiquement
 
-**Given** the volunteer types a name or email
-**When** characters are entered
-**Then** matching seller profiles appear in real-time
+**Étant donné** que le bénévole saisit un nom ou un e-mail
+**Quand** des caractères sont saisis
+**Alors** les profils vendeurs correspondants apparaissent en temps réel
 
-**Given** no matching seller is found
-**When** the volunteer sees the empty result
-**Then** a "Create new profile" button is displayed
+**Étant donné** qu'aucun vendeur correspondant n'est trouvé
+**Quand** le bénévole voit le résultat vide
+**Alors** un bouton « Créer un nouveau profil » est affiché
 
-**Given** the volunteer fills in last name, first name, email, and phone
-**When** the form is submitted
-**Then** a new seller profile is created and immediately selectable for item registration
+**Étant donné** que le bénévole renseigne nom, prénom, e-mail et téléphone
+**Quand** le formulaire est soumis
+**Alors** un nouveau profil vendeur est créé et immédiatement sélectionnable pour l'enregistrement d'articles
 
-**Given** a seller profile exists from a previous edition
-**When** the volunteer selects it
-**Then** the profile is reused â€” no duplicate is created (FR-019 cross-edition persistence)
+**Étant donné** qu'un profil vendeur existe depuis une édition précédente
+**Quand** le bénévole le sélectionne
+**Alors** le profil est réutilisé — aucun doublon n'est créé (FR-019 persistance inter-éditions)
 
-**Given** the admin triggers a GDPR deletion on a seller profile
-**When** the deletion completes
-**Then** last name, first name, email, and phone are anonymized across all editions (FR-021)
-**And** item descriptions belonging to this seller are also anonymized
-**And** product categories are retained
-**And** no PII appears in application logs
+**Étant donné** que l'admin déclenche une suppression RGPD sur un profil vendeur
+**Quand** la suppression se termine
+**Alors** le nom, prénom, e-mail et téléphone sont anonymisés dans toutes les éditions (FR-021)
+**Et** les descriptions des articles appartenant à ce vendeur sont également anonymisées
+**Et** les catégories de produits sont conservées
+**Et** aucune donnée personnelle n'apparaît dans les logs applicatifs
 
-### Story 3.2: Item Registration & Auto-Table Assignment
+### Story 3.2 : Enregistrement d'articles & Assignation automatique de table
 
-As a volunteer,
-I want to register items for a seller with automatic table assignment,
-So that items are correctly cataloged and physically located during the event.
+En tant que bénévole,
+je veux enregistrer des articles pour un vendeur avec assignation automatique de table,
+afin que les articles soient correctement catalogués et localisés physiquement pendant l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a seller is selected and the volunteer enters an item
-**When** they fill in name/description, price, category, and complete/incomplete flag
-**Then** the table is automatically assigned from the edition category-to-table mapping (FR-023)
-**And** the assigned table number is displayed immediately
+**Étant donné** qu'un vendeur est sélectionné et que le bénévole saisit un article
+**Quand** il renseigne nom/description, prix, catégorie et indicateur complet/incomplet
+**Alors** la table est automatiquement assignée depuis la correspondance catégorie-table de l'édition (FR-023)
+**Et** le numéro de table assigné est affiché immédiatement
 
-**Given** the volunteer checks "Incomplete" for an item
-**When** saving the item
-**Then** a comment field is required
-**And** the incompleteness indicator is stored with the item
+**Étant donné** que le bénévole coche « Incomplet » pour un article
+**Quand** l'article est sauvegardé
+**Alors** un champ commentaire est requis
+**Et** l'indicateur d'incomplétude est stocké avec l'article
 
-**Given** an item is registered during Deposit phase
-**When** the volunteer edits its name, price, or category
-**Then** the change is saved and the table is re-assigned if the category changed (FR-024)
+**Étant donné** qu'un article est enregistré en phase Dépôt
+**Quand** le bénévole modifie son nom, son prix ou sa catégorie
+**Alors** la modification est sauvegardée et la table est réassignée si la catégorie a changé (FR-024)
 
-**Given** an item is registered during Deposit phase
-**When** the volunteer deletes it
-**Then** the item is removed from the seller list (FR-024)
+**Étant donné** qu'un article est enregistré en phase Dépôt
+**Quand** le bénévole le supprime
+**Alors** l'article est retiré de la liste du vendeur (FR-024)
 
-**Given** the edition has advanced past Deposit phase
-**When** a volunteer attempts to edit or delete an item
-**Then** the action is blocked with an explicit message
+**Étant donné** que l'édition a dépassé la phase Dépôt
+**Quand** un bénévole tente de modifier ou supprimer un article
+**Alors** l'action est bloquée avec un message explicite
 
-**Given** an item exists in any phase
-**When** a volunteer modifies the complete/incomplete flag or comment
-**Then** the change is saved immediately (FR-025)
-**And** all prices are stored as BigDecimal (NFR-003)
+**Étant donné** qu'un article existe dans n'importe quelle phase
+**Quand** un bénévole modifie l'indicateur complet/incomplet ou le commentaire
+**Alors** la modification est sauvegardée immédiatement (FR-025)
+**Et** tous les prix sont stockés sous forme de BigDecimal (NFR-003)
 
-### Story 3.3: Lot Creation & Management
+### Story 3.3 : Création et gestion des lots
 
-As a volunteer,
-I want to group items into an indivisible lot with a single global price,
-So that sets sold together are treated as an atomic unit during the sale.
+En tant que bénévole,
+je veux regrouper des articles en un lot indivisible avec un prix global unique,
+afin que les ensembles vendus ensemble soient traités comme une unité atomique lors de la vente.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the volunteer is registering items for a seller
-**When** they choose to create a lot
-**Then** they can enter a lot name and a global price (BigDecimal)
-**And** they can add multiple items to the lot, each with its own name/description (FR-043, FR-044)
+**Étant donné** que le bénévole enregistre des articles pour un vendeur
+**Quand** il choisit de créer un lot
+**Alors** il peut saisir un nom de lot et un prix global (BigDecimal)
+**Et** il peut ajouter plusieurs articles au lot, chacun avec son propre nom/description (FR-043, FR-044)
 
-**Given** a lot contains multiple items
-**When** the lot is saved
-**Then** each item has its own barcode generated (one label per item, FR-044)
-**And** lot items inherit auto-table assignment from their category
+**Étant donné** qu'un lot contient plusieurs articles
+**Quand** le lot est sauvegardé
+**Alors** chaque article reçoit son propre code-barres généré (une étiquette par article, FR-044)
+**Et** les articles du lot héritent de l'assignation automatique de table depuis leur catégorie
 
-**Given** a lot item label is generated
-**When** rendered
-**Then** it shows "Lot price: Xâ‚¬" instead of individual price
-**And** "Indivisible lot: X/N" where X is the item position and N is the total (FR-045)
+**Étant donné** qu'une étiquette est générée pour un article de lot
+**Quand** rendue
+**Alors** elle affiche « Prix du lot : X€ » à la place du prix individuel
+**Et** « Lot indivisible : X/N » où X est la position de l'article et N est le total (FR-045)
 
-### Story 3.4: Print Infrastructure â€” Server-Side Queues
+### Story 3.4 : Infrastructure d'impression — Files d'attente côté serveur
 
-As a volunteer who triggers printing,
-I want print jobs to be processed server-side without any printer on my workstation,
-So that printing works from any browser-connected workstation during the event.
+En tant que bénévole déclenchant une impression,
+je veux que les travaux d'impression soient traités côté serveur sans imprimante sur mon poste de travail,
+afin que l'impression fonctionne depuis n'importe quel poste connecté via navigateur pendant l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the Spring Boot application starts
-**When** the context is initialized
-**Then** two `LinkedBlockingQueue` beans exist: one for thermal labels, one for A4 documents
-**And** each queue has a dedicated consumer thread running as a Spring bean
+**Étant donné** que l'application Spring Boot démarre
+**Quand** le contexte est initialisé
+**Alors** deux beans `LinkedBlockingQueue` existent : un pour les étiquettes thermiques, un pour les documents A4
+**Et** chaque file d'attente dispose d'un thread consommateur dédié fonctionnant en tant que bean Spring
 
-**Given** multiple print jobs are submitted concurrently
-**When** they enter the thermal queue
-**Then** jobs are executed sequentially â€” one at a time (FR-029)
+**Étant donné** que plusieurs travaux d'impression sont soumis de manière concurrente
+**Quand** ils entrent dans la file thermique
+**Alors** les travaux sont exécutés séquentiellement — un à la fois (FR-029)
 
-**Given** a user triggers printing from the interface
-**When** the request is received
-**Then** a spinner appears in the print button during queue submission (UX-DR19)
-**And** no action is required on the client workstation (FR-078)
+**Étant donné** qu'un utilisateur déclenche l'impression depuis l'interface
+**Quand** la requête est reçue
+**Alors** un spinner apparaît dans le bouton d'impression pendant la soumission à la file (UX-DR19)
+**Et** aucune action n'est requise sur le poste client (FR-078)
 
-**Given** a print job completes successfully
-**When** the consumer thread finishes
-**Then** a success toast appears for 4 seconds
+**Étant donné** qu'un travail d'impression se termine avec succès
+**Quand** le thread consommateur termine
+**Alors** un toast de succès apparaît pendant 4 secondes
 
-**Given** the printer is offline or errors
-**When** a print job fails
-**Then** a persistent error toast appears: "The [thermal/A4] printer is not responding. Check the USB connection." (FR-079)
-**And** the print action remains re-triggerable from the interface
+**Étant donné** que l'imprimante est hors ligne ou en erreur
+**Quand** un travail d'impression échoue
+**Alors** un toast d'erreur persistant apparaît : « L'imprimante [thermique/A4] ne répond pas. Vérifiez la connexion USB. » (FR-079)
+**Et** l'action d'impression reste redéclenchable depuis l'interface
 
-### Story 3.5: Thermal Label Generation & Printing
+### Story 3.5 : Génération & Impression des étiquettes thermiques
 
-As a volunteer validating a seller deposit,
-I want item labels to be automatically printed on the thermal printer,
-So that items are physically labeled immediately after deposit without manual steps.
+En tant que bénévole validant le dépôt d'un vendeur,
+je veux que les étiquettes d'articles soient automatiquement imprimées sur l'imprimante thermique,
+afin que les articles soient physiquement étiquetés immédiatement après le dépôt, sans étape manuelle.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** an item is registered
-**When** saved
-**Then** a unique Code 128 barcode is generated server-side using ZXing (FR-026)
+**Étant donné** qu'un article est enregistré
+**Quand** sauvegardé
+**Alors** un code-barres Code 128 unique est généré côté serveur via ZXing (FR-026)
 
-**Given** a deposit is validated
-**When** validation completes
-**Then** all labels for that seller are automatically queued for thermal printing (FR-028)
-**And** the roll format is: seller separator (name + edition) -> item label -> item separator -> item label -> ... (FR-030)
+**Étant donné** qu'un dépôt est validé
+**Quand** la validation se termine
+**Alors** toutes les étiquettes de ce vendeur sont automatiquement mises en file d'attente pour l'impression thermique (FR-028)
+**Et** le format du rouleau est : séparateur vendeur (nom + édition) → étiquette article → séparateur article → étiquette article → … (FR-030)
 
-**Given** a label is generated for a standard item
-**When** rendered for ESC/POS
-**Then** it displays: Code 128 barcode graphic (bitmap), human-readable barcode number, item name (wrapping if needed), price, category, table number, incompleteness indicator if applicable
-**And** no seller name appears on the label (GDPR, FR-027)
+**Étant donné** qu'une étiquette est générée pour un article standard
+**Quand** rendue pour ESC/POS
+**Alors** elle affiche : graphique Code 128 (bitmap), numéro de code-barres lisible, nom de l'article (avec retour à la ligne si nécessaire), prix, catégorie, numéro de table, indicateur d'incomplétude si applicable
+**Et** aucun nom de vendeur n'apparaît sur l'étiquette (RGPD, FR-027)
 
-**Given** a label is generated for a lot item
-**When** rendered
-**Then** it shows "Lot price: Xâ‚¬" and "Indivisible lot: X/N" (FR-045)
+**Étant donné** qu'une étiquette est générée pour un article de lot
+**Quand** rendue
+**Alors** elle affiche « Prix du lot : X€ » et « Lot indivisible : X/N » (FR-045)
 
-**Given** the instance config has a thermal ticket width set
-**When** the ESC/POS job is prepared
-**Then** that width is applied (FR-032, default 57mm)
+**Étant donné** que la configuration de l'instance a une largeur de ticket thermique définie
+**Quand** le travail ESC/POS est préparé
+**Alors** cette largeur est appliquée (FR-032, défaut 57 mm)
 
-### Story 3.6: Deposit Slip PDF Generation & Printing
+### Story 3.6 : Génération & Impression du bordereau de dépôt PDF
 
-As a volunteer completing a deposit,
-I want to print a deposit slip per seller,
-So that the seller has a paper record of what they deposited and how much they will receive.
+En tant que bénévole complétant un dépôt,
+je veux imprimer un bordereau de dépôt par vendeur,
+afin que le vendeur dispose d'un justificatif papier de ce qu'il a déposé et du montant qu'il percevra.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a seller deposit is complete
-**When** the volunteer clicks "Print deposit slip"
-**Then** a PDF is generated server-side using OpenPDF 3.0.0 in the instance document language
+**Étant donné** que le dépôt d'un vendeur est terminé
+**Quand** le bénévole clique sur « Imprimer le bordereau de dépôt »
+**Alors** un PDF est généré côté serveur via OpenPDF 3.0.0 dans la langue des documents de l'instance
 
-**Given** the PDF is generated
-**When** the content is rendered
-**Then** it contains: item list (name, unit price), commission rate, expected net payout (BigDecimal, cent-accurate, FR-031)
-**And** a lot appears as a single line (lot name, lot price)
+**Étant donné** que le PDF est généré
+**Quand** le contenu est rendu
+**Alors** il contient : liste des articles (nom, prix unitaire), taux de commission, reversement net attendu (BigDecimal, précis au centime, FR-031)
+**Et** un lot apparaît sur une seule ligne (nom du lot, prix du lot)
 
-**Given** the PDF is generated
-**When** sent for printing
-**Then** it is queued in the A4 document queue and sent to the USB standard printer
+**Étant donné** que le PDF est généré
+**Quand** envoyé pour impression
+**Alors** il est mis en file d'attente dans la file des documents A4 et envoyé à l'imprimante standard USB
 
-**Given** the deposit slip was printed once
-**When** the volunteer re-triggers printing later
-**Then** the slip is re-generated and re-queued (always re-printable)
+**Étant donné** que le bordereau a déjà été imprimé une fois
+**Quand** le bénévole redéclenche l'impression
+**Alors** le bordereau est régénéré et remis en file d'attente (toujours réimprimable)
 
 ---
 
-## Epic 4: Point of Sale
+## Epic 4 : Point de vente
 
-Volunteers can scan items with a USB barcode scanner, manage baskets with full lot support, complete sales, and print buyer invoices -- safely across multiple simultaneous workstations.
+Les bénévoles peuvent scanner des articles avec un scanner code-barres USB, gérer les paniers avec prise en charge complète des lots, finaliser les ventes et imprimer les factures acheteurs — en toute sécurité sur plusieurs postes simultanés.
 
-### Story 4.1: Scanner Component & Item Scan
+### Story 4.1 : Composant scanner & Scan d'articles
 
-As a volunteer cashier,
-I want to scan items with a USB barcode scanner that works regardless of keyboard layout,
-So that I can process sales quickly without configuring each workstation.
+En tant que bénévole caissier,
+je veux scanner des articles avec un scanner code-barres USB fonctionnant quelle que soit la disposition du clavier,
+afin de traiter les ventes rapidement sans configurer chaque poste de travail.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the volunteer opens `/volunteer/pos`
-**When** the page loads
-**Then** the scanner input field is auto-focused and captures all keyboard events
+**Étant donné** que le bénévole ouvre `/volunteer/pos`
+**Quand** la page se charge
+**Alors** le champ de saisie scanner est auto-focalisé et capture tous les événements clavier
 
-**Given** the volunteer clicks elsewhere on the page
-**When** 500ms of keyboard inactivity elapses
-**Then** focus returns automatically to the scanner input
+**Étant donné** que le bénévole clique ailleurs sur la page
+**Quand** 500ms d'inactivité clavier s'écoulent
+**Alors** le focus revient automatiquement sur le champ de saisie scanner
 
-**Given** a scanner sends a barcode on a QWERTY layout while the OS is set to AZERTY
-**When** the scan is processed
-**Then** the correct barcode value is decoded via key code mapping (FR-034)
+**Étant donné** qu'un scanner envoie un code-barres sur une disposition QWERTY alors que l'OS est en AZERTY
+**Quand** le scan est traité
+**Alors** la valeur correcte du code-barres est décodée via la correspondance de codes de touches (FR-034)
 
-**Given** a valid barcode is scanned
-**When** the item is found and available
-**Then** the item is added to the basket and displays name and price (FR-035)
+**Étant donné** qu'un code-barres valide est scanné
+**Quand** l'article est trouvé et disponible
+**Alors** l'article est ajouté au panier et affiche le nom et le prix (FR-035)
 
-**Given** a barcode is scanned for an already-sold item
-**When** the lookup completes
-**Then** an inline error appears: "Item already sold on another workstation." (FR-036)
-**And** the item is not added to the basket
+**Étant donné** qu'un code-barres est scanné pour un article déjà vendu
+**Quand** la recherche se termine
+**Alors** une erreur inline apparaît : « Article déjà vendu sur un autre poste. » (FR-036)
+**Et** l'article n'est pas ajouté au panier
 
-**Given** a barcode is scanned for an item with the incomplete flag
-**When** the item is found
-**Then** an inline warning is displayed with the missing detail (FR-037)
-**And** the item is added to the basket (still sellable)
+**Étant donné** qu'un code-barres est scanné pour un article avec l'indicateur incomplet
+**Quand** l'article est trouvé
+**Alors** un avertissement inline est affiché avec le détail manquant (FR-037)
+**Et** l'article est ajouté au panier (toujours vendable)
 
-### Story 4.2: Basket Management & Payment Validation
+### Story 4.2 : Gestion du panier & Validation du paiement
 
-As a volunteer cashier,
-I want to manage the buyer basket and validate payment,
-So that I can complete transactions cleanly with a full audit trail.
+En tant que bénévole caissier,
+je veux gérer le panier acheteur et valider le paiement,
+afin de conclure les transactions proprement avec un historique complet.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** items have been added to the basket
-**When** the basket is displayed
-**Then** each item shows its name and unit price
-**And** the running total is shown at the bottom
+**Étant donné** que des articles ont été ajoutés au panier
+**Quand** le panier est affiché
+**Alors** chaque article affiche son nom et son prix unitaire
+**Et** le total courant est affiché en bas
 
-**Given** the volunteer wants to remove an item
-**When** they click the close icon on an item row
-**Then** the item is removed from the basket
+**Étant donné** que le bénévole souhaite retirer un article
+**Quand** il clique sur l'icône fermer d'une ligne d'article
+**Alors** l'article est retiré du panier
 
-**Given** the basket contains only complete items (no incomplete lots)
-**When** the volunteer clicks "Validate"
-**Then** all basket items are marked as sold in a single atomic transaction (FR-039)
-**And** the basket is cleared and ready for a new transaction
+**Étant donné** que le panier contient uniquement des articles complets (aucun lot incomplet)
+**Quand** le bénévole clique sur « Valider »
+**Alors** tous les articles du panier sont marqués comme vendus dans une transaction atomique unique (FR-039)
+**Et** le panier est vidé et prêt pour une nouvelle transaction
 
-**Given** payment has been validated
-**When** the transaction closes
-**Then** no item can be returned or modified (FR-039: no returns or exchanges)
+**Étant donné** que le paiement a été validé
+**Quand** la transaction se clôt
+**Alors** aucun article ne peut être retourné ou modifié (FR-039 : ni retour ni échange)
 
-### Story 4.3: Lot Handling at POS
+### Story 4.3 : Gestion des lots au POS
 
-As a volunteer cashier,
-I want the system to enforce lot integrity during scanning,
-So that indivisible lots are sold complete or not at all.
+En tant que bénévole caissier,
+je veux que le système impose l'intégrité des lots lors du scan,
+afin que les lots indivisibles soient vendus complets ou pas du tout.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a scanned item belongs to a lot
-**When** it is added to the basket
-**Then** the lot group appears with the lot name in red and a counter "1/N scanned" (FR-046)
-**And** the lot subtotal is shown in the group header
-**And** no individual item price is shown within the lot group
+**Étant donné** qu'un article scanné appartient à un lot
+**Quand** il est ajouté au panier
+**Alors** le groupe lot apparaît avec le nom du lot en rouge et un compteur « 1/N scannés » (FR-046)
+**Et** le sous-total du lot est affiché dans l'en-tête du groupe
+**Et** aucun prix individuel n'est affiché dans le groupe lot
 
-**Given** a lot is partially scanned
-**When** the volunteer clicks "Validate"
-**Then** validation is blocked with an inline message indicating how many items are missing (FR-047)
+**Étant donné** qu'un lot est partiellement scanné
+**Quand** le bénévole clique sur « Valider »
+**Alors** la validation est bloquée avec un message inline indiquant combien d'articles manquent (FR-047)
 
-**Given** all N items of a lot are scanned
-**When** the last item is added
-**Then** the lot is marked complete and sold at its global price (FR-048)
+**Étant donné** que les N articles d'un lot sont tous scannés
+**Quand** le dernier article est ajouté
+**Alors** le lot est marqué complet et vendu à son prix global (FR-048)
 
-**Given** a lot is partially scanned and the buyer cannot find remaining items
-**When** the volunteer clicks "Remove entire lot"
-**Then** all items of that lot are removed from the basket (FR-081)
-**And** the validate button re-enables if no other blocking lot remains
+**Étant donné** qu'un lot est partiellement scanné et que l'acheteur ne trouve pas les articles restants
+**Quand** le bénévole clique sur « Retirer le lot entier »
+**Alors** tous les articles de ce lot sont retirés du panier (FR-081)
+**Et** le bouton valider se réactive si aucun autre lot bloquant ne subsiste
 
-**Given** a completed lot is validated
-**When** the invoice is generated
-**Then** the lot appears as a single line: lot name and lot price (FR-041)
+**Étant donné** qu'un lot complet est validé
+**Quand** la facture est générée
+**Alors** le lot apparaît sur une seule ligne : nom du lot et prix du lot (FR-041)
 
-### Story 4.4: Multi-Workstation Concurrency Safety
+### Story 4.4 : Sécurité de la concurrence multi-postes
 
-As a volunteer on any cashier workstation,
-I want the system to prevent double-selling the same item,
-So that two cashiers cannot accidentally sell the same item to different buyers.
+En tant que bénévole sur n'importe quel poste caissier,
+je veux que le système empêche la double vente du même article,
+afin que deux caissiers ne puissent pas accidentellement vendre le même article à deux acheteurs différents.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** two volunteers on separate workstations have the same item in their baskets
-**When** the first volunteer validates successfully
-**Then** the second volunteer's validation returns a 409 with the list of conflicting items
+**Étant donné** que deux bénévoles sur des postes séparés ont le même article dans leurs paniers
+**Quand** le premier bénévole valide avec succès
+**Alors** la validation du second bénévole retourne un 409 avec la liste des articles en conflit
 
-**Given** a 409 conflict is returned
-**When** the Angular POS component receives it
-**Then** an inline notification lists the conflicting items by name
-**And** the volunteer manually removes them and re-validates
+**Étant donné** qu'un conflit 409 est retourné
+**Quand** le composant Angular POS le reçoit
+**Alors** une notification inline liste les articles en conflit par nom
+**Et** le bénévole les retire manuellement et revalide
 
-**Given** a sale is being validated
-**When** the optimistic lock (`@Version` on `Item`) detects a concurrent write
-**Then** the transaction rolls back and a 409 is returned -- no partial sale recorded
+**Étant donné** qu'une vente est en cours de validation
+**Quand** le verrou optimiste (`@Version` sur `Item`) détecte une écriture concurrente
+**Alors** la transaction est annulée et un 409 est retourné — aucune vente partielle n'est enregistrée
 
-**Given** a Testcontainers MariaDB integration test
-**When** two concurrent `TransactionTemplate` threads validate overlapping baskets
-**Then** exactly one succeeds and the other receives a 409
+**Étant donné** qu'un test d'intégration Testcontainers MariaDB est exécuté
+**Quand** deux threads `TransactionTemplate` concurrents valident des paniers qui se chevauchent
+**Alors** exactement un réussit et l'autre reçoit un 409
 
-### Story 4.5: Buyer Invoice Printing
+### Story 4.5 : Impression de la facture acheteur
 
-As a volunteer cashier,
-I want to print a buyer invoice on demand after a validated sale,
-So that the buyer has a paper record of their purchase.
+En tant que bénévole caissier,
+je veux imprimer une facture acheteur à la demande après une vente validée,
+afin que l'acheteur dispose d'un justificatif papier de son achat.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a payment has been validated
-**When** the volunteer clicks "Print invoice"
-**Then** a PDF is generated server-side using OpenPDF 3.0.0
+**Étant donné** qu'un paiement a été validé
+**Quand** le bénévole clique sur « Imprimer la facture »
+**Alors** un PDF est généré côté serveur via OpenPDF 3.0.0
 
-**Given** the PDF is generated
-**When** the content is rendered
-**Then** it contains: item list (name, unit price), basket total, association name, edition name, date (FR-041)
-**And** a lot appears as a single line (lot name, lot price)
+**Étant donné** que le PDF est généré
+**Quand** le contenu est rendu
+**Alors** il contient : liste des articles (nom, prix unitaire), total du panier, nom de l'association, nom de l'édition, date (FR-041)
+**Et** un lot apparaît sur une seule ligne (nom du lot, prix du lot)
 
-**Given** the PDF is generated
-**When** sent for printing
-**Then** it is queued in the A4 document queue and sent to the USB standard printer
+**Étant donné** que le PDF est généré
+**Quand** envoyé pour impression
+**Alors** il est mis en file d'attente dans la file des documents A4 et envoyé à l'imprimante standard USB
 
-**Given** the invoice was printed once
-**When** the volunteer re-triggers printing
-**Then** the invoice is re-queued (always re-printable)
+**Étant donné** que la facture a déjà été imprimée une fois
+**Quand** le bénévole redéclenche l'impression
+**Alors** la facture est remise en file d'attente (toujours réimprimable)
 
-### Story 4.6: Phase Transition Basket Cancellation
+### Story 4.6 : Annulation du panier lors d'une transition de phase
 
-As a volunteer cashier with an active basket,
-I want to be immediately notified if the admin changes the phase while I am mid-transaction,
-So that I do not attempt to complete a sale in a phase where it is no longer valid.
+En tant que bénévole caissier avec un panier actif,
+je veux être immédiatement notifié si l'administrateur change la phase pendant que je suis en cours de transaction,
+afin de ne pas tenter de finaliser une vente dans une phase où elle n'est plus valide.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a volunteer has an active basket on the cashier page
-**When** the admin transitions the edition phase
-**Then** the server cancels all active baskets and sends SSE `basket-cancelled` to affected clients (FR-090)
+**Étant donné** qu'un bénévole a un panier actif sur la page caissier
+**Quand** l'admin fait transiter la phase de l'édition
+**Alors** le serveur annule tous les paniers actifs et envoie le SSE `basket-cancelled` aux clients concernés (FR-090)
 
-**Given** the Angular POS component receives `basket-cancelled`
-**When** the event arrives
-**Then** a persistent toast appears: "The phase has changed. Your basket has been cancelled."
-**And** the basket is cleared
-**And** the scanner input is disabled
+**Étant donné** que le composant Angular POS reçoit `basket-cancelled`
+**Quand** l'événement arrive
+**Alors** un toast persistant apparaît : « La phase a changé. Votre panier a été annulé. »
+**Et** le panier est vidé
+**Et** le champ de saisie scanner est désactivé
 
-**Given** the scanner is disabled after basket cancellation
-**When** the volunteer wants to resume
-**Then** they must reload the cashier page to reactivate the scanner
+**Étant donné** que le scanner est désactivé après l'annulation du panier
+**Quand** le bénévole veut reprendre
+**Alors** il doit recharger la page caissier pour réactiver le scanner
 
-**Given** a volunteer has no active basket
-**When** a phase transition occurs
-**Then** no basket-cancelled event is sent to them -- only the phase-changed event updates the phase chip
+**Étant donné** qu'un bénévole n'a pas de panier actif
+**Quand** une transition de phase se produit
+**Alors** aucun événement basket-cancelled ne lui est envoyé — seul l'événement phase-changed met à jour le chip de phase
 
 ---
 
-## Epic 5: Post-Sale, Payouts & Reporting
+## Epic 5 : Post-vente, Reversements & Rapports
 
-Volunteers can settle sellers and process payouts. Admins can generate daily and edition summary reports as PDFs, identify unsettled sellers, and officially close editions.
+Les bénévoles peuvent solder les vendeurs et traiter les reversements. Les administrateurs peuvent générer des rapports de bilan journaliers et d'édition en PDF, identifier les vendeurs non soldés et clôturer officiellement les éditions.
 
-### Story 5.1: Seller Settlement Workflow
+### Story 5.1 : Flux de solde des vendeurs
 
-As a volunteer,
-I want to see the list of unsettled sellers and settle them or mark their payout as not collected,
-So that all payouts are accounted for before the end of the event.
+En tant que bénévole,
+je veux voir la liste des vendeurs non soldés et les solder ou marquer leur reversement comme non réclamé,
+afin que tous les reversements soient comptabilisés avant la fin de l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the volunteer navigates to `/volunteer/settlement`
-**When** the page loads
-**Then** all unsettled sellers are listed with name, amount owed, and phone number (FR-053)
+**Étant donné** que le bénévole navigue vers `/volunteer/settlement`
+**Quand** la page se charge
+**Alors** tous les vendeurs non soldés sont listés avec nom, montant dû et numéro de téléphone (FR-053)
 
-**Given** the volunteer clicks "Settle" on a seller
-**When** the settle action completes
-**Then** the seller status changes to Settled
-**And** the seller disappears from the unsettled list
+**Étant donné** que le bénévole clique sur « Solder » pour un vendeur
+**Quand** l'action de solde se termine
+**Alors** le statut du vendeur passe à Soldé
+**Et** le vendeur disparaît de la liste des non soldés
 
-**Given** a seller does not wish to collect their payout
-**When** the volunteer clicks "Not collected" (FR-052)
-**Then** a confirm dialog appears: "The amount of X.XX EUR will be transferred to the association's revenue. This action is irreversible."
-**And** on confirmation, the full amount owed is recorded as association revenue
-**And** the seller is removed from the unsettled list
+**Étant donné** qu'un vendeur ne souhaite pas récupérer son reversement
+**Quand** le bénévole clique sur « Non réclamé » (FR-052)
+**Alors** une boîte de dialogue de confirmation apparaît : « Le montant de X,XX EUR sera transféré aux recettes de l'association. Cette action est irréversible. »
+**Et** à la confirmation, le montant total dû est enregistré comme recette de l'association
+**Et** le vendeur est retiré de la liste des non soldés
 
-**Given** a seller has been settled
-**When** the volunteer views the settlement list
-**Then** a "Print sales summary" button is available for that seller (UX-DR22)
-**And** clicking it queues the PDF for A4 printing with spinner and toast feedback
+**Étant donné** qu'un vendeur a été soldé
+**Quand** le bénévole consulte la liste de solde
+**Alors** un bouton « Imprimer le bilan de vente » est disponible pour ce vendeur (UX-DR22)
+**Et** cliquer dessus met le PDF en file d'attente pour impression A4 avec retour visuel spinner et toast
 
-### Story 5.2: Sales Summary PDF Generation
+### Story 5.2 : Génération du bilan de vente PDF
 
-As a volunteer or admin,
-I want to generate a sales summary per seller showing sold items, unsold items, and net payout,
-So that sellers can collect their payment with a detailed breakdown.
+En tant que bénévole ou administrateur,
+je veux générer un bilan de vente par vendeur affichant les articles vendus, les invendus et le reversement net,
+afin que les vendeurs puissent récupérer leur paiement avec un détail complet.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** a sales summary is requested for a seller
-**When** the PDF is generated using OpenPDF 3.0.0
-**Then** it contains: sold items (name, unit price), unsold items (name, category, table number), gross total, commission deducted, net amount to pay out (FR-050)
-**And** a lot appears as a single line (lot name, lot price)
+**Étant donné** qu'un bilan de vente est demandé pour un vendeur
+**Quand** le PDF est généré via OpenPDF 3.0.0
+**Alors** il contient : articles vendus (nom, prix unitaire), articles invendus (nom, catégorie, numéro de table), total brut, commission déduite, montant net à reverser (FR-050)
+**Et** un lot apparaît sur une seule ligne (nom du lot, prix du lot)
 
-**Given** a seller sold items with the incomplete flag
-**When** the net payout is calculated
-**Then** commission applies at the full rate -- incompleteness does not affect commission or sale price (FR-089)
-**And** all monetary values use BigDecimal (cent-accurate, NFR-003)
+**Étant donné** qu'un vendeur a vendu des articles avec l'indicateur incomplet
+**Quand** le reversement net est calculé
+**Alors** la commission s'applique au taux plein — l'incomplétude n'affecte ni la commission ni le prix de vente (FR-089)
+**Et** toutes les valeurs monétaires utilisent BigDecimal (précis au centime, NFR-003)
 
-**Given** the PDF language is set to "FR"
-**When** the document is generated
-**Then** all labels and headers use `messages_fr.properties` entries
+**Étant donné** que la langue du PDF est « FR »
+**Quand** le document est généré
+**Alors** tous les libellés et en-têtes utilisent les entrées de `messages_fr.properties`
 
-**Given** the admin views a seller's detail page
-**When** they click "Print sales summary"
-**Then** the same PDF is generated and queued for printing (UX-DR22)
+**Étant donné** que l'admin consulte la page de détail d'un vendeur
+**Quand** il clique sur « Imprimer le bilan de vente »
+**Alors** le même PDF est généré et mis en file d'attente pour impression (UX-DR22)
 
-### Story 5.3: Daily Sales Report (Admin)
+### Story 5.3 : Rapport de ventes journalier (Admin)
 
-As an admin,
-I want to generate a daily sales summary during the Sale phase,
-So that I can monitor daily revenue and sales performance during the event.
+En tant qu'administrateur,
+je veux générer un bilan des ventes journalier en phase Vente,
+afin de suivre les recettes et la performance des ventes au cours de l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the edition is in Sale phase
-**When** the admin generates a daily summary
-**Then** the report covers the current calendar day
-**And** contains: items sold and unsold for the day, daily gross revenue, daily commission earned (FR-054)
+**Étant donné** que l'édition est en phase Vente
+**Quand** l'admin génère un bilan journalier
+**Alors** le rapport couvre la journée calendaire en cours
+**Et** contient : articles vendus et invendus pour la journée, recettes brutes journalières, commission journalière perçue (FR-054)
 
-**Given** the report is generated
-**When** the PDF is produced using OpenPDF 3.0.0
-**Then** it uses the instance document language (FR-057)
+**Étant donné** que le rapport est généré
+**Quand** le PDF est produit via OpenPDF 3.0.0
+**Alors** il utilise la langue des documents de l'instance (FR-057)
 
-**Given** a volunteer attempts to access the reports page
-**When** the route is loaded
-**Then** access is denied with a 403 (FR-058: admin only)
+**Étant donné** qu'un bénévole tente d'accéder à la page des rapports
+**Quand** la route est chargée
+**Alors** l'accès est refusé avec un 403 (FR-058 : admin uniquement)
 
-**Given** the admin refreshes the daily report
-**When** refresh is triggered
-**Then** the report reflects the latest sales data for that calendar day
+**Étant donné** que l'admin actualise le rapport journalier
+**Quand** l'actualisation est déclenchée
+**Alors** le rapport reflète les dernières données de ventes pour cette journée calendaire
 
-### Story 5.4: Edition Summary & Outstanding Sellers Reports
+### Story 5.4 : Bilan d'édition & Rapports des vendeurs non soldés
 
-As an admin,
-I want edition-level summary reports and a list of unsettled sellers,
-So that I have a complete financial picture at the close of the event.
+En tant qu'administrateur,
+je veux des rapports de bilan au niveau de l'édition et une liste des vendeurs non soldés,
+afin d'avoir une vision financière complète à la clôture de l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the edition is closed
-**When** the admin views the reports page
-**Then** an edition summary PDF is available: total items sold/unsold, total gross revenue, total commission earned (FR-055)
+**Étant donné** que l'édition est clôturée
+**Quand** l'admin consulte la page des rapports
+**Alors** un PDF de bilan d'édition est disponible : total des articles vendus/invendus, recettes brutes totales, commission totale perçue (FR-055)
 
-**Given** the admin requests the outstanding sellers report
-**When** generated
-**Then** it lists all unsettled sellers with their phone number as a PDF (FR-056, FR-057)
+**Étant donné** que l'admin demande le rapport des vendeurs non soldés
+**Quand** généré
+**Alors** il liste tous les vendeurs non soldés avec leur numéro de téléphone sous forme de PDF (FR-056, FR-057)
 
-**Given** an edition is archived
-**When** any user views the edition
-**Then** aggregate metrics are visible in read-only mode
-**And** item-level detail is accessible only through the PDFs generated at closure (FR-059)
+**Étant donné** qu'une édition est archivée
+**Quand** un utilisateur quelconque consulte l'édition
+**Alors** les métriques agrégées sont visibles en lecture seule
+**Et** le détail au niveau des articles est accessible uniquement via les PDF générés à la clôture (FR-059)
 
-**Given** the Clean Edition action has been triggered
-**When** item records are deleted
-**Then** aggregate metrics remain available (stored independently of item records)
+**Étant donné** que l'action Nettoyage de l'édition a été déclenchée
+**Quand** les enregistrements d'articles sont supprimés
+**Alors** les métriques agrégées restent disponibles (stockées indépendamment des enregistrements d'articles)
 
-### Story 5.5: Admin Reports Page
+### Story 5.5 : Page des rapports admin
 
-As an admin,
-I want a reports page that shows only sections relevant to the current phase,
-So that I can act quickly without navigating irrelevant options.
+En tant qu'administrateur,
+je veux une page de rapports qui n'affiche que les sections pertinentes pour la phase courante,
+afin d'agir rapidement sans naviguer parmi des options non pertinentes.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the edition is in Sale phase
-**When** the admin navigates to `/admin/reports`
-**Then** only the daily summary section is shown with a "Refresh" button
-**And** synthesis and export sections are absent
+**Étant donné** que l'édition est en phase Vente
+**Quand** l'admin navigue vers `/admin/reports`
+**Alors** seule la section bilan journalier est affichée avec un bouton « Actualiser »
+**Et** les sections synthèse et export sont absentes
 
-**Given** the edition is in Post-sale or Closed phase
-**When** the admin navigates to `/admin/reports`
-**Then** the synthesis section is visible (total sales, payouts, association revenue) in read-only mode
-**And** two CSV export buttons appear: "Export catalog" and "Export payouts"
-**And** clicking a CSV export triggers a direct file download with no dialog
+**Étant donné** que l'édition est en phase Post-vente ou Clôturée
+**Quand** l'admin navigue vers `/admin/reports`
+**Alors** la section synthèse est visible (total des ventes, reversements, recettes de l'association) en lecture seule
+**Et** deux boutons d'export CSV apparaissent : « Exporter le catalogue » et « Exporter les reversements »
+**Et** cliquer sur un export CSV déclenche un téléchargement de fichier direct sans boîte de dialogue
 
-**Given** the edition is in Post-sale phase
-**When** the admin views the reports page
-**Then** a "Print outstanding sellers list" button is visible
-**And** clicking it opens the browser print view with the unsettled sellers list
+**Étant donné** que l'édition est en phase Post-vente
+**Quand** l'admin consulte la page des rapports
+**Alors** un bouton « Imprimer la liste des vendeurs non soldés » est visible
+**Et** cliquer dessus ouvre la vue d'impression du navigateur avec la liste des vendeurs non soldés
 
-**Given** a phase does not match a report section's availability condition
-**When** the admin views the reports page
-**Then** that section is completely absent (not greyed out -- absent)
+**Étant donné** qu'une phase ne correspond pas à la condition de disponibilité d'une section de rapport
+**Quand** l'admin consulte la page des rapports
+**Alors** cette section est complètement absente (pas grisée — absente)
 
 ---
 
-## Epic 6: Item Catalog
+## Epic 6 : Catalogue articles
 
-Admins and volunteers can browse, search, and filter all items in the active edition across all phases. During Sale phase, volunteers can add items directly to the basket from the catalog as a scanner fallback.
+Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases. En phase Vente, les bénévoles peuvent ajouter des articles directement au panier depuis le catalogue en tant que solution de secours au scanner.
 
-### Story 6.1: Item Catalog -- Filterable & Sortable List
+### Story 6.1 : Catalogue articles — Liste filtrable & triable
 
-As an admin or volunteer,
-I want to browse all items in the active edition with filters and sorting,
-So that I can quickly locate any item regardless of which phase the event is in.
+En tant qu'administrateur ou bénévole,
+je veux parcourir tous les articles de l'édition active avec des filtres et un tri,
+afin de localiser rapidement n'importe quel article quelle que soit la phase de l'événement.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the admin or volunteer navigates to `/admin/catalog` or `/volunteer/catalog`
-**When** the page loads
-**Then** all items of the active edition are displayed with pagination (default 50 per page, MatPaginator)
-**And** inline filters appear above the list
+**Étant donné** que l'admin ou le bénévole navigue vers `/admin/catalog` ou `/volunteer/catalog`
+**Quand** la page se charge
+**Alors** tous les articles de l'édition active sont affichés avec pagination (50 par page par défaut, MatPaginator)
+**Et** des filtres inline apparaissent au-dessus de la liste
 
-**Given** the user applies one or more filters
-**When** filters are submitted
-**Then** the list updates to show only matching items filtered by: name/description, barcode number, category, table, sold/unsold status, complete/incomplete flag, seller name (FR-084)
+**Étant donné** que l'utilisateur applique un ou plusieurs filtres
+**Quand** les filtres sont soumis
+**Alors** la liste se met à jour pour n'afficher que les articles correspondants filtrés par : nom/description, numéro de code-barres, catégorie, table, statut vendu/invendu, indicateur complet/incomplet, nom du vendeur (FR-084)
 
-**Given** the user clicks a sortable column header
-**When** clicked once
-**Then** the list sorts ascending with a visible indicator
-**And** clicking again sorts descending
+**Étant donné** que l'utilisateur clique sur un en-tête de colonne triable
+**Quand** cliqué une fois
+**Alors** la liste est triée par ordre croissant avec un indicateur visible
+**Et** cliquer à nouveau trie par ordre décroissant
 
-**Given** the price column is sorted
-**When** JPageFlow processes the BigDecimal sort
-**Then** the sort is attempted; if the known bug (JPageFlow v1.5.0) is present, the test documents this as a known failure pending the library patch (ARCH-005)
+**Étant donné** que la colonne prix est triée
+**Quand** JPageFlow traite le tri BigDecimal
+**Alors** le tri est tenté ; si le bug connu (JPageFlow v1.5.0) est présent, le test documente ceci comme un échec connu en attente du correctif de la bibliothèque (ARCH-005)
 
-**Given** the Clean Edition action has been triggered
-**When** a user navigates to the catalog
-**Then** an empty state appears: "Edition cleaned -- no items." with no action (FR-086)
+**Étant donné** que l'action Nettoyage de l'édition a été déclenchée
+**Quand** un utilisateur navigue vers le catalogue
+**Alors** un état vide apparaît : « Édition nettoyée — aucun article. » sans action (FR-086)
 
-**Given** multiple users filter the catalog simultaneously
-**When** each submits different filter combinations
-**Then** each receives their own correct result independently
+**Étant donné** que plusieurs utilisateurs filtrent le catalogue simultanément
+**Quand** chacun soumet des combinaisons de filtres différentes
+**Alors** chacun reçoit son propre résultat correct de manière indépendante
 
-### Story 6.2: Catalog-to-Basket POS Fallback
+### Story 6.2 : Secours catalogue-vers-panier au POS
 
-As a volunteer cashier,
-I want to add an item from the catalog directly to the basket during Sale phase,
-So that I can process sales even when a barcode is damaged or unreadable.
+En tant que bénévole caissier,
+je veux ajouter un article depuis le catalogue directement au panier en phase Vente,
+afin de traiter les ventes même lorsqu'un code-barres est endommagé ou illisible.
 
-**Acceptance Criteria:**
+**Critères d'acceptation :**
 
-**Given** the edition is in Sale phase and the volunteer is on the cashier page
-**When** they open the catalog
-**Then** each item row shows an "Add to basket" button
+**Étant donné** que l'édition est en phase Vente et que le bénévole est sur la page caissier
+**Quand** il ouvre le catalogue
+**Alors** chaque ligne d'article affiche un bouton « Ajouter au panier »
 
-**Given** the volunteer clicks "Add to basket" for an available item
-**When** the request is processed
-**Then** the item is added to the current basket with its name and price displayed
+**Étant donné** que le bénévole clique sur « Ajouter au panier » pour un article disponible
+**Quand** la requête est traitée
+**Alors** l'article est ajouté au panier courant avec son nom et son prix affichés
 
-**Given** the volunteer attempts to add an already-sold item
-**When** the request is processed
-**Then** the system rejects it with an inline error message (FR-087: already-sold guard)
+**Étant donné** que le bénévole tente d'ajouter un article déjà vendu
+**Quand** la requête est traitée
+**Alors** le système le refuse avec un message d'erreur inline (FR-087 : protection article déjà vendu)
 
-**Given** the item is already present in the current basket
-**When** the volunteer clicks "Add to basket" again
-**Then** the system rejects it with an inline error message (FR-087: already-in-basket guard)
+**Étant donné** que l'article est déjà présent dans le panier courant
+**Quand** le bénévole clique à nouveau sur « Ajouter au panier »
+**Alors** le système le refuse avec un message d'erreur inline (FR-087 : protection article déjà dans le panier)
 
-**Given** the edition is not in Sale phase
-**When** any user views the catalog
-**Then** no "Add to basket" button is shown -- catalog is read-only browse only (FR-083)
-
-
+**Étant donné** que l'édition n'est pas en phase Vente
+**Quand** un utilisateur quelconque consulte le catalogue
+**Alors** aucun bouton « Ajouter au panier » n'est affiché — le catalogue est en lecture seule uniquement (FR-083)
