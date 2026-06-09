@@ -1,0 +1,49 @@
+# ── IntelliJ IDEA ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ── Spring Boot / Maven ───────────────────────────────────────────────────────
+target/
+*.jar
+*.war
+*.ear
+*.class
+*.log
+
+# ── Spring Boot secrets ───────────────────────────────────────────────────────
+**/application-local.yml
+**/application-local.properties
+**/application-secrets.yml
+
+# ── Angular / Node ────────────────────────────────────────────────────────────
+node_modules/
+dist/
+.angular/
+.cache/
+npm-debug.log*
+yarn-error.log
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+.env
+.env.*
+!.env.example
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.stackdump
+*.tmp
+*.bak
+
+# ── BMAD ──────────────────────────────────────────────────────────────────────
+_bmad
+.claude/skills/bmad*
+.agents/skills/bmad*
+.github/agents/bmad*
