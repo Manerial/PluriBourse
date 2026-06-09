@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PluriBourse — Caisse (POS) — Lot complet</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <style>
+    /* ─────────────────────────────────────────
+       Design tokens
+    ───────────────────────────────────────── */
+    :root {
+      --primary: #C44626;
+      --on-primary: #FFFFFF;
+      --primary-container: #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface: #FFFBF9;
+      --surface-variant: #F5EEEA;
+      --on-surface: #1A0A05;
+      --on-surface-variant: #6B6460;
+      --background: #FFFBF9;
+      --outline: #C8B0A4;
+      --outline-variant: #F0E4DC;
+      --error: #BA1A1A;
+      --error-container: #FFDAD6;
+      --on-error-container: #410002;
+      --sidebar-bg: #2A100A;
+
+      --warning-bg: #FFF4EE;
+      --warning-border: #C44626;
+      --warning-text: #8C2910;
+
+      --font: 'DM Sans', sans-serif;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+
+      --shadow-1: 0 1px 4px rgba(28,10,5,.08);
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+      --shadow-3: 0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10);
+    }
+
+    /* ─────────────────────────────────────────
+       Reset & base
+    ───────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--background);
+      color: var(--on-surface);
+      min-height: 100vh;
+    }
+
+    /* ─────────────────────────────────────────
+       Topbar
+    ───────────────────────────────────────── */
+    .topbar {
+      height: 56px;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: var(--shadow-1);
+    }
+
+    .topbar__brand {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--on-surface);
+      letter-spacing: -0.01em;
+    }
+
+    /* Phase chip — centre */
+    .topbar__phase {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.01em;
+    }
+
+    .topbar__phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    /* Role badge — droite */
+    .topbar__user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar__role-badge {
+      background-color: var(--surface-variant);
+      color: var(--on-surface-variant);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .topbar__icon {
+      font-size: 24px;
+      color: var(--on-surface-variant);
+      user-select: none;
+    }
+
+    /* ─────────────────────────────────────────
+       Layout principal
+    ───────────────────────────────────────── */
+    .main-content {
+      padding: 24px;
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ─────────────────────────────────────────
+       Scanner input
+    ───────────────────────────────────────── */
+    .scanner-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scanner-section__label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface-variant);
+    }
+
+    .scanner-section__input {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 16px;
+      color: var(--on-surface);
+      background-color: var(--surface);
+      outline: none;
+      /* Simule l'état autofocused */
+      box-shadow: 0 0 0 3px rgba(196, 70, 38, 0.12);
+    }
+
+    .scanner-section__hint {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+    }
+
+    /* ─────────────────────────────────────────
+       Card panier
+    ───────────────────────────────────────── */
+    .cart-card {
+      background-color: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-2);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cart-card__title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    /* ─────────────────────────────────────────
+       Liste d'articles (rows normaux)
+    ───────────────────────────────────────── */
+    .article-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .article-row {
+      display: flex;
+      align-items: center;
+      background-color: var(--surface-variant);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      gap: 10px;
+    }
+
+    .article-row__info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+      gap: 2px;
+    }
+
+    .article-row__name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .article-row__category {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+    }
+
+    .article-row__price {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .article-row__remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      color: var(--on-surface-variant);
+      flex-shrink: 0;
+      transition: background-color 0.15s;
+    }
+
+    .article-row__remove:hover {
+      background-color: var(--outline-variant);
+      color: var(--on-surface);
+    }
+
+    .article-row__remove .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    /* ─────────────────────────────────────────
+       Séparateur entre articles normaux
+       et groupe lot
+    ───────────────────────────────────────── */
+    .cart-divider {
+      height: 1px;
+      background-color: var(--outline-variant);
+    }
+
+    /* ─────────────────────────────────────────
+       Groupe lot — état complet (succès)
+    ───────────────────────────────────────── */
+    .lot-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background-color: #F0FDF4;
+      border-left: 3px solid #166534;
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .lot-group__header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lot-group__header-icon {
+      font-size: 18px;
+      color: #166534;
+      flex-shrink: 0;
+    }
+
+    .lot-group__header-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+      flex: 1;
+    }
+
+    .lot-group__subtotal {
+      font-size: 15px;
+      font-weight: 700;
+      color: #C44626;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .lot-group__remove-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background-color 0.15s;
+    }
+
+    .lot-group__remove-btn:hover {
+      background-color: var(--primary-container);
+    }
+
+    /* Articles du lot — légèrement indentés, sans prix individuel */
+    .lot-article-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-left: 8px;
+    }
+
+    /* ─────────────────────────────────────────
+       Pied de panier
+    ───────────────────────────────────────── */
+    .cart-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cart-total {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-top: 1px solid var(--outline-variant);
+    }
+
+    .cart-total__label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    .cart-total__amount {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    /* Bouton Valider — état actif */
+    .btn-validate {
+      width: 100%;
+      height: 48px;
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      opacity: 1;
+      transition: background-color 0.15s;
+    }
+
+    .btn-validate:hover {
+      background-color: #a33a1f;
+    }
+
+    /* ─────────────────────────────────────────
+       Material Symbols helper
+    ───────────────────────────────────────── */
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+      user-select: none;
+    }
+
+    /* Icône check_circle remplie */
+    .icon-filled {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <span class="topbar__brand">PluriBourse</span>
+
+    <div class="topbar__phase">
+      <span class="topbar__phase-dot"></span>
+      Vente
+    </div>
+
+    <div class="topbar__user">
+      <span class="topbar__role-badge">Bénévole</span>
+      <span class="material-symbols-outlined topbar__icon">account_circle</span>
+    </div>
+  </header>
+
+  <!-- ── Contenu principal ── -->
+  <main class="main-content">
+
+    <!-- ── Scanner input ── -->
+    <section class="scanner-section">
+      <label class="scanner-section__label" for="barcode-input">
+        Scanner ou saisir un code-barres
+      </label>
+      <input
+        id="barcode-input"
+        class="scanner-section__input"
+        type="text"
+        placeholder="Ex : 0042"
+        autofocus
+      />
+      <span class="scanner-section__hint">Appuyez sur Entrée après chaque scan</span>
+    </section>
+
+    <!-- ── Panier ── -->
+    <div class="cart-card">
+      <h2 class="cart-card__title">Panier</h2>
+
+      <!-- Articles normaux -->
+      <div class="article-list">
+
+        <div class="article-row">
+          <div class="article-row__info">
+            <span class="article-row__name">Poupée Barbie</span>
+            <span class="article-row__category">Jouets</span>
+          </div>
+          <span class="article-row__price">3,50&nbsp;€</span>
+          <button class="article-row__remove" aria-label="Retirer Poupée Barbie">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="article-row">
+          <div class="article-row__info">
+            <span class="article-row__name">Lego Star Wars</span>
+            <span class="article-row__category">Jouets</span>
+          </div>
+          <span class="article-row__price">8,00&nbsp;€</span>
+          <button class="article-row__remove" aria-label="Retirer Lego Star Wars">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Séparateur visuel avant le lot -->
+      <div class="cart-divider"></div>
+
+      <!-- Lot complet — groupe distinct état succès -->
+      <div class="lot-group">
+
+        <div class="lot-group__header">
+          <span class="material-symbols-outlined lot-group__header-icon icon-filled">check_circle</span>
+          <span class="lot-group__header-label">Lot Catan — 3/3 scannés</span>
+          <span class="lot-group__subtotal">10,50&nbsp;€</span>
+          <button class="lot-group__remove-btn">Retirer le lot entier</button>
+        </div>
+
+        <!-- Articles du lot (indentés) — pas de prix individuel -->
+        <div class="lot-article-list">
+
+          <div class="article-row">
+            <div class="article-row__info">
+              <span class="article-row__name">Catan base</span>
+              <span class="article-row__category">Jeux de société</span>
+            </div>
+            <button class="article-row__remove" aria-label="Retirer Catan base">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <div class="article-row">
+            <div class="article-row__info">
+              <span class="article-row__name">Extension Catan</span>
+              <span class="article-row__category">Jeux de société</span>
+            </div>
+            <button class="article-row__remove" aria-label="Retirer Extension Catan">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <div class="article-row">
+            <div class="article-row__info">
+              <span class="article-row__name">Plateau Catan</span>
+              <span class="article-row__category">Jeux de société</span>
+            </div>
+            <button class="article-row__remove" aria-label="Retirer Plateau Catan">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Pied de panier -->
+      <div class="cart-footer">
+        <div class="cart-total">
+          <span class="cart-total__label">Total</span>
+          <span class="cart-total__amount">22,00&nbsp;€</span>
+        </div>
+        <button class="btn-validate">
+          Valider la transaction
+        </button>
+      </div>
+
+    </div>
+    <!-- /cart-card -->
+
+  </main>
+
+</body>
+</html>

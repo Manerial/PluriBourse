@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PluriBourse — Contrôle de phase</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <style>
+    /* ─────────────────────────────────────────
+       Design tokens
+    ───────────────────────────────────────── */
+    :root {
+      --primary:              #C44626;
+      --on-primary:           #FFFFFF;
+      --primary-container:    #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface:              #FFFBF9;
+      --surface-variant:      #F5EEEA;
+      --on-surface:           #1A0A05;
+      --on-surface-variant:   #6B6460;
+      --background:           #FFFBF9;
+      --outline:              #C8B0A4;
+      --outline-variant:      #F0E4DC;
+      --sidebar-bg:           #2A100A;
+
+      --font: 'DM Sans', sans-serif;
+
+      --radius-sm:   4px;
+      --radius-md:   8px;
+      --radius-lg:   12px;
+      --radius-xl:   20px;
+      --radius-full: 999px;
+
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+      --shadow-3: 0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10);
+    }
+
+    /* ─────────────────────────────────────────
+       Reset & base
+    ───────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--background);
+      color: var(--on-surface);
+      min-height: 100vh;
+    }
+
+    /* ─────────────────────────────────────────
+       Topbar
+    ───────────────────────────────────────── */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+
+    .topbar__brand {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--on-surface);
+      letter-spacing: -0.01em;
+      min-width: 140px;
+    }
+
+    .topbar__phase {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.01em;
+    }
+
+    .topbar__phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .topbar__user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 140px;
+      justify-content: flex-end;
+    }
+
+    .topbar__role-badge {
+      background-color: var(--surface-variant);
+      color: var(--on-surface-variant);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .topbar__icon {
+      font-size: 24px;
+      color: var(--on-surface-variant);
+      user-select: none;
+    }
+
+    /* ─────────────────────────────────────────
+       Sidebar
+    ───────────────────────────────────────── */
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      width: 200px;
+      bottom: 0;
+      background-color: var(--sidebar-bg);
+      overflow-y: auto;
+      z-index: 90;
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .sidebar__section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(245, 238, 234, 0.45);
+      padding: 0 12px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      color: rgba(245, 238, 234, 0.65);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s;
+    }
+
+    .sidebar__item .material-symbols-outlined {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .sidebar__item--active {
+      background-color: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .sidebar__item--active .material-symbols-outlined {
+      color: #FFFFFF;
+    }
+
+    /* ─────────────────────────────────────────
+       Content area
+    ───────────────────────────────────────── */
+    .content {
+      margin-left: 200px;
+      margin-top: 56px;
+      padding: 24px;
+      max-width: 840px; /* 200px sidebar + 640px content */
+    }
+
+    .content-inner {
+      max-width: 640px;
+    }
+
+    /* ─────────────────────────────────────────
+       Breadcrumb
+    ───────────────────────────────────────── */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--on-surface-variant);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .breadcrumb__separator {
+      color: var(--outline);
+      font-size: 14px;
+    }
+
+    .breadcrumb__current {
+      color: var(--on-surface-variant);
+      font-weight: 500;
+    }
+
+    /* ─────────────────────────────────────────
+       Page title
+    ───────────────────────────────────────── */
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--on-surface);
+      margin-bottom: 24px;
+      letter-spacing: -0.01em;
+    }
+
+    /* ─────────────────────────────────────────
+       Card
+    ───────────────────────────────────────── */
+    .card {
+      background-color: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-2);
+      padding: 24px;
+    }
+
+    .card + .card {
+      margin-top: 16px;
+    }
+
+    .card__section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--on-surface-variant);
+      margin-bottom: 16px;
+    }
+
+    /* ─────────────────────────────────────────
+       Current phase card
+    ───────────────────────────────────────── */
+    .current-phase {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 8px;
+    }
+
+    .phase-chip--large {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 18px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: var(--radius-full);
+    }
+
+    .phase-chip__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .current-phase__description {
+      font-size: 14px;
+      color: var(--on-surface-variant);
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.5;
+      max-width: 360px;
+    }
+
+    /* ─────────────────────────────────────────
+       Next phase card
+    ───────────────────────────────────────── */
+    .next-phase__name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--on-surface);
+      margin-bottom: 8px;
+    }
+
+    .next-phase__description {
+      font-size: 14px;
+      color: var(--on-surface-variant);
+      line-height: 1.5;
+    }
+
+    /* ─────────────────────────────────────────
+       Primary button
+    ───────────────────────────────────────── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 10px 24px;
+      cursor: pointer;
+      margin-top: 20px;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    /* ─────────────────────────────────────────
+       Overlay + Dialog
+    ───────────────────────────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dialog {
+      background-color: var(--surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-3);
+      padding: 24px;
+      width: 440px;
+      max-width: 90vw;
+    }
+
+    .dialog__title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    .dialog__body {
+      font-size: 14px;
+      color: var(--on-surface-variant);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .dialog__warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background-color: var(--primary-container);
+      border-left: 3px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--on-primary-container);
+      line-height: 1.5;
+    }
+
+    .dialog__warning .material-symbols-outlined {
+      font-size: 18px;
+      color: var(--primary);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .dialog__actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: transparent;
+      color: var(--on-surface-variant);
+      border: 1.5px solid var(--outline);
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 9px 20px;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      /* Focus ring simulated as if the Cancel button has keyboard focus */
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .btn-confirm {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 10px 20px;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Topbar ─── -->
+  <header class="topbar">
+    <span class="topbar__brand">PluriBourse</span>
+
+    <div class="topbar__phase">
+      <span class="topbar__phase-dot"></span>
+      Dépôt
+    </div>
+
+    <div class="topbar__user">
+      <span class="topbar__role-badge">Admin</span>
+      <span class="material-symbols-outlined topbar__icon">account_circle</span>
+    </div>
+  </header>
+
+  <!-- ─── Sidebar ─── -->
+  <nav class="sidebar">
+    <div>
+      <div class="sidebar__section-label">Édition active</div>
+      <a class="sidebar__item" href="#">
+        <span class="material-symbols-outlined">people</span>
+        Vendeurs
+      </a>
+      <a class="sidebar__item" href="#">
+        <span class="material-symbols-outlined">inventory_2</span>
+        Articles
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar__section-label">Gestion</div>
+      <a class="sidebar__item sidebar__item--active" href="#">
+        <span class="material-symbols-outlined">event</span>
+        Éditions
+      </a>
+      <a class="sidebar__item" href="#">
+        <span class="material-symbols-outlined">bar_chart</span>
+        Rapports
+      </a>
+      <a class="sidebar__item" href="#">
+        <span class="material-symbols-outlined">manage_accounts</span>
+        Utilisateurs
+      </a>
+      <a class="sidebar__item" href="#">
+        <span class="material-symbols-outlined">settings</span>
+        Paramètres
+      </a>
+    </div>
+  </nav>
+
+  <!-- ─── Content ─── -->
+  <main class="content">
+    <div class="content-inner">
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb">
+        <span>Éditions</span>
+        <span class="breadcrumb__separator">›</span>
+        <span>Printemps 2026</span>
+        <span class="breadcrumb__separator">›</span>
+        <span class="breadcrumb__current">Contrôle de phase</span>
+      </nav>
+
+      <!-- Page title -->
+      <h1 class="page-title">Contrôle de phase</h1>
+
+      <!-- Card — Phase actuelle -->
+      <div class="card">
+        <div class="card__section-label">Phase actuelle</div>
+        <div class="current-phase">
+          <div class="phase-chip--large">
+            <span class="phase-chip__dot"></span>
+            Dépôt
+          </div>
+          <p class="current-phase__description">
+            Les bénévoles peuvent enregistrer les dépôts de vendeurs. Les caisses sont désactivées.
+          </p>
+        </div>
+      </div>
+
+      <!-- Card — Prochaine phase -->
+      <div class="card">
+        <div class="card__section-label">Prochaine phase</div>
+        <div class="next-phase__name">Vente</div>
+        <p class="next-phase__description">
+          Les dépôts seront verrouillés. Les caisses bénévoles s'activeront sur tous les postes.
+        </p>
+        <button class="btn-primary" type="button">
+          Passer en phase Vente
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ─── Overlay dialog ─── -->
+  <div class="overlay">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+
+      <h2 class="dialog__title" id="dialog-title">Passer en phase Vente</h2>
+
+      <p class="dialog__body">
+        Les dépôts ne seront plus modifiables. Les caisses bénévoles s'activeront immédiatement sur tous les postes connectés.
+      </p>
+
+      <div class="dialog__warning">
+        <span class="material-symbols-outlined">warning</span>
+        Cette action est irréversible.
+      </div>
+
+      <div class="dialog__actions">
+        <button class="btn-ghost" type="button">Annuler</button>
+        <button class="btn-confirm" type="button">Confirmer</button>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

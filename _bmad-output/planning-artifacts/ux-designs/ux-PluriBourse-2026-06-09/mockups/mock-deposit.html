@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PluriBourse — Formulaire de dépôt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #C44626;
+      --on-primary: #FFFFFF;
+      --primary-container: #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface: #FFFBF9;
+      --surface-variant: #F5EEEA;
+      --on-surface: #1A0A05;
+      --on-surface-variant: #6B6460;
+      --background: #FFFBF9;
+      --outline: #C8B0A4;
+      --outline-variant: #F0E4DC;
+      --error: #BA1A1A;
+      --error-container: #FFDAD6;
+      --on-error-container: #410002;
+      --success-bg: #F0FDF4;
+      --success-text: #166534;
+
+      --font: 'DM Sans', sans-serif;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+      --shadow-1: 0 1px 4px rgba(28,10,5,.08);
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--background);
+      color: var(--on-surface);
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .topbar-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--on-surface);
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+
+    .topbar-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .phase-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFF4EE;
+      color: var(--primary);
+      border: 1px solid #F5C9B8;
+      border-radius: var(--radius-full);
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .phase-chip .dot {
+      width: 7px;
+      height: 7px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    .topbar-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-variant);
+      color: var(--on-surface-variant);
+      border-radius: var(--radius-full);
+      padding: 5px 12px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .role-badge .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    /* ── Main content ── */
+    .main {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .content {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Typography helpers ── */
+    .label-lg {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .label-sm {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+
+    .title-md {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+    }
+
+    .body-md {
+      font-size: 14px;
+      font-weight: 400;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-1);
+    }
+
+    .card-form {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-2);
+      border-top: 3px solid var(--primary);
+    }
+
+    /* ── Vendor search card ── */
+    .vendor-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+      margin-bottom: 10px;
+    }
+
+    .search-field-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 100%;
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 10px 44px 10px 14px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--on-surface);
+      background: var(--surface);
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: var(--on-surface-variant);
+    }
+
+    .search-icon-right {
+      position: absolute;
+      right: 12px;
+      font-size: 20px;
+      color: var(--success-text);
+      pointer-events: none;
+    }
+
+    .vendor-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-radius: var(--radius-full);
+      padding: 6px 10px 6px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .chip-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--on-primary-container);
+      cursor: pointer;
+      opacity: 0.7;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      margin-bottom: 8px;
+    }
+
+    /* ── Article list rows ── */
+    .article-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .article-row {
+      background: var(--surface-variant);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .article-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .article-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    .article-meta {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+    }
+
+    .article-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .article-price {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+      white-space: nowrap;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--radius-full);
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .status-chip.success {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .status-chip.warning {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    /* ── Form fields ── */
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--on-surface-variant);
+    }
+
+    .field-input {
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--on-surface);
+      background: var(--surface);
+      outline: none;
+    }
+
+    .field-input:focus {
+      border-color: var(--primary);
+    }
+
+    .field-input-short {
+      width: 120px;
+    }
+
+    .field-select {
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--on-surface);
+      background: var(--surface);
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6460' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    .field-select:focus {
+      border-color: var(--primary);
+    }
+
+    /* ── Checkbox row ── */
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .checkbox-label {
+      font-size: 14px;
+      color: var(--on-surface);
+      cursor: pointer;
+    }
+
+    .field-input-disabled {
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--on-surface-variant);
+      background: var(--surface-variant);
+      outline: none;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 10px 20px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      background: transparent;
+      color: var(--on-surface-variant);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-primary-full {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary-full .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    .btn-primary .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--outline-variant);
+      margin: 4px 0;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <span class="topbar-title">PluriBourse</span>
+
+    <div class="topbar-center">
+      <div class="phase-chip">
+        <span class="dot"></span>
+        Dépôt
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="role-badge">
+        <span class="material-symbols-outlined">account_circle</span>
+        Bénévole
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main">
+    <div class="content">
+
+      <!-- Vendor search card -->
+      <div class="card">
+        <div class="vendor-label label-lg">Vendeur</div>
+        <div class="search-field-wrapper">
+          <input
+            class="search-input"
+            type="text"
+            value="Martin Pierre"
+            readonly
+          />
+          <span class="material-symbols-outlined search-icon-right" style="color: var(--success-text);">check_circle</span>
+        </div>
+        <div>
+          <div class="vendor-chip">
+            Martin Pierre · martin.pierre@email.com
+            <span class="chip-close material-symbols-outlined">close</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deposited articles section -->
+      <div>
+        <div class="section-label">Articles déposés (2)</div>
+        <div class="article-list">
+
+          <div class="article-row">
+            <div class="article-info">
+              <span class="article-name">Poupée Barbie</span>
+              <span class="article-meta">Jouets</span>
+            </div>
+            <div class="article-right">
+              <span class="article-price">3,50&nbsp;€</span>
+              <span class="status-chip success">Complet</span>
+            </div>
+          </div>
+
+          <div class="article-row">
+            <div class="article-info">
+              <span class="article-name">Monopoly</span>
+              <span class="article-meta">Jeux de société</span>
+            </div>
+            <div class="article-right">
+              <span class="article-price">5,00&nbsp;€</span>
+              <span class="status-chip warning">Incomplet</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Add article form card -->
+      <div class="card-form">
+        <div class="title-md">Ajouter un article</div>
+
+        <div class="form-grid">
+
+          <!-- Nom de l'article -->
+          <div class="field-group">
+            <label class="field-label" for="article-name">Nom de l'article</label>
+            <input
+              id="article-name"
+              class="field-input"
+              type="text"
+              value="Lego City 60XXX"
+            />
+          </div>
+
+          <!-- Prix -->
+          <div class="field-group">
+            <label class="field-label" for="article-price">Prix (€)</label>
+            <input
+              id="article-price"
+              class="field-input field-input-short"
+              type="text"
+              value="8.00"
+            />
+          </div>
+
+          <!-- Catégorie -->
+          <div class="field-group">
+            <label class="field-label" for="article-category">Catégorie</label>
+            <select id="article-category" class="field-select">
+              <option value="jouets" selected>Jouets</option>
+              <option value="jeux">Jeux de société</option>
+              <option value="livres">Livres</option>
+              <option value="vetements">Vêtements</option>
+              <option value="sports">Sports &amp; Loisirs</option>
+            </select>
+          </div>
+
+          <!-- Checkbox article incomplet -->
+          <div class="field-group" style="gap: 10px;">
+            <div class="checkbox-row">
+              <input
+                type="checkbox"
+                id="article-incomplete"
+                class="checkbox-input"
+              />
+              <label for="article-incomplete" class="checkbox-label body-md">Article incomplet</label>
+            </div>
+            <input
+              class="field-input-disabled"
+              type="text"
+              placeholder="Détail manquant (ex : pièces manquantes)"
+              disabled
+            />
+          </div>
+
+        </div>
+
+        <div class="divider" style="margin-top: 20px;"></div>
+
+        <!-- Button row -->
+        <div class="btn-row" style="margin-top: 16px;">
+          <button class="btn-primary">
+            <span class="material-symbols-outlined">add_circle</span>
+            Ajouter l'article
+          </button>
+          <button class="btn-ghost">Annuler</button>
+        </div>
+      </div>
+
+      <!-- Footer action -->
+      <button class="btn-primary-full">
+        <span class="material-symbols-outlined">print</span>
+        Valider le dépôt et imprimer les étiquettes
+      </button>
+
+    </div>
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Liste des vendeurs · PluriBourse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet" />
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --primary: #C44626;
+      --on-primary: #FFFFFF;
+      --primary-container: #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface: #FFFBF9;
+      --surface-variant: #F5EEEA;
+      --on-surface: #1A0A05;
+      --on-surface-variant: #6B6460;
+      --background: #FFFBF9;
+      --outline: #C8B0A4;
+      --outline-variant: #F0E4DC;
+      --error: #BA1A1A;
+      --error-container: #FFDAD6;
+      --on-error-container: #410002;
+      --success-bg: #F0FDF4;
+      --success-text: #166534;
+      --sidebar-bg: #2A100A;
+
+      --font: 'DM Sans', sans-serif;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+      --shadow-1: 0 1px 4px rgba(28,10,5,.08);
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+    }
+
+    /* ── Reset / base ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      background: var(--background);
+      color: var(--on-surface);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+    }
+
+    .topbar__logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: -0.2px;
+      flex-shrink: 0;
+    }
+
+    .topbar__center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .phase-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .phase-chip__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .topbar__right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    .topbar__avatar {
+      font-size: 24px;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 56px;
+      width: 200px;
+      height: calc(100vh - 56px);
+      background: var(--sidebar-bg);
+      padding: 16px 8px;
+      overflow-y: auto;
+    }
+
+    .sidebar__section-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: rgba(253, 203, 176, 0.5);
+      padding: 12px 12px 4px;
+      display: block;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(245, 238, 234, 0.65);
+      transition: background 0.15s ease;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(245, 238, 234, 0.9);
+    }
+
+    .nav-item--active {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .nav-item--active:hover {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .nav-item .material-symbols-outlined {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .sidebar__section + .sidebar__section {
+      margin-top: 8px;
+    }
+
+    /* ── Main content ── */
+    .main-content {
+      margin-left: 200px;
+      margin-top: 56px;
+      padding: 24px;
+      background: var(--background);
+      min-height: calc(100vh - 56px);
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-header__titles {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--on-surface);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--on-surface-variant);
+      line-height: 1.4;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: var(--shadow-1);
+      transition: opacity 0.15s ease;
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      margin-bottom: 20px;
+    }
+
+    .search-field {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 280px;
+    }
+
+    .search-field__icon {
+      position: absolute;
+      left: 12px;
+      font-size: 18px;
+      color: var(--on-surface-variant);
+      pointer-events: none;
+    }
+
+    .search-field__input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--on-surface);
+      background: var(--surface);
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .search-field__input::placeholder {
+      color: var(--on-surface-variant);
+    }
+
+    .search-field__input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(196, 70, 38, 0.12);
+    }
+
+    /* ── Table ── */
+    .table-wrapper {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--outline-variant);
+      overflow: hidden;
+      box-shadow: var(--shadow-1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      border-bottom: 2px solid var(--outline-variant);
+    }
+
+    thead th {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      padding: 10px 16px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    thead th:last-child {
+      width: 48px;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--outline-variant);
+      transition: background 0.12s ease;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--surface-variant);
+    }
+
+    tbody tr:nth-child(odd) {
+      background: var(--surface);
+    }
+
+    tbody tr:hover {
+      background: rgba(196, 70, 38, 0.04);
+    }
+
+    tbody td {
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--on-surface);
+      vertical-align: middle;
+    }
+
+    .td-name {
+      font-weight: 500;
+    }
+
+    .td-email {
+      color: var(--on-surface-variant);
+    }
+
+    .td-articles {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .td-amount {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
+    /* ── Status chips ── */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    .chip--success {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .chip--warning {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    /* ── Action icon ── */
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--on-surface-variant);
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .action-btn:hover {
+      color: var(--primary);
+      background: var(--primary-container);
+    }
+
+    .action-btn .material-symbols-outlined {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <span class="topbar__logo">PluriBourse</span>
+    <div class="topbar__center">
+      <span class="phase-chip">
+        <span class="phase-chip__dot"></span>
+        Dépôt
+      </span>
+    </div>
+    <div class="topbar__right">
+      <span class="role-badge">Admin</span>
+      <span class="topbar__avatar material-symbols-outlined">account_circle</span>
+    </div>
+  </header>
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="sidebar__section">
+      <span class="sidebar__section-label">Édition active</span>
+      <a class="nav-item nav-item--active" href="#">
+        <span class="material-symbols-outlined">people</span>
+        Vendeurs
+      </a>
+      <a class="nav-item" href="#">
+        <span class="material-symbols-outlined">inventory_2</span>
+        Articles
+      </a>
+    </div>
+
+    <div class="sidebar__section">
+      <span class="sidebar__section-label">Gestion</span>
+      <a class="nav-item" href="#">
+        <span class="material-symbols-outlined">event</span>
+        Éditions
+      </a>
+      <a class="nav-item" href="#">
+        <span class="material-symbols-outlined">assessment</span>
+        Rapports
+      </a>
+      <a class="nav-item" href="#">
+        <span class="material-symbols-outlined">manage_accounts</span>
+        Utilisateurs
+      </a>
+      <a class="nav-item" href="#">
+        <span class="material-symbols-outlined">settings</span>
+        Paramètres
+      </a>
+    </div>
+  </nav>
+
+  <!-- ── Main content ── -->
+  <main class="main-content">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-header__titles">
+        <h1 class="page-title">Vendeurs</h1>
+        <p class="page-subtitle">Édition Printemps 2026 · 47 vendeurs</p>
+      </div>
+      <button class="btn-primary">
+        <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+        Nouveau vendeur
+      </button>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="search-field">
+        <span class="search-field__icon material-symbols-outlined">search</span>
+        <input
+          class="search-field__input"
+          type="text"
+          placeholder="Rechercher un vendeur…"
+        />
+      </div>
+    </div>
+
+    <!-- Vendors table -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Vendeur</th>
+            <th>Email</th>
+            <th>Articles</th>
+            <th>Montant déposé</th>
+            <th>Statut</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-name">Martin Pierre</td>
+            <td class="td-email">martin.pierre@email.com</td>
+            <td class="td-articles">8 articles</td>
+            <td class="td-amount">34,50 €</td>
+            <td><span class="chip chip--success">Déposé</span></td>
+            <td>
+              <button class="action-btn" title="Modifier">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-name">Dubois Marie</td>
+            <td class="td-email">marie.dubois@email.com</td>
+            <td class="td-articles">0 articles</td>
+            <td class="td-amount">0,00 €</td>
+            <td><span class="chip chip--warning">En attente</span></td>
+            <td>
+              <button class="action-btn" title="Modifier">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-name">Leroy Antoine</td>
+            <td class="td-email">a.leroy@email.com</td>
+            <td class="td-articles">12 articles</td>
+            <td class="td-amount">67,00 €</td>
+            <td><span class="chip chip--success">Déposé</span></td>
+            <td>
+              <button class="action-btn" title="Modifier">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-name">Moreau Isabelle</td>
+            <td class="td-email">i.moreau@email.com</td>
+            <td class="td-articles">3 articles</td>
+            <td class="td-amount">15,50 €</td>
+            <td><span class="chip chip--success">Déposé</span></td>
+            <td>
+              <button class="action-btn" title="Modifier">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-name">Bernard Lucas</td>
+            <td class="td-email">l.bernard@email.com</td>
+            <td class="td-articles">0 articles</td>
+            <td class="td-amount">0,00 €</td>
+            <td><span class="chip chip--warning">En attente</span></td>
+            <td>
+              <button class="action-btn" title="Modifier">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="td-name">Petit Sophie</td>
+            <td class="td-email">s.petit@email.com</td>
+            <td class="td-articles">6 articles</td>
+            <td class="td-amount">28,00 €</td>
+            <td><span class="chip chip--success">Déposé</span></td>
+            <td>
+              <button class="action-btn" title="Modifier">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+</body>
+</html>
