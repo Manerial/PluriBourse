@@ -1,0 +1,56 @@
+@page {
+  margin-top: 2cm;
+  margin-bottom: 2cm;
+  margin-left: 2cm;
+  margin-right: 2cm;
+}
+
+@media print {
+  /* Masquer la navigation et l'en-tête du thème (défaut MkDocs + Material) */
+  header, nav,
+  .navbar, .navbar-header, .navbar-brand, .navbar-collapse,
+  .bs-sidebar, .wy-nav-side, .wy-nav-top,
+  .md-header, .md-nav, .md-sidebar, .md-footer, .md-tabs,
+  [data-md-component="header"], [data-md-component="navigation"],
+  [data-md-component="toc"], footer {
+    display: none !important;
+  }
+
+  /* Neutraliser les éléments fixed/sticky qui se réimpriment entre les pages */
+  * {
+    position: static !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Éviter les titres orphelins en bas de page */
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  h1 + *, h2 + *, h3 + *, h4 + *, h5 + *, h6 + * {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+
+  /* Éviter les pseudo-titres orphelins en bas de page */
+  p:has(> em:only-child), p:has(> strong:only-child) {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Réduire la marge sous <p><strong> quand suivi d'un <p><em> */
+  p:has(> strong:only-child):has(+ p > em:only-child) {
+    margin-bottom: 0.25em;
+  }
+
+  /* Réduire la marge sous <p><em> quand suivi d'un <ul> */
+  p:has(> em:only-child):has(+ ul) {
+    margin-bottom: 0.25em;
+  }
+}
