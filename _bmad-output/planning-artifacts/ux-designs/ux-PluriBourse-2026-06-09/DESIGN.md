@@ -267,7 +267,7 @@ Cohérence : un même type de composant utilise toujours le même token. Ne pas 
 Trois variantes : `primary` (corail plein), `secondary` (corail outline + fond container), `ghost` (transparent, texte muted). Toujours une seule action primaire visible par section. Les actions destructives (supprimer un vendeur, déclencher Clean Edition) utilisent le style `secondary` avec la couleur `error` — jamais un bouton primaire corail pour une action destructive.
 
 **Phase chip** — topbar, toujours visible
-Pill `{rounded.full}` fond `{colors.primary-container}`. Indicateur ● corail avant le label. Labels de phase : "Dépôt" · "Vente" · "Post-vente" · "Clôturée". Cliquable uniquement pour l'Admin (ouvre le panneau de contrôle de phase).
+Pill `{rounded.full}` fond `{colors.primary-container}`. Indicateur ● corail avant le label. Labels de phase : "Préparation" · "Dépôt" · "Vente" · "Post-vente" · "Clôturée". Cliquable uniquement pour l'Admin (ouvre le panneau de contrôle de phase).
 
 **Role badge** — topbar, à droite du phase chip
 Pill `{rounded.full}`. Admin : fond `{colors.primary-container}`, texte `{colors.on-primary-container}`. Bénévole : fond `{colors.surface-variant}`, texte `{colors.on-surface-variant}`.

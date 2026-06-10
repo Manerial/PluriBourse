@@ -26,7 +26,7 @@ L'application est mono-instance, auto-hébergée, réseau local d'événement. P
 |---|---|---|
 | Éditions — liste | `/admin/editions` | Toutes phases |
 | Édition — détail / création | `/admin/editions/:id` | Toutes phases |
-| Édition — Catégories & Tables | `/admin/editions/:id/categories` | Avant phase Dépôt (éditable) · Après : lecture seule |
+| Édition — Catégories & Tables | `/admin/editions/:id/categories` | Phase Préparation (éditable) · Dépôt et après : lecture seule |
 | Édition — Contrôle de phase | `/admin/editions/:id/phase` | Toutes phases |
 | Vendeurs — liste | `/admin/sellers` | Toutes phases |
 | Vendeur — fiche / création | `/admin/sellers/:id` | Toutes phases |
@@ -39,6 +39,7 @@ L'application est mono-instance, auto-hébergée, réseau local d'événement. P
 
 | Phase active | Surface | Chemin |
 |---|---|---|
+| Préparation | Événement non ouvert | `/volunteer/waiting` |
 | Dépôt | Accueil dépôt | `/volunteer/deposit` |
 | Vente | Caisse | `/volunteer/pos` |
 | Post-vente | Reversements | `/volunteer/settlement` |
@@ -111,8 +112,8 @@ Comportemental. Spécifications visuelles dans `DESIGN.md.Components`.
 | **Panier POS** | Caisse | Liste des articles scannés avec prix unitaire et total. Suppression individuelle par icône `close` sur chaque ligne. Bouton "Valider" bloqué si lot incomplet. Annulé automatiquement si changement de phase (SSE `basket-cancelled`). |
 | **Lot dans le panier** | Caisse | Articles du lot affichés groupés avec label du lot en rouge. Compteur "X/N scannés". Sous-total du lot affiché dans l'en-tête du groupe (somme des articles scannés). **Pas de prix individuel par article** — le lot est une unité de vente. Bouton "Retirer le lot entier" visible dès le premier article du lot dans le panier. Validation bloquée tant que lot incomplet. |
 | **Formulaire dépôt** | Bénévole — phase Dépôt | Recherche vendeur par nom ou email en premier. Si non trouvé : bouton "Créer un profil". Saisie article : nom, prix, catégorie (sélecteur), complet/incomplet. Table assignée automatiquement. |
-| **Fiche Catégories & Tables** | Admin — édition | Mode édition jusqu'au démarrage de la phase Dépôt. Mode lecture après. À la création : option "Copier depuis une édition existante" (sélecteur d'édition) ou "Configurer manuellement". |
-| **Page Rapports** | Admin — phases Vente · Post-vente · Clôturée | Contenu conditionnel selon la phase active — seules les sections pertinentes à la phase courante sont affichées, les autres sont absentes. **Rapport de caisse journalier** (Vente uniquement) : montant total des ventes du jour, bouton "Actualiser". **Rapport de synthèse** (Post-vente + Clôturée) : total ventes, total reversements, total recettes association — lecture seule. **Exports CSV** (Post-vente + Clôturée) : boutons "Exporter le catalogue" (articles + statut vendu/non vendu) et "Exporter les reversements" — téléchargement direct sans dialog. **Liste vendeurs non réglés imprimable** (Post-vente) : bouton "Imprimer la liste" — ouvre la vue impression du navigateur. |
+| **Fiche Catégories & Tables** | Admin — édition | Mode édition en phase Préparation. Mode lecture à partir de la phase Dépôt. À la création : option "Copier depuis une édition existante" (sélecteur d'édition) ou "Configurer manuellement". |
+| **Page Rapports** | Admin — phases Vente · Post-vente · Clôturée | Contenu conditionnel selon la phase active — seules les sections pertinentes à la phase courante sont affichées, les autres sont absentes. **Rapport de caisse journalier** (Vente uniquement) : montant total des ventes du jour, bouton "Actualiser". **Rapport de synthèse** (Post-vente + Clôturée) : total ventes, total reversements, total recettes association — lecture seule. **Exports CSV** (Post-vente + Clôturée) : boutons "Exporter le catalogue" (articles + statut vendu/non vendu) et "Exporter les reversements" — téléchargement direct sans dialog. La liste des vendeurs non soldés est accessible via `/volunteer/settlement` et la fiche vendeur admin — pas de section dédiée dans les rapports. |
 | **Action "Nettoyer l'édition"** | Admin — phase Clôturée | Bouton visible sur la fiche édition uniquement si des articles non supprimés existent. Style `secondary` couleur `error`. Dialog de confirmation : "Supprimer tous les articles de cette édition. Cette action est irréversible." Boutons : "Supprimer" (error) + "Annuler" (ghost). Post-Clean : le catalogue affiche un état vide "Édition nettoyée — aucun article." sans action proposée. Le bouton "Nettoyer l'édition" disparaît définitivement. |
 | **Récapitulatif reversement imprimable** | Bénévole — phase Post-vente · Admin toutes phases | Bouton "Imprimer le récapitulatif" accessible depuis la ligne vendeur sur `/volunteer/settlement` (après règlement) et depuis la fiche vendeur Admin. Feedback : spinner dans le bouton pendant la mise en queue. Résultat communiqué par toast succès (4s) ou toast persistant si imprimante hors ligne. Toujours rejouable. |
 
@@ -120,6 +121,7 @@ Comportemental. Spécifications visuelles dans `DESIGN.md.Components`.
 
 | État | Surface | Traitement |
 |---|---|---|
+| Phase Préparation — bénévole connecté | `/volunteer/waiting` | Page neutre : icône Material Symbols centré + "L'événement n'est pas encore ouvert. Revenez quand la phase Dépôt sera démarrée." Chip de phase visible dans la topbar. Aucune action proposée. Mise à jour automatique via SSE dès que la phase passe à Dépôt (redirection vers `/volunteer/deposit`). |
 | Chargement initial | Listes, catalogues | Skeleton rows Angular Material (3–5 lignes). Pas de spinner global. |
 | Liste vide | Vendeurs, articles, reversements | Icône Material Symbols centré + phrase descriptive + action primaire. Ex : "Aucun vendeur enregistré. Créez le premier profil." |
 | Résultats filtrés vides | Catalogue, liste vendeurs | "Aucun résultat pour ces filtres." + bouton "Effacer les filtres". Pas d'état vide générique. |
@@ -199,10 +201,10 @@ Comportemental. Contrastes visuels dans `DESIGN.md`.
 
 ### Flow 3 — Reversement, vendeur absent (Sophie, phase Post-vente)
 
-1. Sophie ouvre `/volunteer/settlement`. Liste des vendeurs non réglés avec montant dû et téléphone visible.
+1. Sophie ouvre `/volunteer/settlement`. Liste des vendeurs non soldés avec montant dû et téléphone visible.
 2. Elle appelle Martin Pierre — pas de réponse. Elle clique "Non réclamé" sur sa ligne.
 3. Dialog de confirmation : "Le montant de 34,50 € sera versé aux recettes de l'association. Cette action est irréversible." Deux boutons : "Confirmer" (primary) et "Annuler" (ghost).
-4. **Climax :** Elle confirme. La ligne disparaît de la liste des non réglés. Toast : "Montant transféré aux recettes." Sophie passe au vendeur suivant.
+4. **Climax :** Elle confirme. La ligne disparaît de la liste des non soldés. Toast : "Montant transféré aux recettes." Sophie passe au vendeur suivant.
 
 ### Flow 4 — Transition de phase (Laurent, admin)
 

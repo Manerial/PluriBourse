@@ -26,7 +26,7 @@ _Ce document se construit de manière collaborative à travers une découverte �
 89 exigences fonctionnelles réparties en 10 groupes de fonctionnalités (F1–F10). Le système est organisé autour d'une machine à états du cycle de vie d'une édition qui gouverne tous les comportements :
 
 - **F1 — Internationalisation (7 EFs) :** Fondation transversale. i18n en double couche : ngx-translate pour l'interface, Spring MessageSource pour les documents imprimés. Langue par compte utilisateur (interface) et par instance (documents).
-- **F2 — Gestion des Éditions (12 EFs) :** Cycle de vie des phases contrôlé par l'administrateur (Dépôt → Vente → Post-vente → Clôturé). Une seule édition active à la fois. Retour arrière de phase supporté. Action optionnelle destructrice « Nettoyer l'Édition ».
+- **F2 — Gestion des Éditions (12 EFs) :** Cycle de vie des phases contrôlé par l'administrateur (Préparation → Dépôt → Vente → Post-vente → Clôturé). Une seule édition active à la fois. Retour arrière de phase supporté. Action optionnelle destructrice « Nettoyer l'Édition ».
 - **F3 — Gestion des Vendeurs & Articles (18 EFs) :** Profils vendeurs multi-éditions. Enregistrement des articles avec affectation de table automatique. Génération de codes-barres Code 128. Impression d'étiquettes thermiques + bordereau de dépôt via file d'attente ESC/POS. Prise en charge des lots.
 - **F4 — Point de Vente (13 EFs) :** Scanner USB HID avec gestion transparente AZERTY/QWERTY. Gestion du panier avec respect de l'intégrité des lots. Impression de facture acheteur. Annulation du panier lors d'une transition de phase (FR-090).
 - **F5 — Post-Vente & Reversements (5 EFs) :** Flux de règlement vendeur. Chemin « non récupéré » transférant le reversement en recette de l'association. Récapitulatif des ventes par vendeur.
@@ -99,8 +99,8 @@ Application web full-stack — orientée backend. Stack décidée en amont : Spr
 | Technologie | Version | Justification |
 |---|---|---|
 | Java | **21** (LTS) | Les threads virtuels (Project Loom) réduisent la pression mémoire sous charge POS concurrente sur RPi 4 ; LTS supporté jusqu'en 2031 |
-| Spring Boot | **4.0.6** | Dernière version stable ; Spring Framework 7, Spring Security 7, Hibernate 7 |
-| Angular | **21** (LTS) | Angular 22 sorti le 3 juin 2026 — trop récent pour la stabilité de l'écosystème `jest-preset-angular` ; LTS supporté jusqu'en mai 2027 |
+| Spring Boot | **4.0.6** | Version stable réelle, sortie avril 2026 (confirmé sur spring.io) ; Spring Framework 7, Spring Security 7, Hibernate 7 — ne pas rétrograder vers 3.x |
+| Angular | **21** (LTS) | Angular 22 sorti le 3 juin 2026 — délibérément écarté : l'écosystème `jest-preset-angular` n'est pas encore stabilisé sur cette version ; Angular 21 LTS supporté jusqu'en mai 2027 — ne pas upgrader vers 22 avant la fin du projet |
 | Outil de build | **Maven** | Builds prévisibles ; bien connu des experts Java ; `pom.xml` lisible ; configuration JaCoCo + Failsafe exhaustivement documentée |
 
 ### Initialisation Backend (Spring Initializr)
@@ -436,6 +436,8 @@ src/
 ```
 
 **Pagination — JPageFlow**
+
+Bibliothèque open source communautaire, dont l'auteur du projet (Manerial) est également l'auteur. Dépôt : https://github.com/Manerial/JPageFlow. Ce projet sert de terrain d'épreuve pour valider JPageFlow en conditions réelles. Ne pas la remplacer par une autre solution de pagination sans décision explicite.
 
 Outil standard pour tous les points d'entrée de listes paginées/filtrées :
 
@@ -900,7 +902,6 @@ La structure du projet supporte toutes les décisions architecturales. Backend e
 - Correctif BigDecimal de JPageFlow (appliquer avant la fonctionnalité de tri par prix)
 - Pipeline CI Testcontainers (peut être ajouté de manière incrémentale)
 - Mécanisme de sauvegarde/restauration (explicitement reporté à la v2)
-- Override de commission par édition (hors périmètre v1)
 
 ---
 

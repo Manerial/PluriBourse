@@ -26,6 +26,27 @@ Créé : 2026-06-08
 
 ---
 
+## Décisions de conception post-UX
+
+**FR-056 — Liste des vendeurs non soldés**
+
+FR-056 est couvert par la page de solde `/volunteer/settlement` (et la fiche vendeur admin), qui affiche déjà les vendeurs non soldés avec leur numéro de téléphone visible (FR-053). Aucun rapport PDF ni vue d'impression dédiés ne sont nécessaires pour ce cas d'usage — une page affichant les données en direct est plus simple et plus utile.
+
+Exception à FR-057 : FR-056 n'est **pas** implémenté sous forme de PDF généré côté serveur. C'est la seule exception à la règle "tous les rapports sont en PDF".
+
+---
+
+**Exigences fonctionnelles complémentaires — Exports CSV**
+
+Issues de la phase UX, non présentes dans le PRD initial :
+
+- **FR-091 :** En phase Post-vente et Clôturée, l'administrateur peut exporter le catalogue articles au format CSV (articles avec leur statut vendu/invendu). Le téléchargement est déclenché directement sans boîte de dialogue.
+- **FR-092 :** En phase Post-vente et Clôturée, l'administrateur peut exporter les reversements au format CSV. Le téléchargement est déclenché directement sans boîte de dialogue.
+
+Ces deux exports sont couverts par Story 5.5 (Épic 5).
+
+---
+
 ## Architecture i18n (EN/FR)
 
 **Contexte :** PluriBourse supporte deux langues (EN/FR). Les traductions front et back sont de nature différente — aucun partage de fichiers n'est nécessaire.

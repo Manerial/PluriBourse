@@ -20,7 +20,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 
 **F1 — Internationalisation (EN/FR)**
 - FR-001 : L'interface utilisateur est disponible en anglais et en français.
-- FR-002 : La langue par défaut de l'interface est détectée à partir du navigateur lors du premier accès et enregistrée dans les préférences du compte utilisateur.
+- FR-002 : La langue par défaut de l'interface est détectée à partir du navigateur et enregistrée dans les préférences du compte à la première connexion de l'utilisateur.
 - FR-003 : Chaque utilisateur peut modifier sa préférence de langue dans les paramètres de son compte.
 - FR-004 : Tous les textes de l'interface sont externalisés — aucun texte n'est codé en dur dans le code source.
 - FR-005 : La langue des documents imprimés est configurée au niveau de l'instance par l'administrateur.
@@ -177,7 +177,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR14 : Implémenter le composant panier POS : liste d'articles avec nom + prix unitaire, bouton de suppression individuel (icône fermer par ligne), regroupement par lot (en-tête de lot en rouge avec compteur « X/N scannés » + sous-total du lot, sans prix individuel par article), bouton « Retirer le lot entier » depuis le premier article du lot, « Valider » bloqué si lot incomplet, panier auto-vidé sur événement SSE basket-cancelled.
 - UX-DR15 : Implémenter le flux formulaire de dépôt (bénévole) : recherche vendeur par nom/email → « Créer un profil » si introuvable → enregistrement d'article (nom, prix, sélecteur de catégorie, case à cocher complet/incomplet + champ commentaire) avec affichage de la table auto-assignée. Autofocus sur le champ de recherche vendeur au chargement de la page.
 - UX-DR16 : Implémenter le composant admin catégories & tables : mode éditable avant le démarrage de la phase Dépôt, lecture seule après. Sur nouvelle édition : option « Copier depuis une édition existante » (liste déroulante de sélection d'édition) ou « Configurer manuellement ».
-- UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue), liste des vendeurs non soldés imprimable (Post-vente, ouvre la vue d'impression du navigateur).
+- UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue). La liste des vendeurs non soldés est accessible via la page de solde (`/volunteer/settlement`) et la fiche vendeur admin — pas de section dédiée dans les rapports.
 - UX-DR18 : Implémenter l'action « Nettoyage de l'édition » : bouton secondaire couleur d'erreur, boîte de dialogue de confirmation irréversible (« Supprimer tous les articles de cette édition. Cette action est irréversible. »), état vide post-nettoyage « Édition nettoyée — aucun article. » sans action, bouton disparaît après le nettoyage. Bouton visible uniquement si des articles existent encore.
 - UX-DR19 : Implémenter le pattern de retour visuel du bouton d'impression : spinner dans le bouton pendant la soumission à la file d'attente, toast de succès (4s), toast d'erreur persistant si l'imprimante est hors ligne avec bouton « Fermer ». Toujours redéclenchable.
 - UX-DR20 : Implémenter le socle d'accessibilité WCAG 2.2 AA : anneaux de focus sur tous les éléments interactifs (jamais supprimés), ordre de tabulation suivant l'ordre de lecture visuel, piège de focus dans les boîtes de dialogue de confirmation, annonces pour lecteurs d'écran via aria-live/aria-label/aria-describedby, cibles tactiles minimales de 44×44px, icônes décoratives aria-hidden="true", icônes sémantiques avec texte accompagnateur ou aria-label.
@@ -195,7 +195,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-007 : Epic 1 — Langue des documents modifiable par l'admin
 - FR-008 : Epic 2 — L'admin crée une édition avec un nom libre
 - FR-009 : Epic 2 — Plusieurs éditions par année
-- FR-010 : Epic 2 — Une seule édition active à la fois
+- FR-010 : Epic 2 — Une seule édition active à la fois (active = phases Préparation → Post-vente ; Clôturée = inactive)
 - FR-011 : Epic 2 — La transition de phase nécessite une boîte de dialogue de confirmation
 - FR-012 : Epic 2 — Phase active affichée à tous les utilisateurs
 - FR-013 : Epic 2 — La clôture de l'édition génère des PDF, l'édition passe en lecture seule
@@ -276,6 +276,8 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-088 : Epic 2 — « Nettoyage de l'édition » supprime définitivement les enregistrements d'articles ; désactive le retour arrière vers Post-vente
 - FR-089 : Epic 5 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
 - FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
+- FR-091 : Epic 5 — Export CSV du catalogue articles (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
+- FR-092 : Epic 5 — Export CSV des reversements (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
 
 ## Liste des épics
 
@@ -287,7 +289,7 @@ Les administrateurs et les bénévoles peuvent déployer l'application, se conne
 **UX :** UX-DR1, UX-DR2, UX-DR3, UX-DR5, UX-DR6, UX-DR7, UX-DR8, UX-DR9, UX-DR12, UX-DR13, UX-DR20
 
 ### Epic 2 : Gestion du cycle de vie des éditions
-Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
 **FR couvertes :** FR-008–016, FR-080, FR-082, FR-088
 **Architecture :** ARCH-012, ARCH-015 (prérequis machine de phases)
@@ -310,7 +312,7 @@ Les bénévoles peuvent scanner des articles avec un scanner code-barres USB, g�
 ### Epic 5 : Post-vente, Reversements & Rapports
 Les bénévoles peuvent solder les vendeurs et traiter les reversements. Les administrateurs peuvent générer des rapports de bilan journaliers et d'édition en PDF, identifier les vendeurs non soldés et clôturer officiellement les éditions.
 
-**FR couvertes :** FR-049–059, FR-089
+**FR couvertes :** FR-049–059, FR-089, FR-091, FR-092
 **UX :** UX-DR17, UX-DR22
 
 ### Epic 6 : Catalogue articles
@@ -319,6 +321,7 @@ Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer 
 **FR couvertes :** FR-083–087
 **Architecture :** ARCH-005
 **UX :** UX-DR11
+**Dépendance :** Story 6.2 requiert les endpoints basket d'Épic 4 — à implémenter après Épic 4.
 
 ---
 
@@ -476,13 +479,13 @@ afin de travailler confortablement dans ma langue maternelle pendant l'événeme
 
 **Critères d'acceptation :**
 
-**Étant donné** qu'un nouvel utilisateur accède à l'application pour la première fois avec la langue navigateur `fr`
-**Quand** la page se charge
+**Étant donné** qu'un nouvel utilisateur se connecte pour la première fois avec la langue navigateur `fr`
+**Quand** la connexion se termine
 **Alors** l'interface s'affiche en français
 **Et** `preferredLanguage: FR` est enregistré sur son compte utilisateur
 
 **Étant donné** que le navigateur d'un nouvel utilisateur est configuré en anglais ou dans une langue non prise en charge
-**Quand** la page se charge
+**Quand** il se connecte pour la première fois
 **Alors** l'interface s'affiche en anglais et `preferredLanguage: EN` est enregistré
 
 **Étant donné** qu'un utilisateur connecté accède à `/account` et sélectionne l'autre langue
@@ -578,7 +581,7 @@ afin d'agir en confiance sans faire d'erreurs accidentelles sous pression.
 
 ## Epic 2 : Gestion du cycle de vie des éditions
 
-Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
 ### Story 2.1 : CRUD d'édition & Configuration du taux de commission
 
@@ -594,7 +597,7 @@ afin que chaque événement soit correctement identifié et configuré financiè
 
 **Étant donné** que l'admin renseigne un nom d'édition et soumet
 **Quand** le formulaire est soumis
-**Alors** une nouvelle édition est créée avec la phase « Dépôt » et un taux de commission de 20 % (défaut)
+**Alors** une nouvelle édition est créée avec la phase « Préparation » et un taux de commission initialisé depuis le paramètre instance (20 % par défaut)
 
 **Étant donné** qu'aucune édition active n'existe
 **Quand** l'admin active une édition
@@ -604,7 +607,7 @@ afin que chaque événement soit correctement identifié et configuré financiè
 **Quand** l'admin tente d'activer une seconde édition
 **Alors** le système le refuse avec une erreur explicite (FR-010)
 
-**Étant donné** qu'une édition est en phase Dépôt (pas encore démarrée)
+**Étant donné** qu'une édition est en phase « Préparation »
 **Quand** l'admin change le taux de commission à 15 %
 **Alors** le taux est enregistré sous forme de BigDecimal `15.00`
 
@@ -638,9 +641,15 @@ afin que les transitions de phase soient intentionnelles et que leurs conséquen
 **Alors** la phase de l'édition est mise à jour en base de données
 **Et** le chip de phase dans la barre supérieure reflète la nouvelle phase pour tous les utilisateurs
 
+**Étant donné** que l'admin confirme la transition Préparation → Dépôt
+**Quand** la transition se termine
+**Alors** la phase passe à « Dépôt »
+**Et** le taux de commission est gelé pour cette édition (FR-016)
+**Et** les catégories et correspondances de tables passent en lecture seule (Story 2.3)
+
 **Étant donné** que l'admin confirme un retour arrière de phase
 **Quand** la transition se termine
-**Alors** la phase revient d'un cran en arrière
+**Alors** la phase revient d'un cran en arrière (Dépôt → Préparation, Vente → Dépôt, Post-vente → Vente, Clôturé → Post-vente)
 **Et** toutes les données enregistrées dans la phase annulée sont préservées (FR-082)
 
 **Étant donné** qu'une édition a été clôturée et que le Nettoyage de l'édition a été déclenché
@@ -672,7 +681,7 @@ afin que les articles soient automatiquement dirigés vers les bonnes tables lor
 **Quand** sauvegardée
 **Alors** les articles de cette catégorie seront auto-assignés aux tables 1-3
 
-**Étant donné** que l'édition n'a pas encore démarré la phase Dépôt
+**Étant donné** que l'édition est en phase Préparation
 **Quand** l'admin modifie les catégories et la correspondance des tables
 **Alors** les modifications sont sauvegardées immédiatement
 
@@ -772,8 +781,7 @@ afin que les vendeurs puissent être associés à leurs articles sans ressaisir 
 **Étant donné** que l'admin déclenche une suppression RGPD sur un profil vendeur
 **Quand** la suppression se termine
 **Alors** le nom, prénom, e-mail et téléphone sont anonymisés dans toutes les éditions (FR-021)
-**Et** les descriptions des articles appartenant à ce vendeur sont également anonymisées
-**Et** les catégories de produits sont conservées
+**Et** les descriptions d'articles et les catégories de produits sont conservées
 **Et** aucune donnée personnelle n'apparaît dans les logs applicatifs
 
 ### Story 3.2 : Enregistrement d'articles & Assignation automatique de table
@@ -1038,9 +1046,8 @@ afin que deux caissiers ne puissent pas accidentellement vendre le même article
 **Quand** le verrou optimiste (`@Version` sur `Item`) détecte une écriture concurrente
 **Alors** la transaction est annulée et un 409 est retourné — aucune vente partielle n'est enregistrée
 
-**Étant donné** qu'un test d'intégration Testcontainers MariaDB est exécuté
-**Quand** deux threads `TransactionTemplate` concurrents valident des paniers qui se chevauchent
-**Alors** exactement un réussit et l'autre reçoit un 409
+**Notes de développement :**
+Valider la concurrence via un test d'intégration Testcontainers MariaDB : deux threads `TransactionTemplate` concurrents valident des paniers qui se chevauchent — exactement un doit réussir et l'autre recevoir un 409.
 
 ### Story 4.5 : Impression de la facture acheteur
 
@@ -1190,9 +1197,9 @@ afin d'avoir une vision financière complète à la clôture de l'événement.
 **Quand** l'admin consulte la page des rapports
 **Alors** un PDF de bilan d'édition est disponible : total des articles vendus/invendus, recettes brutes totales, commission totale perçue (FR-055)
 
-**Étant donné** que l'admin demande le rapport des vendeurs non soldés
-**Quand** généré
-**Alors** il liste tous les vendeurs non soldés avec leur numéro de téléphone sous forme de PDF (FR-056, FR-057)
+**Étant donné** que l'admin veut identifier les vendeurs non soldés
+**Quand** il consulte la page de gestion des vendeurs
+**Alors** les vendeurs non soldés sont visibles avec leur numéro de téléphone (FR-056 — accessible via `/admin/sellers` et `/volunteer/settlement`, non implémenté en PDF, exception à FR-057 documentée dans l'addendum)
 
 **Étant donné** qu'une édition est archivée
 **Quand** un utilisateur quelconque consulte l'édition
@@ -1221,11 +1228,6 @@ afin d'agir rapidement sans naviguer parmi des options non pertinentes.
 **Alors** la section synthèse est visible (total des ventes, reversements, recettes de l'association) en lecture seule
 **Et** deux boutons d'export CSV apparaissent : « Exporter le catalogue » et « Exporter les reversements »
 **Et** cliquer sur un export CSV déclenche un téléchargement de fichier direct sans boîte de dialogue
-
-**Étant donné** que l'édition est en phase Post-vente
-**Quand** l'admin consulte la page des rapports
-**Alors** un bouton « Imprimer la liste des vendeurs non soldés » est visible
-**Et** cliquer dessus ouvre la vue d'impression du navigateur avec la liste des vendeurs non soldés
 
 **Étant donné** qu'une phase ne correspond pas à la condition de disponibilité d'une section de rapport
 **Quand** l'admin consulte la page des rapports
