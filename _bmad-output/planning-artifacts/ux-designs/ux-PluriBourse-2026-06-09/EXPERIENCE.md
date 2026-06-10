@@ -112,7 +112,7 @@ Comportemental. Spécifications visuelles dans `DESIGN.md.Components`.
 | **Panier POS** | Caisse | Liste des articles scannés avec prix unitaire et total. Suppression individuelle par icône `close` sur chaque ligne. Bouton "Valider" bloqué si lot incomplet. Annulé automatiquement si changement de phase (SSE `basket-cancelled`). |
 | **Lot dans le panier** | Caisse | Articles du lot affichés groupés avec label du lot en rouge. Compteur "X/N scannés". Sous-total du lot affiché dans l'en-tête du groupe (somme des articles scannés). **Pas de prix individuel par article** — le lot est une unité de vente. Bouton "Retirer le lot entier" visible dès le premier article du lot dans le panier. Validation bloquée tant que lot incomplet. |
 | **Formulaire dépôt** | Bénévole — phase Dépôt | Recherche vendeur par nom ou email en premier. Si non trouvé : bouton "Créer un profil". Saisie article : nom, prix, catégorie (sélecteur), complet/incomplet. Table assignée automatiquement. |
-| **Fiche Catégories & Tables** | Admin — édition | Mode édition en phase Préparation. Mode lecture à partir de la phase Dépôt. À la création : option "Copier depuis une édition existante" (sélecteur d'édition) ou "Configurer manuellement". |
+| **Fiche Catégories & Tables** | Admin — édition | Mode édition en phase Préparation. Mode lecture à partir de la phase Dépôt. À la création : option "Copier depuis une édition clôturée" (sélecteur limité aux éditions clôturées) ou "Configurer manuellement". |
 | **Page Rapports** | Admin — phases Vente · Post-vente · Clôturée | Contenu conditionnel selon la phase active — seules les sections pertinentes à la phase courante sont affichées, les autres sont absentes. **Rapport de caisse journalier** (Vente uniquement) : montant total des ventes du jour, bouton "Actualiser". **Rapport de synthèse** (Post-vente + Clôturée) : total ventes, total reversements, total recettes association — lecture seule. **Exports CSV** (Post-vente + Clôturée) : boutons "Exporter le catalogue" (articles + statut vendu/non vendu) et "Exporter les reversements" — téléchargement direct sans dialog. La liste des vendeurs non soldés est accessible via `/volunteer/settlement` et la fiche vendeur admin — pas de section dédiée dans les rapports. |
 | **Action "Nettoyer l'édition"** | Admin — phase Clôturée | Bouton visible sur la fiche édition uniquement si des articles non supprimés existent. Style `secondary` couleur `error`. Dialog de confirmation : "Supprimer tous les articles de cette édition. Cette action est irréversible." Boutons : "Supprimer" (error) + "Annuler" (ghost). Post-Clean : le catalogue affiche un état vide "Édition nettoyée — aucun article." sans action proposée. Le bouton "Nettoyer l'édition" disparaît définitivement. |
 | **Récapitulatif reversement imprimable** | Bénévole — phase Post-vente · Admin toutes phases | Bouton "Imprimer le récapitulatif" accessible depuis la ligne vendeur sur `/volunteer/settlement` (après règlement) et depuis la fiche vendeur Admin. Feedback : spinner dans le bouton pendant la mise en queue. Résultat communiqué par toast succès (4s) ou toast persistant si imprimante hors ligne. Toujours rejouable. |
@@ -140,12 +140,14 @@ Comportemental. Spécifications visuelles dans `DESIGN.md.Components`.
 La caisse est conçue pour une utilisation scanner-first. Le champ de scan est autofocused et capte tous les événements clavier. Un clic involontaire sur la page ne doit pas perdre le focus du scanner — le composant `scanner.component.ts` remet le focus automatiquement après 500ms d'inactivité clavier.
 
 **Clavier — navigation générale**
+
 - `Tab` / `Shift+Tab` : navigation entre éléments interactifs dans l'ordre visuel
 - `Enter` / `Space` : activation des boutons et liens
 - `Echap` : fermeture des dialogs et popovers
 - Pas de raccourcis vim ou globaux en v1 — l'audience bénévole ne les utiliserait pas
 
 **Formulaires**
+
 - Validation côté client : Angular reactive forms, feedback immédiat sur `blur`
 - Validation côté serveur : erreurs mappées sur les champs concernés via RFC 7807
 - `Enter` dans un formulaire mono-champ (recherche vendeur) soumet le formulaire
@@ -158,6 +160,7 @@ Toute action irréversible ou à fort impact (transition de phase, suppression p
 Déclenchée par un bouton explicite dans l'interface. Feedback immédiat : spinner dans le bouton pendant la mise en queue. Résultat communiqué par toast (succès) ou toast persistant (erreur). Le bouton redevient actif après traitement — l'impression est toujours rejouable.
 
 **Interdit**
+
 - Drag-and-drop (v1)
 - Infinite scroll (utiliser pagination ou chargement complet pour les volumes PluriBourse)
 - Hover-only affordances (pas d'action visible uniquement au survol)

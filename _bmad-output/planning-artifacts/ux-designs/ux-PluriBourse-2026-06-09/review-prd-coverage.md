@@ -6,7 +6,7 @@ Relecteur : Lens Couverture PRD
 
 ## Résumé
 
-EXPERIENCE.md couvre solidement les flux opérationnels principaux (dépôt, POS, reversement, transitions de phase) et son inventaire de composants s'aligne bien avec le PRD. Cependant, plusieurs exigences à interface utilisateur sont absentes ou significativement sous-spécifiées : l'anonymisation RGPD des vendeurs, les déclencheurs d'impression du bordereau de dépôt et de la facture, le repli catalogue-vers-panier, la page Paramètres admin, le support multilingue dans l'interface elle-même, et le flux de retour en arrière de phase. Ces lacunes ne sont pas cosmétiques — chacune correspond à un écran ou une interaction utilisateur qui devra être conçu.
+EXPERIENCE.md couvre solidement les flux opérationnels principaux (dépôt, POS, reversement, transitions de phase) et son inventaire de composants s'aligne bien avec le PRD. Cependant, plusieurs exigences à interface utilisateur sont absentes ou significativement sous-spécifiées : l'anonymisation RGPD des vendeurs, les déclencheurs d'impression du bordereau de dépôt et de la facture, la page Paramètres admin, le support multilingue dans l'interface elle-même, et le flux de retour en arrière de phase. Ces lacunes ne sont pas cosmétiques — chacune correspond à un écran ou une interaction utilisateur qui devra être conçu.
 
 ---
 
@@ -26,7 +26,7 @@ Le modèle à deux rôles est correctement reflété dans l'IA (routes séparée
 
 ### PASS — Cœur du reversement post-vente (FR-049 à FR-053)
 
-Le Flux 3 couvre le chemin « Non collecté » avec le dialog de confirmation correct et le langage d'irréversibilité. La liste des vendeurs non reversés avec numéro de téléphone (FR-053) est représentée. La saisie du montant du reversement par le bénévole (FR-051) est sous-entendue par le Flux 3 mais pas explicitement conçue comme composant — acceptable au niveau spine.
+Le Flux 3 couvre le chemin « Non réclamé » avec le dialog de confirmation correct et le langage d'irréversibilité. La liste des vendeurs non soldés avec numéro de téléphone (FR-053) est représentée. La saisie du montant du reversement par le bénévole (FR-051) est sous-entendue par le Flux 3 mais pas explicitement conçue comme composant — acceptable au niveau spine.
 
 ### PASS — Plancher d'accessibilité et ton
 
@@ -54,13 +54,9 @@ FR-031 exige un bordereau de dépôt imprimable par vendeur affichant la liste d
 
 FR-040 spécifie qu'après la validation du paiement, une facture acheteur est imprimable « à la demande ». FR-041 en spécifie le contenu. EXPERIENCE.md ne décrit pas où dans l'interface de la caisse le bouton d'impression de facture apparaît (dans le panier après validation ? sur un écran post-transaction ?), ni à quoi ressemble l'état post-validation de la caisse avant la réinitialisation du panier. C'est une lacune dans la spécification du flux POS.
 
-### PRÉOCCUPATION — Ajout manuel au panier depuis le catalogue (FR-087)
-
-FR-087 est un repli critique pour les codes-barres illisibles : un bénévole peut ajouter un article directement depuis le catalogue au panier courant. EXPERIENCE.md référence cela brièvement dans la section Périmètre (« Ajout manuel au panier depuis le catalogue (repli codes-barres illisibles) ») et liste `/volunteer/catalog` comme disponible dans toutes les phases, mais ne spécifie jamais l'interaction : y a-t-il un bouton « Ajouter au panier » sur la ligne du catalogue qui n'apparaît que pendant la phase Vente ? Cela ouvre-t-il la vue POS ? Le catalogue a-t-il besoin du contexte du panier actif ? Ce flux n'a pas de Flux Clé correspondant et pas de patron de composant.
-
 ### PRÉOCCUPATION — Contenu de la page Paramètres admin (FR-073, FR-032, FR-005 à FR-007)
 
-FR-073 spécifie qu'une page de paramètres admin centralise : nom de l'association, taux de commission, langue des documents et largeur du ticket thermique. FR-032 rend la largeur du ticket configurable. FR-005–FR-007 définissent la langue des documents au niveau de l'instance. EXPERIENCE.md liste `/admin/settings` dans la table IA mais ne fournit aucune spécification du contenu de la page, de la disposition des champs, ni de quels paramètres sont modifiables à quelle phase (ex. taux de commission gelé après le démarrage du Dépôt — FR-016). Cette page nécessite une spec de composant ou de formulaire.
+FR-073 spécifie qu'une page de paramètres admin centralise : nom de l'association, taux de commission par défaut, langue des documents par défaut et largeur du ticket thermique. FR-032 rend la largeur du ticket configurable. FR-005–FR-007 définissent la langue des documents par édition (valeur initialisée depuis l'instance à la création, modifiable à tout moment). EXPERIENCE.md liste `/admin/settings` dans la table IA mais ne fournit aucune spécification du contenu de la page, de la disposition des champs, ni de quels paramètres sont modifiables à quelle phase (ex. taux de commission gelé après le démarrage du Dépôt — FR-016). Cette page nécessite une spec de composant ou de formulaire.
 
 ### PRÉOCCUPATION — UX du gel du taux de commission (FR-016)
 
@@ -112,25 +108,22 @@ Ajouter une description de la page de détail de l'édition archivée : métriqu
 Le Flux 3 ne couvre que le reversement. Ajouter le Flux 5 (ou étendre le Flux 3) pour montrer le bénévole imprimant le bilan de vente d'un vendeur avant de remettre les invendus. Spécifier où apparaît le déclencheur d'impression : sur la ligne de la liste de reversement, ou uniquement sur la fiche vendeur.
 
 ### 4. Spécifier le contenu et les états modifiables de la page Paramètres admin (FR-073, FR-016, FR-032, FR-005)
-Ajouter une spec de formulaire pour `/admin/settings` : champs (nom de l'association, taux de commission, langue des documents, largeur du ticket thermique), leurs conditions de modification (taux de commission désactivé après le démarrage du Dépôt avec message explicatif), et comment la langue des documents est liée à la langue de sortie des documents imprimés.
+Ajouter une spec de formulaire pour `/admin/settings` : champs (nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket thermique), avec la note que ces valeurs par défaut n'affectent que les nouvelles éditions. La langue de documents et le taux de commission d'une édition existante se modifient dans la page de l'édition, en phase Préparation uniquement.
 
-### 5. Ajouter un Flux Clé catalogue-vers-panier (FR-087)
-Ajouter un flux court montrant comment un bénévole accède au catalogue pendant la phase Vente, localise un article illisible, et l'ajoute au panier actif. Spécifier si « Ajouter au panier » n'est visible de façon contextuelle que pendant la phase Vente, et comment le bénévole retourne à la caisse POS après l'action.
-
-### 6. Spécifier la suppression RGPD du vendeur (FR-021)
+### 5. Spécifier la suppression RGPD du vendeur (FR-021)
 Sur la fiche `/admin/sellers/:id`, documenter l'action supprimer/anonymiser : contenu du dialog de confirmation (conséquences : anonymisation dans toutes les éditions, irréversible), et l'état post-anonymisation de la fiche (données en placeholder grisées vs. entrée supprimée).
 
-### 7. Spécifier les déclencheurs d'impression du bordereau de dépôt et de la facture acheteur (FR-031, FR-040, FR-041)
+### 6. Spécifier les déclencheurs d'impression du bordereau de dépôt et de la facture acheteur (FR-031, FR-040, FR-041)
 Clarifier dans le flux du formulaire de dépôt si le bordereau de dépôt s'imprime automatiquement avec les étiquettes (aux côtés de FR-028) ou est déclenché manuellement. Clarifier à quoi ressemble l'état de la caisse POS après la validation de la transaction et où apparaît le bouton d'impression de facture.
 
-### 8. Couvrir le flux de retour en arrière et l'état retour-en-arrière-désactivé-après-Nettoyage (FR-082, FR-088)
+### 7. Couvrir le flux de retour en arrière et l'état retour-en-arrière-désactivé-après-Nettoyage (FR-082, FR-088)
 Sur `/admin/editions/:id/phase`, spécifier à quoi ressemblent les boutons de retour en arrière, que le même patron de dialog de confirmation s'applique, et comment l'interface communique que le retour en arrière depuis Clôturé est définitivement indisponible après Nettoyer l'Édition.
 
-### 9. Spécifier la page `/account` (FR-003, FR-067)
+### 8. Spécifier la page `/account` (FR-003, FR-067)
 Ajouter une spec minimale pour la page de paramètres du compte : sélecteur de préférence de langue (EN/FR), comment il s'applique immédiatement sans rechargement de page (changement de langue à l'exécution ngx-translate), et tous les autres champs modifiables par l'utilisateur.
 
-### 10. Ajouter le flux de changement de mot de passe forcé au premier lancement (FR-062)
+### 9. Ajouter le flux de changement de mot de passe forcé au premier lancement (FR-062)
 Spécifier le flux de première connexion Admin/Admin : est-ce une redirection vers un écran de changement de mot de passe dédié, ou un modal en place sur `/admin` ? Qu'est-ce qui empêche de naviguer ailleurs avant que le mot de passe soit changé ?
 
-### 11. Clarifier le mécanisme de livraison des conflits de scan concurrent (NFR-002, FR-036)
+### 10. Clarifier le mécanisme de livraison des conflits de scan concurrent (NFR-002, FR-036)
 Dans le patron du composant Champ scanner, spécifier si l'erreur « déjà vendu » pour un scan concurrent est une réponse d'erreur HTTP synchrone (très probable) ou un push SSE asynchrone — et comment la caisse gère le cas où deux postes réussissent à scanner le même article dans la même fenêtre de requête.

@@ -205,6 +205,7 @@ Le corail rouge-orangé est la couleur de marque. Il apparaît sur les boutons p
 Les surfaces sont teintées de chaud beige-pierre pour éviter le blanc clinique. En mode sombre, elles tirent vers un brun très sombre plutôt que le noir pur — cohérent avec la chaleur de la palette corail.
 
 **Statuts sémantiques**
+
 - Succès / Réglé : vert `#166534` sur `#F0FDF4` — neutre, lisible, non corail
 - Avertissement / Incomplet : `{colors.on-primary-container}` sur `{colors.primary-container}` — corail doux
 - Erreur critique : `{colors.on-error-container}` sur `{colors.error-container}` — rouge Material standard

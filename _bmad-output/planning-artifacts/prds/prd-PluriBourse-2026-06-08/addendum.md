@@ -65,7 +65,7 @@ Ces deux exports sont couverts par Story 5.5 (Épic 5).
 **Format du rouleau :**
 ```
 [séparateur vendeur : nom vendeur + édition]
-[étiquette article 1 : code-barres Code 128, prix, catégorie, table, édition, indicateur incomplet]
+[étiquette article 1 : nom édition / ligne vide / --- catégorie --- / nom+prix / /!\ INCOMPLET si applicable / Table n°X / ligne vide / graphique Code 128 / numéro de code-barres / ligne vide]
 [séparateur article]
 [étiquette article 2]
 ...
@@ -74,6 +74,7 @@ Ces deux exports sont couverts par Story 5.5 (Épic 5).
 ```
 
 **Contraintes techniques :**
+
 - Largeur utilisable : ~50-53mm sur rouleau 57mm
 - Hauteur étiquette : variable (rouleau continu, ~50-60mm par étiquette recommandé)
 - Protocole : ESC/POS (standard pour imprimantes thermiques 57/58mm)
@@ -82,5 +83,6 @@ Ces deux exports sont couverts par Story 5.5 (Épic 5).
 - File d'impression côté serveur : jobs séquentiels, déclenchés à la validation du dépôt
 
 **Options écartées :**
+
 - Option B (backend sert les traductions via API) — couplage front↔back inutile pour un outil communautaire.
 - Option C (fichiers JSON partagés lus des deux côtés) — adaptateur Spring custom à maintenir sans gain réel, étant donné que les traductions front et back sont de nature différente.

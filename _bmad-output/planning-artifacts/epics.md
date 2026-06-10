@@ -19,40 +19,43 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 ### Exigences fonctionnelles
 
 **F1 — Internationalisation (EN/FR)**
+
 - FR-001 : L'interface utilisateur est disponible en anglais et en français.
 - FR-002 : La langue par défaut de l'interface est détectée à partir du navigateur et enregistrée dans les préférences du compte à la première connexion de l'utilisateur.
 - FR-003 : Chaque utilisateur peut modifier sa préférence de langue dans les paramètres de son compte.
 - FR-004 : Tous les textes de l'interface sont externalisés — aucun texte n'est codé en dur dans le code source.
-- FR-005 : La langue des documents imprimés est configurée au niveau de l'instance par l'administrateur.
-- FR-006 : Le paramètre de langue des documents s'applique à l'ensemble de l'instance et à toutes les éditions.
-- FR-007 : Le paramètre de langue des documents est modifiable par l'administrateur à tout moment.
+- FR-005 : La langue des documents imprimés est configurée par édition.
+- FR-006 : Chaque édition possède sa propre langue de documents, initialisée depuis le paramètre instance à sa création. Le paramètre instance sert de valeur par défaut pour les nouvelles éditions.
+- FR-007 : La langue de documents d'une édition est modifiable par l'admin à tout moment. La valeur par défaut de l'instance reste modifiable à tout moment et ne s'applique qu'aux nouvelles éditions.
 
 **F2 — Gestion des éditions et cycle de vie des événements**
+
 - FR-008 : L'administrateur peut créer une édition avec un nom libre.
 - FR-009 : Plusieurs éditions peuvent être créées par année.
 - FR-010 : Une seule édition peut être active à la fois.
 - FR-011 : Toute transition de phase — vers l'avant ou vers l'arrière — nécessite une confirmation explicite de l'administrateur via une boîte de dialogue.
 - FR-012 : La phase active de l'édition en cours est affichée clairement à tous les utilisateurs connectés.
 - FR-013 : L'administrateur déclenche la clôture de l'édition via « Clôturer l'édition » en phase Post-vente. Tous les documents sont générés en PDF dans les deux langues. L'édition passe en lecture seule.
-- FR-014 : Une édition archivée ne peut pas être supprimée.
+- FR-014 : Une édition ayant dépassé la phase Préparation ne peut pas être supprimée.
 - FR-015 : Les données de chaque édition sont strictement isolées.
 - FR-016 : Le taux de commission est configuré lors de la mise en place de l'instance (20 % par défaut), modifiable par l'administrateur jusqu'au démarrage de la phase Dépôt, puis figé pour cette édition.
-- FR-080 : Lors de la création d'une nouvelle édition, l'administrateur peut copier les catégories et la correspondance tables depuis une édition existante.
+- FR-080 : Lors de la création d'une nouvelle édition, l'administrateur peut copier les catégories et la correspondance tables depuis une édition clôturée.
 - FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les données sont préservées. Le retour arrière depuis l'état Clôturé est désactivé après le Nettoyage de l'édition.
 - FR-088 : Après clôture, l'administrateur peut déclencher le « Nettoyage de l'édition » — supprime définitivement les enregistrements d'articles. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
 
 **F3 — Gestion des vendeurs et des articles (Phase Dépôt)**
+
 - FR-017 : L'administrateur configure la liste des catégories d'articles par édition.
 - FR-018 : L'administrateur configure la correspondance catégorie-table par édition.
 - FR-019 : Les profils vendeurs persistent d'une édition à l'autre. Champs obligatoires : nom, prénom, adresse e-mail, numéro de téléphone.
 - FR-020 : Le bénévole recherche un vendeur existant par nom ou e-mail. Si aucun résultat, un nouveau profil est créé.
 - FR-021 : L'administrateur peut supprimer un profil vendeur (RGPD). La suppression anonymise les données personnelles dans toutes les éditions.
 - FR-022 : Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire si incomplet.
-- FR-023 : La table est automatiquement assignée par le système selon la correspondance catégorie-table de l'édition.
+- FR-023 : La table est automatiquement assignée selon la correspondance catégorie-table de l'édition. Algorithme : si le vendeur a déjà des articles dans cette catégorie pour cette édition, la même table lui est réassignée ; sinon, le système choisit la table la moins chargée parmi celles configurées pour la catégorie.
 - FR-024 : Un article ne peut être corrigé ou supprimé que durant la phase Dépôt.
 - FR-025 : L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases.
 - FR-026 : Un code-barres Code 128 unique est généré côté serveur pour chaque article enregistré.
-- FR-027 : L'étiquette d'article affiche : graphique Code 128, numéro de code-barres lisible, nom de l'article, prix, catégorie, numéro de table, indicateur d'incomplétude si applicable. Aucun nom de vendeur (RGPD).
+- FR-027 : L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » (ligne dédiée, si applicable) — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible — ligne vide. Aucun nom de vendeur (RGPD).
 - FR-028 : Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur.
 - FR-029 : Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.
 - FR-030 : Le rouleau imprimé suit le format : [séparateur vendeur : nom du vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …
@@ -63,6 +66,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-045 : L'étiquette d'un article de lot affiche : « Prix du lot : X€ » à la place du prix individuel, et « Lot indivisible : X/N ».
 
 **F4 — Point de vente (Phase Vente)**
+
 - FR-033 : L'interface caissier permet les ventes via un scanner code-barres USB HID.
 - FR-034 : Le composant de scan gère de manière transparente les différences de disposition de clavier AZERTY/QWERTY via une correspondance de codes de touches.
 - FR-035 : Chaque article scanné est ajouté au panier de l'acheteur courant. Le système affiche le nom et le prix de l'article.
@@ -80,6 +84,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-090 : Si l'administrateur déclenche une transition de phase pendant qu'un bénévole a un panier actif, le système annule le panier et affiche un message d'erreur explicite.
 
 **F5 — Post-vente et reversements**
+
 - FR-049 : En phase Post-vente, un bilan de vente est imprimable par vendeur.
 - FR-050 : Le bilan de vente contient : articles vendus, articles invendus avec emplacement de table, total brut, commission, reversement net. Un lot apparaît sur une seule ligne.
 - FR-051 : Pour solder un vendeur, le bénévole saisit le montant en espèces et clique sur « Solder ». Le statut passe à Soldé.
@@ -87,6 +92,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-053 : Les vendeurs non soldés sont identifiables avec leur numéro de téléphone visible.
 
 **F6 — Rapports**
+
 - FR-054 : Un bilan journalier est générable par l'administrateur en phase Vente. Couvre la journée calendaire en cours : articles vendus/invendus, recettes, commission.
 - FR-055 : Un bilan d'édition est généré à la clôture de l'édition : total des articles vendus/invendus, recettes brutes totales, commission totale.
 - FR-056 : Un rapport des vendeurs non soldés liste les vendeurs avec leur numéro de téléphone.
@@ -95,6 +101,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-059 : Les éditions archivées affichent les métriques agrégées et les profils vendeurs en lecture seule. Le détail au niveau des articles est accessible via PDF uniquement.
 
 **F7 — Comptes utilisateurs et contrôle d'accès**
+
 - FR-060 : L'administrateur crée, modifie et désactive les comptes bénévoles. L'administrateur peut réinitialiser le mot de passe d'un bénévole.
 - FR-061 : Il existe un seul compte administrateur par instance.
 - FR-062 : Au premier lancement, le compte administrateur est initialisé avec les identifiants Admin/Admin. L'administrateur est forcé de changer son mot de passe à la première connexion.
@@ -105,15 +112,17 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-067 : Chaque compte mémorise une préférence de langue d'interface (EN/FR), détectée depuis le navigateur à la création, modifiable dans les paramètres.
 
 **F8 — Infrastructure et déploiement**
+
 - FR-068 : Le serveur fonctionne sur Linux, macOS et Windows sans modification du code.
 - FR-069 : Configuration minimale : Raspberry Pi 4 (2 Go de RAM). Stockage SSD/USB fortement recommandé.
 - FR-070 : L'application est déployée via Docker Compose (Spring Boot + MariaDB). Les données sont dans des volumes Docker persistants.
 - FR-071 : Les mises à jour s'appliquent avec : `docker compose pull && docker compose up -d`. Les données sont préservées.
 - FR-072 : Les postes clients accèdent à l'application via un navigateur — aucune installation locale requise.
-- FR-073 : Une page de paramètres administrateur centralise la configuration de l'instance : nom de l'association, taux de commission, langue des documents, largeur du ticket thermique.
+- FR-073 : Une page de paramètres administrateur centralise la configuration de l'instance : nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket thermique.
 - FR-074 : Le guide d'installation cible les utilisateurs non techniques. Couvre l'installation de Docker, le démarrage, la configuration initiale, la réinitialisation du mot de passe et la procédure de mise à jour par OS (Linux, macOS, Windows).
 
 **F9 — Infrastructure d'impression**
+
 - FR-075 : Toute l'impression est acheminée via le serveur central — aucune imprimante n'est requise sur les postes clients.
 - FR-076 : Imprimante thermique (étiquettes articles) : connectée en USB. File d'attente séquentielle.
 - FR-077 : Imprimante standard (documents A4) : connectée en USB. Le PDF est envoyé directement à l'imprimante sans aperçu.
@@ -121,11 +130,11 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-079 : En cas d'erreur d'impression, l'utilisateur est notifié dans l'interface avec un message explicite.
 
 **F10 — Catalogue articles**
+
 - FR-083 : Un catalogue articles filtrable et triable est accessible aux administrateurs et aux bénévoles durant toutes les phases de l'édition active.
 - FR-084 : Catalogue filtré par : nom/description, numéro de code-barres, catégorie, table, statut vendu/invendu, indicateur complet/incomplet, nom du vendeur.
 - FR-085 : Catalogue triable par n'importe quelle colonne visible.
 - FR-086 : Le catalogue affiche uniquement les articles de l'édition active. Non disponible après l'action Nettoyage de l'édition.
-- FR-087 : En phase Vente, un bénévole peut ajouter un article du catalogue directement au panier courant (solution de secours pour les codes-barres illisibles). Empêche l'ajout d'articles déjà vendus ou déjà dans le panier.
 - FR-089 : La commission s'applique normalement aux articles vendus avec l'indicateur incomplet.
 
 ### Exigences non fonctionnelles
@@ -157,7 +166,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - ARCH-013 : RFC 7807 Problem Details pour toutes les réponses d'erreur via `@ControllerAdvice`.
 - ARCH-014 : Springdoc OpenAPI activé dans le profil `dev` uniquement, désactivé en `prod`.
 - ARCH-015 : Ordre de build inter-composants — la machine à états des phases (F2) doit être implémentée avant F3, F4, F5, F10. Spring Session JDBC nécessite la migration Liquibase avant toute fonctionnalité d'authentification. Les consommateurs de la file d'impression doivent être des beans Spring avant l'impression F3/F4.
-- ARCH-016 : Format d'étiquette ESC/POS : séparateur vendeur → étiquette article (bitmap Code 128, numéro de code-barres, nom, prix, catégorie, table, indicateur d'incomplétude) → séparateur article → …
+- ARCH-016 : Format d'étiquette ESC/POS : séparateur vendeur → étiquette article (nom édition, catégorie encadrée, nom+prix, /!\ INCOMPLET si applicable, table, bitmap Code 128, numéro de code-barres) → séparateur article → …
 
 ### Exigences UX Design
 
@@ -176,7 +185,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR13 : Implémenter le composant état vide : icône Material Symbol centrée + phrase descriptive + bouton d'action primaire. Propose toujours une sortie. Utilisé par la liste vendeurs, le catalogue, les résultats filtrés vides (avec action « Effacer les filtres »).
 - UX-DR14 : Implémenter le composant panier POS : liste d'articles avec nom + prix unitaire, bouton de suppression individuel (icône fermer par ligne), regroupement par lot (en-tête de lot en rouge avec compteur « X/N scannés » + sous-total du lot, sans prix individuel par article), bouton « Retirer le lot entier » depuis le premier article du lot, « Valider » bloqué si lot incomplet, panier auto-vidé sur événement SSE basket-cancelled.
 - UX-DR15 : Implémenter le flux formulaire de dépôt (bénévole) : recherche vendeur par nom/email → « Créer un profil » si introuvable → enregistrement d'article (nom, prix, sélecteur de catégorie, case à cocher complet/incomplet + champ commentaire) avec affichage de la table auto-assignée. Autofocus sur le champ de recherche vendeur au chargement de la page.
-- UX-DR16 : Implémenter le composant admin catégories & tables : mode éditable avant le démarrage de la phase Dépôt, lecture seule après. Sur nouvelle édition : option « Copier depuis une édition existante » (liste déroulante de sélection d'édition) ou « Configurer manuellement ».
+- UX-DR16 : Implémenter le composant admin catégories & tables : mode éditable avant le démarrage de la phase Dépôt, lecture seule après. Sur nouvelle édition : option « Copier depuis une édition clôturée » (liste déroulante de sélection d'édition clôturée) ou « Configurer manuellement ».
 - UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue). La liste des vendeurs non soldés est accessible via la page de solde (`/volunteer/settlement`) et la fiche vendeur admin — pas de section dédiée dans les rapports.
 - UX-DR18 : Implémenter l'action « Nettoyage de l'édition » : bouton secondaire couleur d'erreur, boîte de dialogue de confirmation irréversible (« Supprimer tous les articles de cette édition. Cette action est irréversible. »), état vide post-nettoyage « Édition nettoyée — aucun article. » sans action, bouton disparaît après le nettoyage. Bouton visible uniquement si des articles existent encore.
 - UX-DR19 : Implémenter le pattern de retour visuel du bouton d'impression : spinner dans le bouton pendant la soumission à la file d'attente, toast de succès (4s), toast d'erreur persistant si l'imprimante est hors ligne avec bouton « Fermer ». Toujours redéclenchable.
@@ -190,16 +199,16 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-002 : Epic 1 — Détection de la langue navigateur → préférence utilisateur
 - FR-003 : Epic 1 — L'utilisateur peut modifier sa préférence de langue dans les paramètres
 - FR-004 : Epic 1 — Tous les textes de l'interface externalisés (aucune chaîne codée en dur)
-- FR-005 : Epic 1 — Langue des documents configurée au niveau de l'instance
-- FR-006 : Epic 1 — Langue des documents applicable à l'ensemble de l'instance
-- FR-007 : Epic 1 — Langue des documents modifiable par l'admin
+- FR-005 : Epic 1 + 2 — Langue des documents configurée par édition
+- FR-006 : Epic 1 + 2 — Langue de documents par édition, initialisée depuis le paramètre instance à la création
+- FR-007 : Epic 1 + 2 — Langue de documents modifiable par l'admin à tout moment
 - FR-008 : Epic 2 — L'admin crée une édition avec un nom libre
 - FR-009 : Epic 2 — Plusieurs éditions par année
 - FR-010 : Epic 2 — Une seule édition active à la fois (active = phases Préparation → Post-vente ; Clôturée = inactive)
 - FR-011 : Epic 2 — La transition de phase nécessite une boîte de dialogue de confirmation
 - FR-012 : Epic 2 — Phase active affichée à tous les utilisateurs
 - FR-013 : Epic 2 — La clôture de l'édition génère des PDF, l'édition passe en lecture seule
-- FR-014 : Epic 2 — Une édition archivée ne peut pas être supprimée
+- FR-014 : Epic 2 — Une édition ayant dépassé la phase Préparation ne peut pas être supprimée
 - FR-015 : Epic 2 — Données d'édition strictement isolées
 - FR-016 : Epic 2 — Taux de commission figé dès le démarrage de la phase Dépôt
 - FR-017 : Epic 3 — L'admin configure les catégories d'articles par édition
@@ -208,11 +217,11 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-020 : Epic 3 — Le bénévole recherche/crée des profils vendeurs
 - FR-021 : Epic 3 — L'admin peut supprimer un profil vendeur (anonymisation RGPD)
 - FR-022 : Epic 3 — Le bénévole saisit les détails de l'article
-- FR-023 : Epic 3 — Table auto-assignée depuis la correspondance de catégorie
+- FR-023 : Epic 3 — Table auto-assignée : même table si vendeur déjà présent dans la catégorie, sinon table la moins chargée
 - FR-024 : Epic 3 — Article corrigeable/supprimable uniquement en phase Dépôt
 - FR-025 : Epic 3 — Indicateur complet/incomplet modifiable dans toutes les phases
 - FR-026 : Epic 3 — Code-barres Code 128 généré côté serveur par article
-- FR-027 : Epic 3 — Format d'étiquette article (code-barres, nom, prix, catégorie, table, incomplétude)
+- FR-027 : Epic 3 — Format d'étiquette : édition / catégorie / nom+prix / /!\ INCOMPLET si applicable / table / code-barres
 - FR-028 : Epic 3 — Étiquettes imprimées automatiquement à la validation du dépôt
 - FR-029 : Epic 3 — Travaux d'impression mis en file d'attente séquentiellement côté serveur
 - FR-030 : Epic 3 — Format du rouleau thermique : séparateur vendeur → étiquettes articles
@@ -258,21 +267,20 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-070 : Epic 1 — Déployé via Docker Compose, données dans des volumes persistants
 - FR-071 : Epic 1 — Mises à jour via `docker compose pull && docker compose up -d`
 - FR-072 : Epic 1 — Postes clients accèdent via navigateur, aucune installation locale
-- FR-073 : Epic 1 — Page paramètres admin : nom de l'association, taux de commission, langue des documents, largeur du ticket
+- FR-073 : Epic 1 — Page paramètres admin : nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket
 - FR-074 : Epic 1 — Guide d'installation pour utilisateurs non techniques, par OS (Linux/macOS/Windows)
 - FR-075 : Epic 3 — Toute l'impression acheminée via le serveur central
 - FR-076 : Epic 3 — Imprimante thermique (étiquettes) via USB, file d'attente séquentielle
 - FR-077 : Epic 3 — Imprimante standard (A4) via USB, PDF envoyé directement
 - FR-078 : Epic 3 — L'utilisateur déclenche l'impression ; aucune action requise côté client
 - FR-079 : Epic 3 — Erreur d'impression : notification explicite à l'utilisateur dans l'interface
-- FR-080 : Epic 2 — Nouvelle édition peut copier catégories/correspondance tables depuis une édition existante
+- FR-080 : Epic 2 — Nouvelle édition peut copier catégories/correspondance tables depuis une édition clôturée
 - FR-081 : Epic 4 — Le caissier peut retirer l'ensemble d'un lot du panier
 - FR-082 : Epic 2 — L'admin peut revenir en arrière d'une phase à la fois, données préservées
 - FR-083 : Epic 6 — Catalogue articles filtrable/triable accessible durant toutes les phases
 - FR-084 : Epic 6 — Filtres du catalogue : nom, code-barres, catégorie, table, vendu/invendu, complet/incomplet, vendeur
 - FR-085 : Epic 6 — Catalogue triable par n'importe quelle colonne visible
 - FR-086 : Epic 6 — Catalogue affiche l'édition active uniquement ; indisponible après Nettoyage de l'édition
-- FR-087 : Epic 6 — En phase Vente : ajout d'un article depuis le catalogue au panier (solution de secours scanner)
 - FR-088 : Epic 2 — « Nettoyage de l'édition » supprime définitivement les enregistrements d'articles ; désactive le retour arrière vers Post-vente
 - FR-089 : Epic 5 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
 - FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
@@ -316,12 +324,11 @@ Les bénévoles peuvent solder les vendeurs et traiter les reversements. Les adm
 **UX :** UX-DR17, UX-DR22
 
 ### Epic 6 : Catalogue articles
-Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases. En phase Vente, les bénévoles peuvent ajouter des articles directement au panier depuis le catalogue en tant que solution de secours au scanner.
+Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases.
 
-**FR couvertes :** FR-083–087
+**FR couvertes :** FR-083–086
 **Architecture :** ARCH-005
 **UX :** UX-DR11
-**Dépendance :** Story 6.2 requiert les endpoints basket d'Épic 4 — à implémenter après Épic 4.
 
 ---
 
@@ -453,7 +460,7 @@ afin que l'application reflète l'identité et les paramètres opérationnels de
 
 **Étant donné** que l'admin navigue vers `/admin/settings`
 **Quand** la page se charge
-**Alors** la configuration courante est affichée : nom de l'association, taux de commission (défaut 20 %), langue des documents (EN/FR), largeur du ticket thermique (défaut 57 mm)
+**Alors** la configuration courante est affichée : nom de l'association, taux de commission par défaut (défaut 20 %), langue des documents par défaut (EN/FR), largeur du ticket thermique (défaut 57 mm)
 
 **Étant donné** que l'admin met à jour le nom de l'association et sauvegarde
 **Quand** le serveur redémarre
@@ -463,9 +470,10 @@ afin que l'application reflète l'identité et les paramètres opérationnels de
 **Quand** la valeur est stockée
 **Alors** la valeur stockée est un BigDecimal `15.00` (ni float ni double)
 
-**Étant donné** que l'admin définit la langue des documents sur « FR »
-**Quand** un PDF est ultérieurement généré
-**Alors** le contenu du PDF utilise les entrées de `messages_fr.properties`
+**Étant donné** que l'admin définit la langue des documents par défaut sur « FR »
+**Quand** la valeur est sauvegardée
+**Alors** toute nouvelle édition créée ultérieurement hérite de la langue « FR » (FR-006)
+**Et** les éditions existantes conservent leur propre valeur inchangée
 
 **Étant donné** que l'admin modifie la largeur du ticket thermique et sauvegarde
 **Quand** un travail d'impression est ultérieurement envoyé
@@ -499,7 +507,7 @@ afin de travailler confortablement dans ma langue maternelle pendant l'événeme
 **Et** les clés i18n suivent le format `feature.section.key` (3 niveaux maximum)
 
 **Étant donné** qu'un document PDF est généré
-**Quand** la langue des documents de l'instance est « FR »
+**Quand** la langue des documents de l'édition active est « FR »
 **Alors** tous les textes du document utilisent les entrées de `messages_fr.properties`
 
 ### Story 1.7 : Système de design Angular Material & Mise en page applicative
@@ -597,7 +605,12 @@ afin que chaque événement soit correctement identifié et configuré financiè
 
 **Étant donné** que l'admin renseigne un nom d'édition et soumet
 **Quand** le formulaire est soumis
-**Alors** une nouvelle édition est créée avec la phase « Préparation » et un taux de commission initialisé depuis le paramètre instance (20 % par défaut)
+**Alors** une nouvelle édition est créée avec la phase « Préparation », un taux de commission initialisé depuis le paramètre instance (20 % par défaut) et une langue de documents initialisée depuis le paramètre instance (EN par défaut)
+
+**Étant donné** qu'une édition existe (quelle que soit sa phase)
+**Quand** l'admin modifie la langue de documents de l'édition (ex. « FR »)
+**Alors** la nouvelle valeur est enregistrée sur l'édition
+**Et** les documents imprimés ultérieurement pour cette édition utilisent cette langue (FR-005, FR-006, FR-007)
 
 **Étant donné** qu'aucune édition active n'existe
 **Quand** l'admin active une édition
@@ -615,7 +628,7 @@ afin que chaque événement soit correctement identifié et configuré financiè
 **Quand** l'admin tente de modifier le taux de commission
 **Alors** le système le refuse avec une erreur explicite (FR-016 : taux figé une fois le Dépôt démarré)
 
-**Étant donné** qu'une édition archivée existe
+**Étant donné** qu'une édition est en phase Dépôt ou ultérieure
 **Quand** l'admin tente de la supprimer
 **Alors** le système refuse la suppression (FR-014)
 
@@ -671,9 +684,9 @@ afin que les articles soient automatiquement dirigés vers les bonnes tables lor
 **Étant donné** que l'admin ouvre la page des catégories d'une nouvelle édition `/admin/editions/:id/categories`
 **Quand** la page se charge
 **Alors** la liste des catégories est vide et modifiable
-**Et** une option « Copier depuis une édition existante » est disponible avec une liste déroulante de sélection d'édition
+**Et** une option « Copier depuis une édition clôturée » est disponible avec une liste déroulante listant uniquement les éditions clôturées
 
-**Étant donné** que l'admin sélectionne « Copier depuis une édition existante » et confirme
+**Étant donné** que l'admin sélectionne « Copier depuis une édition clôturée » et confirme
 **Quand** la copie se termine
 **Alors** toutes les catégories et correspondances de tables de l'édition sélectionnée sont appliquées à la nouvelle édition (FR-080)
 
@@ -792,9 +805,14 @@ afin que les articles soient correctement catalogués et localisés physiquement
 
 **Critères d'acceptation :**
 
-**Étant donné** qu'un vendeur est sélectionné et que le bénévole saisit un article
-**Quand** il renseigne nom/description, prix, catégorie et indicateur complet/incomplet
-**Alors** la table est automatiquement assignée depuis la correspondance catégorie-table de l'édition (FR-023)
+**Étant donné** qu'un vendeur est sélectionné et que le bénévole saisit un article dans une catégorie où ce vendeur a déjà des articles pour cette édition
+**Quand** l'article est sauvegardé
+**Alors** la même table que ses articles existants dans cette catégorie lui est assignée (FR-023)
+**Et** le numéro de table assigné est affiché immédiatement
+
+**Étant donné** qu'un vendeur est sélectionné et que le bénévole saisit un premier article dans une catégorie pour cette édition
+**Quand** l'article est sauvegardé
+**Alors** la table ayant le moins d'articles parmi celles configurées pour cette catégorie lui est assignée (FR-023)
 **Et** le numéro de table assigné est affiché immédiatement
 
 **Étant donné** que le bénévole coche « Incomplet » pour un article
@@ -804,7 +822,7 @@ afin que les articles soient correctement catalogués et localisés physiquement
 
 **Étant donné** qu'un article est enregistré en phase Dépôt
 **Quand** le bénévole modifie son nom, son prix ou sa catégorie
-**Alors** la modification est sauvegardée et la table est réassignée si la catégorie a changé (FR-024)
+**Alors** la modification est sauvegardée et si la catégorie a changé, la table est réassignée selon l'algorithme FR-023 (même table si vendeur déjà présent dans la nouvelle catégorie, sinon table la moins chargée)
 
 **Étant donné** qu'un article est enregistré en phase Dépôt
 **Quand** le bénévole le supprime
@@ -892,7 +910,7 @@ afin que les articles soient physiquement étiquetés immédiatement après le d
 
 **Étant donné** qu'une étiquette est générée pour un article standard
 **Quand** rendue pour ESC/POS
-**Alors** elle affiche : graphique Code 128 (bitmap), numéro de code-barres lisible, nom de l'article (avec retour à la ligne si nécessaire), prix, catégorie, numéro de table, indicateur d'incomplétude si applicable
+**Alors** elle affiche dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » sur ligne dédiée si applicable — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible — ligne vide
 **Et** aucun nom de vendeur n'apparaît sur l'étiquette (RGPD, FR-027)
 
 **Étant donné** qu'une étiquette est générée pour un article de lot
@@ -913,7 +931,7 @@ afin que le vendeur dispose d'un justificatif papier de ce qu'il a déposé et d
 
 **Étant donné** que le dépôt d'un vendeur est terminé
 **Quand** le bénévole clique sur « Imprimer le bordereau de dépôt »
-**Alors** un PDF est généré côté serveur via OpenPDF 3.0.0 dans la langue des documents de l'instance
+**Alors** un PDF est généré côté serveur via OpenPDF 3.0.0 dans la langue des documents de l'édition
 
 **Étant donné** que le PDF est généré
 **Quand** le contenu est rendu
@@ -1175,7 +1193,7 @@ afin de suivre les recettes et la performance des ventes au cours de l'événeme
 
 **Étant donné** que le rapport est généré
 **Quand** le PDF est produit via OpenPDF 3.0.0
-**Alors** il utilise la langue des documents de l'instance (FR-057)
+**Alors** il utilise la langue des documents de l'édition (FR-057)
 
 **Étant donné** qu'un bénévole tente d'accéder à la page des rapports
 **Quand** la route est chargée
@@ -1237,7 +1255,7 @@ afin d'agir rapidement sans naviguer parmi des options non pertinentes.
 
 ## Epic 6 : Catalogue articles
 
-Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases. En phase Vente, les bénévoles peuvent ajouter des articles directement au panier depuis le catalogue en tant que solution de secours au scanner.
+Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases.
 
 ### Story 6.1 : Catalogue articles — Liste filtrable & triable
 
@@ -1272,31 +1290,3 @@ afin de localiser rapidement n'importe quel article quelle que soit la phase de 
 **Étant donné** que plusieurs utilisateurs filtrent le catalogue simultanément
 **Quand** chacun soumet des combinaisons de filtres différentes
 **Alors** chacun reçoit son propre résultat correct de manière indépendante
-
-### Story 6.2 : Secours catalogue-vers-panier au POS
-
-En tant que bénévole caissier,
-je veux ajouter un article depuis le catalogue directement au panier en phase Vente,
-afin de traiter les ventes même lorsqu'un code-barres est endommagé ou illisible.
-
-**Critères d'acceptation :**
-
-**Étant donné** que l'édition est en phase Vente et que le bénévole est sur la page caissier
-**Quand** il ouvre le catalogue
-**Alors** chaque ligne d'article affiche un bouton « Ajouter au panier »
-
-**Étant donné** que le bénévole clique sur « Ajouter au panier » pour un article disponible
-**Quand** la requête est traitée
-**Alors** l'article est ajouté au panier courant avec son nom et son prix affichés
-
-**Étant donné** que le bénévole tente d'ajouter un article déjà vendu
-**Quand** la requête est traitée
-**Alors** le système le refuse avec un message d'erreur inline (FR-087 : protection article déjà vendu)
-
-**Étant donné** que l'article est déjà présent dans le panier courant
-**Quand** le bénévole clique à nouveau sur « Ajouter au panier »
-**Alors** le système le refuse avec un message d'erreur inline (FR-087 : protection article déjà dans le panier)
-
-**Étant donné** que l'édition n'est pas en phase Vente
-**Quand** un utilisateur quelconque consulte le catalogue
-**Alors** aucun bouton « Ajouter au panier » n'est affiché — le catalogue est en lecture seule uniquement (FR-083)

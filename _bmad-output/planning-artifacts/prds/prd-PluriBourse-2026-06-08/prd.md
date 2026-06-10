@@ -41,11 +41,11 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 
 ## Utilisateurs & Rôles
 
-| Rôle | Accès | Notes |
-|---|---|---|
-| **Administrateur** | Complet | Gestion des phases, commission, éditions, comptes bénévoles, rapports |
-| **Bénévole** | Dépôt + Caisse + Reversement | Rôle unique ; l'interface s'adapte à la phase active. Utilisateurs non techniques opérant sous la pression du jour J |
-| **Vendeur** | Hors application | Documents papier uniquement — bordereau de dépôt à l'arrivée, bilan de vente à la récupération |
+| Rôle | Accès                        | Notes |
+|---|------------------------------|---|
+| **Administrateur** | Complet                      | Gestion des phases, commission, éditions, comptes bénévoles, rapports |
+| **Bénévole** | Dépôt + Caisse + Solde | Rôle unique ; l'interface s'adapte à la phase active. Utilisateurs non techniques opérant sous la pression du jour J |
+| **Vendeur** | Hors application V1          | Documents papier uniquement — bordereau de dépôt à l'arrivée, bilan de vente à la récupération |
 
 > Un admin ne peut pas opérer en tant que bénévole depuis son compte admin. Pour assurer des fonctions de caisse ou de dépôt, l'admin crée un compte bénévole dédié.
 
@@ -56,10 +56,12 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 ### Inclus — v1
 
 **Internationalisation**
+
 - Interface en anglais et français : langue configurée par compte utilisateur
 - Documents imprimés en anglais ou français : langue configurée au niveau de l'instance
 
 **Gestion des Événements**
+
 - Nommage libre des éditions ; plusieurs éditions par an supportées
 - Cycle de vie des phases contrôlé par l'admin : Préparation → Dépôt → Vente → Post-vente → Clôturé
 - Dialogue de confirmation requis pour toute transition de phase (avant ou arrière)
@@ -68,6 +70,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 - Taux de commission configurable par instance (défaut 20 %)
 
 **Gestion des Vendeurs & Articles**
+
 - Profils vendeurs persistants inter-éditions (nom, prénom, email, téléphone)
 - Inscription des articles : nom, prix, catégorie, indicateur complet/incomplet
 - Table assignée automatiquement selon le mapping catégorie-table configuré par édition
@@ -76,25 +79,29 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 - Impression de bordereau de dépôt par vendeur
 
 **Point de Vente**
+
 - Interface caisse avec support scanner USB HID (AZERTY/QWERTY transparent)
 - Panier : plusieurs articles par transaction, une facture acheteur globale
 - Impression de facture acheteur à la demande
 
 **Post-Vente**
-- Reversement vendeur : le bénévole saisit le montant remis en espèces et clique « Reverser »
-- Bouton « Non collecté » : le montant intégral dû est transféré aux recettes de l'association
+
+- Solde vendeur : le bénévole saisit le montant remis en espèces et clique « Solder »
+- Bouton « Non réclamé » : le montant intégral dû est transféré aux recettes de l'association
 - Bilan de vente par vendeur : articles vendus, invendus avec emplacement de table, reversement net
 
 **Rapports**
+
 - Bilan journalier (PDF, admin uniquement)
 - Bilan d'édition (PDF, admin uniquement, généré à la clôture)
-- Rapport des vendeurs en attente (vendeurs non reversés avec numéro de téléphone)
+- Rapport des vendeurs en attente (vendeurs non soldés avec numéro de téléphone)
 
 **Catalogue Articles**
+
 - Catalogue filtrable et triable de tous les articles de l'édition active (accessible à l'admin et aux bénévoles)
-- Ajout manuel au panier depuis le catalogue (solution de repli pour codes-barres illisibles)
 
 **Infrastructure & Accès**
+
 - Rôles Admin et Bénévole, strictement séparés
 - Support multi-poste (minimum 3 simultanés)
 - Déploiement Docker Compose (Spring Boot + MariaDB)
@@ -125,9 +132,9 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 | FR-002 | La langue par défaut de l'interface est détectée depuis le navigateur et stockée dans les préférences du compte à la première connexion de l'utilisateur. |
 | FR-003 | Chaque utilisateur peut modifier sa préférence de langue dans les paramètres du compte. |
 | FR-004 | Tout le texte de l'interface est externalisé — aucun texte d'interface n'est codé en dur dans le code source. |
-| FR-005 | La langue de tous les documents imprimés (bordereaux de dépôt, factures acheteur, bilans de vente, rapports) est configurée au niveau de l'instance par l'admin. |
-| FR-006 | Le paramètre de langue des documents s'applique à toute l'instance et à toutes les éditions. |
-| FR-007 | Le paramètre de langue des documents est modifiable par l'admin à tout moment. |
+| FR-005 | La langue de tous les documents imprimés (bordereaux de dépôt, factures acheteur, bilans de vente, rapports) est configurée par édition. |
+| FR-006 | Chaque édition possède sa propre langue de documents, initialisée depuis le paramètre instance à sa création. Le paramètre instance sert de valeur par défaut pour les nouvelles éditions. |
+| FR-007 | La langue de documents d'une édition est modifiable par l'admin à tout moment. La valeur par défaut de l'instance reste modifiable à tout moment et ne s'applique qu'aux nouvelles éditions créées après la modification. |
 
 ---
 
@@ -142,10 +149,10 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 | FR-012 | La phase active de l'édition courante est affichée clairement à tous les utilisateurs connectés. |
 | FR-013 | L'admin déclenche la clôture de l'édition via un bouton « Clôturer l'Édition » en phase Post-vente. Tous les documents sont générés en PDF dans les deux langues (EN et FR). L'édition passe en lecture seule. Les enregistrements articles restent en base jusqu'à ce que l'admin déclenche explicitement l'action Nettoyer. |
 | FR-088 | Après clôture, l'admin peut déclencher une action **« Nettoyer l'Édition »** qui supprime définitivement les enregistrements articles de la base de données. Après nettoyage, le retour en arrière vers Post-vente est définitivement désactivé pour cette édition. Cette action nécessite une confirmation explicite. |
-| FR-014 | Une édition archivée ne peut pas être supprimée. |
+| FR-014 | Une édition ayant dépassé la phase Préparation ne peut pas être supprimée. |
 | FR-015 | Les données de chaque édition sont strictement cloisonnées — articles, ventes et rapports ne se mélangent jamais entre éditions. |
 | FR-016 | Chaque édition possède son propre taux de commission, initialisé depuis le paramètre instance au moment de la création (défaut 20 %). L'admin peut le modifier en phase Préparation. Une fois la phase Dépôt démarrée, le taux est gelé pour cette édition et s'applique à tous ses articles. |
-| FR-080 | Lors de la création d'une nouvelle édition, l'admin peut soit configurer les catégories et le mapping catégorie-table depuis zéro, soit copier la structure d'une édition existante. |
+| FR-080 | Lors de la création d'une nouvelle édition, l'admin peut soit configurer les catégories et le mapping catégorie-table depuis zéro, soit copier la structure d'une édition clôturée. |
 | FR-082 | L'admin peut revenir en arrière d'une phase à la fois : Clôturé → Post-vente, Post-vente → Vente, Vente → Dépôt, Dépôt → Préparation. Les données enregistrées dans la phase annulée sont préservées — rien n'est supprimé. Le retour depuis Clôturé n'est disponible qu'avant le déclenchement de l'action Nettoyer l'Édition (FR-088). |
 
 ---
@@ -172,7 +179,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 | ID | Exigence |
 |---|---|
 | FR-022 | Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire si incomplet. |
-| FR-023 | La table est assignée automatiquement par le système selon le mapping catégorie-table de l'édition. |
+| FR-023 | La table est assignée automatiquement par le système selon le mapping catégorie-table de l'édition. Algorithme : si le vendeur a déjà des articles dans cette catégorie pour cette édition, la même table lui est réassignée. Sinon, le système choisit la table la moins chargée parmi celles configurées pour la catégorie. |
 | FR-024 | Un article ne peut être corrigé ou supprimé qu'en phase de Dépôt. |
 | FR-025 | L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases. |
 
@@ -186,15 +193,15 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 
 #### Impression
 
-| ID | Exigence |
-|---|---|
-| FR-026 | Un code-barres Code 128 unique est généré côté serveur pour chaque article inscrit. |
-| FR-027 | L'étiquette article affiche centré : graphique du code-barres Code 128, numéro de code-barres lisible, nom de l'article (retour à la ligne si nécessaire), prix, catégorie, numéro de table, indicateur d'incomplétude si applicable. Le nom du vendeur n'apparaît pas (RGPD). |
-| FR-028 | Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur. |
-| FR-029 | Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement. |
-| FR-030 | Le rouleau imprimé suit ce format par vendeur : [séparateur vendeur : nom vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → … |
-| FR-031 | Un bordereau de dépôt est imprimable par vendeur : liste des articles, prix unitaires et reversement net attendu après commission. |
-| FR-032 | La largeur du ticket thermique est configurable dans les paramètres admin (défaut : 57mm). |
+| ID | Exigence                                                                                                                                                                                                                                                                                   |
+|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| FR-026 | Un code-barres Code 128 unique est généré côté serveur pour chaque article inscrit.                                                                                                                                                                                                        |
+| FR-027 | L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — catégorie encadrée (« --- Catégorie --- ») — nom de l'article + prix sur une ligne — « /!\ INCOMPLET » sur une ligne dédiée si applicable — numéro de table (« Table n°X ») — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible — ligne vide. Le nom du vendeur n'apparaît pas (RGPD). |
+| FR-028 | Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur.                                                                                                                                                                          |
+| FR-029 | Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.                                                                                                                                                                                             |
+| FR-030 | Le rouleau imprimé suit ce format par vendeur : [séparateur vendeur : nom vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …                                                                                                                        |
+| FR-031 | Un bordereau de dépôt est imprimable par vendeur : liste des articles, prix unitaires et reversement net attendu après commission.                                                                                                                                                         |
+| FR-032 | La largeur du ticket thermique est configurable dans les paramètres admin (défaut : 57mm).                                                                                                                                                                                                 |
 
 ---
 
@@ -243,7 +250,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 |---|---|
 | FR-054 | Un **bilan journalier** est générable par l'admin à tout moment pendant la phase de Vente. Il couvre le jour calendaire courant. Il contient : nombre d'articles vendus/invendus pour la journée, chiffre d'affaires journalier, commission journalière gagnée par l'association. |
 | FR-055 | Un **bilan d'édition** est généré à la clôture de l'édition. Il contient : total des articles vendus/invendus, chiffre d'affaires brut total, commission totale gagnée par l'association. |
-| FR-056 | Un **rapport des vendeurs en attente** liste les vendeurs non reversés avec leur numéro de téléphone. |
+| FR-056 | Un **rapport des vendeurs en attente** liste les vendeurs non soldés avec leur numéro de téléphone. |
 | FR-057 | Tous les rapports sont générés en PDF. |
 | FR-058 | Les rapports sont accessibles à l'admin uniquement. |
 | FR-059 | Les éditions archivées affichent les métriques agrégées et les profils vendeurs en lecture seule. Le détail au niveau article n'est accessible que via les documents PDF générés à la clôture. |
@@ -274,7 +281,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 | FR-070 | L'application est déployée via Docker Compose (application Spring Boot + MariaDB) — un seul fichier `docker-compose.yml`. Les données sont stockées dans des volumes Docker persistants. |
 | FR-071 | Les mises à jour s'appliquent avec deux commandes : `docker compose pull && docker compose up -d`. Les données persistantes sont préservées. |
 | FR-072 | Les postes clients accèdent à l'application via navigateur — aucune installation locale requise sur les postes. |
-| FR-073 | Une page de paramètres admin centralise la configuration de l'instance : nom de l'association, taux de commission, langue des documents, largeur du ticket thermique. |
+| FR-073 | Une page de paramètres admin centralise la configuration de l'instance : nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket thermique. |
 | FR-074 | Le guide d'installation est exhaustif et cible les utilisateurs non techniques. Il couvre : installation de Docker, démarrage, configuration initiale, procédure de réinitialisation du mot de passe admin, et procédure de mise à jour. Les instructions sont fournies par OS (Linux, macOS, Windows) — commandes et procédures sont spécifiques à chaque plateforme. |
 
 ---
@@ -301,7 +308,6 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 | FR-084 | Le catalogue peut être filtré par : nom/description, numéro de code-barres, catégorie, table, statut vendu/invendu, indicateur complet/incomplet, nom du vendeur. |
 | FR-085 | Le catalogue peut être trié par n'importe quelle colonne visible. |
 | FR-086 | Le catalogue affiche les articles de l'édition active uniquement. Les données au niveau article ne sont pas disponibles sur les éditions où l'action Nettoyer a été déclenchée. |
-| FR-087 | En phase de Vente, un bénévole peut ajouter un article du catalogue directement au panier courant — solution de repli pour les codes-barres illisibles ou endommagés. Le système empêche l'ajout d'un article déjà vendu ou déjà présent dans le panier courant. |
 | FR-089 | La commission s'applique normalement aux articles vendus avec l'indicateur incomplet. Le prix de vente et le taux de commission ne sont pas modifiés par l'état de complétude de l'article. |
 
 ---

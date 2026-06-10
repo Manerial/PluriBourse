@@ -29,9 +29,9 @@ documents:
 - FR-002 : La langue par défaut est détectée depuis le navigateur au premier accès et stockée dans les préférences du compte.
 - FR-003 : Chaque utilisateur peut modifier sa préférence de langue dans les paramètres du compte.
 - FR-004 : Tout le texte de l'interface est externalisé — aucun texte codé en dur dans le code source.
-- FR-005 : La langue de tous les documents imprimés est configurée au niveau de l'instance par l'admin.
-- FR-006 : Le paramètre de langue des documents s'applique à toute l'instance et à toutes les éditions.
-- FR-007 : Le paramètre de langue des documents est modifiable par l'admin à tout moment.
+- FR-005 : La langue de tous les documents imprimés est configurée par édition.
+- FR-006 : Chaque édition possède sa propre langue de documents, initialisée depuis le paramètre instance à sa création.
+- FR-007 : La langue de documents d'une édition est modifiable par l'admin à tout moment. La valeur par défaut instance reste modifiable à tout moment.
 
 **F2 — Gestion des Éditions & Cycle de Vie** — 12 FRs
 - FR-008 : L'admin peut créer une édition avec un nom libre.
@@ -40,10 +40,10 @@ documents:
 - FR-011 : Toute transition de phase nécessite une confirmation explicite de l'admin.
 - FR-012 : La phase active est affichée clairement à tous les utilisateurs connectés.
 - FR-013 : L'admin clôture l'édition via un bouton dédié ; tous les PDFs sont générés ; l'édition passe en lecture seule.
-- FR-014 : Une édition archivée ne peut pas être supprimée.
+- FR-014 : Une édition ayant dépassé la phase Préparation ne peut pas être supprimée.
 - FR-015 : Les données de chaque édition sont strictement cloisonnées.
 - FR-016 : Le taux de commission est configurable jusqu'au démarrage de la phase Dépôt, puis gelé pour l'édition.
-- FR-080 : Lors de la création d'une édition, l'admin peut copier la structure d'une édition existante.
+- FR-080 : Lors de la création d'une édition, l'admin peut copier la structure d'une édition clôturée.
 - FR-082 : L'admin peut revenir en arrière d'une phase à la fois ; les données sont toujours préservées.
 - FR-088 : Après clôture, l'admin peut déclencher « Nettoyer l'Édition » (suppression définitive des articles, désactivation du rollback).
 
@@ -54,11 +54,11 @@ documents:
 - FR-020 : Le bénévole recherche un vendeur existant par nom ou email ; si absent, création d'un nouveau profil.
 - FR-021 : L'admin peut supprimer un profil vendeur (RGPD — anonymisation dans toutes les éditions).
 - FR-022 : Pour chaque article : nom/description, prix, catégorie, indicateur complet/incomplet, commentaire si incomplet.
-- FR-023 : La table est assignée automatiquement selon le mapping catégorie-table de l'édition.
+- FR-023 : Table assignée automatiquement selon le mapping catégorie-table. Algorithme : même table si le vendeur a déjà des articles dans cette catégorie pour cette édition ; sinon, table la moins chargée parmi celles configurées pour la catégorie.
 - FR-024 : Un article ne peut être corrigé ou supprimé qu'en phase de Dépôt.
 - FR-025 : L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases.
 - FR-026 : Un code-barres Code 128 unique est généré côté serveur pour chaque article inscrit.
-- FR-027 : L'étiquette affiche : code-barres, numéro de code-barres, nom de l'article, prix, catégorie, numéro de table, indicateur incomplet (pas de nom vendeur — RGPD).
+- FR-027 : L'étiquette affiche dans cet ordre : nom édition — ligne vide — « --- Catégorie --- » — nom+prix — « /!\ INCOMPLET » si applicable — Table n°X — ligne vide — graphique Code 128 — numéro de code-barres — ligne vide. Pas de nom vendeur (RGPD).
 - FR-028 : L'impression des étiquettes est déclenchée automatiquement à la validation du dépôt d'un vendeur.
 - FR-029 : Les travaux d'impression sont mis en file d'attente côté serveur, exécution séquentielle.
 - FR-030 : Format du rouleau : [séparateur vendeur] → [étiquette article] → [séparateur article] → ...
@@ -87,14 +87,14 @@ documents:
 **F5 — Post-Vente & Reversements** — 5 FRs
 - FR-049 : En phase Post-vente, un bilan de vente est imprimable par vendeur.
 - FR-050 : Le bilan contient : articles vendus, invendus (avec table), total brut, commission déduite, montant net. Un lot = une ligne.
-- FR-051 : Le bénévole saisit le montant remis en espèces et clique « Reverser » ; le statut passe à Reversé.
-- FR-052 : Bouton « Non collecté » : le montant intégral est enregistré comme recette de l'association.
-- FR-053 : Les vendeurs non reversés sont identifiables, avec leur numéro de téléphone visible.
+- FR-051 : Le bénévole saisit le montant remis en espèces et clique « Solder » ; le statut passe à Soldé.
+- FR-052 : Bouton « Non réclamé » : le montant intégral est enregistré comme recette de l'association.
+- FR-053 : Les vendeurs non soldés sont identifiables, avec leur numéro de téléphone visible.
 
 **F6 — Rapports** — 6 FRs
 - FR-054 : Bilan journalier générable par l'admin pendant la phase Vente (jour courant).
 - FR-055 : Bilan d'édition généré à la clôture (totaux vendus/invendus, chiffre d'affaires, commission).
-- FR-056 : Rapport des vendeurs en attente (non reversés, avec numéro de téléphone).
+- FR-056 : Rapport des vendeurs en attente (non soldés, avec numéro de téléphone).
 - FR-057 : Tous les rapports sont générés en PDF.
 - FR-058 : Rapports accessibles à l'admin uniquement.
 - FR-059 : Éditions archivées : métriques agrégées et profils vendeurs en lecture seule ; détail article uniquement via PDF.
@@ -115,7 +115,7 @@ documents:
 - FR-070 : Déploiement via Docker Compose (Spring Boot + MariaDB) ; données dans volumes persistants.
 - FR-071 : Mises à jour : `docker compose pull && docker compose up -d` ; données préservées.
 - FR-072 : Postes clients : accès via navigateur, aucune installation locale requise.
-- FR-073 : Page Paramètres admin : nom association, taux commission, langue documents, largeur ticket.
+- FR-073 : Page Paramètres admin : nom association, taux commission par défaut, langue documents par défaut, largeur ticket.
 - FR-074 : Guide d'installation exhaustif pour non-techniciens (Docker, démarrage, config, reset, mises à jour ; par OS).
 
 **F9 — Infrastructure d'Impression** — 5 FRs
@@ -130,7 +130,6 @@ documents:
 - FR-084 : Filtres : nom/description, numéro de code-barres, catégorie, table, vendu/invendu, complet/incomplet, nom vendeur.
 - FR-085 : Tri par n'importe quelle colonne visible.
 - FR-086 : Catalogue : édition active uniquement ; données indisponibles après Nettoyer.
-- FR-087 : En phase Vente, ajout direct d'un article du catalogue au panier courant (repli code-barres illisible) ; empêche les doublons.
 - FR-089 : La commission s'applique normalement aux articles incomplets vendus.
 - FR-090 : Transition de phase avec panier actif : le panier est annulé et un message d'erreur est affiché au bénévole.
 
@@ -182,16 +181,16 @@ Le PRD est **complet et bien structuré** :
 | FR-002 | Langue détectée depuis le navigateur → préférence utilisateur | Épic 1 | ✓ Couvert |
 | FR-003 | L'utilisateur peut modifier sa préférence de langue | Épic 1 | ✓ Couvert |
 | FR-004 | Tous les textes externalisés, aucune chaîne codée en dur | Épic 1 | ✓ Couvert |
-| FR-005 | Langue des documents configurée au niveau de l'instance | Épic 1 | ✓ Couvert |
-| FR-006 | Langue des documents applicable à toute l'instance | Épic 1 | ✓ Couvert |
-| FR-007 | Langue des documents modifiable par l'admin | Épic 1 | ✓ Couvert |
+| FR-005 | Langue des documents configurée par édition | Épic 1 + 2 | ✓ Couvert |
+| FR-006 | Langue de documents par édition, initialisée depuis l'instance | Épic 1 + 2 | ✓ Couvert |
+| FR-007 | Langue de documents d'une édition modifiable à tout moment | Épic 1 + 2 | ✓ Couvert |
 | FR-008 | L'admin crée une édition avec un nom libre | Épic 2 | ✓ Couvert |
 | FR-009 | Plusieurs éditions par an | Épic 2 | ✓ Couvert |
 | FR-010 | Une seule édition active à la fois | Épic 2 | ✓ Couvert |
 | FR-011 | Transition de phase nécessite une confirmation explicite | Épic 2 | ✓ Couvert |
 | FR-012 | Phase active affichée à tous les utilisateurs | Épic 2 | ✓ Couvert |
 | FR-013 | Clôture de l'édition : génère PDFs, passe en lecture seule | Épic 2 | ✓ Couvert |
-| FR-014 | Édition archivée ne peut pas être supprimée | Épic 2 | ✓ Couvert |
+| FR-014 | Édition ayant dépassé la phase Préparation ne peut pas être supprimée | Épic 2 | ✓ Couvert |
 | FR-015 | Données de chaque édition strictement isolées | Épic 2 | ✓ Couvert |
 | FR-016 | Taux de commission figé au démarrage de la phase Dépôt | Épic 2 | ✓ Couvert |
 | FR-017 | L'admin configure les catégories d'articles par édition | Épic 3 | ✓ Couvert |
@@ -200,11 +199,11 @@ Le PRD est **complet et bien structuré** :
 | FR-020 | Le bénévole recherche/crée des profils vendeurs | Épic 3 | ✓ Couvert |
 | FR-021 | L'admin peut supprimer un profil vendeur (RGPD) | Épic 3 | ✓ Couvert |
 | FR-022 | Le bénévole saisit les détails de l'article | Épic 3 | ✓ Couvert |
-| FR-023 | Table auto-assignée selon le mapping de catégorie | Épic 3 | ✓ Couvert |
+| FR-023 | Table auto-assignée : même table si vendeur déjà présent dans la catégorie, sinon table la moins chargée | Épic 3 | ✓ Couvert |
 | FR-024 | Article corrigeable/supprimable uniquement en phase Dépôt | Épic 3 | ✓ Couvert |
 | FR-025 | Indicateur complet/incomplet modifiable dans toutes les phases | Épic 3 | ✓ Couvert |
 | FR-026 | Code-barres Code 128 généré côté serveur par article | Épic 3 | ✓ Couvert |
-| FR-027 | Format étiquette article (code-barres, nom, prix, catégorie, table, incomplétude) | Épic 3 | ✓ Couvert |
+| FR-027 | Format étiquette : édition / catégorie / nom+prix / /!\ INCOMPLET si applicable / table / code-barres | Épic 3 | ✓ Couvert |
 | FR-028 | Étiquettes imprimées automatiquement à la validation du dépôt | Épic 3 | ✓ Couvert |
 | FR-029 | Travaux d'impression mis en file d'attente séquentiellement | Épic 3 | ✓ Couvert |
 | FR-030 | Format du rouleau thermique : séparateur vendeur → étiquettes | Épic 3 | ✓ Couvert |
@@ -257,14 +256,13 @@ Le PRD est **complet et bien structuré** :
 | FR-077 | Imprimante A4 USB : PDF envoyé directement sans aperçu | Épic 3 | ✓ Couvert |
 | FR-078 | Déclenchement impression côté serveur, aucune action client | Épic 3 | ✓ Couvert |
 | FR-079 | Erreur d'impression : notification explicite dans l'interface | Épic 3 | ✓ Couvert |
-| FR-080 | Nouvelle édition peut copier catégories/tables depuis une existante | Épic 2 | ✓ Couvert |
+| FR-080 | Nouvelle édition peut copier catégories/tables depuis une édition clôturée | Épic 2 | ✓ Couvert |
 | FR-081 | Le caissier peut retirer un lot entier du panier | Épic 4 | ✓ Couvert |
 | FR-082 | L'admin peut revenir en arrière d'une phase, données préservées | Épic 2 | ✓ Couvert |
 | FR-083 | Catalogue filtrable/triable accessible durant toutes les phases | Épic 6 | ✓ Couvert |
 | FR-084 | Filtres du catalogue : nom, code-barres, catégorie, table, statut, vendeur | Épic 6 | ✓ Couvert |
 | FR-085 | Catalogue triable par n'importe quelle colonne | Épic 6 | ✓ Couvert |
 | FR-086 | Catalogue : édition active uniquement, indisponible après Nettoyage | Épic 6 | ✓ Couvert |
-| FR-087 | En phase Vente : ajout article depuis catalogue au panier (repli scanner) | Épic 6 | ✓ Couvert |
 | FR-088 | « Nettoyage de l'édition » : suppression définitive articles, rollback désactivé | Épic 2 | ✓ Couvert |
 | FR-089 | Commission appliquée normalement aux articles incomplets vendus | Épic 5 | ✓ Couvert |
 | FR-090 | Transition de phase avec panier actif : panier annulé, message bénévole | Épic 4 | ✓ Couvert |
@@ -361,13 +359,9 @@ Aucun écart architectural. La divergence "browser print vs PDF" sur le rapport 
 | Épic 3 — Enregistrement vendeurs & Dépôt | ✓ Bénévoles enregistrent et impriment | Requiert Épic 1 + 2 | ✓ |
 | Épic 4 — Point de vente | ✓ Bénévoles vendent, gèrent lots, sécurité multi-postes | Requiert Épic 1 + 2 + 3 | ✓ |
 | Épic 5 — Post-vente & Rapports | ✓ Reversements, rapports, clôture | Requiert Épic 1–4 | ✓ |
-| Épic 6 — Catalogue articles | ✓ Recherche/filtrage toutes phases | Requiert Épic 1–3 (+ Épic 4 pour Story 6.2) | ⚠️ voir ci-dessous |
+| Épic 6 — Catalogue articles | ✓ Recherche/filtrage toutes phases | Requiert Épic 1–3 | ✓ |
 
 ### Violations par Sévérité
-
-#### ✅ Résolue — Dépendance implicite Épic 6 → Épic 4 (Story 6.2)
-
-Dépendance documentée dans la description d'Épic 6 : "Story 6.2 requiert les endpoints basket d'Épic 4 — à implémenter après Épic 4."
 
 #### ✅ Résolue — Exports CSV (Story 5.5) sans traçabilité FR dans le PRD
 
@@ -394,7 +388,6 @@ Sondage sur 6 stories représentatives :
 | Story 3.1 (Vendeurs) | ✓ | ✓ | ✓ RGPD | ✓ |
 | Story 4.4 (Concurrence) | ✓ | ✓ | ✓ 409, Testcontainers | ✓ |
 | Story 5.1 (Reversements) | ✓ | ✓ | ✓ Non réclamé | ✓ |
-| Story 6.2 (Catalogue→panier) | ✓ | ✓ | ✓ déjà vendu, déjà dans panier | ✓ |
 
 **Qualité des ACs : élevée.** Tous les cas d'erreur métier significatifs sont couverts. Format BDD respecté systématiquement. Spécificité suffisante pour démarrer l'implémentation.
 
@@ -416,14 +409,11 @@ Aucun problème bloquant l'implémentation n'a été identifié.
 
 1. **Exports CSV sans FR (Story 5.5)** — Ajouter FR-091/FR-092 dans un addendum PRD, ou documenter explicitement ces exports comme extensions UX acceptées hors scope PRD. Action requise avant que Story 5.5 entre en sprint pour éviter une implémentation sans traçabilité.
 
-2. **Dépendance Épic 6 → Épic 4 (Story 6.2)** — Annoter Épic 6 pour signaler que Story 6.2 requiert Epic 4 complété. Évite un risque de séquençage incorrect lors du sprint planning.
-
 ### Recommandations pour les Étapes Suivantes
 
-1. Traiter les deux points importants ci-dessus (15-20 minutes de mise à jour documentaire)
+1. Traiter le point important ci-dessus (15 minutes de mise à jour documentaire)
 2. Lancer `/bmad-sprint-planning` dans une nouvelle fenêtre de contexte pour produire le plan de sprint
 3. Séquencer les épics dans l'ordre 1 → 2 → 3 → 4 → 5 → 6 — respecte toutes les dépendances
-4. Traiter Story 6.2 uniquement après que les endpoints basket d'Epic 4 sont livrés
 
 ### Note Finale
 

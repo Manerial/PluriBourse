@@ -34,7 +34,7 @@ _Ce document se construit de manière collaborative à travers une découverte �
 - **F7 — Comptes Utilisateurs & Contrôle d'Accès (8 EFs) :** Séparation stricte des rôles Administrateur/Bénévole. Un seul compte administrateur par instance. Interface bénévole pilotée par la phase.
 - **F8 — Infrastructure & Déploiement (7 EFs) :** Docker Compose multiplateforme. Cible Raspberry Pi 4. Guide d'installation non technique.
 - **F9 — Infrastructure d'Impression (5 EFs) :** Point d'impression centralisé côté serveur. Imprimantes thermiques (ESC/POS) + A4 (PDF) via USB. File d'attente d'impression séquentielle. Retour d'erreur vers l'interface.
-- **F10 — Catalogue Articles (8 EFs) :** Catalogue filtrable/triable sur toutes les phases. Repli catalogue-vers-panier pour les codes-barres illisibles.
+- **F10 — Catalogue Articles (7 EFs) :** Catalogue filtrable/triable sur toutes les phases.
 
 **Exigences Non Fonctionnelles :**
 
@@ -76,7 +76,7 @@ _Ce document se construit de manière collaborative à travers une découverte �
 4. **File d'attente d'impression côté serveur** — séquentielle, centralisée, deux files indépendantes (thermique / A4)
 5. **Exactitude financière** — BigDecimal se propage à travers la tarification des articles, la commission, le calcul du reversement et tous les rapports
 6. **Conformité RGPD** — gestion du cycle de vie des DCP (anonymisation, pas suppression des enregistrements) ; aucune DCP dans les journaux
-7. **i18n (double couche)** — langue de l'interface par compte utilisateur ; langue des documents par instance
+7. **i18n (double couche)** — langue de l'interface par compte utilisateur ; langue des documents par édition (initialisée depuis le paramètre instance à la création)
 
 ---
 
@@ -123,6 +123,7 @@ Dependencies:
 ```
 
 **Ajouté manuellement après initialisation :**
+
 - MapStruct (non disponible dans Initializr)
 - OpenPDF 3.0.0 (LGPL 2.1 + MPL 1.1) — génération PDF
 - escpos-coffee ou équivalent — impression thermique ESC/POS
@@ -134,6 +135,7 @@ ng new pluribourse-frontend --standalone --routing --style=scss
 ```
 
 **Ajouté manuellement après initialisation :**
+
 - @ngx-translate/core + @ngx-translate/http-loader — i18n
 - @angular/material — bibliothèque de composants UI (MIT)
 
@@ -177,16 +179,19 @@ Toutes les dépendances sélectionnées utilisent des licences permissives ou fa
 ### Analyse des Priorités de Décision
 
 **Décisions Critiques (Bloquent l'Implémentation) :**
+
 - Stratégie de gestion de session (affecte tous les points d'entrée sécurisés)
 - Modèle de concurrence POS (affecte l'intégrité des ventes d'articles)
 - Mécanisme de notification de changement de phase (affecte toutes les interfaces en phase active)
 
 **Décisions Importantes (Façonnent l'Architecture) :**
+
 - Implémentation de la file d'attente d'impression (affecte la fiabilité F9)
 - Bibliothèque de génération de codes-barres (affecte la génération d'étiquettes F3)
 - Outillage de documentation API (affecte l'expérience développeur)
 
 **Décisions Reportées (Post-v1) :**
+
 - Mécanisme de sauvegarde/restauration (explicitement hors périmètre v1)
 - Override de commission par édition (hors périmètre v1)
 - Configuration du pipeline CI avec Testcontainers (peut être ajouté de manière incrémentale)
@@ -304,6 +309,7 @@ Toutes les dépendances sélectionnées utilisent des licences permissives ou fa
 5. Développement des fonctionnalités (F2 → F3 → F4 → F5 → F6 → F7 → F9 → F10)
 
 **Dépendances Entre Composants :**
+
 - La machine à états de phase (F2) doit être implémentée avant F3, F4, F5, F10 — elle gouverne toutes les règles métier
 - Spring Session JDBC nécessite une migration Liquibase avant toute fonctionnalité d'authentification
 - Le registre des émetteurs SSE doit être en place avant les points d'entrée de transition de phase (F2)
@@ -530,6 +536,7 @@ async loadSellers() {
 ### Directives d'Application
 
 **Toutes les implémentations DOIVENT :**
+
 - Utiliser `FilterService.filterData()` (JPageFlow) pour tout point d'entrée de liste paginée/filtrable
 - Retourner RFC 7807 Problem Details pour toutes les réponses d'erreur
 - Utiliser `BigDecimal` pour toutes les valeurs monétaires — jamais `float` ou `double`
@@ -748,6 +755,7 @@ pluribourse-frontend/
 ### Frontières d'Intégration
 
 **Frontière API (Backend ↔ Frontend)**
+
 - Toute communication via REST JSON sur HTTP
 - URL de base : `/api/`
 - Auth : cookie de session (Spring Security, `JSESSIONID` stocké dans MariaDB via Spring Session JDBC)
@@ -755,10 +763,12 @@ pluribourse-frontend/
 - Point d'entrée d'impression : `POST /api/print/{type}` — déclenche un travail d'impression côté serveur
 
 **Frontière de Données (Service ↔ Référentiel)**
+
 - Les entités ne quittent jamais la couche `service/` — toujours mappées en DTOs via MapStruct
 - `FilterService.filterData()` (JPageFlow) opère sur des listes de DTOs, pas sur des entités
 
 **Frontière d'Impression**
+
 - `PrintQueueService` possède deux instances `LinkedBlockingQueue` (thermique / document)
 - `ThermalPrintService` et `DocumentPrintService` sont des consommateurs de file s'exécutant sur des threads dédiés
 - Pas d'appel d'impression direct depuis les contrôleurs — toujours via `PrintQueueService`
@@ -860,24 +870,28 @@ La structure du projet supporte toutes les décisions architecturales. Backend e
 ### Liste de Contrôle de Complétude Architecturale
 
 **Analyse des Exigences**
+
 - [x] Contexte du projet analysé en profondeur
 - [x] Échelle et complexité évaluées (~100 vendeurs, ~1 700 articles, 3 postes POS)
 - [x] Contraintes techniques identifiées (RPi 4, Docker Compose, politique de licences)
 - [x] Préoccupations transversales cartographiées (machine à états de phase, i18n, RGPD, concurrence, file d'impression)
 
 **Décisions Architecturales**
+
 - [x] Décisions critiques documentées avec versions (Java 21, Spring Boot 4.0.6, Angular 21, OpenPDF 3.0.0)
 - [x] Stack technologique entièrement spécifiée
 - [x] Patrons d'intégration définis (SSE, REST, JPageFlow, Spring Session JDBC)
 - [x] Considérations de performance adressées (threads virtuels, file en mémoire, pas de cache)
 
 **Patrons d'Implémentation**
+
 - [x] Conventions de nommage établies (snake_case BDD, camelCase JSON, kebab-case fichiers Angular)
 - [x] Patrons de structure définis (sous-packages par fonctionnalité backend, Angular par type)
 - [x] Patrons de communication spécifiés (événements SSE, erreurs RFC 7807, pagination JPageFlow)
 - [x] Patrons de processus documentés (états de chargement, gestion d'erreurs, validation, clés i18n)
 
 **Structure du Projet**
+
 - [x] Structure de répertoires complète définie (backend + frontend)
 - [x] Frontières des composants établies (shared/, packages de fonctionnalités, frontière d'impression)
 - [x] Points d'intégration cartographiés (frontière API, SSE, file d'impression, flux de données)
@@ -892,6 +906,7 @@ La structure du projet supporte toutes les décisions architecturales. Backend e
 **Niveau de confiance : Élevé**
 
 **Points forts clés :**
+
 - Stack « ennuyeuse par conception » — bien documentée, maintenable, pas de dépendances exotiques
 - Toutes les licences sont permissives ou faiblement copyleft (MIT, Apache 2.0, LGPL) — pas d'AGPL
 - Modèle de concurrence explicitement testé via Testcontainers
@@ -899,6 +914,7 @@ La structure du projet supporte toutes les décisions architecturales. Backend e
 - La machine à états de phase est la colonne vertébrale architecturale — toutes les fonctionnalités s'y accrochent clairement
 
 **Axes d'amélioration futurs (post-v1) :**
+
 - Correctif BigDecimal de JPageFlow (appliquer avant la fonctionnalité de tri par prix)
 - Pipeline CI Testcontainers (peut être ajouté de manière incrémentale)
 - Mécanisme de sauvegarde/restauration (explicitement reporté à la v2)
@@ -919,6 +935,7 @@ ng new pluribourse-frontend --standalone --routing --style=scss
 ```
 
 **Directives pour l'Agent IA :**
+
 - Respecter scrupuleusement toutes les décisions architecturales telles que documentées — pas d'optimisations locales
 - Utiliser `FilterService.filterData()` (JPageFlow) pour chaque point d'entrée paginé/filtrable
 - Ne jamais utiliser `float` ou `double` pour les valeurs monétaires — `BigDecimal` uniquement
