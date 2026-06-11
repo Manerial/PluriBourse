@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PluriBourse — Caisse · Validation du paiement</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <style>
+    /* Governs: Component Patterns § Panier POS, State Patterns § Moyen de paiement (FR-093) */
+
+    /* ─────────────────────────────────────────
+       Design tokens
+    ───────────────────────────────────────── */
+    :root {
+      --primary: #C44626;
+      --on-primary: #FFFFFF;
+      --primary-container: #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface: #FFFBF9;
+      --surface-variant: #F5EEEA;
+      --on-surface: #1A0A05;
+      --on-surface-variant: #6B6460;
+      --background: #FFFBF9;
+      --outline: #C8B0A4;
+      --outline-variant: #F0E4DC;
+      --error: #BA1A1A;
+      --error-container: #FFDAD6;
+      --on-error-container: #410002;
+      --sidebar-bg: #2A100A;
+      --warning-bg: #FFF4EE;
+      --warning-border: #C44626;
+      --warning-text: #8C2910;
+      --font: 'DM Sans', sans-serif;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+      --shadow-1: 0 1px 4px rgba(28,10,5,.08);
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+      --shadow-3: 0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10);
+    }
+
+    /* ─────────────────────────────────────────
+       Reset & base
+    ───────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--background);
+      color: var(--on-surface);
+      min-height: 100vh;
+    }
+
+    /* ─────────────────────────────────────────
+       Topbar
+    ───────────────────────────────────────── */
+    .topbar {
+      height: 56px;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: var(--shadow-1);
+    }
+
+    .topbar__brand {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--on-surface);
+      letter-spacing: -0.01em;
+      flex: 1;
+    }
+
+    .topbar__center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .topbar__phase {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.01em;
+    }
+
+    .topbar__phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .topbar__right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar__role-badge {
+      background-color: var(--surface-variant);
+      color: var(--on-surface-variant);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .topbar__icon {
+      font-size: 24px;
+      color: var(--on-surface-variant);
+      user-select: none;
+    }
+
+    /* ─────────────────────────────────────────
+       Page de fond (caisse en arrière-plan)
+    ───────────────────────────────────────── */
+    .page-bg {
+      padding: 24px;
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      opacity: 0.4;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .scanner-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scanner-section__label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface-variant);
+    }
+
+    .scanner-section__input {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border: 2px solid var(--outline);
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 16px;
+      color: var(--on-surface);
+      background-color: var(--surface);
+    }
+
+    .cart-card-bg {
+      background-color: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-2);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cart-card-bg__title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .bg-article-row {
+      background-color: var(--surface-variant);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bg-article-row__name {
+      font-size: 14px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .bg-article-row__price {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .bg-divider {
+      height: 1px;
+      background-color: var(--outline-variant);
+    }
+
+    .bg-total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+
+    .bg-total-label {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .bg-total-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .bg-btn-validate {
+      width: 100%;
+      height: 48px;
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* ─────────────────────────────────────────
+       Overlay sombre
+    ───────────────────────────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 56px 0 0 0; /* sous la topbar */
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 20;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 24px 40px;
+    }
+
+    /* ─────────────────────────────────────────
+       Conteneur two-column pour les deux états
+    ───────────────────────────────────────── */
+    .states-wrapper {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 920px;
+    }
+
+    .state-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .state-column__label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.75);
+      text-align: center;
+    }
+
+    /* ─────────────────────────────────────────
+       Modale
+    ───────────────────────────────────────── */
+    .modal {
+      background-color: var(--surface);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-3);
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .modal__header {
+      padding: 20px 20px 0;
+    }
+
+    .modal__title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--on-surface);
+      letter-spacing: -0.01em;
+    }
+
+    .modal__body {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ─────────────────────────────────────────
+       Récapitulatif panier (lecture seule)
+    ───────────────────────────────────────── */
+    .recap {
+      background-color: var(--surface-variant);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .recap__title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      margin-bottom: 4px;
+    }
+
+    .recap__row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .recap__row-name {
+      font-size: 13px;
+      color: var(--on-surface);
+      flex: 1;
+    }
+
+    .recap__row-price {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--on-surface);
+      white-space: nowrap;
+    }
+
+    .recap__divider {
+      height: 1px;
+      background-color: var(--outline-variant);
+      margin: 4px 0;
+    }
+
+    .recap__total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .recap__total-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    .recap__total-amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* ─────────────────────────────────────────
+       Section moyen de paiement
+    ───────────────────────────────────────── */
+    .payment-section__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+      margin-bottom: 10px;
+    }
+
+    .payment-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 2px solid var(--outline-variant);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      cursor: pointer;
+      background-color: var(--surface);
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .payment-option--active {
+      border-color: var(--primary);
+      background-color: var(--primary-container);
+    }
+
+    .payment-option__radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--outline);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .payment-option--active .payment-option__radio {
+      border-color: var(--primary);
+    }
+
+    .payment-option__radio-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+    }
+
+    .payment-option__icon {
+      font-size: 20px;
+      color: var(--on-surface-variant);
+      flex-shrink: 0;
+    }
+
+    .payment-option--active .payment-option__icon {
+      color: var(--on-primary-container);
+    }
+
+    .payment-option__label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface);
+      flex: 1;
+    }
+
+    .payment-option--active .payment-option__label {
+      font-weight: 600;
+      color: var(--on-primary-container);
+    }
+
+    /* ─────────────────────────────────────────
+       Champ "Somme remise" (état B)
+    ───────────────────────────────────────── */
+    .cash-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 12px 12px;
+      background-color: var(--surface-variant);
+      border-radius: var(--radius-md);
+      margin-top: -4px;
+    }
+
+    .cash-detail__label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--on-surface-variant);
+    }
+
+    .cash-detail__input {
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--on-surface);
+      background-color: var(--surface);
+      width: 140px;
+    }
+
+    .cash-detail__note {
+      font-size: 11px;
+      color: var(--on-surface-variant);
+      line-height: 1.4;
+    }
+
+    .cash-detail__change-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .cash-detail__change-icon {
+      font-size: 16px;
+      color: #166534;
+    }
+
+    .cash-detail__change-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #166534;
+    }
+
+    /* ─────────────────────────────────────────
+       Actions modale
+    ───────────────────────────────────────── */
+    .modal__actions {
+      padding: 0 20px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-confirm {
+      flex: 1;
+      height: 44px;
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .btn-confirm--disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-confirm:not(.btn-confirm--disabled):hover {
+      background-color: #a33a1f;
+    }
+
+    .btn-cancel {
+      height: 44px;
+      padding: 0 16px;
+      background: transparent;
+      color: var(--on-surface-variant);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* ─────────────────────────────────────────
+       Material Symbols
+    ───────────────────────────────────────── */
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <span class="topbar__brand">PluriBourse</span>
+
+    <div class="topbar__center">
+      <div class="topbar__phase">
+        <span class="topbar__phase-dot"></span>
+        Vente
+      </div>
+    </div>
+
+    <div class="topbar__right">
+      <span class="topbar__role-badge">Bénévole</span>
+      <span class="material-symbols-outlined topbar__icon">account_circle</span>
+    </div>
+  </header>
+
+  <!-- ── Page de fond : caisse en arrière-plan (grisée/non interactive) ── -->
+  <div class="page-bg" aria-hidden="true">
+    <div class="scanner-section">
+      <span class="scanner-section__label">Scanner ou saisir un code-barres</span>
+      <input class="scanner-section__input" type="text" placeholder="Ex : 0042" tabindex="-1" />
+    </div>
+
+    <div class="cart-card-bg">
+      <span class="cart-card-bg__title">Panier</span>
+      <div class="bg-article-row">
+        <span class="bg-article-row__name">Poupée Barbie</span>
+        <span class="bg-article-row__price">3,50&nbsp;€</span>
+      </div>
+      <div class="bg-article-row">
+        <span class="bg-article-row__name">Lego City 60235</span>
+        <span class="bg-article-row__price">8,00&nbsp;€</span>
+      </div>
+      <div class="bg-article-row">
+        <span class="bg-article-row__name">Livre "Harry Potter T.1"</span>
+        <span class="bg-article-row__price">8,00&nbsp;€</span>
+      </div>
+      <div class="bg-divider"></div>
+      <div class="bg-total-row">
+        <span class="bg-total-label">Total</span>
+        <span class="bg-total-amount">19,50&nbsp;€</span>
+      </div>
+      <button class="bg-btn-validate" tabindex="-1">Valider la transaction</button>
+    </div>
+  </div>
+
+  <!-- ── Overlay avec les deux états côte à côte ── -->
+  <div class="overlay" role="dialog" aria-modal="true" aria-label="Valider la transaction">
+
+    <div class="states-wrapper">
+
+      <!-- ── État A : aucun moyen de paiement sélectionné ── -->
+      <div class="state-column">
+        <span class="state-column__label">État A — Aucun moyen de paiement sélectionné</span>
+
+        <div class="modal">
+          <div class="modal__header">
+            <h2 class="modal__title">Valider la transaction</h2>
+          </div>
+
+          <div class="modal__body">
+
+            <!-- Récapitulatif panier -->
+            <div class="recap">
+              <span class="recap__title">Récapitulatif</span>
+              <div class="recap__row">
+                <span class="recap__row-name">Poupée Barbie</span>
+                <span class="recap__row-price">3,50&nbsp;€</span>
+              </div>
+              <div class="recap__row">
+                <span class="recap__row-name">Lego City 60235</span>
+                <span class="recap__row-price">8,00&nbsp;€</span>
+              </div>
+              <div class="recap__row">
+                <span class="recap__row-name">Livre "Harry Potter T.1"</span>
+                <span class="recap__row-price">8,00&nbsp;€</span>
+              </div>
+              <div class="recap__divider"></div>
+              <div class="recap__total-row">
+                <span class="recap__total-label">Total à encaisser</span>
+                <span class="recap__total-amount">19,50&nbsp;€</span>
+              </div>
+            </div>
+
+            <!-- Choix du moyen de paiement -->
+            <div>
+              <div class="payment-section__title">Moyen de paiement <span style="color:var(--error);font-size:12px;font-weight:500;margin-left:4px;">(obligatoire)</span></div>
+              <div class="payment-options">
+
+                <div class="payment-option">
+                  <div class="payment-option__radio"></div>
+                  <span class="material-symbols-outlined payment-option__icon">payments</span>
+                  <span class="payment-option__label">Espèces</span>
+                </div>
+
+                <div class="payment-option">
+                  <div class="payment-option__radio"></div>
+                  <span class="material-symbols-outlined payment-option__icon">receipt_long</span>
+                  <span class="payment-option__label">Chèque</span>
+                </div>
+
+                <div class="payment-option">
+                  <div class="payment-option__radio"></div>
+                  <span class="material-symbols-outlined payment-option__icon">credit_card</span>
+                  <span class="payment-option__label">Carte bancaire</span>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <div class="modal__actions">
+            <button class="btn-confirm btn-confirm--disabled" disabled>Confirmer</button>
+            <button class="btn-cancel">Annuler</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── État B : Espèces sélectionnées + somme remise saisie ── -->
+      <div class="state-column">
+        <span class="state-column__label">État B — Espèces sélectionnées + somme remise renseignée</span>
+
+        <div class="modal">
+          <div class="modal__header">
+            <h2 class="modal__title">Valider la transaction</h2>
+          </div>
+
+          <div class="modal__body">
+
+            <!-- Récapitulatif panier -->
+            <div class="recap">
+              <span class="recap__title">Récapitulatif</span>
+              <div class="recap__row">
+                <span class="recap__row-name">Poupée Barbie</span>
+                <span class="recap__row-price">3,50&nbsp;€</span>
+              </div>
+              <div class="recap__row">
+                <span class="recap__row-name">Lego City 60235</span>
+                <span class="recap__row-price">8,00&nbsp;€</span>
+              </div>
+              <div class="recap__row">
+                <span class="recap__row-name">Livre "Harry Potter T.1"</span>
+                <span class="recap__row-price">8,00&nbsp;€</span>
+              </div>
+              <div class="recap__divider"></div>
+              <div class="recap__total-row">
+                <span class="recap__total-label">Total à encaisser</span>
+                <span class="recap__total-amount">19,50&nbsp;€</span>
+              </div>
+            </div>
+
+            <!-- Choix du moyen de paiement — Espèces actif -->
+            <div>
+              <div class="payment-section__title">Moyen de paiement <span style="color:var(--error);font-size:12px;font-weight:500;margin-left:4px;">(obligatoire)</span></div>
+              <div class="payment-options">
+
+                <!-- Option active -->
+                <div class="payment-option payment-option--active">
+                  <div class="payment-option__radio">
+                    <span class="payment-option__radio-dot"></span>
+                  </div>
+                  <span class="material-symbols-outlined payment-option__icon">payments</span>
+                  <span class="payment-option__label">Espèces</span>
+                </div>
+
+                <!-- Champ somme remise — affiché sous l'option active -->
+                <div class="cash-detail">
+                  <span class="cash-detail__label">Somme remise (optionnel)</span>
+                  <input class="cash-detail__input" type="text" value="25,00" />
+                  <span class="cash-detail__note">Si vous ne renseignez pas ce champ, le montant exact est supposé.</span>
+                  <div class="cash-detail__change-row">
+                    <span class="material-symbols-outlined cash-detail__change-icon">swap_horiz</span>
+                    <span class="cash-detail__change-text">Monnaie à rendre : 5,50&nbsp;€</span>
+                  </div>
+                </div>
+
+                <div class="payment-option">
+                  <div class="payment-option__radio"></div>
+                  <span class="material-symbols-outlined payment-option__icon">receipt_long</span>
+                  <span class="payment-option__label">Chèque</span>
+                </div>
+
+                <div class="payment-option">
+                  <div class="payment-option__radio"></div>
+                  <span class="material-symbols-outlined payment-option__icon">credit_card</span>
+                  <span class="payment-option__label">Carte bancaire</span>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <div class="modal__actions">
+            <button class="btn-confirm">Confirmer</button>
+            <button class="btn-cancel">Annuler</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- /states-wrapper -->
+
+  </div>
+  <!-- /overlay -->
+
+</body>
+</html>

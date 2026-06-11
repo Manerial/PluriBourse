@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PluriBourse — Admin · Catégories &amp; Tables</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet" />
+
+  <style>
+    /* Governs: Component Patterns § Fiche Catégories & Tables (FR-017, FR-018, FR-080) */
+
+    :root {
+      --primary: #C44626;
+      --on-primary: #FFFFFF;
+      --primary-container: #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface: #FFFBF9;
+      --surface-variant: #F5EEEA;
+      --on-surface: #1A0A05;
+      --on-surface-variant: #6B6460;
+      --background: #FFFBF9;
+      --outline: #C8B0A4;
+      --outline-variant: #F0E4DC;
+      --error: #BA1A1A;
+      --sidebar-bg: #2A100A;
+      --warning-bg: #FFF4EE;
+      --warning-border: #C44626;
+      --warning-text: #8C2910;
+      --font: 'DM Sans', sans-serif;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-full: 999px;
+      --shadow-1: 0 1px 4px rgba(28,10,5,.08);
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      background: var(--background);
+      color: var(--on-surface);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* ─── Topbar ─── */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+    }
+
+    .topbar__logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: -0.2px;
+      flex-shrink: 0;
+    }
+
+    .topbar__center { flex: 1; display: flex; justify-content: center; }
+
+    .phase-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-variant);
+      color: var(--on-surface-variant);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      border: none;
+    }
+    .phase-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: #C44626; }
+
+    .topbar__right { display: flex; align-items: center; gap: 12px; }
+
+    .role-badge {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--on-primary-container);
+      background: var(--primary-container);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon-btn:hover { background: var(--surface-variant); }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      position: fixed;
+      top: 56px; left: 0; bottom: 0;
+      width: 200px;
+      background: var(--sidebar-bg);
+      padding: 16px 0;
+      overflow-y: auto;
+    }
+
+    .sidebar__section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: rgba(255,255,255,.4);
+      padding: 12px 16px 6px;
+    }
+
+    .sidebar__link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      color: rgba(255,255,255,.7);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 0;
+      transition: background 120ms;
+    }
+    .sidebar__link:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .sidebar__link.active {
+      background: var(--primary);
+      color: #fff;
+    }
+    .sidebar__link .material-symbols-outlined { font-size: 18px; }
+
+    /* ─── Content ─── */
+    .content {
+      margin-left: 200px;
+      margin-top: 56px;
+      padding: 24px;
+      min-height: calc(100vh - 56px);
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .breadcrumb {
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .breadcrumb a { color: var(--primary); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb .sep { color: var(--outline); }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    /* ─── States toggle ─── */
+    .state-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .state-btn {
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--outline);
+      background: transparent;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      transition: all 120ms;
+    }
+    .state-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* ─── Warning banner ─── */
+    .warning-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      color: var(--warning-text);
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .warning-banner .material-symbols-outlined { color: var(--warning-border); font-size: 20px; flex-shrink: 0; }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+    }
+
+    /* ─── Category table ─── */
+    .cat-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .cat-table thead th {
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--on-surface-variant);
+      padding: 12px 16px;
+      background: var(--surface-variant);
+      border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .cat-table tbody tr {
+      border-bottom: 1px solid var(--outline-variant);
+    }
+    .cat-table tbody tr:last-child { border-bottom: none; }
+    .cat-table tbody tr:hover { background: #FFFAF7; }
+
+    .cat-table td {
+      padding: 12px 16px;
+      vertical-align: middle;
+    }
+
+    .td-name { width: 220px; }
+    .td-tables { }
+    .td-action { width: 48px; text-align: center; }
+
+    /* ─── Category name input ─── */
+    .cat-name-input {
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      width: 100%;
+      transition: border-color 120ms, background 120ms;
+      outline: none;
+    }
+    .cat-name-input:hover { border-color: var(--outline); }
+    .cat-name-input:focus { border-color: var(--primary); background: #fff; }
+    .cat-name-input.readonly {
+      pointer-events: none;
+      border-color: transparent;
+      background: transparent;
+    }
+
+    /* ─── Chip input ─── */
+    .chip-input-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-height: 36px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 8px 4px 10px;
+      border-radius: var(--radius-full);
+      user-select: none;
+    }
+
+    .chip__remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--on-primary-container);
+      cursor: pointer;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+      transition: background 120ms;
+    }
+    .chip__remove:hover { background: rgba(140,41,16,.15); }
+    .chip__remove .material-symbols-outlined { font-size: 14px; }
+
+    .chip.readonly { padding: 4px 10px; }
+
+    .chip-text-input {
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--on-surface);
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 52px;
+      padding: 4px 4px;
+    }
+    .chip-text-input::placeholder { color: var(--on-surface-variant); }
+
+    /* ─── Delete row btn ─── */
+    .btn-delete-row {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 120ms, color 120ms;
+    }
+    .btn-delete-row:hover { background: #FFDAD6; color: var(--error); }
+    .btn-delete-row .material-symbols-outlined { font-size: 18px; }
+
+    /* ─── Add category footer ─── */
+    .cat-table-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--outline-variant);
+      background: var(--surface);
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px 4px;
+      border-radius: var(--radius-sm);
+      transition: background 120ms;
+    }
+    .btn-ghost:hover { background: var(--primary-container); }
+    .btn-ghost .material-symbols-outlined { font-size: 18px; }
+
+    /* ─── Primary button ─── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-primary);
+      background: var(--primary);
+      border: none;
+      cursor: pointer;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      transition: opacity 120ms;
+    }
+    .btn-primary:hover { opacity: .88; }
+
+    /* ─── Section title ─── */
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--on-surface);
+      margin-bottom: 12px;
+    }
+
+    /* ─── Focus helper ─── */
+    .focus-hint {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+      margin-top: 4px;
+    }
+
+    /* ─── Two-column layout for demo states ─── */
+    .demo-section { margin-bottom: 48px; }
+    .demo-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--on-surface-variant);
+      margin-bottom: 12px;
+      padding: 4px 10px;
+      background: var(--surface-variant);
+      border-radius: var(--radius-full);
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ─── Topbar ─── -->
+<header class="topbar">
+  <span class="topbar__logo">PluriBourse</span>
+  <div class="topbar__center">
+    <button class="phase-chip">
+      <span class="dot"></span>
+      Préparation
+    </button>
+  </div>
+  <div class="topbar__right">
+    <span class="role-badge">Admin</span>
+    <button class="icon-btn" aria-label="Mon compte">
+      <span class="material-symbols-outlined">account_circle</span>
+    </button>
+  </div>
+</header>
+
+<!-- ─── Sidebar ─── -->
+<nav class="sidebar" aria-label="Navigation principale">
+  <div class="sidebar__section-label">Édition active</div>
+  <a href="#" class="sidebar__link">
+    <span class="material-symbols-outlined">people</span>
+    Vendeurs
+  </a>
+  <a href="#" class="sidebar__link">
+    <span class="material-symbols-outlined">inventory_2</span>
+    Articles
+  </a>
+  <div class="sidebar__section-label">Gestion</div>
+  <a href="#" class="sidebar__link active">
+    <span class="material-symbols-outlined">event</span>
+    Éditions
+  </a>
+  <a href="#" class="sidebar__link">
+    <span class="material-symbols-outlined">assessment</span>
+    Rapports
+  </a>
+  <a href="#" class="sidebar__link">
+    <span class="material-symbols-outlined">manage_accounts</span>
+    Utilisateurs
+  </a>
+  <a href="#" class="sidebar__link">
+    <span class="material-symbols-outlined">settings</span>
+    Paramètres
+  </a>
+</nav>
+
+<!-- ─── Main content ─── -->
+<main class="content">
+
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <a href="#">Éditions</a>
+    <span class="sep">›</span>
+    <a href="#">Bourse Automne 2026</a>
+    <span class="sep">›</span>
+    <span>Catégories &amp; Tables</span>
+  </nav>
+
+  <div class="page-header" style="margin-bottom:24px">
+    <h1 class="page-title">Catégories &amp; Tables</h1>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ÉTAT 1 — Phase Préparation (éditable)       -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="demo-section">
+    <div class="demo-label">État : Phase Préparation — éditable</div>
+
+    <div class="card">
+      <table class="cat-table" aria-label="Catégories et tables de l'édition">
+        <thead>
+          <tr>
+            <th class="td-name">Catégorie</th>
+            <th class="td-tables">Tables assignées</th>
+            <th class="td-action"></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Ligne 1 : Jouets & jeux -->
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input" type="text" value="Jouets &amp; jeux de société"
+                     aria-label="Nom de la catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container" role="group" aria-label="Tables assignées à Jouets & jeux de société">
+                <span class="chip">
+                  1
+                  <button class="chip__remove" aria-label="Retirer table 1">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </span>
+                <span class="chip">
+                  2
+                  <button class="chip__remove" aria-label="Retirer table 2">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </span>
+                <span class="chip">
+                  3
+                  <button class="chip__remove" aria-label="Retirer table 3">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </span>
+                <input class="chip-text-input" type="text" inputmode="numeric"
+                       placeholder="+ n°" aria-label="Ajouter un numéro de table" />
+              </div>
+            </td>
+            <td class="td-action">
+              <button class="btn-delete-row" aria-label="Supprimer la catégorie Jouets & jeux de société">
+                <span class="material-symbols-outlined">delete_outline</span>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Ligne 2 : Livres & BD -->
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input" type="text" value="Livres &amp; BD"
+                     aria-label="Nom de la catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container" role="group" aria-label="Tables assignées à Livres & BD">
+                <span class="chip">
+                  4
+                  <button class="chip__remove" aria-label="Retirer table 4">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </span>
+                <input class="chip-text-input" type="text" inputmode="numeric"
+                       placeholder="+ n°" aria-label="Ajouter un numéro de table" />
+              </div>
+            </td>
+            <td class="td-action">
+              <button class="btn-delete-row" aria-label="Supprimer la catégorie Livres & BD">
+                <span class="material-symbols-outlined">delete_outline</span>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Ligne 3 : BD (partage table 4 avec Livres — silencieux) -->
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input" type="text" value="Vêtements enfants"
+                     aria-label="Nom de la catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container" role="group" aria-label="Tables assignées à Vêtements enfants">
+                <span class="chip">
+                  4
+                  <button class="chip__remove" aria-label="Retirer table 4">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </span>
+                <span class="chip">
+                  5
+                  <button class="chip__remove" aria-label="Retirer table 5">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </span>
+                <input class="chip-text-input" type="text" inputmode="numeric"
+                       placeholder="+ n°" aria-label="Ajouter un numéro de table" />
+              </div>
+            </td>
+            <td class="td-action">
+              <button class="btn-delete-row" aria-label="Supprimer la catégorie Vêtements enfants">
+                <span class="material-symbols-outlined">delete_outline</span>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Ligne 4 : Skis (saisie en cours — focus) -->
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input" type="text" value="Skis &amp; matériel de glisse"
+                     aria-label="Nom de la catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container" role="group" aria-label="Tables assignées à Skis & matériel de glisse"
+                   style="border: 1px solid var(--primary); border-radius: var(--radius-sm); padding: 4px 8px; background:#fff;">
+                <span class="chip">
+                  6
+                  <button class="chip__remove" aria-label="Retirer table 6">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </span>
+                <input class="chip-text-input" type="text" inputmode="numeric"
+                       value="7" aria-label="Ajouter un numéro de table"
+                       style="width:28px; color: var(--on-surface); font-weight:600;" />
+              </div>
+              <p class="focus-hint">Appuyez sur Entrée pour ajouter</p>
+            </td>
+            <td class="td-action">
+              <button class="btn-delete-row" aria-label="Supprimer la catégorie Skis & matériel de glisse">
+                <span class="material-symbols-outlined">delete_outline</span>
+              </button>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+
+      <div class="cat-table-footer">
+        <button class="btn-ghost">
+          <span class="material-symbols-outlined">add</span>
+          Ajouter une catégorie
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+      <button class="btn-primary">Enregistrer</button>
+    </div>
+
+    <p style="font-size:12px; color:var(--on-surface-variant); margin-top:8px; text-align:right;">
+      Note : La table 4 est partagée entre « Livres &amp; BD » et « Vêtements enfants » — aucun indicateur visuel (comportement intentionnel).
+    </p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ÉTAT 2 — Phase Dépôt (lecture seule)        -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="demo-section">
+    <div class="demo-label">État : Phase Dépôt — lecture seule</div>
+
+    <div class="warning-banner" role="status">
+      <span class="material-symbols-outlined">lock</span>
+      Catégories verrouillées — repassez en phase Préparation pour modifier.
+    </div>
+
+    <div class="card">
+      <table class="cat-table" aria-label="Catégories et tables de l'édition (lecture seule)">
+        <thead>
+          <tr>
+            <th class="td-name">Catégorie</th>
+            <th class="td-tables">Tables assignées</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input readonly" type="text" value="Jouets &amp; jeux de société"
+                     readonly aria-label="Catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container">
+                <span class="chip readonly">1</span>
+                <span class="chip readonly">2</span>
+                <span class="chip readonly">3</span>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input readonly" type="text" value="Livres &amp; BD"
+                     readonly aria-label="Catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container">
+                <span class="chip readonly">4</span>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input readonly" type="text" value="Vêtements enfants"
+                     readonly aria-label="Catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container">
+                <span class="chip readonly">4</span>
+                <span class="chip readonly">5</span>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="td-name">
+              <input class="cat-name-input readonly" type="text" value="Skis &amp; matériel de glisse"
+                     readonly aria-label="Catégorie" />
+            </td>
+            <td class="td-tables">
+              <div class="chip-input-container">
+                <span class="chip readonly">6</span>
+                <span class="chip readonly">7</span>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ÉTAT 3 — Formulaire dépôt (côté bénévole)  -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="demo-section">
+    <div class="demo-label">Formulaire dépôt — table auto-assignée (bénévole)</div>
+
+    <div class="card" style="max-width:480px; padding:24px;">
+      <div style="margin-bottom:20px;">
+        <label style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--on-surface-variant); margin-bottom:6px;">
+          Nom de l'article
+        </label>
+        <input type="text" value="Kapla 200 pièces"
+               style="width:100%; font-family:var(--font); font-size:14px; border:1px solid var(--outline); border-radius:var(--radius-md); padding:10px 12px; outline:none; color:var(--on-surface);" />
+      </div>
+
+      <div style="display:flex; gap:16px; margin-bottom:20px;">
+        <div style="flex:1;">
+          <label style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--on-surface-variant); margin-bottom:6px;">
+            Prix
+          </label>
+          <input type="text" value="12,00 €"
+                 style="width:100%; font-family:var(--font); font-size:14px; border:1px solid var(--outline); border-radius:var(--radius-md); padding:10px 12px; outline:none; color:var(--on-surface);" />
+        </div>
+        <div style="flex:1.5;">
+          <label style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--on-surface-variant); margin-bottom:6px;">
+            Catégorie
+          </label>
+          <select style="width:100%; font-family:var(--font); font-size:14px; border:1px solid var(--primary); border-radius:var(--radius-md); padding:10px 12px; outline:none; color:var(--on-surface); background:#fff; appearance:none;">
+            <option>Jouets &amp; jeux de société</option>
+          </select>
+          <!-- Texte inline de table auto-assignée -->
+          <p style="margin-top:6px; font-size:13px; font-weight:600; color:var(--on-surface-variant); display:flex; align-items:center; gap:6px;">
+            <span class="material-symbols-outlined" style="font-size:15px; color:var(--primary);">table_restaurant</span>
+            Table n°2
+          </p>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
+        <input type="checkbox" id="incomplet" style="width:16px; height:16px; accent-color:var(--primary);" />
+        <label for="incomplet" style="font-size:14px; font-weight:500;">Article incomplet</label>
+      </div>
+
+      <button class="btn-primary" style="width:100%; justify-content:center;">
+        Ajouter l'article
+      </button>
+    </div>
+
+    <p style="font-size:12px; color:var(--on-surface-variant); margin-top:8px; max-width:480px;">
+      La table est calculée côté serveur (FR-023) dès la sélection de catégorie.
+      Si le vendeur a déjà des articles dans cette catégorie, la même table lui est réassignée.
+      Sinon, c'est la table la moins chargée (toutes catégories confondues).
+    </p>
+  </div>
+
+</main>
+</body>
+</html>

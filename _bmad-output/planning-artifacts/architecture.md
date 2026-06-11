@@ -40,7 +40,7 @@ _Ce document se construit de manière collaborative à travers une découverte �
 
 | ID | Catégorie | Impact Architectural |
 |---|---|---|
-| NFR-001 | Performance | Doit fonctionner sur RPi 4 (2 Go RAM) sous charge événementielle (~1 700 articles, 3 postes) |
+| NFR-001 | Performance | Doit fonctionner sur RPi 4 (2 Go RAM) sous charge événementielle (~100 vendeurs, ~1 700 articles, 3 postes) |
 | NFR-002 | Concurrence | Les opérations POS simultanées ne doivent pas générer de conflits de données |
 | NFR-003 | Exactitude Financière | Tous les calculs monétaires en BigDecimal — jamais float/double |
 | NFR-004 | Compatibilité Navigateur | Tout navigateur moderne, tout OS — REST pur + SPA, sans API spécifiques au navigateur |
@@ -257,7 +257,7 @@ Toutes les dépendances sélectionnées utilisent des licences permissives ou fa
 | Implémentation de la file | **`LinkedBlockingQueue` en mémoire** (une par type d'imprimante) | Simple, pas d'infrastructure supplémentaire ; livraison au-plus-une fois acceptable |
 | Garantie de livraison | Au-plus-une fois | Acceptable : tous les travaux d'impression sont redéclenchables depuis l'interface (FR-078) ; source de données toujours disponible en BDD |
 | Injection de la file | Injectée par constructeur (pas statique) | Permet une file bornée dans les tests pour vérifier le comportement sous contre-pression |
-| Gestion des erreurs | Les erreurs d'imprimante remontent vers l'interface via SSE ou réponse de polling (FR-079) | Utilisateur notifié ; peut réessayer manuellement |
+| Gestion des erreurs | Les erreurs d'imprimante remontent vers l'interface via SSE ou réponse de polling (FR-079). La file est suspendue. L'utilisateur peut relancer le job en erreur ou l'ignorer. L'admin dispose d'une vue de l'état de la file et des erreurs en cours. | Utilisateur notifié ; peut réessayer ou ignorer ; admin peut diagnostiquer |
 | Imprimante thermique | ESC/POS via `escpos-coffee` (ou équivalent) — travaux séquentiels | Une file, un thread consommateur |
 | Imprimante A4/document | PDF généré par OpenPDF 3.0.0 → envoyé à l'imprimante USB | Une file, un thread consommateur |
 

@@ -1,0 +1,101 @@
+# generated: 2026-06-11
+# last_updated: 2026-06-12
+# project: PluriBourse
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: "2026-06-11"
+last_updated: "2026-06-12"
+project: PluriBourse
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # ─── Epic 1 : Fondation applicative, Authentification & i18n ───────────────
+  epic-1: backlog
+  1-1-mise-en-place-du-squelette-de-projet-baseline-docker-compose: backlog
+  1-2-authentification-spring-security-controle-dacces-base-sur-les-roles: backlog
+  1-3-gestion-des-comptes-benevoles: backlog
+  1-4-recuperation-du-mot-de-passe-admin-via-cli: backlog
+  1-5-configuration-de-linstance-page-de-parametres-admin: backlog
+  1-6-preference-de-langue-utilisateur-infrastructure-i18n: backlog
+  1-7-systeme-de-design-angular-material-mise-en-page-applicative: backlog
+  1-8-composants-ui-partages-boites-de-dialogue-notifications-accessibilite: backlog
+  1-9-guide-dinstallation: backlog
+  epic-1-retrospective: optional
+
+  # ─── Epic 2 : Gestion du cycle de vie des éditions ─────────────────────────
+  epic-2: backlog
+  2-1-crud-dedition-configuration-du-taux-de-commission: backlog
+  2-2-controle-du-cycle-de-phases-boites-de-dialogue-de-confirmation: backlog
+  2-3-categories-de-ledition-correspondance-des-tables: backlog
+  2-4-notification-de-phase-en-temps-reel-via-sse: backlog
+  2-5-cloture-de-ledition-nettoyage-de-ledition: backlog
+  2-6-annulation-du-panier-lors-dune-transition-de-phase-cote-serveur: backlog
+  epic-2-retrospective: optional
+
+  # ─── Epic 3 : Enregistrement des vendeurs & Dépôt ──────────────────────────
+  epic-3: backlog
+  3-1-gestion-des-profils-vendeurs: backlog
+  3-2-enregistrement-darticles-assignation-automatique-de-table: backlog
+  3-3-creation-et-gestion-des-lots: backlog
+  3-4-infrastructure-dimpression-files-dattente-cote-serveur: backlog
+  3-5-generation-impression-des-etiquettes-thermiques: backlog
+  3-6-generation-impression-automatique-du-bordereau-de-depot-pdf: backlog
+  3-7-vue-admin-de-diagnostic-de-la-file-dimpression: backlog
+  epic-3-retrospective: optional
+
+  # ─── Epic 4 : Point de vente ────────────────────────────────────────────────
+  epic-4: backlog
+  4-1-composant-scanner-scan-darticles: backlog
+  4-2-gestion-du-panier-validation-du-paiement: backlog
+  4-3-gestion-des-lots-au-pos: backlog
+  4-4-securite-de-la-concurrence-multi-postes: backlog
+  4-5-impression-de-la-facture-acheteur: backlog
+  4-6-gestion-du-changement-de-phase-dans-le-composant-pos-cote-client: backlog
+  epic-4-retrospective: optional
+
+  # ─── Epic 5 : Post-vente, Reversements & Rapports ──────────────────────────
+  epic-5: backlog
+  5-1-flux-de-solde-des-vendeurs: backlog
+  5-2-generation-du-bilan-de-vente-pdf: backlog
+  5-3-rapport-de-ventes-journalier-admin: backlog
+  5-4-bilan-dedition-rapports-des-vendeurs-non-soldes: backlog
+  5-5-page-des-rapports-admin: backlog
+  epic-5-retrospective: optional
+
+  # ─── Epic 6 : Catalogue articles ────────────────────────────────────────────
+  epic-6: backlog
+  6-1-catalogue-articles-liste-filtrable-triable: backlog
+  epic-6-retrospective: optional

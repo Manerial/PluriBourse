@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bénévole — Reversements · PluriBourse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <style>
+    /*
+     * PluriBourse — Mock Bénévole : /volunteer/settlement
+     * ====================================================
+     * EXPERIENCE.md sections illustrées :
+     *   - Page Reversements vue Bénévole (layout sans sidebar, pleine largeur)
+     *   - Même composant Angular que /admin/settlement — colonnes conditionnelles (*ngIf="isAdmin")
+     *   - Formulaire de solde vendeur (inline row, validation espèces)
+     */
+
+    /* ── Design tokens ── */
+    :root {
+      --primary: #C44626;
+      --on-primary: #FFFFFF;
+      --primary-container: #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface: #FFFBF9;
+      --surface-variant: #F5EEEA;
+      --on-surface: #1A0A05;
+      --on-surface-variant: #6B6460;
+      --background: #FFFBF9;
+      --outline: #C8B0A4;
+      --outline-variant: #F0E4DC;
+      --error: #BA1A1A;
+      --error-container: #FFDAD6;
+      --on-error-container: #410002;
+      --success-bg: #F0FDF4;
+      --success-text: #166534;
+      --shadow-1: 0 1px 4px rgba(28,10,5,.08);
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+      --shadow-3: 0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+      --font: 'DM Sans', sans-serif;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--background);
+      color: var(--on-surface);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Material Symbols ── */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      box-shadow: var(--shadow-1);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .topbar-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .topbar-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .phase-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-radius: var(--radius-full);
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .role-badge {
+      background: var(--surface-variant);
+      color: var(--on-surface-variant);
+      border-radius: var(--radius-full);
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #9E9E9E;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Main content (no sidebar) ── */
+    .main-content {
+      flex: 1;
+      padding: 24px;
+      background: var(--background);
+    }
+
+    /* ── Annotation banner ── */
+    .annotation-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: #FFFBEB;
+      border-left: 3px solid #F59E0B;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 10px 14px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      color: #78350F;
+      line-height: 1.5;
+    }
+
+    .annotation-banner .material-symbols-outlined {
+      font-size: 16px;
+      color: #F59E0B;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      margin-bottom: 20px;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--on-surface);
+      line-height: 1.2;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      margin-top: 4px;
+    }
+
+    /* ── Filter toggle ── */
+    .filter-toggle {
+      display: inline-flex;
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-top: 16px;
+    }
+
+    .filter-btn {
+      padding: 6px 16px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background: var(--surface-variant);
+    }
+
+    th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--on-surface-variant);
+      white-space: nowrap;
+      border-bottom: 1px solid var(--outline-variant);
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--on-surface);
+      border-bottom: 1px solid var(--outline-variant);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--surface-variant);
+    }
+
+    /* Seller name */
+    .seller-name {
+      font-weight: 600;
+    }
+
+    /* Amount */
+    .amount {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: var(--radius-full);
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-badge .material-symbols-outlined {
+      font-size: 14px;
+    }
+
+    .status-unsettled {
+      background: var(--error-container);
+      color: var(--on-error-container);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    /* ── Action buttons ── */
+    .actions-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      border: none;
+    }
+
+    .btn .material-symbols-outlined {
+      font-size: 16px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+
+    .btn-secondary {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--on-surface-variant);
+      border: 1px solid var(--outline-variant);
+    }
+
+    .btn-ghost-icon {
+      background: transparent;
+      color: var(--on-surface-variant);
+      border: 1px solid var(--outline-variant);
+      padding: 6px;
+      border-radius: var(--radius-md);
+    }
+
+    .btn-ghost-icon .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    /* ── Inline settlement form row ── */
+    .settlement-form-row td {
+      border-bottom: 1px solid var(--outline-variant);
+      padding: 0;
+    }
+
+    .settlement-form-inner {
+      border-left: 3px solid var(--primary);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--primary-container);
+      flex-wrap: wrap;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--on-primary-container);
+      white-space: nowrap;
+    }
+
+    .form-input {
+      padding: 7px 12px;
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-surface);
+      background: var(--surface);
+      width: 120px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .form-input:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar (no sidebar) ── -->
+  <header class="topbar">
+    <span class="topbar-logo">PluriBourse</span>
+    <div class="topbar-center">
+      <span class="phase-chip">
+        <span class="material-symbols-outlined" style="font-size:14px;">sell</span>
+        Post-vente
+      </span>
+    </div>
+    <div class="topbar-right">
+      <span class="role-badge">Bénévole</span>
+      <div class="avatar" title="Sophie Olivier">SO</div>
+    </div>
+  </header>
+
+  <!-- ── Main content (full width, no sidebar margin) ── -->
+  <main class="main-content">
+
+    <!-- ── Annotation maquette ── -->
+    <div class="annotation-banner">
+      <span class="material-symbols-outlined">info</span>
+      <span>Même composant Angular que <code>/admin/settlement</code> — colonnes Téléphone et Email masquées (<code>*ngIf="isAdmin"</code>).</span>
+    </div>
+
+    <!-- ── Page header ── -->
+    <div class="page-header">
+      <h1 class="page-title">Reversements</h1>
+      <p class="page-subtitle">Édition Printemps 2026 · 3 vendeurs non soldés</p>
+      <div class="filter-toggle">
+        <button class="filter-btn">Tous</button>
+        <button class="filter-btn active">Non soldés</button>
+        <button class="filter-btn">Soldés</button>
+      </div>
+    </div>
+
+    <!-- ── Settlements table ── -->
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Vendeur</th>
+            <th>Montant dû</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Row 1 : Dubois Marie — settlement form open -->
+          <tr>
+            <td><span class="seller-name">Dubois Marie</span></td>
+            <td><span class="amount">12,00 €</span></td>
+            <td>
+              <span class="status-badge status-unsettled">
+                <span class="status-dot"></span>
+                Non soldé
+              </span>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn btn-ghost">
+                  <span class="material-symbols-outlined">print</span>
+                  Imprimer le bilan
+                </button>
+                <button class="btn btn-secondary">Solder</button>
+                <button class="btn-ghost-icon" title="Non réclamé">
+                  <span class="material-symbols-outlined">block</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Inline settlement form row for Dubois Marie -->
+          <tr class="settlement-form-row">
+            <td colspan="4">
+              <div class="settlement-form-inner">
+                <label class="form-label" for="amount-dubois">Montant remis en espèces (€)</label>
+                <input class="form-input" id="amount-dubois" type="text" value="12,00" />
+                <button class="btn btn-primary">
+                  <span class="material-symbols-outlined">check</span>
+                  Valider
+                </button>
+                <button class="btn btn-ghost">Annuler</button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 2 : Leroy Antoine -->
+          <tr>
+            <td><span class="seller-name">Leroy Antoine</span></td>
+            <td><span class="amount">67,00 €</span></td>
+            <td>
+              <span class="status-badge status-unsettled">
+                <span class="status-dot"></span>
+                Non soldé
+              </span>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn btn-ghost">
+                  <span class="material-symbols-outlined">print</span>
+                  Imprimer le bilan
+                </button>
+                <button class="btn btn-secondary">Solder</button>
+                <button class="btn-ghost-icon" title="Non réclamé">
+                  <span class="material-symbols-outlined">block</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 3 : Bernard Claire -->
+          <tr>
+            <td><span class="seller-name">Bernard Claire</span></td>
+            <td><span class="amount">28,50 €</span></td>
+            <td>
+              <span class="status-badge status-unsettled">
+                <span class="status-dot"></span>
+                Non soldé
+              </span>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn btn-ghost">
+                  <span class="material-symbols-outlined">print</span>
+                  Imprimer le bilan
+                </button>
+                <button class="btn btn-secondary">Solder</button>
+                <button class="btn-ghost-icon" title="Non réclamé">
+                  <span class="material-symbols-outlined">block</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+</body>
+</html>

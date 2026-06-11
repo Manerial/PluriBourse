@@ -1,174 +1,151 @@
 # Revue de Cohérence — UX PluriBourse (DESIGN↔EXPERIENCE)
-Date : 2026-06-09
+Date : 2026-06-12
 Relecteur : Lens Cohérence
 
 ## Résumé
 
-Les deux documents sont bien alignés dans leur intention et partagent une terminologie cohérente dans la plupart des domaines. Cependant, trois catégories de défauts réels nécessitent d'être corrigés avant le début de l'implémentation : deux références de tokens non résolues (`{colors.sidebar-bg}` et `{elevation.*}`) qui casseront tout pipeline de thématisation piloté par tokens, une contradiction directe sur la politique de défilement infini vs. pagination, et une déclaration d'autofocus ambiguë dans le Flux 1 qui entre en conflit avec le tableau des Patrons de Composants. Toutes les autres divergences sont des écarts mineurs de formulation ou des lacunes de couverture.
+Les trois ÉCHECS de la revue du 2026-06-09 ont été résolus : les tokens `{elevation.*}` sont maintenant définis dans le YAML de DESIGN.md, `{colors.sidebar-bg}` est présent dans le bloc `colors`, et la contradiction infinite scroll / pagination a été levée. L'autofocus ambigu du Flux 1 a également été corrigé. En revanche, les ajouts de composants du 2026-06-12 introduisent un nouvel ÉCHEC (`{colors.warning}` non défini) et deux nouvelles PRÉOCCUPATIONS, et plusieurs PRÉOCCUPATIONS de l'ancienne revue restent ouvertes.
 
 ---
 
 ## Constats
 
+### PASS — Tokens `{elevation.*}` définis (résolution ÉCHEC #1 de 2026-06-09)
+
+Le frontmatter YAML de DESIGN.md contient maintenant le bloc `elevation:` avec les clés `level-1`, `level-2`, `level-3` et leurs valeurs d'ombre correspondantes. Les références `{elevation.level-2}` (card) et `{elevation.level-3}` (dialog) dans le YAML `components` se résolvent correctement.
+
+### PASS — Token `{colors.sidebar-bg}` défini (résolution ÉCHEC #2 de 2026-06-09)
+
+Le bloc YAML `colors` de DESIGN.md contient maintenant `sidebar-bg: '#2A100A'`. La prose de DESIGN.md Mise en page référence ce token ; il se résout correctement.
+
+### PASS — Contradiction infinite scroll levée (résolution ÉCHEC #3 de 2026-06-09)
+
+L'entrée `Catalogue / liste filtrée` dans les Patrons de Composants de EXPERIENCE.md indique maintenant « Pagination via `MatPaginator` — page size par défaut 50 », sans mention de scroll infini. La section Interdit continue d'interdire l'infinite scroll. Les deux déclarations sont cohérentes.
+
+### PASS — Autofocus Flux 1 clarifié (résolution PRÉOCCUPATION sérieuse de 2026-06-09)
+
+Le Flux 1 de EXPERIENCE.md indique désormais : « Le champ de recherche vendeur reçoit le focus à l'ouverture. » Il n'y a plus de confusion entre le champ scanner (POS uniquement) et le champ de recherche vendeur (dépôt). La distinction est nette.
+
 ### PASS — Échelle typographique
 
-Les deux documents nomment et appliquent les mêmes niveaux d'échelle de façon cohérente : `title-lg`, `body-md`, `label-lg`, `label-sm`. Les règles pour les prix (`title-md` / `{colors.primary}`) apparaissent dans DESIGN.md et se reflètent correctement dans les descriptions comportementales des composants dans EXPERIENCE.md.
+Inchangé depuis la revue précédente. Tous les tokens `{typography.*}` référencés dans EXPERIENCE.md (`{typography.label-lg}` ligne 125) se résolvent vers des clés existantes dans le YAML de DESIGN.md.
 
 ### PASS — Comportement et labels de la puce de phase
 
-Les labels de phase correspondent exactement dans les deux documents : « Dépôt » · « Vente » · « Post-vente » · « Clôturée ». La règle de cliquabilité (Admin uniquement → panneau de contrôle de phase) est cohérente. L'événement SSE `phase-changed` et la transition fondu 150 ms ne sont mentionnés que dans EXPERIENCE.md (comme détail comportemental), ce qui est correct au regard de la finalité du document.
+Cohérence maintenue. Les labels de phase correspondent dans les deux documents.
 
-### PASS — Spec du dialog de confirmation
+### PASS — Spec du dialog de confirmation (cas standard)
 
-Les deux documents décrivent la même structure : titre + conséquences + bouton confirmer + bouton annuler/ghost. EXPERIENCE.md ajoute les extras comportementaux corrects (piège focus, Échap ferme, focus initial sur Annuler). Pas de contradiction.
+La structure titre + conséquences + bouton confirmer + bouton annuler/ghost reste cohérente entre les deux documents pour les dialogs de transition de phase et de suppression destructive.
 
 ### PASS — Comportement des toasts
 
-Les deux s'accordent : en bas à droite, 4 s pour le succès, persistant pour les erreurs système (imprimante). EXPERIENCE.md ajoute « Max 1 toast simultané » et « bouton Fermer » sur le persistant — les deux sont des détails comportementaux additifs, pas des contradictions.
+Inchangé. Cohérence maintenue sur position, durée et persistance.
 
-### PASS — Variantes du badge de rôle
+### PASS — Tokens `{colors.*}` des nouveaux composants 2026-06-12 (cas résolus)
 
-DESIGN.md définit deux variantes (Admin : primary-container / on-primary-container ; Bénévole : surface-variant / on-surface-variant). La table des Patrons de Composants de EXPERIENCE.md référence la Topbar qui inclut « Badge rôle + icône profil » — cohérent, bien que EXPERIENCE.md ne respécifie pas les couleurs du badge (correct, DESIGN.md est propriétaire des couleurs).
+Les références suivantes dans les nouveaux composants se résolvent correctement vers le YAML de DESIGN.md :
+- `{colors.on-surface-variant}` (Contrôle de phase — retour arrière ; Fiche édition — taux de commission ; Formulaire dépôt — table auto-assignée)
+- `{colors.primary-container}` (Édition archivée — vue détail)
+- `{colors.surface-variant}` (Fiche édition — taux de commission)
 
-### PASS — Cohérence des noms de composants
+### PASS — Nouveaux composants : cohérence des noms
 
-Les noms suivants correspondent exactement entre les documents : Phase chip, Role badge, Status chips (success/warning/error), Dialog de confirmation, Notification inline, Toast, Sidebar item, Boutons (primary / secondary / ghost).
+Les composants ajoutés en 2026-06-12 utilisent des noms de composants de base (`button-secondary`, `button-ghost`, `button-primary`, `dialog`, `status-chip-success`, `status-chip-error`) qui correspondent exactement aux entrées du YAML `components` de DESIGN.md. Aucune dérive de nomenclature introduite.
 
-### PASS — Largeur de la sidebar
+### PASS — Règle boutons destructifs dans les nouveaux composants
 
-DESIGN.md Mise en page : « Sidebar Admin : largeur fixe 200px. » Patrons de Composants EXPERIENCE.md : « Largeur fixe 200px. » Correspondance exacte.
-
-### PASS — Hauteur de la topbar
-
-DESIGN.md : « Topbar : hauteur fixe 56px. » EXPERIENCE.md ne re-spécifie pas la hauteur (correct, la spec visuelle appartient à DESIGN.md). Pas de contradiction.
-
-### PASS — Règle de couleur des boutons destructifs
-
-DESIGN.md : « actions destructives utilisent le style `secondary` avec la couleur `error` — jamais un bouton primaire corail. » EXPERIENCE.md Flux 3 utilise correctement « Confirmer (primary) » pour une confirmation financière non destructive, et la section Dialog des Composants de DESIGN.md mentionne « action confirmée = primary ou error » — cohérent.
-
-### PASS — Référence du token du plancher d'accessibilité
-
-La section Accessibilité de EXPERIENCE.md référence `{colors.primary}` pour le focus ring — ce token existe dans le YAML de DESIGN.md.
+Les composants `Fiche vendeur admin — suppression RGPD` et `Action "Nettoyer l'édition"` utilisent correctement le style `secondary` couleur `error` pour les boutons destructifs, conformément à la règle DESIGN.md « jamais un bouton primaire corail pour une action destructive ».
 
 ---
 
-### PRÉOCCUPATION — Asymétrie de couverture des composants : EXPERIENCE.md n'a pas de contrepartie DESIGN pour plusieurs composants
+### PRÉOCCUPATION — Asymétrie de couverture : 9 nouveaux composants EXPERIENCE.md sans entrée YAML dans DESIGN.md
 
-Les composants suivants apparaissent dans `## Patrons de Composants` de EXPERIENCE.md mais n'ont pas d'entrée dédiée dans `## Composants` de DESIGN.md :
+Les composants suivants, ajoutés le 2026-06-12, n'ont aucune entrée dans le bloc `components` de DESIGN.md :
 
-- **Topbar** — DESIGN.md décrit le contenu de la topbar de façon inline dans la section Mise en page, mais aucune clé `topbar` n'existe dans le bloc YAML `components`. Il n'y a pas de spec pour le fond de la topbar, sa bordure ou son token d'ombre.
-- **Catalogue / liste filtrée** — Spec comportementale dans EXPERIENCE.md ; pas de spec visuelle (style de l'en-tête, apparence du champ de filtre, style de la flèche de tri) dans DESIGN.md.
-- **Champ scanner** — Spec comportementale dans EXPERIENCE.md ; pas de spec visuelle dans DESIGN.md (distinct du composant `input` générique : style de ring autofocus, état actif du scanner).
-- **Panier caisse** — Spec comportementale dans EXPERIENCE.md ; pas de spec visuelle dans DESIGN.md (disposition du panneau, ligne de total, placement du bouton Valider).
-- **Lot dans le panier** — Spec comportementale dans EXPERIENCE.md ; pas de spec visuelle.
-- **Formulaire dépôt** — Spec comportementale dans EXPERIENCE.md ; pas de spec visuelle.
-- **Fiche Catégories & Tables** — Spec comportementale dans EXPERIENCE.md ; pas de spec visuelle.
+- **Page Rapports** — pas de spec pour les bannières de section conditionnelle, le style des métriques agrégées, le style du bouton "Actualiser".
+- **Action "Nettoyer l'édition"** — pas de spec pour le style de bannière d'avertissement post-Clean.
+- **Contrôle de phase — retour arrière** — pas de spec pour le style du message inline verrouillé (icône `lock`).
+- **Édition archivée — vue détail** — pas de spec pour les tuiles de métriques agrégées.
+- **Catalogue — état post-Nettoyage** — pas de spec pour la disposition de l'état vide spécialisé.
+- **Page Paramètres instance** — pas de spec pour le style des notes explicatives sous les champs.
+- **Fiche édition — taux de commission** — pas de spec pour l'état désactivé du champ (au-delà des tokens de couleur).
+- **Page compte utilisateur** — pas de spec pour le layout à deux sections.
+- **Premier lancement — changement de mot de passe forcé** — pas de spec pour la bannière d'invite proéminente.
+- **Fiche vendeur admin — suppression RGPD** — pas de spec visuelle pour la zone de danger en bas de fiche.
 
-À l'inverse, DESIGN.md définit `list-row` (composant YAML) mais EXPERIENCE.md n'a pas d'entrée comportementale dédiée — acceptable car list-row est utilisé implicitement par Catalogue et la liste Vendeurs.
+À ceci s'ajoutent les composants déjà signalés dans la revue précédente et toujours manquants : Topbar (clé YAML absente), Catalogue/liste filtrée (style tri, champ filtre), Scanner input (ring autofocus), Panier POS, Lot dans le panier, Formulaire dépôt.
 
-**Sévérité :** Moyenne. L'implémentation peut avancer, mais les développeurs devront prendre des décisions visuelles pour ces composants sans spec ancrée dans des tokens, risquant une incohérence visuelle.
+**Sévérité :** Moyenne. L'implémentation peut avancer avec les maquettes HTML de référence, mais les développeurs manquent d'un ancrage token systématique pour ces surfaces. Le risque d'incohérence visuelle augmente au fil des composants.
 
-### PRÉOCCUPATION — Couleur de fond de la sidebar non tokenisée
+**Recommandation :** Ajouter des entrées YAML minimalistes dans DESIGN.md pour les composants les plus complexes (bannières, tuiles métriques, zone danger) avec au minimum fond, bordure et référence de couleur. Les pages simples peuvent rester couvertes par les maquettes.
 
-Prose Mise en page DESIGN.md : « Fond sombre `{colors.sidebar-bg}` (#2A100A). »
-
-Le token `{colors.sidebar-bg}` **n'existe pas** dans le bloc YAML `colors` de DESIGN.md. La valeur littérale `#2A100A` n'apparaît nulle part dans le YAML non plus. Le token existant le plus proche est `surface-variant-dark: '#2A1510'` (thème sombre), qui est une valeur différente.
-
-EXPERIENCE.md ne référence pas `{colors.sidebar-bg}` directement (l'entrée Sidebar indique seulement la largeur et le comportement), donc il n'y a pas de référence non résolue dans EXPERIENCE.md — mais la prose de DESIGN.md elle-même cite un token qu'elle ne définit pas.
-
-**Sévérité :** Moyenne-élevée. Tout système de thématisation consommant le YAML échouera à résoudre cette référence.
-
-### PRÉOCCUPATION — Divergence de formulation : « Notification d'erreur inline » vs « Notification inline »
-
-Titre de section `## Composants` de DESIGN.md : **« Notification d'erreur inline »**
-Entrée du tableau Patrons de Composants de EXPERIENCE.md : **« Notification inline »**
-
-La description dans DESIGN.md restreint ce composant aux « erreurs métier (article déjà vendu, lot incomplet). » EXPERIENCE.md élargit le label à simplement « Notification inline » avec usage « Erreurs métier dans le flux (POS, dépôt) » — même périmètre mais le nom diffère d'un mot.
-
-**Sévérité :** Faible. Pas d'impact fonctionnel, mais le nom de fichier et le sélecteur du composant Angular devraient adopter un nom canonique unique pour éviter la divergence.
-
-### PRÉOCCUPATION — Couleur de la puce de statut dans Patterns d'État EXPERIENCE.md : « rouge » vs « orange »
+### PRÉOCCUPATION — Couleur de la notification inline pour le conflit POS : « rouge » non spécifié (persistante depuis 2026-06-09)
 
 `## Patterns d'État` de EXPERIENCE.md :
 - « Conflit POS (article déjà vendu) » → « Notification inline **rouge** sous le scanner »
+- « Conflit de scan concurrent » → « Notification inline **rouge** sous le scanner »
 - « Lot incomplet » → « Notification inline **orange** dans le panier »
 
-DESIGN.md définit :
-- `status-chip-warning` : utilise `{colors.primary-container}` / `{colors.on-primary-container}` (corail doux) — ce qui correspond à orange-ish
-- `status-chip-error` : utilise `{colors.error-container}` / `{colors.on-error-container}` (rouge)
+DESIGN.md définit la `Notification d'erreur inline` avec fond `{colors.primary-container}` et bordure `{colors.primary}` — ce qui est corail/orange, pas rouge. Aucune variante rouge de la notification inline n'est définie dans DESIGN.md. La distinction rouge/orange n'est toujours pas ancrée dans des tokens.
 
-EXPERIENCE.md Flux 2 utilise également « Notification inline **orange** » pour lot incomplet, et la table des Patrons de Composants de DESIGN.md décrit le lot incomplet comme notification inline orange. Le token de puce de statut avertissement est corail/orange — c'est cohérent.
+Par ailleurs, EXPERIENCE.md ligne 121 (`Lot dans le panier`) indique « label du lot en rouge » sans référencer un token — la valeur littérale de rouge reste non spécifiée.
 
-Cependant, les Patterns d'État de EXPERIENCE.md indiquent que le conflit POS est « rouge » (notification inline) alors que le composant décrit dans DESIGN.md pour les erreurs inline utilise `{colors.primary-container}` (corail/orange). Une notification inline « rouge » nécessiterait le style `status-chip-error`, mais le composant Notification d'erreur inline n'utilise que le style primary-container. Il y a une lacune potentielle : aucune spec visuelle n'existe pour une notification inline **rouge**, seulement orange.
+**Sévérité :** Moyenne. Les développeurs doivent décider quelle valeur de rouge employer pour les notifications d'erreur POS, sans référence dans DESIGN.md.
 
-**Sévérité :** Moyenne. L'équipe d'implémentation a besoin d'une clarification : un conflit d'article POS déclenche-t-il une notification inline rouge (style erreur) ou orange (style avertissement) ?
+**Recommandation :** Soit (a) ajouter une variante `notification-inline-error` dans DESIGN.md `components` avec `{colors.error-container}` / `{colors.on-error-container}`, soit (b) préciser explicitement dans EXPERIENCE.md que le « rouge » de la notification inline POS utilise les tokens `{colors.error-container}` / `{colors.on-error-container}`. Le label de lot rouge doit également être tokenisé.
+
+### PRÉOCCUPATION — Bouton "Confirmer" en style `secondary` dans le dialog de retour arrière
+
+Composant `Contrôle de phase — retour arrière` dans EXPERIENCE.md :
+> « Boutons : "Confirmer" (secondary) + "Annuler" (ghost). »
+
+DESIGN.md `## Composants`, section Dialog de confirmation :
+> « action confirmée = primary ou error »
+
+Un bouton de confirmation en style `secondary` (corail outline) diverge de la règle visuelle des dialogs. Le style `secondary` est prévu pour les actions contextuelles importantes mais non primaires, pas pour les confirmations de dialog. Cette incohérence peut semer la confusion : un dialog standard a un bouton corail plein ("Confirmer"), le retour arrière aurait un bouton outline — sans règle explicite justifiant l'exception.
+
+**Sévérité :** Faible à Moyenne. L'exception est compréhensible (retour arrière = action moins engagée qu'une avancée de phase), mais elle doit être soit explicitée comme règle dans DESIGN.md, soit corrigée vers `primary`.
+
+**Recommandation :** Si l'intention est de différencier visuellement le retour arrière de l'avancement (plus rassurant, moins urgent), documenter la règle dans DESIGN.md : « Dans les dialogs de retour arrière non destructif, le bouton de confirmation peut utiliser le style `secondary`. » Sinon, aligner sur `primary`.
 
 ---
 
-### ÉCHEC — Référence de token non résolue : `{elevation.level-2}` et `{elevation.level-3}` dans DESIGN.md YAML
+### ECHEC — Token `{colors.warning}` non défini dans DESIGN.md
 
-Le bloc YAML `components` de DESIGN.md référence :
-- `card.shadow: '{elevation.level-2}'` (ligne 156)
-- `dialog.shadow: '{elevation.level-3}'` (ligne 180)
+Composant `Fiche Catégories & Tables` dans EXPERIENCE.md (ligne 124) :
+> « **Mode lecture (phase Dépôt et au-delà) :** bannière `{colors.warning}` … »
 
-Il n'y a pas de clé `elevation` dans le frontmatter YAML de DESIGN.md. Les valeurs d'élévation ne sont décrites que dans la prose (section `## Élévation & Profondeur` de DESIGN.md) mais jamais définies comme tokens YAML.
+Le bloc YAML `colors` de DESIGN.md ne contient aucune clé `warning`. DESIGN.md définit `status-chip-warning` (composant) mais aucun token de couleur de ce nom. Les tokens de couleur existants les plus proches pour une bannière d'avertissement sont `{colors.primary-container}` / `{colors.on-primary-container}` (corail doux, utilisé par `status-chip-warning`).
 
-EXPERIENCE.md ne référence pas directement les tokens `{elevation.*}`, mais hérite de ces références cassées indirectement via les tokens de composants `card` et `dialog` sur lesquels il s'appuie.
+**Référence fichier :** EXPERIENCE.md ligne 124.
 
-**Référence fichier :** DESIGN.md lignes 156, 180.
+**Sévérité :** Élevée. Toute pipeline de thématisation pilotée par tokens échouera à résoudre `{colors.warning}`. Ce token était absent avant les ajouts du 2026-06-12 et l'est toujours.
 
-**Sévérité :** Élevée / Bloquant pour la thématisation pilotée par tokens. Tout système résolvant `{elevation.level-2}` depuis le YAML échouera.
+**Recommandation :** Soit (a) ajouter `warning: '{colors.primary-container}'` (alias) dans le YAML `colors` de DESIGN.md si la bannière doit se comporter comme un avertissement corail doux, soit (b) remplacer `{colors.warning}` dans EXPERIENCE.md par `{colors.primary-container}` directement, avec une note explicite que les bannières d'avertissement utilisent le token `primary-container`.
 
-### ÉCHEC — Contradiction directe : politique de défilement infini
+---
 
-`## Patrons de Composants`, entrée Catalogue/liste filtrée de EXPERIENCE.md :
-> « Pas de pagination en v1 — **scroll infini si nécessaire** (volume modeste ~1 700 articles). »
+## Récapitulatif des constats
 
-`## Primitives d'Interaction`, section Interdit de EXPERIENCE.md :
-> « **Infinite scroll** (utiliser pagination ou chargement complet pour les volumes PluriBourse) »
-
-Ces deux déclarations se contredisent directement au sein du même document. L'une impose le défilement infini pour les catalogues ; l'autre l'interdit explicitement.
-
-**Référence fichier :** EXPERIENCE.md lignes 104 et 153.
-
-**Sévérité :** Élevée / Bloquant pour l'implémentation du catalogue POS et de la liste articles. L'équipe ne peut pas implémenter les deux.
-
-### ÉCHEC — Incohérence d'autofocus : champ scanner dans le flux de dépôt (Flux 1)
-
-`## Patrons de Composants`, entrée Champ scanner de EXPERIENCE.md :
-> « Champ auto-focused à l'ouverture de la **caisse** (POS). »
-
-`## Flux Clés`, Flux 1 (Dépôt) de EXPERIENCE.md :
-> « Sophie arrive sur `/volunteer/deposit`. **Scanner input autofocused.** »
-
-La surface de dépôt (`/volunteer/deposit`) est un formulaire de dépôt, pas la caisse. Le tableau des Patrons de Composants scopes le champ scanner exclusivement à la caisse POS. Si `/volunteer/deposit` a également un scanner autofocused, il doit être spécifié comme second contexte d'utilisation du champ scanner. Si l'autofocus du Flux 1 fait référence au champ de recherche de vendeur plutôt qu'à un scanner à code-barres, le texte du flux est trompeur.
-
-**Référence fichier :** EXPERIENCE.md lignes 105 et 175.
-
-**Sévérité :** Élevée. Le dépôt et la caisse POS sont des surfaces fondamentalement différentes ; confondre le comportement du scanner entraînera des erreurs d'implémentation.
+| Sévérité | Nb | Statut |
+|---|---|---|
+| ÉCHEC | 1 | `{colors.warning}` non défini (nouveau) |
+| PRÉOCCUPATION | 3 | Asymétrie composants (persistante + élargie) · Couleur rouge inline non tokenisée (persistante) · Confirm `secondary` dans dialog retour arrière (nouveau) |
+| PASS | 13 | — |
 
 ---
 
 ## Recommandations
 
-Ordonnées par priorité. Bloquants en premier.
+Ordonnées par priorité.
 
-1. **(Bloquant) Résoudre la contradiction de défilement infini** — Choisir une politique unique pour toutes les surfaces de liste et mettre à jour EXPERIENCE.md pour être cohérent. Recommandation : charger tous les enregistrements (chargement complet) pour le volume de ~1 700 articles, sans pagination ni défilement infini. Supprimer la clause « scroll infini si nécessaire » des Patrons de Composants et l'interdiction « Infinite scroll » de la liste Interdit (remplacer par la règle positive choisie).
+1. **(Bloquant) Définir ou remplacer le token `{colors.warning}`** — Ajouter dans le YAML `colors` de DESIGN.md la clé `warning` avec la valeur `{colors.primary-container}` (alias lisible) ou remplacer la référence dans EXPERIENCE.md par le token existant. À faire avant tout travail de thématisation sur la Fiche Catégories & Tables.
 
-2. **(Bloquant) Définir les tokens `elevation` dans le YAML de DESIGN.md** — Ajouter un bloc `elevation` au frontmatter YAML avec les clés `level-1`, `level-2`, `level-3` correspondant aux valeurs d'ombre de la section prose `## Élévation & Profondeur`. Exemple :
-   ```yaml
-   elevation:
-     level-1: '0 1px 4px rgba(28,10,5,.08)'
-     level-2: '0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08)'
-     level-3: '0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10)'
-   ```
+2. **(Moyen) Tokeniser la couleur « rouge » de la notification inline POS et le label de lot** — Ajouter une variante `notification-inline-error` dans DESIGN.md `components` ou référencer explicitement `{colors.error-container}` / `{colors.on-error-container}` dans EXPERIENCE.md pour les cas d'erreur POS (conflit vendu, conflit concurrent). Tokeniser également le « rouge » du label de lot dans le panier.
 
-3. **(Bloquant) Définir le token `colors.sidebar-bg` dans le YAML de DESIGN.md** — Ajouter `sidebar-bg: '#2A100A'` au bloc `colors`, ou remplacer la référence dans la prose par un token existant (`surface-variant-dark` est proche mais pas identique — vérifier l'intention avant d'en faire un alias).
+3. **(Moyen) Clarifier le style du bouton "Confirmer" dans les dialogs de retour arrière** — Documenter l'exception dans DESIGN.md si `secondary` est intentionnel, ou corriger vers `primary` pour respecter la règle existante des dialogs.
 
-4. **(Bloquant) Clarifier l'autofocus dans le Flux 1 (Dépôt)** — Soit : (a) étendre la spec du composant Champ scanner pour couvrir `/volunteer/deposit` avec son propre comportement d'autofocus et son périmètre, soit (b) corriger le Flux 1 pour indiquer « Champ de recherche vendeur autofocused » (pas le champ scanner). Cette distinction est critique pour l'architecture de composants Angular.
+4. **(Moyen) Ajouter des entrées YAML minimalistes dans DESIGN.md pour les composants à fort risque de dérive** — Priorité aux composants avec une structure visuelle propre et non couverte par les composants existants : bannières (verrouillage, archivage, premier lancement), tuiles métriques (Édition archivée), zone danger (suppression RGPD). Les pages standard (Paramètres, Compte) peuvent rester couvertes par les maquettes existantes.
 
-5. **(Moyen) Clarifier la couleur de la notification inline pour le conflit d'article POS** — Décider si le conflit article-déjà-vendu utilise le style de notification inline erreur (rouge) ou avertissement (orange), et ajouter une spec visuelle dans `## Composants` de DESIGN.md si une variante rouge de la notification inline est nécessaire.
-
-6. **(Moyen) Ajouter des specs visuelles dans DESIGN.md pour les composants spécifiques au POS** — Topbar, Panier caisse, Lot dans le panier, Champ scanner et Formulaire dépôt devraient chacun avoir au minimum une entrée YAML dans `components` (fond, padding, références de couleur clés) pour que les développeurs aient une référence ancrée dans des tokens et n'improvisent pas.
-
-7. **(Faible) Aligner le nom du composant** — Standardiser sur « Notification d'erreur inline » (DESIGN.md) ou « Notification inline » (EXPERIENCE.md) dans les deux documents et dans le nommage du composant Angular (`notification-inline.component.ts` ou `error-notification-inline.component.ts`).
+5. **(Faible) Compléter les entrées YAML des composants signalés en 2026-06-09 toujours manquants** — Topbar, Scanner input (ring autofocus), Panier POS, Lot dans le panier, Formulaire dépôt.

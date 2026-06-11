@@ -1,129 +1,192 @@
 # Revue de Couverture PRD — UX PluriBourse
-Date : 2026-06-09
-Relecteur : Lens Couverture PRD
+Date : 2026-06-12
+Relecteur : Lens Couverture PRD (révision post-mise à jour EXPERIENCE.md)
 
 ---
 
 ## Résumé
 
-EXPERIENCE.md couvre solidement les flux opérationnels principaux (dépôt, POS, reversement, transitions de phase) et son inventaire de composants s'aligne bien avec le PRD. Cependant, plusieurs exigences à interface utilisateur sont absentes ou significativement sous-spécifiées : l'anonymisation RGPD des vendeurs, les déclencheurs d'impression du bordereau de dépôt et de la facture, la page Paramètres admin, le support multilingue dans l'interface elle-même, et le flux de retour en arrière de phase. Ces lacunes ne sont pas cosmétiques — chacune correspond à un écran ou une interaction utilisateur qui devra être conçu.
+La mise à jour du 2026-06-12 de EXPERIENCE.md résout intégralement les 2 ÉCHECS et les 9 PRÉOCCUPATIONS de la revue précédente (2026-06-09). La spine couvre maintenant tous les flux opérationnels principaux avec une fidélité suffisante pour guider l'implémentation. Trois lacunes nouvelles subsistent : la page de file d'impression admin (route présente dans l'IA, zéro contenu spécifié), le comportement de blocage de la clôture d'édition lorsque des vendeurs restent non soldés (FR-096), et le message d'avertissement pour un article incomplet scanné en caisse (FR-037). Aucune ne constitue un échec bloquant, mais la première et la deuxième nécessitent une spec avant développement.
 
 ---
 
-## Constats
+## Résolu
+
+### RÉSOLU — Vue en lecture seule de l'édition archivée et état post-Nettoyage (FR-059, FR-086, FR-088)
+
+**Précédent statut : ÉCHEC**
+
+La spine contient désormais :
+- Composant **"Édition archivée — vue détail"** — bannière lecture seule, métriques agrégées (6 champs), sous-section vendeurs en lecture seule, accès conditionnel au catalogue, bouton "Nettoyer l'édition".
+- Composant **"Catalogue — état post-Nettoyage"** — message centré, absence de filtres et d'actions.
+- Composant **"Action 'Nettoyer l'édition'"** — dialog de confirmation avec libellé d'irréversibilité, post-état catalogue vide.
+- State Pattern **"Phase Clôturée — édition archivée"** et **"Catalogue post-Nettoyage"** dans la table State Patterns.
+- State Pattern **"Retour arrière désactivé après Nettoyage"** avec message inline icône `lock`.
+
+Couverture complète de FR-059, FR-086, FR-088.
+
+---
+
+### RÉSOLU — Déclencheur d'impression du bilan de vente en post-vente (FR-049, FR-050, FR-065)
+
+**Précédent statut : ÉCHEC**
+
+La spine contient désormais :
+- Composant **"Récapitulatif reversement imprimable"** — bouton "Imprimer le récapitulatif" sur la ligne vendeur de `/volunteer/settlement` et depuis la fiche vendeur admin, avec feedback spinner et toast.
+- **Flow 5** (nouveau) — parcours narratif complet : impression du bilan avant règlement, confirmation d'impression, puis solde du vendeur.
+
+Couverture complète de FR-049, FR-050, FR-065.
+
+---
+
+### RÉSOLU — Flux de retour en arrière de phase (FR-082)
+
+**Précédent statut : PRÉOCCUPATION**
+
+Composant **"Contrôle de phase — retour arrière"** spécifié avec : bouton secondaire "Revenir à la phase précédente", dialog de confirmation avec libellé de préservation des données, et cas particulier Clôturé → Post-vente après Nettoyage (bouton absent, message inline icône `lock`). State Pattern correspondant présent.
+
+---
+
+### RÉSOLU — Anonymisation RGPD des vendeurs (FR-021)
+
+**Précédent statut : PRÉOCCUPATION**
+
+Composant **"Fiche vendeur admin — suppression RGPD"** spécifié : bouton "Supprimer ce vendeur" (style secondary/error, phase Dépôt uniquement), dialog de confirmation avec description des conséquences et caractère irréversible, post-suppression avec redirection et toast.
+
+---
+
+### RÉSOLU — Déclencheur d'impression du bordereau de dépôt (FR-031)
+
+**Précédent statut : PRÉOCCUPATION**
+
+La section Interaction Primitives — Impression spécifie explicitement : à la validation du dépôt (FR-028, FR-031), l'impression des étiquettes et du bordereau est déclenchée automatiquement sans bouton supplémentaire. Le bordereau est également rejouable depuis la fiche vendeur via "Réimprimer le bordereau".
+
+---
+
+### RÉSOLU — Déclencheur d'impression de la facture acheteur (FR-040, FR-041)
+
+**Précédent statut : PRÉOCCUPATION**
+
+Le composant **"Panier POS"** spécifie l'étape de validation du paiement et l'**état post-validation** : bouton "Imprimer la facture" visible 30 secondes, disparaît automatiquement, scanner reprend le focus. State Pattern **"Post-validation POS — facture disponible"** confirmé dans la table des états.
+
+---
+
+### RÉSOLU — Contenu de la page Paramètres admin (FR-073, FR-032, FR-005)
+
+**Précédent statut : PRÉOCCUPATION**
+
+Composant **"Page Paramètres instance"** spécifié : 4 champs (nom association, taux de commission par défaut, langue des documents par défaut, largeur du ticket thermique), notes explicatives sur la portée "nouvelles éditions uniquement", feedback spinner + toast.
+
+---
+
+### RÉSOLU — UX du gel du taux de commission (FR-016)
+
+**Précédent statut : PRÉOCCUPATION**
+
+Composant **"Fiche édition — taux de commission"** spécifié : champ modifiable en phase Préparation uniquement, état désactivé visuel (fond surface-variant, texte on-surface-variant) avec message inline "Taux gelé pour cette édition" dès la phase Dépôt.
+
+---
+
+### RÉSOLU — Page compte utilisateur (FR-003, FR-067)
+
+**Précédent statut : PRÉOCCUPATION**
+
+Composant **"Page compte utilisateur"** spécifié : sélecteur EN/FR avec application immédiate sans rechargement (ngx-translate runtime switch), formulaire changement de mot de passe (3 champs), validation nouveau ≠ actuel.
+
+---
+
+### RÉSOLU — Changement de mot de passe forcé au premier lancement (FR-062)
+
+**Précédent statut : PRÉOCCUPATION**
+
+Composant **"Premier lancement — changement de mot de passe forcé"** spécifié : redirection vers `/account/force-password`, sidebar masquée, message d'invite, aucun contournement possible. **Flow 6** (nouveau) — parcours narratif complet depuis `docker compose up -d` jusqu'à la configuration initiale.
+
+---
+
+### RÉSOLU — Mécanisme de livraison des conflits de scan concurrent (NFR-002, FR-036)
+
+**Précédent statut : PRÉOCCUPATION**
+
+La section **Interaction Primitives — Conflit de scan concurrent** spécifie explicitement : réponse HTTP 409 synchrone au scan (pas SSE), verrou optimiste côté serveur, notification inline rouge, scanner reste actif. State Pattern **"Conflit de scan concurrent"** confirmé dans la table des états.
+
+---
+
+### RÉSOLU — Exports CSV (FR-091, FR-092)
+
+FR-091 et FR-092 sont couverts dans le composant **"Page Rapports"** : boutons "Exporter le catalogue" et "Exporter les reversements" disponibles en phases Post-vente et Clôturée, téléchargement direct sans dialog, conformément au PRD.
+
+---
+
+### RÉSOLU — Moyens de paiement POS (FR-093, FR-094)
+
+FR-093 est couvert dans le composant **"Panier POS"** : trois boutons radio (Espèces / Chèque / Carte), sélection obligatoire, bouton "Confirmer" désactivé tant qu'aucun moyen de paiement n'est sélectionné, calcul de monnaie si espèces. FR-094 est couvert dans le composant **"Page Rapports"** : ventilation par moyen de paiement dans le rapport de caisse journalier et le rapport de synthèse.
+
+---
+
+## Constats actifs
 
 ### PASS — Couverture du cycle de vie des phases
 
-Les cinq phases (Inscription est pré-application, puis Dépôt → Vente → Post-vente → Clôturé) sont représentées. La table IA de EXPERIENCE.md mappe chaque surface Bénévole à la phase correcte. La mise à jour de la puce de phase via SSE (`phase-changed`) est spécifiée pour la topbar. Le Flux 4 démontre la transition avant avec dialog et diffusion SSE. Le retour en arrière est mentionné dans le PRD (FR-082) mais n'est que partiellement couvert — voir PRÉOCCUPATION ci-dessous.
+Les cinq phases (Préparation → Dépôt → Vente → Post-vente → Clôturé) sont représentées. L'IA mappe chaque surface bénévole à la phase correcte. La mise à jour via SSE (`phase-changed`) est spécifiée. Les Flows 4, 5 et 6 couvrent respectivement : transition avant, flux post-vente, et premier lancement. Le retour en arrière et l'état post-Nettoyage sont couverts (voir RÉSOLU).
 
-### PASS — Flux POS principaux (FR-033 à FR-048, FR-081, FR-090)
+### PASS — Flux POS principaux (FR-033 à FR-048, FR-081, FR-090, FR-093)
 
-Le comportement du champ scanner, la transparence AZERTY/QWERTY, la gestion du panier, le regroupement des lots avec compteur X/N, la validation bloquée sur les lots incomplets, la suppression de lot (FR-081) et l'annulation du panier lors d'un changement de phase (FR-090) sont tous spécifiés dans les sections Patrons de Composants et Patterns d'État, avec le Flux 2 fournissant le parcours narratif. C'est le domaine de couverture le plus solide.
+Scanner, AZERTY/QWERTY, panier, lots avec compteur X/N, validation bloquée sur lot incomplet, retrait de lot (FR-081), annulation lors d'un changement de phase (FR-090), sélection obligatoire du moyen de paiement (FR-093) et calcul de monnaie : tous spécifiés. Couverture solide.
 
-### PASS — Couverture des rôles utilisateurs (Admin / Bénévole)
+### PASS — Post-vente et reversements (FR-049 à FR-053, FR-065, FR-095)
 
-Le modèle à deux rôles est correctement reflété dans l'IA (routes séparées, sidebar Admin uniquement, badge de rôle topbar). FR-064 (l'admin ne peut pas agir en tant que bénévole) est reconnu dans la section Foundation. L'interface Bénévole adaptative à la phase (FR-065) est couverte par la table IA. FR-061 (compte admin unique) n'a pas de surface UX directe, donc pas de lacune ici.
+Flow 5 couvre l'impression du bilan avant règlement. Composant "Page Reversements" spécifié avec colonnes conditionnelles par rôle. Composant "Formulaire de solde vendeur" spécifié (montant supérieur bloquant, montant inférieur avec confirmation). Cas "Non réclamé" couvert par Flow 3. Couverture complète.
 
-### PASS — Cœur du reversement post-vente (FR-049 à FR-053)
+### PASS — Exports et rapports (FR-054, FR-055, FR-057, FR-091, FR-092, FR-094)
 
-Le Flux 3 couvre le chemin « Non réclamé » avec le dialog de confirmation correct et le langage d'irréversibilité. La liste des vendeurs non soldés avec numéro de téléphone (FR-053) est représentée. La saisie du montant du reversement par le bénévole (FR-051) est sous-entendue par le Flux 3 mais pas explicitement conçue comme composant — acceptable au niveau spine.
+Page Rapports spécifiée avec contenu conditionnel selon la phase, ventilation par moyen de paiement, exports CSV directs. Couverture suffisante.
 
-### PASS — Plancher d'accessibilité et ton
+### PASS — Premier lancement et administration (FR-062, FR-073, FR-016)
 
-WCAG 2.2 AA, piège focus, aria-live pour le scanner, aria-label sur la puce de phase, et cibles minimum 44×44 px sont tous spécifiés. La section Voix et Ton est approfondie et adresse directement le contexte du bénévole sous pression d'événement.
+Flow 6 + composant "Premier lancement" + composant "Page Paramètres instance" + composant "Fiche édition — taux de commission" forment un ensemble cohérent couvrant le parcours d'installation et de configuration initiale.
 
-### PASS — Patrons de composants pour le retour d'impression (FR-079)
+### PASS — Plancher d'accessibilité et ton (NFR-004, NFR-005)
 
-Le patron toast imprimante-hors-ligne est défini à la fois dans Patterns d'État et Patrons de Composants, avec le comportement correct (toast persistant, action rejouable). Couvre FR-079.
-
----
-
-### PRÉOCCUPATION — Flux de retour en arrière de phase (FR-082)
-
-FR-082 spécifie que le retour en arrière (Clôturé → Post-vente → Vente → Dépôt) est disponible phase par phase et nécessite une confirmation. EXPERIENCE.md définit `/admin/editions/:id/phase` comme surface et montre la transition avant dans le Flux 4, mais il n'y a aucune spécification de ce à quoi ressemble le déclencheur de retour en arrière, si le même patron de dialog s'applique, ni comment l'interface signale que le retour en arrière depuis Clôturé est indisponible après Nettoyer l'Édition (FR-088). L'action Nettoyer l'Édition est mentionnée dans les Patterns d'État (Phase Clôturée), mais l'état retour-en-arrière-désactivé-après-nettoyage n'est pas couvert.
-
-### PRÉOCCUPATION — Anonymisation RGPD des vendeurs (FR-021)
-
-FR-021 exige que l'admin puisse supprimer un profil vendeur, ce qui déclenche l'anonymisation dans toutes les éditions (nom, email, téléphone, descriptions d'articles). C'est une action destructive distincte avec des conséquences significatives. EXPERIENCE.md ne spécifie pas de surface UI pour cela : aucune mention sur la fiche `/admin/sellers/:id`, pas de spec de dialog de confirmation, pas d'explication de ce à quoi ressemble la fiche anonymisée post-action. La règle générale « dialog de confirmation pour les actions destructives » existe dans les Primitives d'Interaction, mais le déclencheur spécifique et le post-état pour la suppression RGPD sont absents.
-
-### PRÉOCCUPATION — Déclencheur d'impression du bordereau de dépôt (FR-031)
-
-FR-031 exige un bordereau de dépôt imprimable par vendeur affichant la liste des articles, les prix unitaires et le reversement net attendu. Le Flux 1 décrit l'impression automatique des étiquettes après la validation du dépôt mais ne mentionne pas l'impression du bordereau. Il n'est pas clair d'après EXPERIENCE.md si le bordereau de dépôt s'imprime automatiquement avec les étiquettes, ou s'il nécessite un déclencheur manuel sur la fiche vendeur. Cette distinction affecte la conception du formulaire de dépôt. La primitive d'interaction Impression dans EXPERIENCE.md (bouton explicite → spinner → toast) implique qu'il est manuel, mais cela n'est pas confirmé pour le bordereau de dépôt spécifiquement.
-
-### PRÉOCCUPATION — Déclencheur d'impression de la facture acheteur (FR-040, FR-041)
-
-FR-040 spécifie qu'après la validation du paiement, une facture acheteur est imprimable « à la demande ». FR-041 en spécifie le contenu. EXPERIENCE.md ne décrit pas où dans l'interface de la caisse le bouton d'impression de facture apparaît (dans le panier après validation ? sur un écran post-transaction ?), ni à quoi ressemble l'état post-validation de la caisse avant la réinitialisation du panier. C'est une lacune dans la spécification du flux POS.
-
-### PRÉOCCUPATION — Contenu de la page Paramètres admin (FR-073, FR-032, FR-005 à FR-007)
-
-FR-073 spécifie qu'une page de paramètres admin centralise : nom de l'association, taux de commission par défaut, langue des documents par défaut et largeur du ticket thermique. FR-032 rend la largeur du ticket configurable. FR-005–FR-007 définissent la langue des documents par édition (valeur initialisée depuis l'instance à la création, modifiable à tout moment). EXPERIENCE.md liste `/admin/settings` dans la table IA mais ne fournit aucune spécification du contenu de la page, de la disposition des champs, ni de quels paramètres sont modifiables à quelle phase (ex. taux de commission gelé après le démarrage du Dépôt — FR-016). Cette page nécessite une spec de composant ou de formulaire.
-
-### PRÉOCCUPATION — UX du gel du taux de commission (FR-016)
-
-FR-016 stipule que le taux de commission est modifiable jusqu'au démarrage de la phase Dépôt, puis gelé pour cette édition. Cela implique un état d'édition conditionnel sur la page Paramètres ou Détail de l'édition. EXPERIENCE.md note que `/admin/editions/:id/categories` est « éditable » avant le Dépôt et « en lecture seule » après, mais n'étend pas ce patron au champ du taux de commission. Aucun traitement visuel (champ désactivé, message inline explicatif) n'est spécifié.
-
-### PRÉOCCUPATION — Configuration initiale admin et changement de mot de passe forcé (FR-062)
-
-FR-062 spécifie qu'au premier lancement, l'admin se connecte avec Admin/Admin et est forcé de changer son mot de passe. Il s'agit d'un flux de premier lancement avec son propre écran ou modal. EXPERIENCE.md ne le couvre pas. Bien qu'il s'agisse d'un flux ponctuel, c'est la première chose qu'une association déployant rencontrera.
-
-### PRÉOCCUPATION — Préférence de langue par compte (FR-003, FR-067)
-
-FR-003 et FR-067 exigent que chaque compte stocke une préférence de langue d'interface, modifiable dans les paramètres du compte. `/account` est listé dans l'IA partagée mais EXPERIENCE.md ne fournit aucune spécification du contenu de la page de compte. Le changement de langue est fondamental à l'exigence ngx-translate — il nécessite au minimum une spec de surface.
-
-### PRÉOCCUPATION — Exigences non fonctionnelles — perception des performances (NFR-001)
-
-NFR-001 exige aucune dégradation notable sur Raspberry Pi 4 sous charge événementielle. EXPERIENCE.md spécifie des lignes de squelette pour les états de chargement (bien), mais n'aborde pas les considérations de performance perçue spécifiques aux contextes de matériel bas de gamme : aucune stratégie de chargement paresseux mentionnée, aucune spécification de latence maximale acceptable pour le retour du scanner, aucune orientation sur l'anti-rebond ou la limitation des requêtes pour les filtres du catalogue. Ce sont des décisions techniques adjacentes à l'UX qui devraient au moins être signalées dans la spine.
-
-### PRÉOCCUPATION — NFR-002 — Communication des conflits entre postes concurrents
-
-NFR-002 et FR-042 exigent que les opérations simultanées depuis 3+ postes ne produisent pas de conflits. EXPERIENCE.md gère le cas article-déjà-vendu (FR-036) et l'annulation du panier lors d'un changement de phase (FR-090) via SSE. Cependant, il n'aborde pas ce qui se passe lorsque deux caissiers scannent le même article simultanément au même moment exact — l'événement SSE `phase-changed` est documenté, mais aucun événement `item-sold` équivalent pour les conflits n'est spécifié pour la zone de résultat du scanner. Le message d'erreur inline « Article déjà vendu sur un autre poste » apparaît dans Voix et Ton comme exemple de message, mais son mécanisme de déclenchement et son timing (est-il synchrone au scan ? asynchrone via SSE ?) ne sont pas spécifiés dans les Patrons de Composants.
+WCAG 2.2 AA, piège focus, aria-live scanner, aria-label phase chip, cibles 44×44px : tous spécifiés. Section Voix et Ton approfondie. Inchangé depuis la revue précédente.
 
 ---
 
-### ÉCHEC — Surface UI du rapport des vendeurs en attente (FR-056)
+### PRÉOCCUPATION — Page de file d'impression admin (FR-079)
 
-FR-056 définit un « rapport des vendeurs en attente » listant les vendeurs non reversés avec leur numéro de téléphone, généré en PDF (FR-057). La route `/admin/reports` est dans l'IA, accessible en phases Post-vente et Clôturé. Cependant, EXPERIENCE.md ne spécifie pas comment les rapports sont déclenchés, listés ou téléchargés. Il n'y a pas de patron de composant pour la page Rapports : aucune mention d'un bouton « Générer », aucun mécanisme de téléchargement, aucune distinction entre le bilan journalier (FR-054, phase Vente uniquement), le bilan d'édition (FR-055, généré à la clôture via FR-013), et le rapport des vendeurs en attente (FR-056). Trois rapports distincts avec des déclencheurs et des cycles de vie différents sont réduits à une seule entrée IA sans spécification comportementale.
+FR-079 spécifie que l'admin dispose d'une vue de l'état de la file d'impression et des erreurs en cours pour diagnostiquer le problème, et peut relancer un job en erreur ou l'ignorer pour reprendre la file. La route `/admin/print-queue` est présente dans l'IA ("File d'impression — Toutes phases") mais aucun composant ni spec de contenu ne décrit cette page : quelles colonnes affiche-t-elle, comment l'admin interagit avec les jobs en erreur (bouton "Relancer" ? "Ignorer" ?), quel état visuel différencie un job en attente, en cours, en erreur ou traité. La note toast-imprimante-hors-ligne dans les State Patterns décrit la notification utilisateur mais pas la gestion admin de la file. Ce composant nécessite une spec avant développement.
 
-### ÉCHEC — Vue en lecture seule de l'édition archivée et état post-Nettoyage (FR-059, FR-086, FR-088)
+**Recommandation :** Ajouter un composant "Page file d'impression" spécifiant les colonnes (date, job, vendeur, statut), les actions par ligne (Relancer, Ignorer), et l'état vide "Aucun job en attente."
 
-FR-059 spécifie que les éditions archivées affichent les métriques agrégées et les profils vendeurs en mode lecture seule ; le détail au niveau article n'est disponible qu'en PDF. FR-086 ajoute que si Nettoyer a été déclenché, les données au niveau article ne sont pas disponibles dans le catalogue. FR-088 définit Nettoyer l'Édition comme une action permanente. EXPERIENCE.md mentionne l'état « Phase Clôturée » dans les Patterns d'État (bannière lecture seule, bouton « Nettoyer l'édition »), mais ne spécifie pas : à quoi ressemble la page de détail de l'édition archivée, quelles métriques agrégées sont affichées, comment les profils vendeurs apparaissent sans détail article, ni comment le catalogue gère l'état post-Nettoyage (vide ? masqué ? message ?). C'est en pratique toute une famille d'écrans absente de la spine.
+---
 
-### ÉCHEC — Déclencheur d'impression du bilan de vente en post-vente (FR-049, FR-050, FR-065)
+### PRÉOCCUPATION — Bouton de clôture conditionnel et notification vendeurs non soldés (FR-096)
 
-FR-049 et FR-065 spécifient qu'en phase Post-vente, un bénévole peut imprimer le bilan de vente d'un vendeur pour regrouper ses invendus avant la remise. C'est une action bénévole principale en Post-vente — sans doute plus fréquente que le reversement lui-même. Le Flux 3 (reversement) est le seul flux clé Post-vente et il ne mentionne pas l'impression. Le bouton d'impression du bilan de vente sur la liste de reversement ou la fiche vendeur est complètement absent de EXPERIENCE.md.
+FR-096 spécifie que le bouton "Clôturer l'Édition" est désactivé tant qu'au moins un vendeur est dans un statut autre que Soldé ou Non réclamé, avec une notification inline affichant le nombre de vendeurs non soldés et un lien vers la page de solde. EXPERIENCE.md couvre la page de contrôle de phase (route dans l'IA, composant "Contrôle de phase — retour arrière") mais ne spécifie pas l'état désactivé du bouton de clôture, le libellé de la notification inline, ni le lien vers `/admin/settlement`. Cette interaction est sur le chemin critique de la clôture d'édition.
+
+**Recommandation :** Étendre le composant "Contrôle de phase" (ou créer un état "Clôture conditionnelle") pour spécifier : bouton "Clôturer l'Édition" désactivé avec notification inline "X vendeur(s) non soldé(s) — Accéder à la page de solde" (lien cliquable). Préciser que le serveur renvoie 409 si la contrainte est violée côté API.
+
+---
+
+### FAIBLE — Avertissement article incomplet scanné en caisse (FR-037)
+
+FR-037 exige que scanner un article incomplet affiche un avertissement informatif au caissier incluant le détail de ce qui manque. L'article peut tout de même être vendu. EXPERIENCE.md spécifie le comportement pour les articles déjà vendus (notification inline rouge) et pour les lots incomplets (notification inline orange), mais ne décrit pas le traitement UX d'un article individuel incomplet : aucun état dans State Patterns, aucune mention dans le composant "Panier POS". Ce cas est moins critique que les deux précédents (l'article est vendu sans blocage), mais le type de notification (inline ? toast ?) et son contenu (affichage du commentaire d'incomplétude ?) doivent être spécifiés.
+
+**Recommandation :** Ajouter dans State Patterns un état "Article incomplet scanné — caisse" : notification inline orange sous le scanner, message incluant le champ commentaire de l'article (ex. "Cet article est incomplet : il manque le livret de règles."), sans blocage de la transaction.
 
 ---
 
 ## Recommandations
 
-Ordonnées par priorité. Bloquants (éléments ÉCHEC) en premier.
+Ordonnées par priorité.
 
-### 1. [BLOQUANT] Spécifier la page Rapports (FR-054, FR-055, FR-056, FR-057, FR-058)
-Ajouter un patron de composant et au minimum une description de maquette pour `/admin/reports`. Définir les trois types de rapports, leurs déclencheurs de génération (bouton à la demande vs. automatique à la clôture), leurs phases d'accès, et le mécanisme de téléchargement (lien de téléchargement PDF / ouverture dans le navigateur / impression automatique). C'est une surface à trois rapports, pas une simple route.
+### 1. [MOYEN] Spécifier la page de file d'impression admin (FR-079)
 
-### 2. [BLOQUANT] Spécifier la vue de l'édition archivée et l'état du catalogue post-Nettoyage (FR-059, FR-086, FR-088)
-Ajouter une description de la page de détail de l'édition archivée : métriques agrégées affichées, vue en lecture seule du profil vendeur sans détail article, et comportement du catalogue après Nettoyage. Définir ce que déclenche le bouton « Nettoyer l'édition » et à quoi ressemble l'état UI post-Nettoyage (entrée catalogue désactivée ? catalogue vide avec message explicatif ?).
+Route `/admin/print-queue` présente dans l'IA sans composant ni spec de contenu. Ajouter un composant "Page file d'impression" avec colonnes, actions par ligne (Relancer, Ignorer), et états (en attente, en cours, en erreur, traité). Sans cette spec, la page sera implémentée de façon ad hoc.
 
-### 3. [BLOQUANT] Ajouter un Flux Clé Post-vente couvrant l'impression du bilan de vente (FR-049, FR-050, FR-065)
-Le Flux 3 ne couvre que le reversement. Ajouter le Flux 5 (ou étendre le Flux 3) pour montrer le bénévole imprimant le bilan de vente d'un vendeur avant de remettre les invendus. Spécifier où apparaît le déclencheur d'impression : sur la ligne de la liste de reversement, ou uniquement sur la fiche vendeur.
+### 2. [MOYEN] Spécifier le comportement de clôture conditionnelle (FR-096)
 
-### 4. Spécifier le contenu et les états modifiables de la page Paramètres admin (FR-073, FR-016, FR-032, FR-005)
-Ajouter une spec de formulaire pour `/admin/settings` : champs (nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket thermique), avec la note que ces valeurs par défaut n'affectent que les nouvelles éditions. La langue de documents et le taux de commission d'une édition existante se modifient dans la page de l'édition, en phase Préparation uniquement.
+Ajouter un état ou une extension du composant "Contrôle de phase" pour le bouton "Clôturer l'Édition" désactivé avec notification inline. Ce comportement est sur le chemin critique de la clôture d'édition et doit être spécifié avant l'implémentation de F2.
 
-### 5. Spécifier la suppression RGPD du vendeur (FR-021)
-Sur la fiche `/admin/sellers/:id`, documenter l'action supprimer/anonymiser : contenu du dialog de confirmation (conséquences : anonymisation dans toutes les éditions, irréversible), et l'état post-anonymisation de la fiche (données en placeholder grisées vs. entrée supprimée).
+### 3. [FAIBLE] Couvrir l'avertissement article incomplet au POS (FR-037)
 
-### 6. Spécifier les déclencheurs d'impression du bordereau de dépôt et de la facture acheteur (FR-031, FR-040, FR-041)
-Clarifier dans le flux du formulaire de dépôt si le bordereau de dépôt s'imprime automatiquement avec les étiquettes (aux côtés de FR-028) ou est déclenché manuellement. Clarifier à quoi ressemble l'état de la caisse POS après la validation de la transaction et où apparaît le bouton d'impression de facture.
-
-### 7. Couvrir le flux de retour en arrière et l'état retour-en-arrière-désactivé-après-Nettoyage (FR-082, FR-088)
-Sur `/admin/editions/:id/phase`, spécifier à quoi ressemblent les boutons de retour en arrière, que le même patron de dialog de confirmation s'applique, et comment l'interface communique que le retour en arrière depuis Clôturé est définitivement indisponible après Nettoyer l'Édition.
-
-### 8. Spécifier la page `/account` (FR-003, FR-067)
-Ajouter une spec minimale pour la page de paramètres du compte : sélecteur de préférence de langue (EN/FR), comment il s'applique immédiatement sans rechargement de page (changement de langue à l'exécution ngx-translate), et tous les autres champs modifiables par l'utilisateur.
-
-### 9. Ajouter le flux de changement de mot de passe forcé au premier lancement (FR-062)
-Spécifier le flux de première connexion Admin/Admin : est-ce une redirection vers un écran de changement de mot de passe dédié, ou un modal en place sur `/admin` ? Qu'est-ce qui empêche de naviguer ailleurs avant que le mot de passe soit changé ?
-
-### 10. Clarifier le mécanisme de livraison des conflits de scan concurrent (NFR-002, FR-036)
-Dans le patron du composant Champ scanner, spécifier si l'erreur « déjà vendu » pour un scan concurrent est une réponse d'erreur HTTP synchrone (très probable) ou un push SSE asynchrone — et comment la caisse gère le cas où deux postes réussissent à scanner le même article dans la même fenêtre de requête.
+Ajouter un State Pattern pour le scan d'un article incomplet en caisse : type de notification, contenu (inclusion du commentaire d'incomplétude), absence de blocage. Améliore la cohérence des spécifications des cas limites POS.

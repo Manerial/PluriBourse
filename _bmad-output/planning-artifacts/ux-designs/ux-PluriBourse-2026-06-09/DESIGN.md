@@ -5,6 +5,7 @@ updated: 2026-06-09
 colors:
   # Thème clair — corail primaire
   primary: '#C44626'
+  primary-hover: '#A83A1E'
   on-primary: '#FFFFFF'
   primary-container: '#FFF4EE'
   on-primary-container: '#8C2910'
@@ -16,13 +17,18 @@ colors:
   surface-variant: '#F5EEEA'
   on-surface: '#1A0A05'
   on-surface-variant: '#6B6460'
+  on-surface-muted: 'rgba(245,238,234,0.65)'
   background: '#FFFBF9'
-  outline: '#C8B0A4'
+  outline: '#8A7870'
   outline-variant: '#F0E4DC'
   error: '#BA1A1A'
   on-error: '#FFFFFF'
   error-container: '#FFDAD6'
   on-error-container: '#410002'
+  success-container: '#F0FDF4'
+  on-success-container: '#166534'
+  warning: '#FFF4EE'
+  on-warning: '#8C2910'
   # Thème sombre
   primary-dark: '#F07040'
   on-primary-dark: '#1A0A05'
@@ -108,7 +114,7 @@ components:
     radius: '{rounded.md}'
     padding: '10px 20px'
     font: '{typography.label-lg}'
-    hover-background: '#A83A1E'
+    hover-background: '{colors.primary-hover}'
   button-secondary:
     background: '{colors.primary-container}'
     foreground: '{colors.on-primary-container}'
@@ -138,8 +144,8 @@ components:
     admin-background: '{colors.primary-container}'
     admin-foreground: '{colors.on-primary-container}'
   status-chip-success:
-    background: '#F0FDF4'
-    foreground: '#166534'
+    background: '{colors.success-container}'
+    foreground: '{colors.on-success-container}'
     radius: '{rounded.full}'
     padding: '3px 10px'
     font: '{typography.label-sm}'
@@ -166,9 +172,9 @@ components:
     padding: '10px 14px'
     hover-background: '{colors.outline-variant}'
   sidebar-item:
-    foreground: 'rgba(245, 238, 234, 0.65)'
+    foreground: '{colors.on-surface-muted}'
     radius: '{rounded.md}'
-    padding: '8px 12px'
+    padding: '12px 12px'
     font: '{typography.body-md}'
     active-background: '{colors.primary}'
     active-foreground: '#FFFFFF'
@@ -179,11 +185,55 @@ components:
     font: '{typography.body-md}'
     focus-border: '{colors.primary}'
     error-border: '{colors.error}'
+    # Variante scanner : zone résultat = {colors.primary-container} (article ajouté), {colors.error-container} (rejet)
   dialog:
     background: '{colors.surface}'
     radius: '{rounded.xl}'
     shadow: '{elevation.level-3}'
     padding: '{spacing.lg}'
+  topbar:
+    background: '{colors.surface}'
+    height: '56px'
+    border-bottom: 'none'
+    shadow: 'none'
+  notification-inline:
+    background: '{colors.primary-container}'
+    border-left: '3px solid {colors.primary}'
+    font: '{typography.body-md}'
+    # Variante erreur POS (article déjà vendu, conflit concurrent) :
+    error-background: '{colors.error-container}'
+    error-border-left: '3px solid {colors.error}'
+  skeleton-row:
+    background: '{colors.surface-variant}'
+    animation: 'pulse 1.5s ease-in-out infinite'
+    radius: '{rounded.md}'
+  segmented-control:
+    active-background: '{colors.primary-container}'
+    active-foreground: '{colors.on-primary-container}'
+    inactive-background: '{colors.surface-variant}'
+    inactive-foreground: '{colors.on-surface-variant}'
+    border: '1.5px solid {colors.outline}'
+    radius: '{rounded.md}'
+  banner:
+    background: '{colors.primary-container}'
+    foreground: '{colors.on-primary-container}'
+    border-left: '3px solid {colors.primary}'
+    font: '{typography.body-md}'
+    radius: '{rounded.md}'
+    padding: '{spacing.md}'
+  metric-tile:
+    background: '{colors.surface-variant}'
+    radius: '{rounded.lg}'
+    padding: '{spacing.md}'
+    label-font: '{typography.label-sm}'
+    value-font: '{typography.title-lg}'
+    value-foreground: '{colors.primary}'
+  danger-zone:
+    background: '{colors.error-container}'
+    foreground: '{colors.on-error-container}'
+    border: '1px solid {colors.error}'
+    radius: '{rounded.md}'
+    padding: '{spacing.md}'
 ---
 
 ## Brand & Style
@@ -277,13 +327,13 @@ Pill `{rounded.full}`. Admin : fond `{colors.primary-container}`, texte `{colors
 Trois variants : success (vert), warning (corail doux), error (rouge). Toujours avec une icône Material Symbols avant le label (taille 14px).
 
 **Dialog de confirmation** — transitions de phase, actions destructives
-Radius `{rounded.xl}`. Toujours : titre explicite + description des conséquences + deux boutons (action confirmée = primary ou error, annulation = ghost). Jamais de dialog sans description des conséquences. Overlay sombre `rgba(0,0,0,0.5)`.
+Radius `{rounded.xl}`. Toujours : titre explicite + description des conséquences + deux boutons (action confirmée = `primary` ou `error`, annulation = `ghost`). Jamais de dialog sans description des conséquences. Overlay sombre `rgba(0,0,0,0.5)`. Exception : dans les dialogs de retour arrière de phase (non destructif), le bouton de confirmation peut utiliser le style `secondary` pour signaler visuellement une action moins engagée qu'une avancée de phase.
 
 **Sidebar item** — Admin uniquement
-Fond transparent par défaut, texte `rgba(245,238,234,0.65)`. Actif : fond `{colors.primary}`, texte blanc. Icône Material Symbols 18px avant le label. Hover : fond `rgba(255,255,255,0.08)`.
+Fond transparent par défaut, texte `{colors.on-surface-muted}`. Actif : fond `{colors.primary}`, texte blanc. Icône Material Symbols 18px avant le label. Hover : fond `rgba(255,255,255,0.08)`.
 
-**Notification d'erreur inline** — erreurs métier (article déjà vendu, lot incomplet)
-Fond `{colors.primary-container}`, bordure gauche 3px `{colors.primary}`, icône `warning` Material Symbols. Apparaît directement dans le flux de la page, pas en toast flottant.
+**Notification inline** — erreurs et avertissements métier dans le flux (article déjà vendu, lot incomplet, catégories verrouillées)
+Deux variantes : **avertissement** (fond `{colors.primary-container}`, bordure gauche 3px `{colors.primary}`, icône `warning`) pour les avertissements opérationnels (lot incomplet, article incomplet) ; **erreur** (fond `{colors.error-container}`, bordure gauche 3px `{colors.error}`, icône `error`) pour les erreurs bloquantes (article déjà vendu, conflit concurrent au POS). Apparaît directement dans le flux de la page, pas en toast flottant.
 
 **Toast** — confirmations d'action réussie, erreurs système (imprimante hors ligne)
 Position : bottom-right. Durée : 4s pour succès, persistant jusqu'à interaction pour les erreurs système.

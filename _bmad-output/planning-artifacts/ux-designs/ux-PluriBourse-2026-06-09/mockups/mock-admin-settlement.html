@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Reversements · PluriBourse</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <style>
+    /*
+     * =============================================================
+     * Page Reversements
+     *   Écran principal de gestion des reversements vendeurs.
+     *   Tableau avec filtre "Non soldés" actif, 4 lignes vendeurs.
+     *
+     * Formulaire de solde vendeur
+     *   Formulaire inline (ligne supplémentaire colspan=6) ouvert
+     *   sous la ligne Dubois Marie. Saisie du montant + validation.
+     *
+     * State Patterns ligne soldée
+     *   Ligne grisée (opacity 0.6) pour vendeur déjà soldé.
+     *   Actions "Solder" et "Non réclamé" masquées, seul "Imprimer"
+     *   reste disponible.
+     *
+     * Sidebar Post-vente
+     *   Navigation contextuelle phase Post-vente : section ÉDITION
+     *   ACTIVE avec item "Reversements" actif (fond primary, blanc).
+     * =============================================================
+     */
+
+    :root {
+      --primary: #C44626;
+      --on-primary: #FFFFFF;
+      --primary-container: #FFF4EE;
+      --on-primary-container: #8C2910;
+      --surface: #FFFBF9;
+      --surface-variant: #F5EEEA;
+      --on-surface: #1A0A05;
+      --on-surface-variant: #6B6460;
+      --background: #FFFBF9;
+      --outline: #C8B0A4;
+      --outline-variant: #F0E4DC;
+      --error: #BA1A1A;
+      --error-container: #FFDAD6;
+      --on-error-container: #410002;
+      --success-bg: #F0FDF4;
+      --success-text: #166534;
+      --sidebar-bg: #2A100A;
+      --shadow-1: 0 1px 4px rgba(28,10,5,.08);
+      --shadow-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+      --shadow-3: 0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+      --font: 'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--background);
+      color: var(--on-surface);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      user-select: none;
+      vertical-align: middle;
+    }
+
+    /* ---- TOPBAR ---- */
+    .topbar {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline-variant);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      box-shadow: var(--shadow-1);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .topbar-logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: -0.3px;
+      flex-shrink: 0;
+    }
+
+    .topbar-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .phase-chip {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.2px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .role-badge {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.5px;
+    }
+
+    /* ---- LAYOUT BODY ---- */
+    .layout-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ---- SIDEBAR ---- */
+    .sidebar {
+      width: 200px;
+      background: var(--sidebar-bg);
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 20px 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      padding: 0 16px;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      border-radius: 0;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+
+    .sidebar-item .material-symbols-outlined {
+      font-size: 18px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .sidebar-item:hover {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.9);
+    }
+
+    .sidebar-item.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    .sidebar-item.active .material-symbols-outlined {
+      color: #FFFFFF;
+    }
+
+    /* ---- CONTENT ---- */
+    .content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: var(--background);
+    }
+
+    /* ---- PAGE HEADER ---- */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+
+    .page-header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--on-surface);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      font-weight: 400;
+    }
+
+    /* ---- FILTER TOGGLE ---- */
+    .filter-toggle {
+      display: flex;
+      align-items: center;
+      background: var(--surface-variant);
+      border-radius: var(--radius-full);
+      padding: 3px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .filter-btn {
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--on-surface-variant);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 600;
+    }
+
+    /* ---- TABLE CARD ---- */
+    .table-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-2);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background: var(--surface-variant);
+      border-bottom: 1px solid var(--outline-variant);
+    }
+
+    th {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--on-surface-variant);
+      padding: 11px 16px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 16px;
+      font-size: 14px;
+      color: var(--on-surface);
+      vertical-align: middle;
+      border-bottom: 1px solid var(--outline-variant);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:last-child .inline-form-td {
+      border-bottom: none;
+    }
+
+    /* ---- CHIPS ---- */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+
+    .chip .material-symbols-outlined {
+      font-size: 14px;
+    }
+
+    .chip-unsettled {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    .chip-settled {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    /* ---- ACTIONS ---- */
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      padding: 6px 12px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn .material-symbols-outlined {
+      font-size: 16px;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--on-surface-variant);
+      border: 1px solid var(--outline);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface-variant);
+      color: var(--on-surface);
+    }
+
+    .btn-secondary {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border: 1px solid transparent;
+    }
+
+    .btn-secondary:hover {
+      background: #fce8df;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-1);
+    }
+
+    .btn-primary:hover {
+      background: #b33d20;
+    }
+
+    .btn-icon {
+      padding: 6px;
+      border-radius: var(--radius-md);
+    }
+
+    /* ---- SETTLED ROW ---- */
+    .row-settled td {
+      opacity: 0.6;
+    }
+
+    /* ---- INLINE FORM ROW ---- */
+    .inline-form-row td {
+      padding: 0;
+      border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .inline-form-container {
+      border-left: 3px solid var(--primary);
+      background: var(--primary-container);
+      padding: 16px 24px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--on-primary-container);
+    }
+
+    .form-input {
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface);
+      background: #FFFFFF;
+      border: 1.5px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 7px 12px;
+      width: 140px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      box-shadow: 0 0 0 3px rgba(196,70,38,0.18);
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ---- AMOUNT ---- */
+    .amount {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .contact-secondary {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+    }
+
+    .seller-name {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="topbar-logo">PluriBourse</span>
+    <div class="topbar-center">
+      <span class="phase-chip">Post-vente</span>
+    </div>
+    <div class="topbar-right">
+      <span class="role-badge">Admin</span>
+      <div class="avatar">JH</div>
+    </div>
+  </header>
+
+  <!-- LAYOUT BODY -->
+  <div class="layout-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-section-label">Édition active</div>
+      <a class="sidebar-item" href="#">
+        <span class="material-symbols-outlined">group</span>
+        Vendeurs
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="material-symbols-outlined">inventory_2</span>
+        Articles
+      </a>
+      <a class="sidebar-item active" href="#">
+        <span class="material-symbols-outlined">payments</span>
+        Reversements
+      </a>
+
+      <div class="sidebar-section-label">Gestion</div>
+      <a class="sidebar-item" href="#">
+        <span class="material-symbols-outlined">event</span>
+        Éditions
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="material-symbols-outlined">bar_chart</span>
+        Rapports
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="material-symbols-outlined">manage_accounts</span>
+        Utilisateurs
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="material-symbols-outlined">settings</span>
+        Paramètres
+      </a>
+    </nav>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Reversements</h1>
+          <span class="page-subtitle">Édition Printemps 2026 · 3 vendeurs non soldés</span>
+        </div>
+        <div class="filter-toggle">
+          <button class="filter-btn">Tous</button>
+          <button class="filter-btn active">Non soldés</button>
+          <button class="filter-btn">Soldés</button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Vendeur</th>
+              <th>Téléphone</th>
+              <th>Email</th>
+              <th>Montant dû</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- ROW 1 — Martin Pierre · Soldé -->
+            <tr class="row-settled">
+              <td><span class="seller-name">Martin Pierre</span></td>
+              <td><span class="contact-secondary">06 12 34 56 78</span></td>
+              <td><span class="contact-secondary">martin.pierre@email.com</span></td>
+              <td><span class="amount">34,50 €</span></td>
+              <td>
+                <span class="chip chip-settled">
+                  <span class="material-symbols-outlined">check_circle</span>
+                  Soldé
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn-ghost">
+                    <span class="material-symbols-outlined">print</span>
+                    Imprimer le bilan
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- ROW 2 — Dubois Marie · Non soldé · Formulaire ouvert -->
+            <tr>
+              <td><span class="seller-name">Dubois Marie</span></td>
+              <td><span class="contact-secondary">06 98 76 54 32</span></td>
+              <td><span class="contact-secondary">marie.dubois@email.com</span></td>
+              <td><span class="amount">12,00 €</span></td>
+              <td>
+                <span class="chip chip-unsettled">
+                  <span class="material-symbols-outlined">schedule</span>
+                  Non soldé
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn-ghost">
+                    <span class="material-symbols-outlined">print</span>
+                    Imprimer le bilan
+                  </button>
+                  <button class="btn btn-secondary">
+                    <span class="material-symbols-outlined">payments</span>
+                    Solder
+                  </button>
+                  <button class="btn btn-ghost btn-icon" title="Non réclamé">
+                    <span class="material-symbols-outlined">block</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- INLINE FORM ROW — Dubois Marie -->
+            <tr class="inline-form-row">
+              <td colspan="6" class="inline-form-td">
+                <div class="inline-form-container">
+                  <div class="form-field">
+                    <label class="form-label">Montant remis en espèces (€)</label>
+                    <input class="form-input" type="text" value="12,00" />
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn btn-primary">
+                      <span class="material-symbols-outlined">check</span>
+                      Valider
+                    </button>
+                    <button class="btn btn-ghost">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- ROW 3 — Leroy Antoine · Non soldé -->
+            <tr>
+              <td><span class="seller-name">Leroy Antoine</span></td>
+              <td><span class="contact-secondary">07 45 67 89 01</span></td>
+              <td><span class="contact-secondary">a.leroy@email.com</span></td>
+              <td><span class="amount">67,00 €</span></td>
+              <td>
+                <span class="chip chip-unsettled">
+                  <span class="material-symbols-outlined">schedule</span>
+                  Non soldé
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn-ghost">
+                    <span class="material-symbols-outlined">print</span>
+                    Imprimer le bilan
+                  </button>
+                  <button class="btn btn-secondary">
+                    <span class="material-symbols-outlined">payments</span>
+                    Solder
+                  </button>
+                  <button class="btn btn-ghost btn-icon" title="Non réclamé">
+                    <span class="material-symbols-outlined">block</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- ROW 4 — Bernard Claire · Non soldé -->
+            <tr>
+              <td><span class="seller-name">Bernard Claire</span></td>
+              <td><span class="contact-secondary">06 23 45 67 89</span></td>
+              <td><span class="contact-secondary">c.bernard@email.com</span></td>
+              <td><span class="amount">28,50 €</span></td>
+              <td>
+                <span class="chip chip-unsettled">
+                  <span class="material-symbols-outlined">schedule</span>
+                  Non soldé
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn-ghost">
+                    <span class="material-symbols-outlined">print</span>
+                    Imprimer le bilan
+                  </button>
+                  <button class="btn btn-secondary">
+                    <span class="material-symbols-outlined">payments</span>
+                    Solder
+                  </button>
+                  <button class="btn btn-ghost btn-icon" title="Non réclamé">
+                    <span class="material-symbols-outlined">block</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+
+</body>
+</html>

@@ -11,26 +11,26 @@
 
 - [ ] `planning-artifacts/prds/prd-PluriBourse-2026-06-08/prd.md`
   - [x] Énoncé du problème & Vision
-  - [ ] Rôles (Admin, Bénévole, Vendeur hors app)
-  - [ ] Périmètre v1 — Inclus
-  - [ ] Périmètre v1 — Hors périmètre
-  - [ ] F1 — Internationalisation (FR-001–007)
-  - [ ] F2 — Gestion des éditions & cycle de vie (FR-008–016, FR-080, FR-082, FR-088)
-  - [ ] F3 — Gestion des vendeurs & articles (FR-017–032)
-  - [ ] F4 — Point de vente (FR-033–042)
-  - [ ] F4bis — Lots (FR-043–048)
-  - [ ] F5 — Post-vente & Reversements (FR-049–053)
-  - [ ] F6 — Rapports (FR-054–059)
+  - [x] Rôles (Admin, Bénévole, Vendeur hors app)
+  - [x] Périmètre v1 — Inclus
+  - [x] Périmètre v1 — Hors périmètre
+  - [x] F1 — Internationalisation (FR-001–007)
+  - [x] F2 — Gestion des éditions & cycle de vie (FR-008–016, FR-080, FR-082, FR-088)
+  - [x] F3 — Gestion des vendeurs & articles (FR-017–032)
+  - [x] F4 — Point de vente (FR-033–042, FR-090, FR-093)
+  - [x] F4bis — Lots (FR-043–048)
+  - [x] F5 — Post-vente & Reversements (FR-049–053)
+  - [x] F6 — Rapports (FR-054–059)
   - [ ] F7 — Comptes & Accès (FR-060–067)
   - [ ] F8 — Infrastructure & Déploiement (FR-068–074)
   - [ ] F9 — Impression (FR-075–079)
-  - [ ] F10 — Catalogue articles (FR-083–089, FR-090)
+  - [ ] F10 — Catalogue articles (FR-083–089)
   - [ ] Exigences non fonctionnelles (NFR)
   - [ ] Métriques de succès
 
 - [ ] `planning-artifacts/prds/prd-PluriBourse-2026-06-08/addendum.md`
   - [ ] Infrastructure & déploiement
-  - [ ] FR-056 — décision vendeurs non soldés (pas de PDF)
+  - [ ] FR-095 — page de solde (liste vendeurs, deux routes `/volunteer/settlement` et `/admin/settlement`, composant unique)
   - [ ] FR-091 / FR-092 — exports CSV
   - [ ] Architecture i18n
   - [ ] Impression étiquettes thermiques 57mm
@@ -112,6 +112,7 @@
 - [ ] Story 2.3 — Catégories & correspondance des tables
 - [ ] Story 2.4 — Notification de phase en temps réel (SSE)
 - [ ] Story 2.5 — Clôture & Nettoyage de l'édition
+- [ ] Story 2.6 — Annulation du panier lors d'une transition de phase
 
 ### Epic 3 — Enregistrement vendeurs & Dépôt
 - [ ] Story 3.1 — Gestion des profils vendeurs
@@ -120,6 +121,7 @@
 - [ ] Story 3.4 — Infrastructure d'impression (files d'attente serveur)
 - [ ] Story 3.5 — Génération & Impression des étiquettes thermiques
 - [ ] Story 3.6 — Génération & Impression du bordereau de dépôt PDF
+- [ ] Story 3.7 — Vue admin de diagnostic de la file d'impression
 
 ### Epic 4 — Point de vente
 - [ ] Story 4.1 — Composant scanner & scan d'articles
@@ -127,7 +129,6 @@
 - [ ] Story 4.3 — Gestion des lots au POS ⚠️ *logique d'intégrité complexe*
 - [ ] Story 4.4 — Sécurité de la concurrence multi-postes ⚠️ *cas limite critique*
 - [ ] Story 4.5 — Impression de la facture acheteur
-- [ ] Story 4.6 — Annulation du panier lors d'une transition de phase
 
 ### Epic 5 — Post-vente, Reversements & Rapports
 - [ ] Story 5.1 — Flux de solde des vendeurs
@@ -138,7 +139,6 @@
 
 ### Epic 6 — Catalogue articles
 - [ ] Story 6.1 — Catalogue filtrable & triable
-- [ ] Story 6.2 — Secours catalogue-vers-panier au POS
 
 ---
 

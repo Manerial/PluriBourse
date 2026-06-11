@@ -28,22 +28,29 @@ Créé : 2026-06-08
 
 ## Décisions de conception post-UX
 
-**FR-056 — Liste des vendeurs non soldés**
+**FR-095 — Page de solde (anciennement FR-056)**
 
-FR-056 est couvert par la page de solde `/volunteer/settlement` (et la fiche vendeur admin), qui affiche déjà les vendeurs non soldés avec leur numéro de téléphone visible (FR-053). Aucun rapport PDF ni vue d'impression dédiés ne sont nécessaires pour ce cas d'usage — une page affichant les données en direct est plus simple et plus utile.
+FR-056 a été supprimé et remplacé par FR-095. La liste des vendeurs non soldés n'est pas un rapport — c'est le point d'entrée de F5. La page de solde affiche tous les vendeurs de l'édition, avec un filtre par statut (soldé / non soldé) et des actions par ligne (imprimer bilan, solder, non réclamé).
 
-Exception à FR-057 : FR-056 n'est **pas** implémenté sous forme de PDF généré côté serveur. C'est la seule exception à la règle "tous les rapports sont en PDF".
+La page est accessible via deux routes distinctes partageant le même composant Angular : `/volunteer/settlement` (bénévoles) et `/admin/settlement` (admin). L'admin voit en plus les colonnes téléphone et email, affichées conditionnellement selon le rôle.
+
+FR-057 s'applique sans exception : tous les rapports sont en PDF. La page de solde n'est pas un rapport.
 
 ---
 
-**Exigences fonctionnelles complémentaires — Exports CSV**
+**Exports CSV (FR-091, FR-092)**
 
-Issues de la phase UX, non présentes dans le PRD initial :
+Issues de la phase UX, intégrées dans le corps du PRD (§F6). Couvertes par Story 5.5 (Épic 5).
 
-- **FR-091 :** En phase Post-vente et Clôturée, l'administrateur peut exporter le catalogue articles au format CSV (articles avec leur statut vendu/invendu). Le téléchargement est déclenché directement sans boîte de dialogue.
-- **FR-092 :** En phase Post-vente et Clôturée, l'administrateur peut exporter les reversements au format CSV. Le téléchargement est déclenché directement sans boîte de dialogue.
+---
 
-Ces deux exports sont couverts par Story 5.5 (Épic 5).
+**Exigences fonctionnelles complémentaires — Moyen de paiement**
+
+Issues de précisions de spécification post-UX :
+
+- **FR-094 :** Le bilan journalier (FR-054) et le bilan d'édition (FR-055) incluent une ventilation des recettes par moyen de paiement (total espèces, total chèques, total carte). Couvert par Stories 5.3 et 5.4 (Épic 5).
+
+*Note : FR-093 (sélection obligatoire du moyen de paiement) a été intégré dans le corps du PRD (§F4).*
 
 ---
 
@@ -65,7 +72,7 @@ Ces deux exports sont couverts par Story 5.5 (Épic 5).
 **Format du rouleau :**
 ```
 [séparateur vendeur : nom vendeur + édition]
-[étiquette article 1 : nom édition / ligne vide / --- catégorie --- / nom+prix / /!\ INCOMPLET si applicable / Table n°X / ligne vide / graphique Code 128 / numéro de code-barres / ligne vide]
+[étiquette article 1 : nom édition / ligne vide / --- catégorie --- / nom+prix / /!\ INCOMPLET si applicable / Table n°X / ligne vide / graphique Code 128 / numéro de code-barres au format XXXX-XXXX / ligne vide]
 [séparateur article]
 [étiquette article 2]
 ...

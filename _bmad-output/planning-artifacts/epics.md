@@ -39,23 +39,24 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-014 : Une édition ayant dépassé la phase Préparation ne peut pas être supprimée.
 - FR-015 : Les données de chaque édition sont strictement isolées.
 - FR-016 : Le taux de commission est configuré lors de la mise en place de l'instance (20 % par défaut), modifiable par l'administrateur jusqu'au démarrage de la phase Dépôt, puis figé pour cette édition.
+- FR-017 : L'administrateur configure la liste des catégories d'articles par édition.
+- FR-018 : L'administrateur configure la correspondance catégorie-table par édition. Une même table peut être assignée à plusieurs catégories (relation many-to-many). Chaque catégorie doit avoir au moins une table — la sauvegarde est bloquée sinon. Modifiable en phase Préparation, figé au démarrage de Dépôt, à nouveau modifiable en cas de retour arrière vers Préparation (FR-082).
 - FR-080 : Lors de la création d'une nouvelle édition, l'administrateur peut copier les catégories et la correspondance tables depuis une édition clôturée.
-- FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les données sont préservées. Le retour arrière depuis l'état Clôturé est désactivé après le Nettoyage de l'édition.
-- FR-088 : Après clôture, l'administrateur peut déclencher le « Nettoyage de l'édition » — supprime définitivement les enregistrements d'articles. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
+- FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les ventes et les soldes sont préservés. Les articles des vendeurs déjà soldés ne peuvent plus être vendus. Le retour arrière depuis l'état Clôturé est désactivé après le Nettoyage de l'édition.
+- FR-088 : Après clôture, l'administrateur peut déclencher le « Nettoyage de l'édition » — supprime définitivement les enregistrements d'articles et les profils vendeurs de l'édition. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
+- FR-096 : La clôture de l'édition est conditionnée au solde complet de tous les vendeurs : le bouton « Clôturer l'édition » est désactivé tant qu'au moins un vendeur est dans un statut autre que Soldé ou Non réclamé. Une notification inline (UX-DR7) affiche le nombre de vendeurs non soldés avec un lien vers `/admin/settlement`. La requête API de clôture est également rejetée avec un 409 si cette contrainte est violée.
 
 **F3 — Gestion des vendeurs et des articles (Phase Dépôt)**
 
-- FR-017 : L'administrateur configure la liste des catégories d'articles par édition.
-- FR-018 : L'administrateur configure la correspondance catégorie-table par édition.
-- FR-019 : Les profils vendeurs persistent d'une édition à l'autre. Champs obligatoires : nom, prénom, adresse e-mail, numéro de téléphone.
+- FR-019 : Les profils vendeurs sont propres à chaque édition. Champs obligatoires : nom, prénom, adresse e-mail, numéro de téléphone.
 - FR-020 : Le bénévole recherche un vendeur existant par nom ou e-mail. Si aucun résultat, un nouveau profil est créé.
-- FR-021 : L'administrateur peut supprimer un profil vendeur (RGPD). La suppression anonymise les données personnelles dans toutes les éditions.
+- FR-021 : L'administrateur peut supprimer un vendeur en phase de Dépôt. La suppression efface définitivement le profil vendeur et tous ses articles dans cette édition (RGPD). Confirmation explicite requise.
 - FR-022 : Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire si incomplet.
-- FR-023 : La table est automatiquement assignée selon la correspondance catégorie-table de l'édition. Algorithme : si le vendeur a déjà des articles dans cette catégorie pour cette édition, la même table lui est réassignée ; sinon, le système choisit la table la moins chargée parmi celles configurées pour la catégorie.
+- FR-023 : La table est automatiquement assignée selon la correspondance catégorie-table de l'édition. Algorithme : si le vendeur a déjà des articles dans cette catégorie pour cette édition, la même table lui est réassignée ; sinon, le système choisit la table la moins chargée parmi celles configurées pour la catégorie. La charge est calculée sur l'ensemble des articles assignés à la table, toutes catégories confondues.
 - FR-024 : Un article ne peut être corrigé ou supprimé que durant la phase Dépôt.
 - FR-025 : L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases.
-- FR-026 : Un code-barres Code 128 unique est généré côté serveur pour chaque article enregistré.
-- FR-027 : L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » (ligne dédiée, si applicable) — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible — ligne vide. Aucun nom de vendeur (RGPD).
+- FR-026 : Un code-barres Code 128 unique est généré côté serveur pour chaque article enregistré. Le numéro encode 8 chiffres : 4 chiffres pour le numéro du vendeur (dans l'édition) + 4 chiffres pour le numéro de l'article dans l'inventaire du vendeur.
+- FR-027 : L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » (ligne dédiée, si applicable) — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible au format XXXX-XXXX (séparation entre numéro vendeur et numéro article) — ligne vide. Aucun nom de vendeur (RGPD).
 - FR-028 : Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur.
 - FR-029 : Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.
 - FR-030 : Le rouleau imprimé suit le format : [séparateur vendeur : nom du vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …
@@ -77,28 +78,33 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-040 : Après validation, une facture acheteur est imprimable à la demande.
 - FR-041 : La facture affiche : liste des articles, prix unitaires, total, nom de l'association, nom de l'édition, date. Un lot apparaît sur une seule ligne.
 - FR-042 : L'application supporte un minimum de 3 postes caissiers simultanés sans conflits de données.
+- FR-090 : Si l'administrateur déclenche une transition de phase pendant qu'un bénévole a un panier actif, le système annule le panier et affiche un message d'erreur explicite.
+- FR-093 : À la validation du paiement, le caissier sélectionne le moyen de paiement de l'acheteur. Valeurs possibles : espèces, chèque, carte. Le moyen de paiement est enregistré avec la transaction. En cas de paiement en espèces, un champ optionnel permet de saisir la somme remise par l'acheteur ; si renseigné, le système affiche la monnaie à rendre. Si laissé vide, aucun calcul n'est effectué (montant exact supposé).
+
+**F4 bis — Lots en caisse**
+
 - FR-046 : Le scan d'un article appartenant à un lot affiche le nom du lot en rouge avec un compteur « X/N scannés ».
 - FR-047 : Le système bloque la validation du paiement tant que le lot n'est pas complet (tous les N articles scannés).
-- FR-048 : Une fois complet, le lot est vendu à son prix global.
+- FR-048 : Les articles d'un lot n'ont pas de prix individuel — seul le lot en a un. Une fois complet, le lot est vendu à son prix global. La commission s'applique au prix global : `commission_lot = prix_lot × taux_commission`.
 - FR-081 : Si un caissier ne peut pas compléter un lot, il peut retirer l'ensemble du lot du panier.
-- FR-090 : Si l'administrateur déclenche une transition de phase pendant qu'un bénévole a un panier actif, le système annule le panier et affiche un message d'erreur explicite.
 
 **F5 — Post-vente et reversements**
 
+- FR-095 : La page de solde est le point d'entrée de F5. Elle affiche la liste de tous les vendeurs de l'édition active, filtrable par statut (soldé / non soldé). Chaque ligne comporte les actions : imprimer le bilan de vente, accéder au formulaire de solde, marquer comme non réclamé. Accessible aux bénévoles via `/volunteer/settlement` et à l'admin via `/admin/settlement`. L'admin voit en plus téléphone et email. Composant Angular unique — affichage des colonnes de contact conditionné par le rôle.
 - FR-049 : En phase Post-vente, un bilan de vente est imprimable par vendeur.
 - FR-050 : Le bilan de vente contient : articles vendus, articles invendus avec emplacement de table, total brut, commission, reversement net. Un lot apparaît sur une seule ligne.
-- FR-051 : Pour solder un vendeur, le bénévole saisit le montant en espèces et clique sur « Solder ». Le statut passe à Soldé.
+- FR-051 : Pour solder un vendeur, le bénévole saisit le montant en espèces remis et clique « Solder ». Le système enregistre le montant saisi. Si ce montant est strictement inférieur au montant net calculé, un avertissement est affiché avant confirmation — le bénévole peut tout de même valider. Si le montant est supérieur, la validation est bloquée. Après l'opération, le statut du vendeur passe à **Soldé**.
 - FR-052 : Le bouton « Non réclamé » transfère l'intégralité du montant dû en recettes de l'association.
-- FR-053 : Les vendeurs non soldés sont identifiables avec leur numéro de téléphone visible.
+- FR-053 : Les vendeurs non soldés sont identifiables dans la liste de solde via un filtre dédié.
 
 **F6 — Rapports**
 
 - FR-054 : Un bilan journalier est générable par l'administrateur en phase Vente. Couvre la journée calendaire en cours : articles vendus/invendus, recettes, commission.
 - FR-055 : Un bilan d'édition est généré à la clôture de l'édition : total des articles vendus/invendus, recettes brutes totales, commission totale.
-- FR-056 : Un rapport des vendeurs non soldés liste les vendeurs avec leur numéro de téléphone.
 - FR-057 : Tous les rapports sont générés en PDF.
 - FR-058 : Les rapports sont accessibles à l'administrateur uniquement.
-- FR-059 : Les éditions archivées affichent les métriques agrégées et les profils vendeurs en lecture seule. Le détail au niveau des articles est accessible via PDF uniquement.
+- FR-094 : Le bilan journalier et le bilan d'édition incluent une ventilation des recettes par moyen de paiement (espèces, chèque, carte).
+- FR-059 : Les éditions clôturées affichent les métriques agrégées en lecture seule. Les profils vendeurs et le détail des articles restent consultables jusqu'au déclenchement de l'action Nettoyer l'Édition ; après nettoyage, seules les métriques agrégées sont accessibles en base.
 
 **F7 — Comptes utilisateurs et contrôle d'accès**
 
@@ -139,8 +145,8 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 
 ### Exigences non fonctionnelles
 
-- NFR-001 : Performance — l'application est utilisable sur Raspberry Pi 4 (2 Go de RAM) sans dégradation notable sous la charge d'un événement (3 postes simultanés, ~1 700 articles).
-- NFR-002 : Concurrence — les opérations simultanées depuis plusieurs postes ne génèrent pas de conflits de données.
+- NFR-001 : Performance — charge de référence : ~100 vendeurs, ~1 700 articles, 3 postes simultanés. L'application est utilisable sur Raspberry Pi 4 (2 Go de RAM). Les opérations caisse (scan, validation de paiement) répondent en moins de 500ms sous charge normale. Les autres pages (catalogue, rapports) se chargent en moins de 1 seconde sous charge nominale.
+- NFR-002 : Concurrence — le système empêche la vente simultanée d'un même article depuis deux postes via verrou optimiste (`@Version` sur `Item`). Le second poste reçoit un 409 avec la liste des articles en conflit.
 - NFR-003 : Précision financière — les calculs de reversement sont précis au centime. Toutes les valeurs monétaires utilisent BigDecimal — jamais float ou double.
 - NFR-004 : Compatibilité navigateurs — l'interface fonctionne sur tout navigateur moderne (Chrome, Firefox, Edge, Safari) sur tout système d'exploitation.
 - NFR-005 : Compatibilité scanners — les scanners USB HID fonctionnent sans configuration, quelle que soit la disposition du clavier (AZERTY/QWERTY).
@@ -186,7 +192,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR14 : Implémenter le composant panier POS : liste d'articles avec nom + prix unitaire, bouton de suppression individuel (icône fermer par ligne), regroupement par lot (en-tête de lot en rouge avec compteur « X/N scannés » + sous-total du lot, sans prix individuel par article), bouton « Retirer le lot entier » depuis le premier article du lot, « Valider » bloqué si lot incomplet, panier auto-vidé sur événement SSE basket-cancelled.
 - UX-DR15 : Implémenter le flux formulaire de dépôt (bénévole) : recherche vendeur par nom/email → « Créer un profil » si introuvable → enregistrement d'article (nom, prix, sélecteur de catégorie, case à cocher complet/incomplet + champ commentaire) avec affichage de la table auto-assignée. Autofocus sur le champ de recherche vendeur au chargement de la page.
 - UX-DR16 : Implémenter le composant admin catégories & tables : mode éditable avant le démarrage de la phase Dépôt, lecture seule après. Sur nouvelle édition : option « Copier depuis une édition clôturée » (liste déroulante de sélection d'édition clôturée) ou « Configurer manuellement ».
-- UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue). La liste des vendeurs non soldés est accessible via la page de solde (`/volunteer/settlement`) et la fiche vendeur admin — pas de section dédiée dans les rapports.
+- UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue). La liste des vendeurs non soldés est accessible via la page de solde, commune aux bénévoles (`/volunteer/settlement`) et à l'admin (`/admin/settlement`) — pas de section dédiée dans les rapports. L'admin voit en plus les colonnes téléphone et email, affichées conditionnellement selon le rôle.
 - UX-DR18 : Implémenter l'action « Nettoyage de l'édition » : bouton secondaire couleur d'erreur, boîte de dialogue de confirmation irréversible (« Supprimer tous les articles de cette édition. Cette action est irréversible. »), état vide post-nettoyage « Édition nettoyée — aucun article. » sans action, bouton disparaît après le nettoyage. Bouton visible uniquement si des articles existent encore.
 - UX-DR19 : Implémenter le pattern de retour visuel du bouton d'impression : spinner dans le bouton pendant la soumission à la file d'attente, toast de succès (4s), toast d'erreur persistant si l'imprimante est hors ligne avec bouton « Fermer ». Toujours redéclenchable.
 - UX-DR20 : Implémenter le socle d'accessibilité WCAG 2.2 AA : anneaux de focus sur tous les éléments interactifs (jamais supprimés), ordre de tabulation suivant l'ordre de lecture visuel, piège de focus dans les boîtes de dialogue de confirmation, annonces pour lecteurs d'écran via aria-live/aria-label/aria-describedby, cibles tactiles minimales de 44×44px, icônes décoratives aria-hidden="true", icônes sémantiques avec texte accompagnateur ou aria-label.
@@ -211,17 +217,17 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-014 : Epic 2 — Une édition ayant dépassé la phase Préparation ne peut pas être supprimée
 - FR-015 : Epic 2 — Données d'édition strictement isolées
 - FR-016 : Epic 2 — Taux de commission figé dès le démarrage de la phase Dépôt
-- FR-017 : Epic 3 — L'admin configure les catégories d'articles par édition
-- FR-018 : Epic 3 — L'admin configure la correspondance catégorie-table
-- FR-019 : Epic 3 — Les profils vendeurs persistent d'une édition à l'autre
+- FR-017 : Epic 2 — L'admin configure les catégories d'articles par édition (Story 2.3)
+- FR-018 : Epic 2 — L'admin configure la correspondance catégorie-table (Story 2.3)
+- FR-019 : Epic 3 — Les profils vendeurs sont propres à chaque édition
 - FR-020 : Epic 3 — Le bénévole recherche/crée des profils vendeurs
 - FR-021 : Epic 3 — L'admin peut supprimer un profil vendeur (anonymisation RGPD)
 - FR-022 : Epic 3 — Le bénévole saisit les détails de l'article
 - FR-023 : Epic 3 — Table auto-assignée : même table si vendeur déjà présent dans la catégorie, sinon table la moins chargée
 - FR-024 : Epic 3 — Article corrigeable/supprimable uniquement en phase Dépôt
 - FR-025 : Epic 3 — Indicateur complet/incomplet modifiable dans toutes les phases
-- FR-026 : Epic 3 — Code-barres Code 128 généré côté serveur par article
-- FR-027 : Epic 3 — Format d'étiquette : édition / catégorie / nom+prix / /!\ INCOMPLET si applicable / table / code-barres
+- FR-026 : Epic 3 — Code-barres Code 128 généré côté serveur par article (8 chiffres : 4 vendeur + 4 article dans inventaire vendeur)
+- FR-027 : Epic 3 — Format d'étiquette : édition / catégorie / nom+prix / /!\ INCOMPLET si applicable / table / code-barres (numéro XXXX-XXXX)
 - FR-028 : Epic 3 — Étiquettes imprimées automatiquement à la validation du dépôt
 - FR-029 : Epic 3 — Travaux d'impression mis en file d'attente séquentiellement côté serveur
 - FR-030 : Epic 3 — Format du rouleau thermique : séparateur vendeur → étiquettes articles
@@ -247,13 +253,13 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-050 : Epic 5 — Bilan de vente : articles vendus, invendus + table, total brut, commission, reversement net
 - FR-051 : Epic 5 — Le bénévole solde le vendeur : saisit le montant en espèces, clique Solder
 - FR-052 : Epic 5 — Le bouton « Non réclamé » transfère le reversement en recettes de l'association
-- FR-053 : Epic 5 — Vendeurs non soldés identifiables avec numéro de téléphone
+- FR-053 : Epic 5 — Vendeurs non soldés identifiables dans la liste de solde via un filtre dédié
 - FR-054 : Epic 5 — Bilan journalier générable par l'admin en phase Vente
 - FR-055 : Epic 5 — Bilan d'édition généré à la clôture de l'édition
-- FR-056 : Epic 5 — Rapport des vendeurs non soldés (non soldés + numéro de téléphone)
+- FR-095 : Epic 5 — Page de solde : liste de tous les vendeurs filtrable par statut (soldé / non soldé), actions par ligne (imprimer bilan, solder, non réclamé) ; accessible bénévoles (`/volunteer/settlement`) et admin (`/admin/settlement`) ; l'admin voit en plus téléphone et email ; composant Angular unique
 - FR-057 : Epic 5 — Tous les rapports générés en PDF
 - FR-058 : Epic 5 — Rapports accessibles à l'admin uniquement
-- FR-059 : Epic 5 — Éditions archivées : métriques agrégées en lecture seule, détail articles via PDF uniquement
+- FR-059 : Epic 5 — Éditions clôturées : métriques agrégées + profils vendeurs + détail articles en lecture seule jusqu'au Nettoyage ; après nettoyage, seules les métriques agrégées en base
 - FR-060 : Epic 1 — L'admin crée/modifie/désactive les comptes bénévoles, réinitialise les mots de passe
 - FR-061 : Epic 1 — Un seul compte admin par instance
 - FR-062 : Epic 1 — Premier lancement : identifiants Admin/Admin, changement de mot de passe forcé
@@ -282,15 +288,18 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-085 : Epic 6 — Catalogue triable par n'importe quelle colonne visible
 - FR-086 : Epic 6 — Catalogue affiche l'édition active uniquement ; indisponible après Nettoyage de l'édition
 - FR-088 : Epic 2 — « Nettoyage de l'édition » supprime définitivement les enregistrements d'articles ; désactive le retour arrière vers Post-vente
-- FR-089 : Epic 5 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
+- FR-096 : Epic 2 — Clôture bloquée tant que tous les vendeurs ne sont pas soldés ou non réclamés
+- FR-089 : Epic 3 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
 - FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
 - FR-091 : Epic 5 — Export CSV du catalogue articles (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
 - FR-092 : Epic 5 — Export CSV des reversements (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
+- FR-093 : Epic 4 — Moyen de paiement enregistré à la validation (espèces, chèque, carte)
+- FR-094 : Epic 5 — Ventilation des recettes par moyen de paiement dans les bilans journalier et d'édition — addendum
 
 ## Liste des épics
 
 ### Epic 1 : Fondation applicative, Authentification & i18n
-Les administrateurs et les bénévoles peuvent déployer l'application, se connecter avec les rôles appropriés, gérer les comptes utilisateurs, configurer l'instance et utiliser l'application dans leur langue préférée (EN/FR). Tous les composants partagés et le système de design Angular Material sont en place.
+Les administrateurs et les bénévoles peuvent déployer l'application, se connecter avec les rôles appropriés, gérer les comptes utilisateurs, configurer l'instance et utiliser l'application dans leur langue préférée (EN/FR). Tous les composants partagés et le système de design Angular Material sont en place. Un guide d'installation complet permet à un utilisateur non technique de déployer l'instance sans assistance.
 
 **FR couvertes :** FR-001–007, FR-060–067, FR-068–074
 **Architecture :** ARCH-001, ARCH-002, ARCH-006, ARCH-007, ARCH-011, ARCH-013, ARCH-014
@@ -299,28 +308,28 @@ Les administrateurs et les bénévoles peuvent déployer l'application, se conne
 ### Epic 2 : Gestion du cycle de vie des éditions
 Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
-**FR couvertes :** FR-008–016, FR-080, FR-082, FR-088
+**FR couvertes :** FR-008–018, FR-080, FR-082, FR-088, FR-090 (côté serveur), FR-096
 **Architecture :** ARCH-012, ARCH-015 (prérequis machine de phases)
 **UX :** UX-DR4, UX-DR18
 
 ### Epic 3 : Enregistrement des vendeurs & Dépôt
 Les bénévoles peuvent enregistrer les vendeurs et tous leurs articles (y compris les lots) avec assignation automatique de table, et imprimer les étiquettes et bordereaux de dépôt via l'imprimante thermique centralisée.
 
-**FR couvertes :** FR-017–032, FR-043–045, FR-075–079
+**FR couvertes :** FR-019–032, FR-043–045, FR-075–079, FR-089
 **Architecture :** ARCH-003, ARCH-008, ARCH-009, ARCH-010, ARCH-015 (prérequis file d'impression), ARCH-016
 **UX :** UX-DR15, UX-DR16, UX-DR19, UX-DR22
 
 ### Epic 4 : Point de vente
 Les bénévoles peuvent scanner des articles avec un scanner code-barres USB, gérer les paniers avec prise en charge complète des lots, finaliser les ventes et imprimer les factures acheteurs — en toute sécurité sur plusieurs postes simultanés.
 
-**FR couvertes :** FR-033–042, FR-046–048, FR-081, FR-090
+**FR couvertes :** FR-033–042, FR-046–048, FR-081, FR-090 (côté client), FR-093
 **Architecture :** ARCH-003 (validation concurrence), ARCH-004
 **UX :** UX-DR10, UX-DR14, UX-DR21
 
 ### Epic 5 : Post-vente, Reversements & Rapports
 Les bénévoles peuvent solder les vendeurs et traiter les reversements. Les administrateurs peuvent générer des rapports de bilan journaliers et d'édition en PDF, identifier les vendeurs non soldés et clôturer officiellement les éditions.
 
-**FR couvertes :** FR-049–059, FR-089, FR-091, FR-092
+**FR couvertes :** FR-049–055, FR-057–059, FR-091, FR-092, FR-094, FR-095
 **UX :** UX-DR17, UX-DR22
 
 ### Epic 6 : Catalogue articles
@@ -353,7 +362,9 @@ afin que le développement des fonctionnalités puisse démarrer sur une base st
 **Étant donné** que l'application Spring Boot démarre
 **Quand** les migrations Liquibase s'exécutent
 **Alors** la table `users` existe avec tous les champs, y compris `preferred_language` et la FK nullable `seller_profile_id`
-**Et** les tables Spring Session JDBC existent
+**Et** les tables Spring Session JDBC existent (changeset 002)
+**Et** les tables `categories` et `table_assignments` existent (changeset 003)
+**Et** la table `instance_config` existe (changeset 004)
 **Et** un compte administrateur par défaut (username : « Admin », hash BCrypt de « Admin ») est initialisé
 
 **Étant donné** que l'application retourne une erreur
@@ -510,6 +521,8 @@ afin de travailler confortablement dans ma langue maternelle pendant l'événeme
 **Quand** la langue des documents de l'édition active est « FR »
 **Alors** tous les textes du document utilisent les entrées de `messages_fr.properties`
 
+**Note de développement :** Toutes les chaînes françaises (`fr.json` et `messages_fr.properties`) utilisent le **vouvoiement systématique**. Aucun tutoiement, même informel. Voir EXPERIENCE.md § Voice and Tone pour les exemples.
+
 ### Story 1.7 : Système de design Angular Material & Mise en page applicative
 
 En tant qu'utilisateur naviguant dans l'application,
@@ -585,6 +598,58 @@ afin d'agir en confiance sans faire d'erreurs accidentelles sous pression.
 **Et** les icônes décoratives ont `aria-hidden="true"`
 **Et** les icônes sémantiques ont un `aria-label` ou un libellé textuel visible
 
+### Story 1.9 : Guide d'installation
+
+En tant que responsable d'association non technique,
+je veux un guide d'installation clair et complet,
+afin de pouvoir déployer et configurer PluriBourse seul, sans connaissances préalables de Docker ou du terminal.
+
+**Dépendances :** Stories 1.1 (Docker Compose), 1.4 (commande CLI reset mdp), 1.5 (paramètres instance)
+
+**Critères d'acceptation :**
+
+**Étant donné** que le dépôt est cloné
+**Quand** le fichier `GUIDE_INSTALLATION.md` est ouvert
+**Alors** il existe à la racine du dépôt
+**Et** il contient exactement les 7 sections suivantes dans l'ordre : « Prérequis », « Installation de Docker », « Téléchargement et lancement », « Premier lancement », « Configuration initiale », « Réinitialisation du mot de passe admin », « Mise à jour »
+
+**Étant donné** que la section « Installation de Docker » est lue
+**Quand** le lecteur identifie son système d'exploitation
+**Alors** des instructions distinctes et complètes sont présentes pour Windows (Docker Desktop), macOS (Docker Desktop) et Linux / Raspberry Pi (Docker Engine)
+**Et** chaque procédure OS est autonome — elle n'oblige pas à lire les autres sections OS
+
+**Étant donné** que la section « Téléchargement et lancement » est lue
+**Quand** les instructions sont suivies
+**Alors** la commande `docker compose up -d` est présente dans un bloc de code copier-coller
+**Et** une étape de vérification indique comment confirmer que l'application répond (URL et message attendu dans le navigateur)
+
+**Étant donné** que la section « Réinitialisation du mot de passe admin » est lue
+**Quand** les instructions sont suivies
+**Alors** la commande CLI exacte (`docker compose exec ...`) est présente dans un bloc de code
+**Et** le résultat attendu dans la console est décrit
+**Et** les instructions pour ouvrir un terminal sont fournies pour chaque OS
+
+**Étant donné** que la section « Premier lancement » est lue
+**Quand** les instructions sont suivies
+**Alors** l'URL d'accès (`http://localhost:8080` ou le port configuré) et les identifiants par défaut (`Admin` / `Admin`) sont indiqués
+**Et** une étape de vérification confirme que le changement de mot de passe obligatoire a bien été effectué avant de poursuivre
+
+**Étant donné** que la section « Mise à jour » est lue
+**Quand** les instructions sont suivies
+**Alors** la commande exacte `docker compose pull && docker compose up -d` est présente dans un bloc de code
+**Et** le guide confirme explicitement que les données de l'association sont préservées après la mise à jour (FR-071)
+
+**Étant donné** que le guide est rédigé en français
+**Alors** toutes les formulations adressées au lecteur utilisent le vouvoiement (vous, votre)
+
+**Étant donné** que n'importe quelle section technique du guide est lue
+**Quand** un terme technique est mentionné pour la première fois (terminal, conteneur, volume, port)
+**Alors** ce terme est défini ou accompagné d'une explication en langage naturel
+
+**Étant donné** qu'une personne n'ayant jamais utilisé Docker suit le guide de A à Z
+**Quand** elle atteint la fin de la section « Configuration initiale »
+**Alors** l'application est déployée, le mot de passe admin a été changé, et les paramètres de l'instance sont configurés — sans étape nécessitant une connaissance Docker préalable
+
 ---
 
 ## Epic 2 : Gestion du cycle de vie des éditions
@@ -613,12 +678,12 @@ afin que chaque événement soit correctement identifié et configuré financiè
 **Et** les documents imprimés ultérieurement pour cette édition utilisent cette langue (FR-005, FR-006, FR-007)
 
 **Étant donné** qu'aucune édition active n'existe
-**Quand** l'admin active une édition
-**Alors** elle devient l'édition active
+**Quand** l'admin crée une nouvelle édition
+**Alors** cette édition est créée en phase « Préparation » et devient l'édition active
 
-**Étant donné** qu'une édition est déjà active
-**Quand** l'admin tente d'activer une seconde édition
-**Alors** le système le refuse avec une erreur explicite (FR-010)
+**Étant donné** qu'une édition est déjà en phase Préparation, Dépôt, Vente ou Post-vente
+**Quand** l'admin tente de créer une nouvelle édition
+**Alors** le système le refuse avec une erreur explicite (FR-010 : une seule édition active à la fois)
 
 **Étant donné** qu'une édition est en phase « Préparation »
 **Quand** l'admin change le taux de commission à 15 %
@@ -665,6 +730,11 @@ afin que les transitions de phase soient intentionnelles et que leurs conséquen
 **Alors** la phase revient d'un cran en arrière (Dépôt → Préparation, Vente → Dépôt, Post-vente → Vente, Clôturé → Post-vente)
 **Et** toutes les données enregistrées dans la phase annulée sont préservées (FR-082)
 
+**Étant donné** que l'admin confirme le retour arrière Dépôt → Préparation
+**Quand** la transition se termine
+**Alors** les catégories et la correspondance des tables redeviennent modifiables (FR-018)
+**Et** le taux de commission redevient modifiable (FR-016)
+
 **Étant donné** qu'une édition a été clôturée et que le Nettoyage de l'édition a été déclenché
 **Quand** l'admin consulte la page de contrôle des phases
 **Alors** le bouton de retour arrière depuis Clôturée est absent (FR-082 : retour arrière désactivé après nettoyage)
@@ -693,6 +763,14 @@ afin que les articles soient automatiquement dirigés vers les bonnes tables lor
 **Étant donné** que l'admin ajoute une catégorie (ex. « Jouets ») assignée aux tables 1, 2, 3
 **Quand** sauvegardée
 **Alors** les articles de cette catégorie seront auto-assignés aux tables 1-3
+
+**Étant donné** que l'admin assigne la table 5 à deux catégories distinctes (ex. « Livres » et « BD »)
+**Quand** sauvegardé
+**Alors** la table 5 apparaît dans la correspondance des deux catégories sans erreur de validation
+
+**Étant donné** que l'admin tente de sauvegarder avec une catégorie sans aucune table assignée
+**Quand** il clique sur « Enregistrer »
+**Alors** la sauvegarde est bloquée et une erreur inline apparaît sur la ligne concernée : « Assignez au moins une table à cette catégorie » (FR-018)
 
 **Étant donné** que l'édition est en phase Préparation
 **Quand** l'admin modifie les catégories et la correspondance des tables
@@ -737,7 +815,13 @@ afin que l'édition soit correctement archivée et que le stockage puisse être 
 
 **Critères d'acceptation :**
 
-**Étant donné** que l'édition est en phase Post-vente
+**Étant donné** que l'édition est en phase Post-vente et qu'au moins un vendeur est dans un statut autre que Soldé ou Non réclamé
+**Quand** l'admin consulte la page de contrôle de phase `/admin/editions/:id/phase`
+**Alors** le bouton « Clôturer l'édition » est désactivé
+**Et** une notification inline est affichée : « X vendeur(s) non soldé(s). Tous les vendeurs doivent être soldés ou marqués non réclamés avant la clôture. » avec un lien vers `/admin/settlement` (FR-096, UX-DR7)
+**Et** le serveur rejette toute requête de clôture avec un 409 si cette contrainte est violée (ARCH-013)
+
+**Étant donné** que l'édition est en phase Post-vente et que tous les vendeurs sont Soldés ou Non réclamés
 **Quand** l'admin clique sur « Clôturer l'édition » et confirme
 **Alors** la phase de l'édition passe à « Clôturée » et devient en lecture seule
 **Et** les PDF de bilan d'édition sont générés en EN et FR (FR-013)
@@ -749,6 +833,7 @@ afin que l'édition soit correctement archivée et que le stockage puisse être 
 **Étant donné** que l'admin clique sur « Nettoyer l'édition » et confirme
 **Quand** l'action se termine
 **Alors** tous les enregistrements d'articles de cette édition sont définitivement supprimés
+**Et** tous les profils vendeurs de cette édition sont définitivement supprimés
 **Et** le bouton « Nettoyer l'édition » disparaît
 **Et** le catalogue affiche l'état vide « Édition nettoyée — aucun article. »
 **Et** le retour arrière depuis Clôturée est définitivement désactivé pour cette édition (FR-088)
@@ -756,6 +841,28 @@ afin que l'édition soit correctement archivée et que le stockage puisse être 
 **Étant donné** qu'une édition Clôturée a été nettoyée
 **Quand** l'admin consulte l'édition
 **Alors** les métriques agrégées (total des ventes, recettes, commission) restent visibles en lecture seule (FR-059)
+
+### Story 2.6 : Annulation du panier lors d'une transition de phase — côté serveur
+
+En tant qu'administrateur déclenchant une transition de phase,
+je veux que le serveur invalide automatiquement les paniers POS actifs et notifie les clients via SSE,
+afin que les bénévoles en caisse ne puissent pas finaliser des ventes dans une phase qui n'est plus valide.
+
+**Critères d'acceptation :**
+
+**Étant donné** qu'un bénévole a un panier actif sur la page caissier
+**Quand** l'admin fait transiter la phase de l'édition
+**Alors** le serveur identifie tous les paniers actifs et envoie l'événement SSE `basket-cancelled` aux clients concernés (FR-090)
+
+**Étant donné** qu'un bénévole n'a pas de panier actif
+**Quand** une transition de phase se produit
+**Alors** aucun événement `basket-cancelled` ne lui est envoyé — seul `phase-changed` est diffusé
+
+**Étant donné** qu'une transition de phase est déclenchée
+**Quand** le `SseEmitterRegistry` diffuse `basket-cancelled`
+**Alors** le payload contient l'`editionId` et la nouvelle phase
+
+**Note de développement :** La gestion côté Angular du composant POS (toast persistant, vidage du panier, désactivation du scanner) est implémentée dans Story 4.6.
 
 ---
 
@@ -787,14 +894,9 @@ afin que les vendeurs puissent être associés à leurs articles sans ressaisir 
 **Quand** le formulaire est soumis
 **Alors** un nouveau profil vendeur est créé et immédiatement sélectionnable pour l'enregistrement d'articles
 
-**Étant donné** qu'un profil vendeur existe depuis une édition précédente
-**Quand** le bénévole le sélectionne
-**Alors** le profil est réutilisé — aucun doublon n'est créé (FR-019 persistance inter-éditions)
-
-**Étant donné** que l'admin déclenche une suppression RGPD sur un profil vendeur
+**Étant donné** que l'admin supprime un vendeur en phase de Dépôt et confirme
 **Quand** la suppression se termine
-**Alors** le nom, prénom, e-mail et téléphone sont anonymisés dans toutes les éditions (FR-021)
-**Et** les descriptions d'articles et les catégories de produits sont conservées
+**Alors** le profil vendeur et tous ses articles sont définitivement supprimés de cette édition (FR-021)
 **Et** aucune donnée personnelle n'apparaît dans les logs applicatifs
 
 ### Story 3.2 : Enregistrement d'articles & Assignation automatique de table
@@ -812,7 +914,7 @@ afin que les articles soient correctement catalogués et localisés physiquement
 
 **Étant donné** qu'un vendeur est sélectionné et que le bénévole saisit un premier article dans une catégorie pour cette édition
 **Quand** l'article est sauvegardé
-**Alors** la table ayant le moins d'articles parmi celles configurées pour cette catégorie lui est assignée (FR-023)
+**Alors** la table ayant le moins d'articles toutes catégories confondues parmi celles configurées pour cette catégorie lui est assignée (FR-023)
 **Et** le numéro de table assigné est affiché immédiatement
 
 **Étant donné** que le bénévole coche « Incomplet » pour un article
@@ -822,7 +924,7 @@ afin que les articles soient correctement catalogués et localisés physiquement
 
 **Étant donné** qu'un article est enregistré en phase Dépôt
 **Quand** le bénévole modifie son nom, son prix ou sa catégorie
-**Alors** la modification est sauvegardée et si la catégorie a changé, la table est réassignée selon l'algorithme FR-023 (même table si vendeur déjà présent dans la nouvelle catégorie, sinon table la moins chargée)
+**Alors** la modification est sauvegardée et si la catégorie a changé, la table est réassignée selon l'algorithme FR-023 (même table si vendeur déjà présent dans la nouvelle catégorie, sinon table la moins chargée toutes catégories confondues)
 
 **Étant donné** qu'un article est enregistré en phase Dépôt
 **Quand** le bénévole le supprime
@@ -846,9 +948,15 @@ afin que les ensembles vendus ensemble soient traités comme une unité atomique
 **Critères d'acceptation :**
 
 **Étant donné** que le bénévole enregistre des articles pour un vendeur
-**Quand** il choisit de créer un lot
-**Alors** il peut saisir un nom de lot et un prix global (BigDecimal)
-**Et** il peut ajouter plusieurs articles au lot, chacun avec son propre nom/description (FR-043, FR-044)
+**Quand** il sélectionne le segment "Lot" dans le sélecteur de type en tête du formulaire de dépôt
+**Alors** le formulaire bascule en mode Lot : les champs "Nom du lot" et "Prix global du lot (€)" remplacent les champs de saisie individuelle (FR-043)
+**Et** une liste d'articles apparaît avec un bouton "+ Ajouter un article au lot"
+
+**Étant donné** que le bénévole est en mode Lot
+**Quand** il renseigne les articles du lot
+**Alors** chaque article possède son propre nom/description et catégorie, sans prix individuel (FR-043, FR-044)
+**Et** le bouton "Valider le lot" reste désactivé tant que moins de 2 articles sont présents dans la liste
+**Et** le label du bouton reflète en temps réel le nombre d'articles saisis — ex : "Valider le lot (2 articles)"
 
 **Étant donné** qu'un lot contient plusieurs articles
 **Quand** le lot est sauvegardé
@@ -861,6 +969,8 @@ afin que les ensembles vendus ensemble soient traités comme une unité atomique
 **Et** « Lot indivisible : X/N » où X est la position de l'article et N est le total (FR-045)
 
 ### Story 3.4 : Infrastructure d'impression — Files d'attente côté serveur
+
+> **Story technique prérequise (spike accepté)** — Aucune valeur utilisateur visible en sprint review. Livrée avant les Stories 3.5, 3.6 et 3.7 qui l'utilisent. La Definition of Done est basée sur les ACs techniques ci-dessous.
 
 En tant que bénévole déclenchant une impression,
 je veux que les travaux d'impression soient traités côté serveur sans imprimante sur mon poste de travail,
@@ -901,7 +1011,7 @@ afin que les articles soient physiquement étiquetés immédiatement après le d
 
 **Étant donné** qu'un article est enregistré
 **Quand** sauvegardé
-**Alors** un code-barres Code 128 unique est généré côté serveur via ZXing (FR-026)
+**Alors** un code-barres Code 128 unique est généré côté serveur via ZXing (FR-026) : 8 chiffres structurés XXXX-XXXX (4 chiffres numéro vendeur + 4 chiffres numéro article dans l'inventaire du vendeur)
 
 **Étant donné** qu'un dépôt est validé
 **Quand** la validation se termine
@@ -910,7 +1020,7 @@ afin que les articles soient physiquement étiquetés immédiatement après le d
 
 **Étant donné** qu'une étiquette est générée pour un article standard
 **Quand** rendue pour ESC/POS
-**Alors** elle affiche dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » sur ligne dédiée si applicable — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible — ligne vide
+**Alors** elle affiche dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » sur ligne dédiée si applicable — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible au format XXXX-XXXX — ligne vide
 **Et** aucun nom de vendeur n'apparaît sur l'étiquette (RGPD, FR-027)
 
 **Étant donné** qu'une étiquette est générée pour un article de lot
@@ -921,30 +1031,55 @@ afin que les articles soient physiquement étiquetés immédiatement après le d
 **Quand** le travail ESC/POS est préparé
 **Alors** cette largeur est appliquée (FR-032, défaut 57 mm)
 
-### Story 3.6 : Génération & Impression du bordereau de dépôt PDF
+### Story 3.6 : Génération & Impression automatique du bordereau de dépôt PDF
 
 En tant que bénévole complétant un dépôt,
-je veux imprimer un bordereau de dépôt par vendeur,
-afin que le vendeur dispose d'un justificatif papier de ce qu'il a déposé et du montant qu'il percevra.
+je veux qu'un bordereau de dépôt soit automatiquement imprimé à la validation,
+afin que le vendeur dispose d'un justificatif papier de ce qu'il a déposé et du montant qu'il percevra, sans étape manuelle supplémentaire.
 
 **Critères d'acceptation :**
 
-**Étant donné** que le dépôt d'un vendeur est terminé
-**Quand** le bénévole clique sur « Imprimer le bordereau de dépôt »
-**Alors** un PDF est généré côté serveur via OpenPDF 3.0.0 dans la langue des documents de l'édition
+**Étant donné** qu'un dépôt est validé
+**Quand** la validation se termine (en parallèle de l'impression des étiquettes — Story 3.5)
+**Alors** un PDF de bordereau de dépôt est automatiquement généré côté serveur via OpenPDF 3.0.0 dans la langue des documents de l'édition (FR-031)
+**Et** le PDF est mis en file d'attente dans la file des documents A4 et envoyé à l'imprimante standard USB
 
 **Étant donné** que le PDF est généré
 **Quand** le contenu est rendu
 **Alors** il contient : liste des articles (nom, prix unitaire), taux de commission, reversement net attendu (BigDecimal, précis au centime, FR-031)
 **Et** un lot apparaît sur une seule ligne (nom du lot, prix du lot)
 
-**Étant donné** que le PDF est généré
-**Quand** envoyé pour impression
-**Alors** il est mis en file d'attente dans la file des documents A4 et envoyé à l'imprimante standard USB
+**Étant donné** que le bénévole consulte la fiche vendeur (en phase Dépôt ou Post-vente)
+**Quand** il clique sur « Réimprimer le bordereau »
+**Alors** le bordereau est régénéré et remis en file d'attente — l'impression est toujours rejouable depuis la fiche vendeur
 
-**Étant donné** que le bordereau a déjà été imprimé une fois
-**Quand** le bénévole redéclenche l'impression
-**Alors** le bordereau est régénéré et remis en file d'attente (toujours réimprimable)
+### Story 3.7 : Vue admin de diagnostic de la file d'impression
+
+En tant qu'administrateur,
+je veux consulter l'état en temps réel des files d'impression et des erreurs en cours,
+afin de diagnostiquer les problèmes d'imprimante sans interrompre l'événement.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin navigue vers la page de gestion des impressions
+**Quand** la page se charge
+**Alors** l'état des deux files (thermique et A4) est affiché : jobs en attente, job en cours, jobs en erreur (FR-079)
+
+**Étant donné** qu'un job est en erreur dans une file
+**Quand** l'admin consulte la vue de diagnostic
+**Alors** le job en erreur est visible avec la cause de l'erreur
+
+**Étant donné** qu'un job est en erreur
+**Quand** l'admin clique sur « Relancer »
+**Alors** le job est remis en tête de file et la file reprend (FR-079)
+
+**Étant donné** qu'un job est en erreur
+**Quand** l'admin clique sur « Ignorer »
+**Alors** le job est retiré de la file et la file reprend les jobs suivants (FR-079)
+
+**Étant donné** qu'un bénévole tente d'accéder à la page de diagnostic
+**Quand** la route est chargée
+**Alors** l'accès est refusé avec un 403 — vue admin uniquement
 
 ---
 
@@ -1008,6 +1143,19 @@ afin de conclure les transactions proprement avec un historique complet.
 **Alors** tous les articles du panier sont marqués comme vendus dans une transaction atomique unique (FR-039)
 **Et** le panier est vidé et prêt pour une nouvelle transaction
 
+**Étant donné** que le panier contient uniquement des articles valides et que le bénévole clique sur « Valider »
+**Quand** la confirmation de paiement s'affiche
+**Alors** le bénévole sélectionne le moyen de paiement (espèces, chèque, carte) avant que la transaction ne se finalise (FR-093)
+**Et** le moyen de paiement est enregistré avec la transaction
+
+**Étant donné** que le moyen de paiement sélectionné est « espèces »
+**Quand** le bénévole saisit un montant dans le champ optionnel « Somme remise »
+**Alors** le système affiche la monnaie à rendre (somme remise − total du panier) (FR-093)
+
+**Étant donné** que le moyen de paiement sélectionné est « espèces » et que le champ « Somme remise » est laissé vide
+**Quand** le bénévole valide
+**Alors** la transaction se finalise sans calcul de monnaie (montant exact supposé) (FR-093)
+
 **Étant donné** que le paiement a été validé
 **Quand** la transaction se clôt
 **Alors** aucun article ne peut être retourné ou modifié (FR-039 : ni retour ni échange)
@@ -1026,9 +1174,10 @@ afin que les lots indivisibles soient vendus complets ou pas du tout.
 **Et** le sous-total du lot est affiché dans l'en-tête du groupe
 **Et** aucun prix individuel n'est affiché dans le groupe lot
 
-**Étant donné** qu'un lot est partiellement scanné
-**Quand** le bénévole clique sur « Valider »
-**Alors** la validation est bloquée avec un message inline indiquant combien d'articles manquent (FR-047)
+**Étant donné** qu'un panier ne contient pas de lot incomplet
+**Quand** le premier article d'un lot est scanné
+**Alors** le bouton « Valider » est désactivé (grisé)
+**Et** une notification inline orange apparaît dans le panier indiquant combien d'articles manquent dans le lot (FR-047)
 
 **Étant donné** que les N articles d'un lot sont tous scannés
 **Quand** le dernier article est ajouté
@@ -1092,31 +1241,29 @@ afin que l'acheteur dispose d'un justificatif papier de son achat.
 **Quand** le bénévole redéclenche l'impression
 **Alors** la facture est remise en file d'attente (toujours réimprimable)
 
-### Story 4.6 : Annulation du panier lors d'une transition de phase
+### Story 4.6 : Gestion du changement de phase dans le composant POS — côté client
 
 En tant que bénévole caissier avec un panier actif,
 je veux être immédiatement notifié si l'administrateur change la phase pendant que je suis en cours de transaction,
-afin de ne pas tenter de finaliser une vente dans une phase où elle n'est plus valide.
+afin de ne pas tenter de finaliser une vente dans une phase qui n'est plus valide.
+
+**Dépendance :** Story 2.6 (émission SSE `basket-cancelled` côté serveur)
 
 **Critères d'acceptation :**
 
-**Étant donné** qu'un bénévole a un panier actif sur la page caissier
-**Quand** l'admin fait transiter la phase de l'édition
-**Alors** le serveur annule tous les paniers actifs et envoie le SSE `basket-cancelled` aux clients concernés (FR-090)
-
-**Étant donné** que le composant Angular POS reçoit `basket-cancelled`
+**Étant donné** que le composant Angular POS reçoit l'événement SSE `basket-cancelled`
 **Quand** l'événement arrive
 **Alors** un toast persistant apparaît : « La phase a changé. Votre panier a été annulé. »
-**Et** le panier est vidé
-**Et** le champ de saisie scanner est désactivé
+**Et** le panier est entièrement vidé
+**Et** le champ de saisie scanner est désactivé (FR-090, UX-DR21)
 
 **Étant donné** que le scanner est désactivé après l'annulation du panier
 **Quand** le bénévole veut reprendre
 **Alors** il doit recharger la page caissier pour réactiver le scanner
 
 **Étant donné** qu'un bénévole n'a pas de panier actif
-**Quand** une transition de phase se produit
-**Alors** aucun événement basket-cancelled ne lui est envoyé — seul l'événement phase-changed met à jour le chip de phase
+**Quand** un événement `basket-cancelled` arrive (cas théorique)
+**Alors** aucun toast n'est affiché — le composant l'ignore silencieusement
 
 ---
 
@@ -1134,7 +1281,18 @@ afin que tous les reversements soient comptabilisés avant la fin de l'événeme
 
 **Étant donné** que le bénévole navigue vers `/volunteer/settlement`
 **Quand** la page se charge
-**Alors** tous les vendeurs non soldés sont listés avec nom, montant dû et numéro de téléphone (FR-053)
+**Alors** tous les vendeurs non soldés sont listés avec nom, prénom, montant dû et statut (FR-053)
+**Et** les colonnes téléphone et email ne sont pas affichées — elles sont réservées à la vue admin `/admin/settlement` (FR-095)
+
+**Étant donné** que le montant saisi est strictement inférieur au montant net calculé
+**Quand** le bénévole clique sur « Solder »
+**Alors** un avertissement s'affiche : « Le montant saisi (X,XX €) est inférieur au montant dû (Y,YY €). »
+**Et** le bénévole peut tout de même confirmer le solde (FR-051)
+
+**Étant donné** que le montant saisi est strictement supérieur au montant net calculé
+**Quand** le bénévole clique sur « Solder »
+**Alors** la validation est bloquée avec un message d'erreur (FR-051)
+**Et** le bénévole doit corriger le montant avant de pouvoir valider
 
 **Étant donné** que le bénévole clique sur « Solder » pour un vendeur
 **Quand** l'action de solde se termine
@@ -1189,7 +1347,7 @@ afin de suivre les recettes et la performance des ventes au cours de l'événeme
 **Étant donné** que l'édition est en phase Vente
 **Quand** l'admin génère un bilan journalier
 **Alors** le rapport couvre la journée calendaire en cours
-**Et** contient : articles vendus et invendus pour la journée, recettes brutes journalières, commission journalière perçue (FR-054)
+**Et** contient : articles vendus et invendus pour la journée, recettes brutes journalières, commission journalière perçue, ventilation des recettes par moyen de paiement (FR-054, FR-094)
 
 **Étant donné** que le rapport est généré
 **Quand** le PDF est produit via OpenPDF 3.0.0
@@ -1213,20 +1371,19 @@ afin d'avoir une vision financière complète à la clôture de l'événement.
 
 **Étant donné** que l'édition est clôturée
 **Quand** l'admin consulte la page des rapports
-**Alors** un PDF de bilan d'édition est disponible : total des articles vendus/invendus, recettes brutes totales, commission totale perçue (FR-055)
+**Alors** un PDF de bilan d'édition est disponible : total des articles vendus/invendus, recettes brutes totales, commission totale perçue, ventilation des recettes par moyen de paiement (FR-055, FR-094)
 
 **Étant donné** que l'admin veut identifier les vendeurs non soldés
-**Quand** il consulte la page de gestion des vendeurs
-**Alors** les vendeurs non soldés sont visibles avec leur numéro de téléphone (FR-056 — accessible via `/admin/sellers` et `/volunteer/settlement`, non implémenté en PDF, exception à FR-057 documentée dans l'addendum)
+**Quand** il consulte la page de solde (`/admin/settlement`)
+**Alors** les vendeurs non soldés sont visibles avec leur numéro de téléphone et leur adresse email, via le filtre « non soldés » de la liste (FR-095)
 
-**Étant donné** qu'une édition est archivée
-**Quand** un utilisateur quelconque consulte l'édition
-**Alors** les métriques agrégées sont visibles en lecture seule
-**Et** le détail au niveau des articles est accessible uniquement via les PDF générés à la clôture (FR-059)
+**Étant donné** qu'une édition est Clôturée et que le Nettoyage n'a pas été déclenché
+**Quand** un admin consulte l'édition
+**Alors** les métriques agrégées, les profils vendeurs et le détail des articles sont accessibles en lecture seule (FR-059)
 
-**Étant donné** que l'action Nettoyage de l'édition a été déclenchée
-**Quand** les enregistrements d'articles sont supprimés
-**Alors** les métriques agrégées restent disponibles (stockées indépendamment des enregistrements d'articles)
+**Étant donné** que le Nettoyage de l'édition a été déclenché
+**Quand** un admin consulte l'édition
+**Alors** seules les métriques agrégées restent accessibles — les articles et profils vendeurs ne sont plus disponibles en base (FR-059, FR-088)
 
 ### Story 5.5 : Page des rapports admin
 

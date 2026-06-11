@@ -316,6 +316,23 @@
       color: var(--on-primary-container);
     }
 
+    /* ── Lot badge (article list) ── */
+    .lot-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-radius: var(--radius-full);
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
     /* ── Form fields ── */
     .form-grid {
       display: flex;
@@ -485,6 +502,168 @@
       font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
       user-select: none;
     }
+
+    /* ── Type selector (segmented control) ── */
+    .type-selector {
+      display: flex;
+      background: var(--surface-variant);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .type-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      padding: 9px 16px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+    }
+
+    .type-btn.active {
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 600;
+    }
+
+    /* ── Lot article rows ── */
+    .lot-articles-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lot-articles-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+    }
+
+    .lot-article-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-variant);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+    }
+
+    .lot-num {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--on-surface-variant);
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .lot-name-input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      padding: 7px 10px;
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--on-surface);
+      background: var(--surface);
+      outline: none;
+    }
+
+    .lot-name-input:focus {
+      border-color: var(--primary);
+    }
+
+    .lot-cat-select {
+      width: 136px;
+      flex-shrink: 0;
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      padding: 7px 30px 7px 10px;
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--on-surface);
+      background: var(--surface);
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B6460' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      cursor: pointer;
+    }
+
+    .lot-incomplet-check {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .lot-incomplet-check input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .lot-incomplet-check label {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .lot-remove-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      color: var(--on-surface-variant);
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+
+    .lot-remove-btn:hover {
+      background: var(--error-container);
+      color: var(--on-error-container);
+      opacity: 1;
+    }
+
+    .lot-remove-btn .material-symbols-outlined {
+      font-size: 16px;
+    }
+
+    .btn-add-lot-article {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px dashed var(--outline);
+      border-radius: var(--radius-md);
+      padding: 8px 14px;
+      background: transparent;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      align-self: flex-start;
+    }
+
+    .btn-add-lot-article .material-symbols-outlined {
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -532,9 +711,9 @@
         </div>
       </div>
 
-      <!-- Deposited articles section -->
+      <!-- Deposited articles section (2 individual + 1 lot already saved) -->
       <div>
-        <div class="section-label">Articles déposés (2)</div>
+        <div class="section-label">Articles déposés (3)</div>
         <div class="article-list">
 
           <div class="article-row">
@@ -559,65 +738,105 @@
             </div>
           </div>
 
+          <!-- Lot row — shows how a saved lot appears in the article list -->
+          <div class="article-row">
+            <div class="article-info">
+              <span class="article-name">
+                Set Playmobil ferme
+                <span class="lot-badge">Lot · 3 art.</span>
+              </span>
+              <span class="article-meta">Jouets</span>
+            </div>
+            <div class="article-right">
+              <span class="article-price">8,00&nbsp;€</span>
+              <span class="status-chip success">Complet</span>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Add article form card -->
+      <!-- Add item form card — LOT MODE active -->
       <div class="card-form">
-        <div class="title-md">Ajouter un article</div>
+
+        <!-- Type selector (segmented control) — "Lot" segment active -->
+        <div class="type-selector">
+          <button class="type-btn" type="button">Article individuel</button>
+          <button class="type-btn active" type="button">Lot</button>
+        </div>
 
         <div class="form-grid">
 
-          <!-- Nom de l'article -->
+          <!-- Nom du lot -->
           <div class="field-group">
-            <label class="field-label" for="article-name">Nom de l'article</label>
+            <label class="field-label" for="lot-name">Nom du lot</label>
             <input
-              id="article-name"
+              id="lot-name"
               class="field-input"
               type="text"
-              value="Lego City 60XXX"
+              value="Set Lego City 60XXX"
             />
           </div>
 
-          <!-- Prix -->
+          <!-- Prix global du lot -->
           <div class="field-group">
-            <label class="field-label" for="article-price">Prix (€)</label>
+            <label class="field-label" for="lot-price">Prix global du lot (€)</label>
             <input
-              id="article-price"
+              id="lot-price"
               class="field-input field-input-short"
               type="text"
-              value="8.00"
+              value="12,00"
             />
           </div>
 
-          <!-- Catégorie -->
-          <div class="field-group">
-            <label class="field-label" for="article-category">Catégorie</label>
-            <select id="article-category" class="field-select">
-              <option value="jouets" selected>Jouets</option>
-              <option value="jeux">Jeux de société</option>
-              <option value="livres">Livres</option>
-              <option value="vetements">Vêtements</option>
-              <option value="sports">Sports &amp; Loisirs</option>
-            </select>
-          </div>
+          <!-- Articles du lot -->
+          <div class="lot-articles-section">
+            <div class="lot-articles-label">Articles du lot — 2 minimum</div>
 
-          <!-- Checkbox article incomplet -->
-          <div class="field-group" style="gap: 10px;">
-            <div class="checkbox-row">
-              <input
-                type="checkbox"
-                id="article-incomplete"
-                class="checkbox-input"
-              />
-              <label for="article-incomplete" class="checkbox-label body-md">Article incomplet</label>
+            <!-- Article 1 -->
+            <div class="lot-article-row">
+              <span class="lot-num">1</span>
+              <input class="lot-name-input" type="text" value="Camion pompier" />
+              <select class="lot-cat-select">
+                <option selected>Jouets</option>
+                <option>Jeux de société</option>
+                <option>Livres</option>
+                <option>Vêtements</option>
+              </select>
+              <div class="lot-incomplet-check">
+                <input type="checkbox" id="lot-art-1-incomplet" />
+                <label for="lot-art-1-incomplet">Incomplet</label>
+              </div>
+              <button class="lot-remove-btn" type="button" aria-label="Retirer l'article">
+                <span class="material-symbols-outlined">close</span>
+              </button>
             </div>
-            <input
-              class="field-input-disabled"
-              type="text"
-              placeholder="Détail manquant (ex : pièces manquantes)"
-              disabled
-            />
+
+            <!-- Article 2 -->
+            <div class="lot-article-row">
+              <span class="lot-num">2</span>
+              <input class="lot-name-input" type="text" value="Hélicoptère de secours" />
+              <select class="lot-cat-select">
+                <option selected>Jouets</option>
+                <option>Jeux de société</option>
+                <option>Livres</option>
+                <option>Vêtements</option>
+              </select>
+              <div class="lot-incomplet-check">
+                <input type="checkbox" id="lot-art-2-incomplet" />
+                <label for="lot-art-2-incomplet">Incomplet</label>
+              </div>
+              <button class="lot-remove-btn" type="button" aria-label="Retirer l'article">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <!-- Add article to lot -->
+            <button class="btn-add-lot-article" type="button">
+              <span class="material-symbols-outlined">add</span>
+              Ajouter un article au lot
+            </button>
+
           </div>
 
         </div>
@@ -626,11 +845,11 @@
 
         <!-- Button row -->
         <div class="btn-row" style="margin-top: 16px;">
-          <button class="btn-primary">
-            <span class="material-symbols-outlined">add_circle</span>
-            Ajouter l'article
+          <button class="btn-primary" type="button">
+            <span class="material-symbols-outlined">inventory_2</span>
+            Valider le lot (2 articles)
           </button>
-          <button class="btn-ghost">Annuler</button>
+          <button class="btn-ghost" type="button">Annuler</button>
         </div>
       </div>
 
