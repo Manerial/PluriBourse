@@ -9,7 +9,7 @@ updated: 2026-06-10
 
 ## Résumé Exécutif
 
-PluriBourse est une plateforme de gestion d'événements auto-hébergée, accessible via navigateur, destinée aux associations organisant des ventes d'occasion — bourse aux jouets, livres, skis, vêtements, ou tout autre type de produits. Elle couvre l'ensemble du cycle de vie de l'événement : inscription des vendeurs, catalogage des articles avec génération d'étiquettes à code-barres, caisse multi-poste avec scanner, et calcul automatisé des soldes vendeurs.
+PluriBourse est une plateforme de gestion d'événements auto-hébergée, accessible via navigateur, destinée aux associations organisant des ventes d'occasion — bourse aux jouets, livres, skis, vêtements, ou tout autre type de produits. Elle couvre l'ensemble du cycle de vie de l'événement : inscription des vendeurs, catalogage des articles avec génération d'étiquettes à code-barres, caisse multi-poste avec douchette à code-barres, et calcul automatisé des soldes vendeurs.
 
 La plateforme remplace des outils fragiles par un système propre et maintenable, conçu pour fonctionner sur plusieurs postes via un serveur central. Chaque association héberge sa propre instance, gère ses propres événements sous des éditions librement nommées, et configure son propre taux de commission. Un guide d'installation détaillé pour utilisateurs non techniques rend le déploiement accessible sans support informatique dédié.
 
@@ -19,17 +19,31 @@ Construit avec Spring Boot et Angular, déployé via Docker Compose, PluriBourse
 
 PluriBourse démarre comme un outil construit pour les besoins spécifiques d'une association. Son modèle auto-hébergé, sa commission configurable, le nommage libre des éditions et sa conception agnostique au type de produit sont des fondations intentionnelles pour une portée plus large : toute association organisant n'importe quel type de vente d'occasion peut le télécharger, l'installer et le faire fonctionner de façon autonome.
 
-Le guide d'installation est autant une fonctionnalité du produit que le logiciel lui-même — c'est ce qui transforme un code fonctionnel en quelque chose que le trésorier d'une association peut vraiment déployer un samedi après-midi.
+Le guide d'installation est aussi important que le produit lui-même — c'est lui qui transforme le logiciel en un outil que le trésorier d'une association peut déployer sans assistance un samedi après-midi.
 
 ## Le Problème
 
-Les associations qui organisent des bourses disposent parfois d'outils qui fonctionnent — support multi-poste, traçabilité des bénévoles, réconciliation automatique des soldes. Le problème ne porte pas sur ce que le logiciel fait : il porte sur la capacité de quiconque à le maintenir.
+Les associations qui organisent des bourses disposent parfois d'outils fonctionnels — support multi-poste, traçabilité des actions des bénévoles, gestion automatique des soldes. Le problème ne porte pas sur ce que le logiciel fait : il porte sur la maintenabilité.
 
-Des chemins codés en dur signifient que tout changement d'infrastructure casse le logiciel. Une documentation absente ou insuffisante fait de l'auteur original le seul capable de diagnostiquer les pannes. Chaque édition se déroule avec le risque qu'une mise à jour de routine ou une nouvelle machine brise silencieusement l'outil, sans possibilité de le corriger sous la pression du jour J.
+- Des chemins parfois codés en dur impliquant que tout changement d'infrastructure casse le logiciel.
+- Une documentation absente ou insuffisante faisant de l'auteur original le seul capable de diagnostiquer facilement les pannes.
+- Des architectures et technologies datées, déployées directement sur le serveur et sans versionning, rendant l'investigation fastidieuse.
 
-Le coût n'est pas la perte de fonctionnalités — c'est la fragilité. Un outil que personne ne peut maintenir est une charge, pas un atout.
+Chaque édition se déroule avec le risque qu'une mise à jour de routine ou une nouvelle machine brise silencieusement l'outil, sans possibilité de le corriger sous la pression du jour J.
+
+Le coût caché de ces solutions, c'est leur fragilité. Un outil que personne ne peut maintenir est une charge, pas un atout.
 
 ## La Solution
+
+PluriBourse répond aux trois fragilités identifiées par des choix techniques délibérés.
+
+**Une architecture reproductible, sans dépendance à la machine.** Le déploiement repose sur Docker Compose : l'environnement d'exécution est décrit dans un fichier, pas dans la tête de quelqu'un. Changer de serveur ou reconstruire après une panne ne nécessite aucune connaissance préalable de la configuration. Il n'y a pas de chemin codé en dur, pas de paramètre implicite hérité d'une installation précédente.
+
+**Une stack normée, lisible par n'importe quel développeur.** Spring Boot et Angular sont des standards largement documentés. La structure en couches (contrôleur → service → dépôt), les migrations de base de données versionnées avec Liquibase, et l'absence d'abstractions maison font que tout développeur familier de ces technologies peut ouvrir le code, comprendre ce qu'il fait, et diagnostiquer un problème sans l'auteur original.
+
+**Un guide d'installation conçu comme un livrable à part entière.** Si un trésorier non technique peut installer la plateforme seul un samedi après-midi, il peut aussi suivre un runbook de diagnostic le jour d'une panne. La documentation n'est pas une annexe : c'est ce qui transforme un logiciel fonctionnel en un outil qu'une association peut posséder et maintenir de façon autonome.
+
+## Aperçu
 
 PluriBourse structure chaque événement en cinq phases contrôlées par l'administrateur :
 
@@ -53,7 +67,7 @@ Les transitions de phase nécessitent une confirmation explicite. Un retour en a
 
 **Bénévoles :** Comptes individuels pour la traçabilité de base. Opèrent aussi bien l'inscription au dépôt, la caisse, et le solde vendeur selon les phases. Interface conçue pour la rapidité et la simplicité — utilisateurs non techniques travaillant sous la pression du jour J.
 
-**Vendeurs :** N'accèdent pas à l'application. Ils interagissent uniquement via des documents papier — un bordereau de dépôt à l'arrivée, un bilan de vente et leurs invendus à la récupération.
+**Vendeurs :** N'accèdent pas à l'application. Ils interagissent avec les bénévoles et via des documents papier — un bordereau de dépôt à l'arrivée, un bilan de vente et leurs invendus à la récupération.
 
 ## Périmètre
 
@@ -92,7 +106,7 @@ Les transitions de phase nécessitent une confirmation explicite. Un retour en a
 *Post-vente*
 
 - Bilan de vente imprimable par vendeur (articles vendus, invendus avec table, solde net)
-- Bouton « Solder » : enregistre le solde remis en espèces
+- Bouton « Solder » : enregistre le solde remis en espèces / chèque / carte bleue
 - Bouton « Non réclamé » : transfère le montant aux recettes de l'association
 - Liste des vendeurs non soldés avec numéro de téléphone et adresse mail
 
