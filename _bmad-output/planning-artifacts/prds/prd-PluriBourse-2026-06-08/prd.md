@@ -234,7 +234,7 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 | ID | Exigence |
 |---|---|
 | FR-046 | Scanner un article appartenant à un lot affiche le nom du lot en rouge avec un compteur « X/N scanné(s) ». |
-| FR-047 | Le système bloque la validation du paiement tant que le lot n'est pas complet (tous les N articles scannés). |
+| FR-047 | Si le lot n'est pas complet lors de la validation, une notification inline avertissement est affichée dans le panier, mais la validation du paiement n'est pas bloquée — le caissier peut valider un lot incomplet. |
 | FR-048 | Une fois complet, le lot est vendu à son prix global de lot. Les articles d'un lot n'ont pas de prix individuel — seul le lot en a un. La commission s'applique au prix global : `commission_lot = prix_lot × taux_commission`. |
 | FR-081 | Si un caissier ne peut pas compléter un lot (article introuvable), il peut retirer le lot entier du panier. Tous les articles du lot déjà scannés sont retirés. |
 

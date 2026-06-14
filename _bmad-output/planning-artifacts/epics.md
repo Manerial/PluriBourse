@@ -84,7 +84,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 **F4 bis — Lots en caisse**
 
 - FR-046 : Le scan d'un article appartenant à un lot affiche le nom du lot en rouge avec un compteur « X/N scannés ».
-- FR-047 : Le système bloque la validation du paiement tant que le lot n'est pas complet (tous les N articles scannés).
+- FR-047 : Si le lot n'est pas complet lors de la validation, une notification inline avertissement est affichée dans le panier, mais la validation du paiement n'est pas bloquée — le caissier peut valider un lot incomplet.
 - FR-048 : Les articles d'un lot n'ont pas de prix individuel — seul le lot en a un. Une fois complet, le lot est vendu à son prix global. La commission s'applique au prix global : `commission_lot = prix_lot × taux_commission`.
 - FR-081 : Si un caissier ne peut pas compléter un lot, il peut retirer l'ensemble du lot du panier.
 
@@ -189,7 +189,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR11 : Implémenter le pattern liste filtrable/triable avec `MatPaginator` (taille de page par défaut 50), tri par clic sur l'en-tête de colonne (indicateur ↑↓), filtres inline au-dessus de la liste. Utilisé par le catalogue articles et la liste vendeurs.
 - UX-DR12 : Implémenter l'état de chargement squelette (3–5 lignes squelettes Angular Material) pour les listes lors du chargement initial des données. Pas de spinner global.
 - UX-DR13 : Implémenter le composant état vide : icône Material Symbol centrée + phrase descriptive + bouton d'action primaire. Propose toujours une sortie. Utilisé par la liste vendeurs, le catalogue, les résultats filtrés vides (avec action « Effacer les filtres »).
-- UX-DR14 : Implémenter le composant panier POS : liste d'articles avec nom + prix unitaire, bouton de suppression individuel (icône fermer par ligne), regroupement par lot (en-tête de lot en rouge avec compteur « X/N scannés » + sous-total du lot, sans prix individuel par article), bouton « Retirer le lot entier » depuis le premier article du lot, « Valider » bloqué si lot incomplet, panier auto-vidé sur événement SSE basket-cancelled.
+- UX-DR14 : Implémenter le composant panier POS : liste d'articles avec nom + prix unitaire, bouton de suppression individuel (icône fermer par ligne), regroupement par lot (en-tête de lot en rouge avec compteur « X/N scannés » + sous-total du lot, sans prix individuel par article), bouton « Retirer le lot entier » depuis le premier article du lot, notification inline avertissement si lot incomplet (le bouton « Valider » reste actif), panier auto-vidé sur événement SSE basket-cancelled.
 - UX-DR15 : Implémenter le flux formulaire de dépôt (bénévole) : recherche vendeur par nom/email → « Créer un profil » si introuvable → enregistrement d'article (nom, prix, sélecteur de catégorie, case à cocher complet/incomplet + champ commentaire) avec affichage de la table auto-assignée. Autofocus sur le champ de recherche vendeur au chargement de la page.
 - UX-DR16 : Implémenter le composant admin catégories & tables : mode éditable avant le démarrage de la phase Dépôt, lecture seule après. Sur nouvelle édition : option « Copier depuis une édition clôturée » (liste déroulante de sélection d'édition clôturée) ou « Configurer manuellement ».
 - UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue). La liste des vendeurs non soldés est accessible via la page de solde, commune aux bénévoles (`/volunteer/settlement`) et à l'admin (`/admin/settlement`) — pas de section dédiée dans les rapports. L'admin voit en plus les colonnes téléphone et email, affichées conditionnellement selon le rôle.
@@ -247,7 +247,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-044 : Epic 3 — Chaque article d'un lot a son propre nom et étiquette
 - FR-045 : Epic 3 — L'étiquette d'un article de lot affiche le prix du lot et « Lot indivisible : X/N »
 - FR-046 : Epic 4 — Le scan d'un article de lot affiche le nom du lot en rouge + compteur « X/N scannés »
-- FR-047 : Epic 4 — Validation bloquée jusqu'à ce que le lot soit complet
+- FR-047 : Epic 4 — Avertissement inline si lot incomplet, validation non bloquée
 - FR-048 : Epic 4 — Lot complet vendu au prix global du lot
 - FR-049 : Epic 5 — Bilan de vente imprimable par vendeur en phase Post-vente
 - FR-050 : Epic 5 — Bilan de vente : articles vendus, invendus + table, total brut, commission, reversement net
@@ -1138,7 +1138,7 @@ afin de conclure les transactions proprement avec un historique complet.
 **Quand** il clique sur l'icône fermer d'une ligne d'article
 **Alors** l'article est retiré du panier
 
-**Étant donné** que le panier contient uniquement des articles complets (aucun lot incomplet)
+**Étant donné** que le panier contient au moins un article
 **Quand** le bénévole clique sur « Valider »
 **Alors** tous les articles du panier sont marqués comme vendus dans une transaction atomique unique (FR-039)
 **Et** le panier est vidé et prêt pour une nouvelle transaction
@@ -1163,8 +1163,8 @@ afin de conclure les transactions proprement avec un historique complet.
 ### Story 4.3 : Gestion des lots au POS
 
 En tant que bénévole caissier,
-je veux que le système impose l'intégrité des lots lors du scan,
-afin que les lots indivisibles soient vendus complets ou pas du tout.
+je veux être informé lorsqu'un lot est incomplet lors du scan,
+afin de décider de le vendre en l'état ou de le retirer du panier.
 
 **Critères d'acceptation :**
 
@@ -1174,10 +1174,10 @@ afin que les lots indivisibles soient vendus complets ou pas du tout.
 **Et** le sous-total du lot est affiché dans l'en-tête du groupe
 **Et** aucun prix individuel n'est affiché dans le groupe lot
 
-**Étant donné** qu'un panier ne contient pas de lot incomplet
-**Quand** le premier article d'un lot est scanné
-**Alors** le bouton « Valider » est désactivé (grisé)
-**Et** une notification inline orange apparaît dans le panier indiquant combien d'articles manquent dans le lot (FR-047)
+**Étant donné** que le premier article d'un lot est scanné
+**Quand** il est ajouté au panier
+**Alors** une notification inline avertissement apparaît dans le panier indiquant combien d'articles manquent dans le lot (FR-047)
+**Et** le bouton « Valider » reste actif — la vente d'un lot incomplet est autorisée
 
 **Étant donné** que les N articles d'un lot sont tous scannés
 **Quand** le dernier article est ajouté
@@ -1186,7 +1186,7 @@ afin que les lots indivisibles soient vendus complets ou pas du tout.
 **Étant donné** qu'un lot est partiellement scanné et que l'acheteur ne trouve pas les articles restants
 **Quand** le bénévole clique sur « Retirer le lot entier »
 **Alors** tous les articles de ce lot sont retirés du panier (FR-081)
-**Et** le bouton valider se réactive si aucun autre lot bloquant ne subsiste
+**Et** la transaction peut continuer avec les articles hors lot
 
 **Étant donné** qu'un lot complet est validé
 **Quand** la facture est générée
