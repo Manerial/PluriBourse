@@ -96,6 +96,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-051 : Pour solder un vendeur, le bénévole saisit le montant en espèces remis et clique « Solder ». Le système enregistre le montant saisi. Si ce montant est strictement inférieur au montant net calculé, un avertissement est affiché avant confirmation — le bénévole peut tout de même valider. Si le montant est supérieur, la validation est bloquée. Après l'opération, le statut du vendeur passe à **Soldé**.
 - FR-052 : Le bouton « Non réclamé » transfère l'intégralité du montant dû en recettes de l'association.
 - FR-053 : Les vendeurs non soldés sont identifiables dans la liste de solde via un filtre dédié.
+- FR-097 : En phase Post-vente, l'admin peut déclencher depuis `/admin/settlement` l'impression groupée des bilans de vente de tous les vendeurs correspondant au filtre actif (toutes pages confondues). Absent en phase Clôturée et de `/volunteer/settlement`.
 
 **F6 — Rapports**
 
@@ -254,6 +255,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-051 : Epic 5 — Le bénévole solde le vendeur : saisit le montant en espèces, clique Solder
 - FR-052 : Epic 5 — Le bouton « Non réclamé » transfère le reversement en recettes de l'association
 - FR-053 : Epic 5 — Vendeurs non soldés identifiables dans la liste de solde via un filtre dédié
+- FR-097 : Epic 5 — Impression groupée des bilans depuis `/admin/settlement` (filtre actif, toutes pages, Post-vente uniquement)
 - FR-054 : Epic 5 — Bilan journalier générable par l'admin en phase Vente
 - FR-055 : Epic 5 — Bilan d'édition généré à la clôture de l'édition
 - FR-095 : Epic 5 — Page de solde : liste de tous les vendeurs filtrable par statut (soldé / non soldé), actions par ligne (imprimer bilan, solder, non réclamé) ; accessible bénévoles (`/volunteer/settlement`) et admin (`/admin/settlement`) ; l'admin voit en plus téléphone et email ; composant Angular unique
@@ -329,7 +331,7 @@ Les bénévoles peuvent scanner des articles avec un scanner code-barres USB, g�
 ### Epic 5 : Post-vente, Reversements & Rapports
 Les bénévoles peuvent solder les vendeurs et traiter les reversements. Les administrateurs peuvent générer des rapports de bilan journaliers et d'édition en PDF, identifier les vendeurs non soldés et clôturer officiellement les éditions.
 
-**FR couvertes :** FR-049–055, FR-057–059, FR-091, FR-092, FR-094, FR-095
+**FR couvertes :** FR-049–055, FR-057–059, FR-091, FR-092, FR-094, FR-095, FR-097
 **UX :** UX-DR17, UX-DR22
 
 ### Epic 6 : Catalogue articles
@@ -1407,6 +1409,45 @@ afin d'agir rapidement sans naviguer parmi des options non pertinentes.
 **Étant donné** qu'une phase ne correspond pas à la condition de disponibilité d'une section de rapport
 **Quand** l'admin consulte la page des rapports
 **Alors** cette section est complètement absente (pas grisée — absente)
+
+### Story 5.6 : Impression groupée des bilans de vente (Admin)
+
+En tant qu'administrateur,
+je veux imprimer en un seul clic les bilans de vente de tous les vendeurs correspondant au filtre actif,
+afin d'éviter de déclencher les impressions une par une avant de commencer les règlements.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'édition est en phase Post-vente et que l'admin consulte `/admin/settlement`
+**Quand** la page se charge
+**Alors** un bouton « Imprimer tous les bilans » est visible en haut de la liste (FR-097)
+
+**Étant donné** que le filtre actif est « tous les vendeurs » (filtre par défaut)
+**Quand** l'admin clique sur « Imprimer tous les bilans »
+**Alors** un travail d'impression A4 est enfilé pour chaque vendeur de l'édition active, toutes pages confondues (FR-097)
+**Et** le contenu de chaque bilan respecte le format FR-050
+
+**Étant donné** que le filtre actif est « non soldés »
+**Quand** l'admin clique sur « Imprimer tous les bilans »
+**Alors** seuls les bilans des vendeurs non soldés sont enfilés — tous, pas uniquement ceux de la page courante (FR-097)
+
+**Étant donné** que l'admin clique sur le bouton
+**Quand** la soumission est en cours
+**Alors** le bouton passe en état désactivé avec un spinner inline (UX-DR19)
+**Et** à la fin, un toast succès (4 s) indique le nombre de bilans mis en file (ex. : « 20 bilans mis en file d'impression. »)
+
+**Étant donné** qu'un ou plusieurs enfilages échouent
+**Quand** la soumission se termine
+**Alors** un toast d'erreur persistant indique le nombre d'échecs et contient un lien vers `/admin/print-queue` (UX-DR19)
+**Et** les travaux déjà enfilés avec succès ne sont pas annulés
+
+**Étant donné** que l'édition est en phase Clôturée
+**Quand** l'admin consulte `/admin/settlement`
+**Alors** le bouton « Imprimer tous les bilans » est absent (FR-097)
+
+**Étant donné** qu'un bénévole consulte `/volunteer/settlement`
+**Quand** la page se charge
+**Alors** le bouton « Imprimer tous les bilans » est absent (FR-097)
 
 ---
 
