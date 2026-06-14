@@ -51,12 +51,12 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-019 : Les profils vendeurs sont propres à chaque édition. Champs obligatoires : nom, prénom, adresse e-mail, numéro de téléphone.
 - FR-020 : Le bénévole recherche un vendeur existant par nom ou e-mail. Si aucun résultat, un nouveau profil est créé.
 - FR-021 : L'administrateur peut supprimer un vendeur en phase de Dépôt. La suppression efface définitivement le profil vendeur et tous ses articles dans cette édition (RGPD). Confirmation explicite requise.
-- FR-022 : Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire si incomplet.
+- FR-022 : Pour chaque article (individuel ou membre d'un lot), le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire libre optionnel disponible en tout temps, qu'il s'agisse d'un article complet ou incomplet.
 - FR-023 : La table est automatiquement assignée selon la correspondance catégorie-table de l'édition. Algorithme : si le vendeur a déjà des articles dans cette catégorie pour cette édition, la même table lui est réassignée ; sinon, le système choisit la table la moins chargée parmi celles configurées pour la catégorie. La charge est calculée sur l'ensemble des articles assignés à la table, toutes catégories confondues.
 - FR-024 : Un article ne peut être corrigé ou supprimé que durant la phase Dépôt.
-- FR-025 : L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases.
+- FR-025 : L'indicateur complet/incomplet et le commentaire article sont modifiables dans toutes les phases.
 - FR-026 : Un code-barres Code 128 unique est généré côté serveur pour chaque article enregistré. Le numéro encode 8 chiffres : 4 chiffres pour le numéro du vendeur (dans l'édition) + 4 chiffres pour le numéro de l'article dans l'inventaire du vendeur.
-- FR-027 : L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » (ligne dédiée, si applicable) — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible au format XXXX-XXXX (séparation entre numéro vendeur et numéro article) — ligne vide. Aucun nom de vendeur (RGPD).
+- FR-027 : L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — « --- Catégorie --- » — nom de l'article + prix — « /!\ INCOMPLET » (ligne dédiée, si applicable) — commentaire article (ligne dédiée, si non vide) — « Table n°X » — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible au format XXXX-XXXX (séparation entre numéro vendeur et numéro article) — ligne vide. Aucun nom de vendeur (RGPD).
 - FR-028 : Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur.
 - FR-029 : Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.
 - FR-030 : Le rouleau imprimé suit le format : [séparateur vendeur : nom du vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …
@@ -173,7 +173,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - ARCH-013 : RFC 7807 Problem Details pour toutes les réponses d'erreur via `@ControllerAdvice`.
 - ARCH-014 : Springdoc OpenAPI activé dans le profil `dev` uniquement, désactivé en `prod`.
 - ARCH-015 : Ordre de build inter-composants — la machine à états des phases (F2) doit être implémentée avant F3, F4, F5, F10. Spring Session JDBC nécessite la migration Liquibase avant toute fonctionnalité d'authentification. Les consommateurs de la file d'impression doivent être des beans Spring avant l'impression F3/F4.
-- ARCH-016 : Format d'étiquette ESC/POS : séparateur vendeur → étiquette article (nom édition, catégorie encadrée, nom+prix, /!\ INCOMPLET si applicable, table, bitmap Code 128, numéro de code-barres) → séparateur article → …
+- ARCH-016 : Format d'étiquette ESC/POS : séparateur vendeur → étiquette article (nom édition, catégorie encadrée, nom+prix, /!\ INCOMPLET si applicable, commentaire si non vide, table, bitmap Code 128, numéro de code-barres) → séparateur article → …
 
 ### Exigences UX Design
 
@@ -223,12 +223,12 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-019 : Epic 3 — Les profils vendeurs sont propres à chaque édition
 - FR-020 : Epic 3 — Le bénévole recherche/crée des profils vendeurs
 - FR-021 : Epic 3 — L'admin peut supprimer un profil vendeur (anonymisation RGPD)
-- FR-022 : Epic 3 — Le bénévole saisit les détails de l'article
+- FR-022 : Epic 3 — Le bénévole saisit les détails de l'article ; commentaire optionnel disponible en tout temps (article individuel et articles de lot)
 - FR-023 : Epic 3 — Table auto-assignée : même table si vendeur déjà présent dans la catégorie, sinon table la moins chargée
 - FR-024 : Epic 3 — Article corrigeable/supprimable uniquement en phase Dépôt
-- FR-025 : Epic 3 — Indicateur complet/incomplet modifiable dans toutes les phases
+- FR-025 : Epic 3 — Indicateur complet/incomplet et commentaire article modifiables dans toutes les phases
 - FR-026 : Epic 3 — Code-barres Code 128 généré côté serveur par article (8 chiffres : 4 vendeur + 4 article dans inventaire vendeur)
-- FR-027 : Epic 3 — Format d'étiquette : édition / catégorie / nom+prix / /!\ INCOMPLET si applicable / table / code-barres (numéro XXXX-XXXX)
+- FR-027 : Epic 3 — Format d'étiquette : édition / catégorie / nom+prix / /!\ INCOMPLET si applicable / commentaire si non vide / table / code-barres (numéro XXXX-XXXX)
 - FR-028 : Epic 3 — Étiquettes imprimées automatiquement à la validation du dépôt
 - FR-029 : Epic 3 — Travaux d'impression mis en file d'attente séquentiellement côté serveur
 - FR-030 : Epic 3 — Format du rouleau thermique : séparateur vendeur → étiquettes articles
@@ -923,10 +923,13 @@ afin que les articles soient correctement catalogués et localisés physiquement
 **Alors** la table ayant le moins d'articles toutes catégories confondues parmi celles configurées pour cette catégorie lui est assignée (FR-023)
 **Et** le numéro de table assigné est affiché immédiatement
 
+**Étant donné** que le bénévole saisit un article
+**Quand** le formulaire est affiché
+**Alors** un champ commentaire optionnel est disponible indépendamment de l'état de la case complet/incomplet (FR-022)
+
 **Étant donné** que le bénévole coche « Incomplet » pour un article
 **Quand** l'article est sauvegardé
-**Alors** un champ commentaire est requis
-**Et** l'indicateur d'incomplétude est stocké avec l'article
+**Alors** l'indicateur d'incomplétude est stocké avec l'article
 
 **Étant donné** qu'un article est enregistré en phase Dépôt
 **Quand** le bénévole modifie son nom, son prix ou sa catégorie
@@ -960,7 +963,7 @@ afin que les ensembles vendus ensemble soient traités comme une unité atomique
 
 **Étant donné** que le bénévole est en mode Lot
 **Quand** il renseigne les articles du lot
-**Alors** chaque article possède son propre nom/description et catégorie, sans prix individuel (FR-043, FR-044)
+**Alors** chaque article possède son propre nom/description, catégorie et commentaire optionnel, sans prix individuel (FR-022, FR-043, FR-044)
 **Et** le bouton "Valider le lot" reste désactivé tant que moins de 2 articles sont présents dans la liste
 **Et** le label du bouton reflète en temps réel le nombre d'articles saisis — ex : "Valider le lot (2 articles)"
 

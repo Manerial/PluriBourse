@@ -182,10 +182,10 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 
 | ID | Exigence |
 |---|---|
-| FR-022 | Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire si incomplet. |
+| FR-022 | Pour chaque article, le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire libre optionnel (disponible en tout temps, qu'il s'agisse d'un article complet ou incomplet). |
 | FR-023 | La table est assignée automatiquement par le système selon le mapping catégorie-table de l'édition. Algorithme : si le vendeur a déjà des articles dans cette catégorie pour cette édition, la même table lui est réassignée. Sinon, le système choisit la table la moins chargée parmi celles configurées pour la catégorie. La charge d'une table est calculée sur l'ensemble des articles qui lui sont assignés pour l'édition, toutes catégories confondues. |
 | FR-024 | Un article ne peut être corrigé ou supprimé qu'en phase de Dépôt. |
-| FR-025 | L'indicateur complet/incomplet et son commentaire sont modifiables dans toutes les phases. |
+| FR-025 | L'indicateur complet/incomplet et le commentaire article sont modifiables dans toutes les phases. |
 | FR-089 | La commission s'applique normalement aux articles vendus avec l'indicateur incomplet. Le prix de vente et le taux de commission ne sont pas modifiés par l'état de complétude de l'article. |
 
 #### Lots
@@ -203,7 +203,7 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 | ID | Exigence                                                                                                                                                                                                                                                                                   |
 |---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | FR-026 | Un code-barres Code 128 unique est généré côté serveur pour chaque article inscrit. Le numéro encode 8 chiffres : 4 chiffres pour le numéro du vendeur (dans l'édition) + 4 chiffres pour le numéro de l'article dans l'inventaire du vendeur. |
-| FR-027 | L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — catégorie encadrée (« --- Catégorie --- ») — nom de l'article + prix sur une ligne — « /!\ INCOMPLET » sur une ligne dédiée si applicable — numéro de table (« Table n°X ») — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible au format XXXX-XXXX (séparation entre numéro vendeur et numéro article) — ligne vide. Le nom du vendeur n'apparaît pas (RGPD). |
+| FR-027 | L'étiquette article affiche de manière centrée, dans cet ordre : nom de l'édition — ligne vide — catégorie encadrée (« --- Catégorie --- ») — nom de l'article + prix sur une ligne — « /!\ INCOMPLET » sur une ligne dédiée si applicable — commentaire article sur une ligne dédiée si non vide — numéro de table (« Table n°X ») — ligne vide — graphique Code 128 (bitmap) — numéro de code-barres lisible au format XXXX-XXXX (séparation entre numéro vendeur et numéro article) — ligne vide. Le nom du vendeur n'apparaît pas (RGPD). |
 | FR-028 | Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur.                                                                                                                                                                          |
 | FR-029 | Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.                                                                                                                                                                                             |
 | FR-030 | Le rouleau imprimé suit ce format par vendeur : [séparateur vendeur : nom vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …                                                                                                                        |
