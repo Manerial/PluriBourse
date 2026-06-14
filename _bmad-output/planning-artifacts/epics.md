@@ -44,7 +44,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-080 : Lors de la création d'une nouvelle édition, l'administrateur peut copier les catégories et la correspondance tables depuis une édition clôturée.
 - FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les ventes et les soldes sont préservés. Les articles des vendeurs déjà soldés ne peuvent plus être vendus. Le retour arrière depuis l'état Clôturé est désactivé après le Nettoyage de l'édition.
 - FR-088 : Après clôture, l'administrateur peut déclencher le « Nettoyage de l'édition » — supprime définitivement les enregistrements d'articles et les profils vendeurs de l'édition. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
-- FR-096 : La clôture de l'édition est conditionnée au solde complet de tous les vendeurs : le bouton « Clôturer l'édition » est désactivé tant qu'au moins un vendeur est dans un statut autre que Soldé ou Non réclamé. Une notification inline (UX-DR7) affiche le nombre de vendeurs non soldés avec un lien vers `/admin/settlement`. La requête API de clôture est également rejetée avec un 409 si cette contrainte est violée.
+- FR-096 : À la clôture de l'édition, tous les vendeurs non soldés sont automatiquement marqués « Non réclamé » et leurs montants enregistrés en recettes de l'association (même logique que FR-052), de manière atomique avec la transition de phase. Si au moins un vendeur est non soldé, la boîte de dialogue de confirmation affiche le nombre de vendeurs concernés et le montant total à transférer. Le bouton « Clôturer l'édition » n'est plus désactivé en présence de vendeurs non soldés.
 
 **F3 — Gestion des vendeurs et des articles (Phase Dépôt)**
 
@@ -290,7 +290,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-085 : Epic 6 — Catalogue triable par n'importe quelle colonne visible
 - FR-086 : Epic 6 — Catalogue affiche l'édition active uniquement ; indisponible après Nettoyage de l'édition
 - FR-088 : Epic 2 — « Nettoyage de l'édition » supprime définitivement les enregistrements d'articles ; désactive le retour arrière vers Post-vente
-- FR-096 : Epic 2 — Clôture bloquée tant que tous les vendeurs ne sont pas soldés ou non réclamés
+- FR-096 : Epic 2 — À la clôture, vendeurs non soldés auto-marqués Non réclamé (atomique avec la phase) ; dialog de confirmation enrichie si vendeurs non soldés
 - FR-089 : Epic 3 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
 - FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
 - FR-091 : Epic 5 — Export CSV du catalogue articles (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
@@ -817,15 +817,19 @@ afin que l'édition soit correctement archivée et que le stockage puisse être 
 
 **Critères d'acceptation :**
 
-**Étant donné** que l'édition est en phase Post-vente et qu'au moins un vendeur est dans un statut autre que Soldé ou Non réclamé
-**Quand** l'admin consulte la page de contrôle de phase `/admin/editions/:id/phase`
-**Alors** le bouton « Clôturer l'édition » est désactivé
-**Et** une notification inline est affichée : « X vendeur(s) non soldé(s). Tous les vendeurs doivent être soldés ou marqués non réclamés avant la clôture. » avec un lien vers `/admin/settlement` (FR-096, UX-DR7)
-**Et** le serveur rejette toute requête de clôture avec un 409 si cette contrainte est violée (ARCH-013)
+**Étant donné** que l'édition est en phase Post-vente et qu'au moins un vendeur est non soldé
+**Quand** l'admin clique sur « Clôturer l'édition »
+**Alors** la boîte de dialogue de confirmation affiche : « X vendeur(s) non soldé(s) seront automatiquement marqués Non réclamé. Montant total transféré aux recettes de l'association : Y,YY €. » (FR-096)
+**Et** le bouton « Clôturer l'édition » est actif (non désactivé)
 
-**Étant donné** que l'édition est en phase Post-vente et que tous les vendeurs sont Soldés ou Non réclamés
-**Quand** l'admin clique sur « Clôturer l'édition » et confirme
-**Alors** la phase de l'édition passe à « Clôturée » et devient en lecture seule
+**Étant donné** que tous les vendeurs sont déjà Soldés ou Non réclamés
+**Quand** l'admin clique sur « Clôturer l'édition »
+**Alors** la boîte de dialogue de confirmation standard s'affiche sans message d'alerte sur les vendeurs non soldés
+
+**Étant donné** que l'admin confirme la clôture
+**Quand** la transaction s'exécute
+**Alors** tous les vendeurs encore non soldés sont marqués Non réclamé et leurs montants enregistrés en recettes de l'association, de manière atomique avec la transition de phase (FR-096)
+**Et** la phase de l'édition passe à « Clôturée » et devient en lecture seule
 **Et** les PDF de bilan d'édition sont générés en EN et FR (FR-013)
 
 **Étant donné** que l'édition est Clôturée et que des enregistrements d'articles existent

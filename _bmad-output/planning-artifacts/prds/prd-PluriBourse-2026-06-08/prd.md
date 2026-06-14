@@ -66,7 +66,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 - Cycle de vie des phases contrôlé par l'admin : Préparation → Dépôt → Vente → Post-vente → Clôturé
 - Dialogue de confirmation requis pour toute transition de phase (avant ou arrière)
 - Retour en arrière disponible phase par phase ; données toujours préservées
-- Clôture conditionnée : tous les vendeurs doivent être soldés ou marqués non réclamés avant que la clôture ne soit possible
+- À la clôture, les vendeurs non soldés sont automatiquement marqués Non réclamé (montant intégral → recettes de l'association) ; une alerte dans la dialog de confirmation indique le nombre de vendeurs concernés et le montant total avant confirmation
 - Action optionnelle post-clôture « Nettoyer l'Édition » : supprime définitivement les enregistrements articles et les profils vendeurs de l'édition, et désactive le retour en arrière
 - Taux de commission configurable par édition (initialisé depuis un paramètre instance, défaut 20 %)
 
@@ -157,7 +157,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 | FR-080 | Lors de la création d'une nouvelle édition, l'admin peut soit configurer les catégories et le mapping catégorie-table depuis zéro, soit copier la structure d'une édition clôturée. La copie inclut les catégories d'articles et le mapping catégorie-table uniquement. Le taux de commission et la langue de documents sont initialisés depuis les paramètres instance (FR-016, FR-006). |
 | FR-082 | L'admin peut revenir en arrière d'une phase à la fois : Clôturé → Post-vente, Post-vente → Vente, Vente → Dépôt, Dépôt → Préparation. Les données enregistrées dans la phase annulée sont intégralement préservées — rien n'est supprimé ni annulé. En particulier : les ventes enregistrées restent marquées comme vendues lors d'un retour Vente → Dépôt ; les soldes enregistrés restent valides lors d'un retour Post-vente → Vente. Les articles appartenant à un vendeur déjà soldé ne peuvent plus être mis en vente (le vendeur est supposé avoir récupéré ses invendus). Le retour depuis Clôturé n'est disponible qu'avant le déclenchement de l'action Nettoyer l'Édition (FR-088). |
 | FR-088 | Après clôture, l'admin peut déclencher une action **« Nettoyer l'Édition »** qui supprime définitivement les enregistrements articles et les profils vendeurs de cette édition. Après nettoyage, le retour en arrière vers Post-vente est définitivement désactivé pour cette édition. Cette action nécessite une confirmation explicite. |
-| FR-096 | La clôture de l'édition est conditionnée au solde complet de tous les vendeurs. Le bouton « Clôturer l'Édition » est désactivé tant qu'au moins un vendeur est dans un statut autre que Soldé ou Non réclamé. Une notification inline affiche le nombre de vendeurs non soldés avec un lien vers la page de solde. Le serveur rejette également toute requête de clôture avec une erreur 409 si cette contrainte est violée. |
+| FR-096 | À la clôture de l'édition, tous les vendeurs non soldés sont automatiquement marqués « Non réclamé » : leur montant net dû est enregistré en recettes de l'association (même logique que FR-052), de manière atomique avec la transition de phase. Si au moins un vendeur est non soldé au moment de la clôture, la boîte de dialogue de confirmation affiche : « X vendeur(s) non soldé(s) seront automatiquement marqués Non réclamé. Montant total transféré aux recettes de l'association : Y,YY €. » Le bouton « Clôturer l'édition » n'est plus désactivé en présence de vendeurs non soldés. |
 
 ---
 
