@@ -1,7 +1,7 @@
 ---
 name: PluriBourse
 status: final
-updated: 2026-06-09
+updated: 2026-06-15
 colors:
   # Thème clair — corail primaire
   primary: '#C44626'
@@ -262,6 +262,8 @@ Les surfaces sont teintées de chaud beige-pierre pour éviter le blanc clinique
 
 Règle : le corail primaire ne double pas comme couleur de statut. Si quelque chose est en erreur, c'est rouge erreur, pas corail.
 
+*Alias intentionnel :* `warning` (`#FFF4EE`) est un alias sémantique de `primary-container` (valeur hex identique). Utiliser `warning` / `on-warning` pour les contextes d'avertissement de verrouillage (bannière Catégories verrouillées) ; utiliser `primary-container` / `on-primary-container` pour les contextes informatifs neutres (bannière Édition archivée, state chips warning). Le rendu visuel est identique — la distinction est sémantique.
+
 ## Typography
 
 Une seule famille : **DM Sans** (Google Fonts, SIL OFL). Pas de serif, pas de monospace visible en interface (le code-barres est un graphique, pas du texte).
@@ -315,7 +317,7 @@ Cohérence : un même type de composant utilise toujours le même token. Ne pas 
 
 **Boutons**
 
-Trois variantes : `primary` (corail plein), `secondary` (corail outline + fond container), `ghost` (transparent, texte muted). Toujours une seule action primaire visible par section. Les actions destructives (supprimer un vendeur, déclencher Clean Edition) utilisent le style `secondary` avec la couleur `error` — jamais un bouton primaire corail pour une action destructive.
+Trois variantes : `primary` (corail plein), `secondary` (corail outline + fond container), `ghost` (transparent, texte muted). Toujours une seule action primaire visible par section. Les actions destructives (supprimer un vendeur, archiver l'édition) utilisent le style `secondary` avec la couleur `error` — jamais un bouton primaire corail pour une action destructive. Exception documentée : l'action "Non réclamé" est irréversible mais non destructive (transfert aux recettes de l'association, pas de suppression) — elle utilise le style `primary` pour signaler une action engagée, pas une destruction.
 
 **Phase chip** — topbar, toujours visible
 Pill `{rounded.full}` fond `{colors.primary-container}`. Indicateur ● corail avant le label. Labels de phase : "Préparation" · "Dépôt" · "Vente" · "Post-vente" · "Clôturée". Cliquable uniquement pour l'Admin (ouvre le panneau de contrôle de phase).

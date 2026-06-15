@@ -1,797 +1,652 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Validation Report — PluriBourse</title>
-  <style>
-    :root {
-      --primary: #C44626;
-      --primary-container: #FFF4EE;
-      --on-primary-container: #8C2910;
-      --surface: #FFFBF9;
-      --surface-variant: #F5EEEA;
-      --on-surface: #1A0A05;
-      --on-surface-variant: #6B6460;
-      --error: #BA1A1A;
-      --error-container: #FFDAD6;
-      --on-error-container: #410002;
-      --outline: #C8B0A4;
+<meta charset="utf-8">
+<title>UX Design Validation: PluriBourse (Run 2)</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
 
-      --critical-bg: #FFF0F0;
-      --critical-border: #BA1A1A;
-      --critical-label: #7A0000;
-      --high-bg: #FFF8EE;
-      --high-border: #C87000;
-      --high-label: #7A4000;
-      --medium-bg: #FFFBF0;
-      --medium-border: #A89020;
-      --medium-label: #5A4800;
-      --low-bg: #F8FAF5;
-      --low-border: #4A7A30;
-      --low-label: #2A5010;
-      --pass-bg: #F0FAF5;
-      --pass-border: #1A7A50;
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
 
-      font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
-      color: var(--on-surface);
-      background: var(--surface);
-    }
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
 
-    * { box-sizing: border-box; }
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 
-    body {
-      margin: 0;
-      padding: 32px 24px;
-      max-width: 960px;
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 1.5;
-    }
+  .run-badge {
+    background: #e7e5e4;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    align-self: center;
+  }
 
-    /* Header */
-    .report-header {
-      border-bottom: 2px solid var(--primary);
-      padding-bottom: 20px;
-      margin-bottom: 32px;
-    }
-    .report-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--on-surface);
-      margin: 0 0 8px 0;
-    }
-    .report-header .meta {
-      font-size: 13px;
-      color: var(--on-surface-variant);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .report-header .meta a {
-      color: var(--primary);
-      text-decoration: none;
-    }
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
 
-    /* Overall verdict */
-    .verdict-box {
-      background: var(--primary-container);
-      border-left: 4px solid var(--primary);
-      border-radius: 8px;
-      padding: 20px 24px;
-      margin-bottom: 32px;
-    }
-    .verdict-box h2 {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--on-primary-container);
-      margin: 0 0 10px 0;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .verdict-box p {
-      margin: 0 0 8px 0;
-      font-size: 15px;
-      color: var(--on-surface);
-    }
-    .verdict-box p:last-child { margin-bottom: 0; }
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
 
-    /* Category verdicts table */
-    section { margin-bottom: 40px; }
-    h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--on-surface);
-      margin: 0 0 16px 0;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--outline);
-    }
-    h3 {
-      font-size: 15px;
-      font-weight: 700;
-      margin: 24px 0 12px 0;
-    }
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-    th, td {
-      text-align: left;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--surface-variant);
-    }
-    th {
-      background: var(--surface-variant);
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--on-surface-variant);
-    }
-    tr:last-child td { border-bottom: none; }
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
 
-    .verdict-strong { color: #166534; font-weight: 600; }
-    .verdict-adequate { color: #854D0E; font-weight: 600; }
-    .verdict-thin { color: #9A3412; font-weight: 600; }
-    .verdict-broken { color: var(--error); font-weight: 600; }
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
 
-    /* Finding cards */
-    .finding {
-      border-radius: 8px;
-      padding: 14px 18px;
-      margin-bottom: 12px;
-      border-left: 4px solid;
-    }
-    .finding.critical {
-      background: var(--critical-bg);
-      border-color: var(--critical-border);
-    }
-    .finding.high {
-      background: var(--high-bg);
-      border-color: var(--high-border);
-    }
-    .finding.medium {
-      background: var(--medium-bg);
-      border-color: var(--medium-border);
-    }
-    .finding.low {
-      background: var(--low-bg);
-      border-color: var(--low-border);
-    }
-    .finding-header {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-    }
-    .severity-badge {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 999px;
-    }
-    .severity-badge.critical { background: var(--critical-border); color: white; }
-    .severity-badge.high { background: var(--high-border); color: white; }
-    .severity-badge.medium { background: var(--medium-border); color: white; }
-    .severity-badge.low { background: var(--low-border); color: white; }
-    .lens-badge {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--on-surface-variant);
-      background: var(--surface-variant);
-      padding: 2px 8px;
-      border-radius: 999px;
-    }
-    .finding-title {
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--on-surface);
-    }
-    .finding-location {
-      font-size: 12px;
-      color: var(--on-surface-variant);
-      font-family: 'Consolas', 'Courier New', monospace;
-      margin-bottom: 6px;
-    }
-    .finding-desc {
-      font-size: 14px;
-      color: var(--on-surface);
-      margin: 0 0 6px 0;
-    }
-    .finding-fix {
-      font-size: 13px;
-      color: #1A4A3A;
-      background: rgba(26,74,58,0.06);
-      border-radius: 4px;
-      padding: 6px 10px;
-      margin-top: 4px;
-    }
-    .finding-fix strong { color: #166534; }
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
 
-    /* Counts summary bar */
-    .counts-bar {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
-    .count-pill {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .count-pill.critical { background: var(--critical-bg); color: var(--critical-label); border: 1.5px solid var(--critical-border); }
-    .count-pill.high { background: var(--high-bg); color: var(--high-label); border: 1.5px solid var(--high-border); }
-    .count-pill.medium { background: var(--medium-bg); color: var(--medium-label); border: 1.5px solid var(--medium-border); }
-    .count-pill.low { background: var(--low-bg); color: var(--low-label); border: 1.5px solid var(--low-border); }
-    .count-pill .count-num { font-size: 18px; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 28px 0 10px;
+  }
 
-    /* Reviewer files */
-    .reviewer-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .reviewer-list li {
-      background: var(--surface-variant);
-      border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .reviewer-list li a {
-      color: var(--primary);
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .reviewer-list li .rev-counts {
-      font-size: 12px;
-      color: var(--on-surface-variant);
-    }
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
 
-    /* PRD progress box */
-    .progress-box {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .progress-card {
-      background: var(--pass-bg);
-      border: 1.5px solid var(--pass-border);
-      border-radius: 8px;
-      padding: 16px;
-    }
-    .progress-card h4 {
-      margin: 0 0 4px 0;
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #1A5A3A;
-    }
-    .progress-card .progress-num {
-      font-size: 28px;
-      font-weight: 700;
-      color: #166534;
-    }
-    .progress-card .progress-label {
-      font-size: 13px;
-      color: var(--on-surface-variant);
-    }
-
-    details {
-      margin-bottom: 8px;
-    }
-    details summary {
-      cursor: pointer;
-      padding: 8px 12px;
-      background: var(--surface-variant);
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      list-style: none;
-    }
-    details summary::-webkit-details-marker { display: none; }
-    details summary::before { content: '▶ '; font-size: 11px; }
-    details[open] summary::before { content: '▼ '; }
-    details .details-body { padding: 12px 4px 4px 4px; }
-  </style>
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
 </head>
 <body>
+  <div class="container">
 
-<div class="report-header">
-  <h1>Validation Report — PluriBourse</h1>
-  <div class="meta">
-    <span><strong>DESIGN.md :</strong> <code>_bmad-output/planning-artifacts/ux-designs/ux-PluriBourse-2026-06-09/DESIGN.md</code></span>
-    <span><strong>EXPERIENCE.md :</strong> <code>_bmad-output/planning-artifacts/ux-designs/ux-PluriBourse-2026-06-09/EXPERIENCE.md</code> (updated 2026-06-12)</span>
-    <span><strong>Run at :</strong> 2026-06-12 · Lentilles : Rubric Walker · Accessibilité · Cohérence · Couverture PRD</span>
-  </div>
-</div>
+    <header class="report-header">
+      <div class="title">
+        <h1>PluriBourse — UX Design Validation Report</h1>
+        <div class="subtitle">ux-designs/ux-PluriBourse-2026-06-09/DESIGN.md · EXPERIENCE.md</div>
+      </div>
+      <span class="run-badge">Run 2 · 2026-06-15</span>
+    </header>
 
-<!-- Overall verdict -->
-<div class="verdict-box">
-  <h2>Overall Verdict</h2>
-  <p>Le spine pair est opérationnellement complet et bien structuré pour une première vague d'implémentation. La rubrique mécaniques est solide — 6 catégories sur 8 en <strong>strong</strong>, 2 en <strong>adequate</strong> — et la couverture PRD est quasi-totale : les 2 ÉCHECS et 9 PRÉOCCUPATIONS de la revue précédente sont tous résolus.</p>
-  <p>Deux bloquants subsistent : le token <code>{colors.warning}</code> est référencé dans EXPERIENCE.md mais absent du YAML de DESIGN.md (bloquant pour toute pipeline de thématisation), et le contraste de bordure des champs de saisie en mode clair reste à <strong>1,99:1</strong> contre un seuil WCAG 3:1. Le périmètre restant est délimité et concret — 2 corrections de tokens, 1 spec de composant manquant, et des annotations d'accessibilité à compléter sur les nouveaux composants.</p>
-</div>
-
-<!-- Category verdicts -->
-<section>
-  <h2>Category Verdicts</h2>
-  <table>
-    <thead>
-      <tr><th>Catégorie</th><th>Verdict</th><th>Note principale</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Flow coverage</td><td><span class="verdict-strong">strong</span></td><td>6 flows, protagonistes nommés, climax + failure paths</td></tr>
-      <tr><td>Token completeness</td><td><span class="verdict-adequate">adequate</span></td><td>1 token critique manquant : <code>{colors.warning}</code></td></tr>
-      <tr><td>Component coverage</td><td><span class="verdict-adequate">adequate</span></td><td>22 composants EXPERIENCE vs 13 entrées YAML DESIGN</td></tr>
-      <tr><td>State coverage</td><td><span class="verdict-strong">strong</span></td><td>16 états couverts ; /admin/users et /admin/editions liste non spécifiés</td></tr>
-      <tr><td>Visual reference coverage</td><td><span class="verdict-adequate">adequate</span></td><td>Mockup orphelin : mock-admin-edition-create.html</td></tr>
-      <tr><td>Bloat &amp; overspecification</td><td><span class="verdict-strong">strong</span></td><td>Quelques éléments d'implémentation Angular à déplacer</td></tr>
-      <tr><td>Inheritance discipline</td><td><span class="verdict-strong">strong</span></td><td>Glossaire cohérent, tokens résolus (sauf warning)</td></tr>
-      <tr><td>Shape fit</td><td><span class="verdict-strong">strong</span></td><td>Ordre canonique respecté, sections requises présentes</td></tr>
-    </tbody>
-  </table>
-</section>
-
-<!-- Findings summary bar -->
-<section>
-  <h2>Findings by Severity</h2>
-  <div class="counts-bar">
-    <div class="count-pill critical"><span class="count-num">2</span> Critical</div>
-    <div class="count-pill high"><span class="count-num">9</span> High</div>
-    <div class="count-pill medium"><span class="count-num">14</span> Medium</div>
-    <div class="count-pill low"><span class="count-num">17</span> Low</div>
-  </div>
-
-  <h3>Critical (2)</h3>
-
-  <div class="finding critical">
-    <div class="finding-header">
-      <span class="severity-badge critical">Critical</span>
-      <span class="lens-badge">Rubric · Cohérence</span>
-      <span class="finding-title">Token <code>{colors.warning}</code> non défini dans DESIGN.md</span>
+    <div class="synthesis">
+      <p>La paire de spines PluriBourse — après intégration des 10 corrections de la première passe — est <strong>globalement solide et prête pour le développement des flux opérationnels principaux</strong>. Tous les findings critiques et high bloquants de la première validation sont résolus sans exception. Les 6 Key Flows, la cohérence de navigation (aucune route orpheline), le vocabulaire métier stable et les patterns d'accessibilité sont confirmés par trois reviewers indépendants.</p>
+      <p>Cette deuxième passe est élargie aux lentilles <strong>cohérence interne</strong> et <strong>couverture PRD</strong>. Un seul point de blocage technique émerge : le token <code>{typography.display-sm}</code> dans le composant <code>metric-tile</code> n'existe pas dans le système de design — confirmé indépendamment par le rubric walker et le reviewer cohérence.</p>
+      <p><strong>À traiter avant implémentation :</strong> 1 critical (token manquant), 4 high (exception états vides non documentée, variante Banner non documentée, FR-025 indicateur complet/incomplet hors Dépôt, FR-084 filtre vendeur Catalogue). 12 medium constituent un second niveau de priorité, à adresser sprint par sprint.</p>
     </div>
-    <div class="finding-location">§ EXPERIENCE.md ligne 124 · DESIGN.md frontmatter colors</div>
-    <p class="finding-desc">Le composant "Fiche Catégories & Tables" référence <code>{colors.warning}</code> pour la bannière de verrouillage. Ce token est absent du YAML <code>colors</code> de DESIGN.md. Toute pipeline de thématisation pilotée par tokens échouera.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>warning: '{colors.primary-container}'</code> dans le YAML <code>colors</code> de DESIGN.md (alias du corail doux de <code>status-chip-warning</code>), ou remplacer la référence dans EXPERIENCE.md par <code>{colors.primary-container}</code> directement.</div>
-  </div>
 
-  <div class="finding critical">
-    <div class="finding-header">
-      <span class="severity-badge critical">Critical</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Contraste bordure de saisie mode clair — SC 1.4.11 WCAG 2.2 AA</span>
+    <div class="dimension-summary">
+      <div class="dim-card">
+        <div class="dim-name">Flow coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Token completeness</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Component coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">State coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Visual ref. coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Bloat &amp; overspec.</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Inheritance discipline</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Shape fit</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
     </div>
-    <div class="finding-location">§ DESIGN.md <code>colors.outline</code> · <code>components.input.border</code></div>
-    <p class="finding-desc"><code>outline</code> <code>#C8B0A4</code> sur <code>surface</code> <code>#FFFBF9</code> = <strong>1,99:1</strong>. Seuil requis : 3:1 (SC 1.4.11). Amélioré depuis 1,26:1 mais encore insuffisant. Affecte tous les champs de saisie de l'application.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Remplacer <code>outline: '#C8B0A4'</code> par <code>#9E8C86</code> (3,01:1 minimum) ou <code>#8A7870</code> (≈ 3,5:1 pour marge de sécurité) dans DESIGN.md.</div>
-  </div>
 
-  <h3>High (9)</h3>
+    <p class="section-label">Rubric walker — 8 dimensions</p>
 
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title">Mockup orphelin : <code>mock-admin-edition-create.html</code> sans spec comportementale</span>
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>1. Flow coverage</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Les 6 Key Flows couvrent l'ensemble des parcours utilisateurs. Chaque flow présente un protagoniste nommé, des étapes numérotées, un climax beat et un failure path. Aucune régression depuis la première passe.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Flow 2 sans failure path nommé</h3>
+              <span class="finding-location">EXPERIENCE.md — Key Flow 2</span>
+            </header>
+            <div class="finding-note">Le lot incomplet (Marc) est couvert par State Patterns mais le flow ne nomme pas son failure path. Non bloquant.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Optionnel — "Failure: scanner déconnecté → [voir State Patterns]".</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>2. Token completeness</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>La régression critique de la première passe (<code>{colors.error}</code> sur un élément neutre) est résolue. Une nouvelle régression a été introduite lors de l'ajout des entrées comportementales : <code>{typography.display-sm}</code> dans le composant <code>metric-tile</code> ne résout pas. Ce niveau typographique n'existe pas dans le frontmatter DESIGN.md. Confirmé par deux reviewers indépendants.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-critical">critical</span>
+              <h3 class="finding-title"><code>{typography.display-sm}</code> inexistant dans DESIGN.md</h3>
+              <span class="finding-location">EXPERIENCE.md ligne 157 — composant metric-tile</span>
+            </header>
+            <div class="finding-note">Scale typographique définie : display (32px/700), headline (24px/700), title-lg (18px/600), title-md, body-lg, body-md, label-lg, label-sm. Aucun niveau <code>display-sm</code>. Le frontmatter DESIGN.md <code>metric-tile.value-font</code> utilise déjà <code>{typography.title-lg}</code>.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Remplacer <code>{typography.display-sm}</code> par <code>{typography.title-lg}</code> dans EXPERIENCE.md ligne 157.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>3. Component coverage</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Les 6 composants manquants de la première passe (segmented-control, banner, metric-tile, danger-zone, skeleton-row, list-row) ont été ajoutés avec des entrées comportementales complètes. Aucune régression.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>4. State coverage</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>L'état "Reversements — liste vide" et le comportement Enter dans "Somme remise" ont été ajoutés. Toutes les surfaces IA ont leurs états couverts. Aucune régression.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>5. Visual reference coverage</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>La règle "spine wins on conflict" est établie en blockquote en tête de la section IA. Toutes les références maquettes sont couvertes par cette règle globale.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>6. Bloat &amp; overspecification</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>RFC 7807, verrou optimiste, garantie de non-double-vente, et SerialPort.getCommPorts() ont été retirés ou remplacés par des formulations neutres. "Non persistée en base" a été retiré. Aucune surspécification technique résiduelle.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>7. Inheritance discipline</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>L'entrée datée "Reversements sidebar" a été ajoutée au decision log. Les tokens résolvent vers des valeurs définies (sauf display-sm — voir §2). Nommage cohérent entre spines.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>8. Shape fit</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Section Inspiration &amp; Anti-patterns ajoutée après Foundation, conforme au modèle de référence. Les 8 sections DESIGN.md sont dans l'ordre canonique. Les 8 sections EXPERIENCE.md sont présentes. Aucune régression.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <p class="section-label">Lentilles supplémentaires</p>
+
+    <section class="reviewer-section">
+      <details open>
+        <summary>
+          <h2>Cohérence interne</h2>
+          <span class="reviewer-source">review-coherence.md</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Les deux spines forment un système globalement solide : navigation complète (aucune route orpheline), vocabulaire métier stable, patterns de confirmation et toast cohérents. Trois zones de friction subsistent avant implémentation : le token <code>display-sm</code> inexistant (critical, confirmé §2), une exception non documentée dans Voice and Tone sur les états vides bloquants, et une ambiguïté de variante du composant Banner.</p>
+            <p><strong>Verdicts par axe :</strong> Noms de composants — adequate · Tokens couleur/statut — adequate · Patterns UX — adequate · Navigation — <strong>strong</strong> · Vocabulaire métier — <strong>strong</strong> · Phases — adequate.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-critical">critical</span>
+              <h3 class="finding-title"><code>{typography.display-sm}</code> inexistant (confirmé §2)</h3>
+              <span class="finding-location">EXPERIENCE.md — composant metric-tile</span>
+            </header>
+            <div class="finding-note">Token non défini dans DESIGN.md. Confirmé indépendamment par le rubric walker.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Remplacer par <code>{typography.title-lg}</code> — voir §2.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">Exception états vides sans action non documentée</h3>
+              <span class="finding-location">EXPERIENCE.md — Voice and Tone</span>
+            </header>
+            <div class="finding-note">Voice and Tone énonce "Jamais un état vide sans sortie" mais trois états documentés n'ont pas d'action proposée (/volunteer/waiting en Préparation, Reversements liste vide, Catalogue post-Archivage). Ces cas sont métier-justifiés mais créent une contradiction formelle.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter une note d'exception dans Voice and Tone : "Exception : les états structurellement bloquants (phase non ouverte côté bénévole, édition archivée) n'ont pas d'action proposée — le message explicatif suffit."</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">Variante Banner (info vs warning) non documentée</h3>
+              <span class="finding-location">EXPERIENCE.md — Component Patterns Banner + Édition archivée — vue détail</span>
+            </header>
+            <div class="finding-note">Banner utilisé dans deux contextes avec des tokens différents : variante warning (<code>{colors.warning}</code> / <code>{colors.on-warning}</code>) pour Catégories verrouillées ; variante informationnelle (<code>{colors.primary-container}</code>) pour Édition archivée. Aucune variante documentée dans DESIGN.md ni EXPERIENCE.md.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter dans la définition Banner (EXPERIENCE.md) une section "Variantes" : <code>warning</code> (Catégories verrouillées) et <code>info</code> (Édition archivée, tokens primary-container / on-primary-container).</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Segmented control — tokens divergents entre DESIGN.md et EXPERIENCE.md</h3>
+              <span class="finding-location">DESIGN.md frontmatter · EXPERIENCE.md — Component Patterns</span>
+            </header>
+            <div class="finding-note">EXPERIENCE.md : segment actif "fond <code>{colors.primary}</code>, texte blanc". DESIGN.md frontmatter : <code>active-background: '{colors.primary-container}'</code>, <code>active-foreground: '{colors.on-primary-container}'</code>. Deux specs contradictoires.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Aligner EXPERIENCE.md sur DESIGN.md frontmatter (<code>primary-container</code> / <code>on-primary-container</code>), ou mettre à jour DESIGN.md et documenter l'exception.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Dualité sémantique <code>warning</code> / <code>primary-container</code></h3>
+              <span class="finding-location">DESIGN.md frontmatter — colors</span>
+            </header>
+            <div class="finding-note"><code>warning: '#FFF4EE'</code> et <code>primary-container: '#FFF4EE'</code> ont des valeurs hex identiques. Banner utilise <code>{colors.warning}</code>, status-chip-warning utilise <code>{colors.primary-container}</code>. Confusion pour les développeurs.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Documenter dans DESIGN.md Colors que <code>warning</code> est un alias intentionnel de <code>primary-container</code>, ou fusionner les deux tokens.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Bouton "Confirmer" de l'action Non réclamé en <code>primary</code> vs pattern irréversible</h3>
+              <span class="finding-location">EXPERIENCE.md — Key Flow 3</span>
+            </header>
+            <div class="finding-note">L'action "Non réclamé" est irréversible. Les autres actions irréversibles utilisent <code>error</code> pour le bouton de confirmation. Le choix <code>primary</code> pour "Non réclamé" n'est pas documenté comme exception.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Documenter l'exception ("irréversible mais non destructif = primary suffisant") dans DESIGN.md Do's and Don'ts, ou aligner sur <code>error</code>.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Référence "Clean Edition" orpheline dans Interaction Primitives</h3>
+              <span class="finding-location">EXPERIENCE.md — Interaction Primitives</span>
+            </header>
+            <div class="finding-note">"Clean Edition" apparaît comme exemple d'action irréversible mais ce terme n'existe plus dans EXPERIENCE.md v2026-06-15 (renommé "Archiver l'édition").</div>
+            <div class="finding-fix"><strong>Fix:</strong> Remplacer "Clean Edition" par "Archiver l'édition".</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Contraintes de phase absentes de 3 composants</h3>
+              <span class="finding-location">EXPERIENCE.md — Page Rapports · Page Reversements · Fiche Catégories &amp; Tables</span>
+            </header>
+            <div class="finding-note">Les composants Page Rapports (inaccessible en Préparation/Dépôt), Page Reversements (Post-vente + Clôturée uniquement), et Fiche Catégories &amp; Tables (lecture seule de Dépôt à Clôturée) ne précisent pas leurs contraintes de phase, contrairement à l'IA.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter dans chaque composant une note "(phase X+ uniquement — entrée masquée dans la sidebar les autres phases)".</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title"><code>notification-inline</code> — casse variable dans EXPERIENCE.md</h3>
+              <span class="finding-location">EXPERIENCE.md — plusieurs sections</span>
+            </header>
+            <div class="finding-note">Nommé "Notification inline", "notification inline (variante erreur)", "notification inline avertissement" selon les sections. Kebab-case dans DESIGN.md frontmatter.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Uniformiser en <code>notification-inline</code> dans les mentions EXPERIENCE.md.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="reviewer-section">
+      <details open>
+        <summary>
+          <h2>Couverture PRD</h2>
+          <span class="reviewer-source">review-prd-coverage.md</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Taux de couverture : <strong>76 % explicite</strong> (61/81 FRs UX), <strong>91 % incluant les implicites</strong>. Les flux critiques (POS 92 %, Impression 100 %, Éditions 82 %, Rapports 88 %) sont bien couverts. Le groupe le plus faible est F3 Vendeurs &amp; Articles (56 % explicite), avec 3 FRs non couverts.</p>
+            <p><strong>Couverture par groupe :</strong> F1 Internationalisation 71 % · F2 Éditions &amp; Cycle de vie 82 % · F3 Vendeurs &amp; Articles 56 % · F4 POS 92 % · F5 Post-Vente 71 % · F6 Rapports 88 % · F7 Comptes 63 % · F9 Impression 100 % · F10 Catalogue 75 %.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">FR-025 — Indicateur complet/incomplet non modifiable hors phase Dépôt</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Catalogue / liste filtrée</span>
+            </header>
+            <div class="finding-note">Le PRD permet de modifier l'indicateur complet/incomplet et le commentaire en phases Vente, Post-vente et Clôturée. Aucun chemin UX défini dans EXPERIENCE.md pour cette action hors Dépôt.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter dans le composant Catalogue une colonne d'actions avec "Modifier statut" (accessible en toutes phases), ouvrant un dialog ou inline edit limité aux champs complet/incomplet et commentaire.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">FR-084 — Filtre "nom du vendeur" absent du composant Catalogue</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Catalogue / liste filtrée</span>
+            </header>
+            <div class="finding-note">Le composant liste les filtres disponibles mais n'inclut pas le filtre "nom du vendeur" requis par FR-084.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter "nom du vendeur" dans la liste des filtres du composant Catalogue.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">FR-055 — Génération PDF bilan d'édition non décrite dans le flow de clôture</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Contrôle de phase</span>
+            </header>
+            <div class="finding-note">La génération automatique du bilan d'édition PDF (deux langues EN+FR) au moment de la clôture n'est pas spécifiée dans le composant Contrôle de phase — ni spinner, ni toast de confirmation.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Enrichir le composant "Contrôle de phase" avec état de clôture : spinner pendant la génération + toast "Bilan d'édition généré (EN + FR)".</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">FR-045 — Étiquette thermique lot sans spec visuelle différenciante</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Formulaire lot</span>
+            </header>
+            <div class="finding-note">L'étiquette d'un article de lot doit afficher "Prix du lot : X€" et "Lot indivisible : X/N" à la place d'un prix individuel. Aucune spec de différenciation dans EXPERIENCE.md.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter dans le composant "Formulaire lot" un tableau comparatif étiquette standard vs étiquette lot.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">FR-019 — Champs vendeur et validations absents du formulaire dépôt</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Formulaire dépôt</span>
+            </header>
+            <div class="finding-note">Les champs obligatoires du profil vendeur (nom, prénom, email, téléphone) et leurs validations (format email, format téléphone) ne sont pas spécifiés.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter la liste des champs et leurs règles de validation dans le composant Formulaire dépôt.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">FR-041 — Structure de la facture acheteur non spécifiée</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Panier POS (état post-validation)</span>
+            </header>
+            <div class="finding-note">La structure de la facture acheteur (liste articles + prix, total, nom association, date, lots sur une ligne) n'est spécifiée que dans le PRD. EXPERIENCE.md décrit uniquement le bouton "Imprimer la facture".</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter dans le composant Panier POS (état post-validation) une note sur les champs obligatoires du PDF facture.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">FR-014 — Suppression d'édition sans contrainte UX post-Préparation</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Page Éditions — liste</span>
+            </header>
+            <div class="finding-note">Le comportement du bouton "Supprimer" en phase post-Préparation n'est pas spécifié (absent ? désactivé avec tooltip ?).</div>
+            <div class="finding-fix"><strong>Fix:</strong> Préciser que l'action "Supprimer" est absente ou désactivée (+ tooltip) pour toute édition ayant dépassé la phase Préparation.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">FR-030 — Structure du rouleau thermique non documentée dans EXPERIENCE.md</h3>
+              <span class="finding-location">EXPERIENCE.md — Interaction Primitives "Impression"</span>
+            </header>
+            <div class="finding-note">La structure séquentielle du rouleau (séparateur vendeur → étiquettes → séparateur article) n'est documentée que dans le PRD, alors qu'elle conditionne la lisibilité en phase Dépôt.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter dans Interaction Primitives "Impression" une note sur la structure du rouleau par vendeur.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">FR-027 — Layout étiquette standard non spécifié dans EXPERIENCE.md</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Formulaire dépôt</span>
+            </header>
+            <div class="finding-note">Ordre des champs, mention INCOMPLET conditionnelle, barcode XXXX-XXXX, absence du nom vendeur (RGPD) — spécifiés dans le PRD uniquement.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter une note de structure étiquette dans le composant Formulaire dépôt.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">FR-024 — Suppression d'article sans spec UX complète</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Catalogue (admin phase Dépôt)</span>
+            </header>
+            <div class="finding-note">Ni CTA décrit dans le catalogue, ni dialog de confirmation, ni post-état pour la suppression d'article en phase Dépôt.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter bouton "Supprimer l'article" (danger zone), dialog de confirmation, et toast post-suppression dans le composant Catalogue phase Dépôt.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">FR-010 — Unicité édition active sans contrainte UX</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Page Éditions — liste</span>
+            </header>
+            <div class="finding-note">Le comportement du bouton "Créer une édition" quand une édition active existe déjà n'est pas spécifié.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Bouton désactivé + tooltip si une édition active existe.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">FR-061 — Sélecteur de rôle non contraint à la création d'utilisateur</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Page Utilisateurs</span>
+            </header>
+            <div class="finding-note">Le sélecteur de rôle ne précise pas que le rôle "Admin" ne doit pas être proposable (un seul compte admin par instance).</div>
+            <div class="finding-fix"><strong>Fix:</strong> Préciser que le rôle "Admin" est absent du sélecteur lors de la création d'un compte bénévole.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">FR-050 — Contenu du bilan de vente sans spec formelle de composant</h3>
+              <span class="finding-location">EXPERIENCE.md — composant Récapitulatif reversement imprimable</span>
+            </header>
+            <div class="finding-note">Le contenu du bilan (articles vendus, invendus avec table, total brut, commission, net) est décrit narrativement dans Flow 5 sans spec de composant formelle.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ajouter dans le composant "Récapitulatif reversement imprimable" une liste des champs attendus du bilan.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <div class="mechanical">
+      <h3>Résolutions passe 1 — 10/10 ✓</h3>
+      <ul>
+        <li><strong>critical</strong> — <code>{colors.error}</code> → <code>{colors.primary}</code> sur label de lot dans le Panier POS</li>
+        <li><strong>high</strong> — RFC 7807, verrou optimiste, garantie de non-double-vente retirés d'EXPERIENCE.md</li>
+        <li><strong>high</strong> — <code>SerialPort.getCommPorts()</code> remplacé par formulation neutre côté comportement</li>
+        <li><strong>high</strong> — Section Inspiration &amp; Anti-patterns ajoutée après Foundation (depuis le decision log)</li>
+        <li><strong>medium</strong> — Note "spine wins on conflict" en blockquote en tête de la section IA</li>
+        <li><strong>medium</strong> — Entrées comportementales ajoutées pour 6 composants : segmented-control, banner, metric-tile, danger-zone, skeleton-row, list-row</li>
+        <li><strong>medium</strong> — "non persistée en base" retiré du composant Sélection d'imprimante — login bénévole</li>
+        <li><strong>low</strong> — <code>{colors.warning}</code> complété avec <code>{colors.on-warning}</code> et référence au composant banner</li>
+        <li><strong>low</strong> — État "Reversements — liste vide" ajouté dans State Patterns</li>
+        <li><strong>low</strong> — Comportement Enter dans "Somme remise" ajouté dans Interaction Primitives</li>
+        <li><strong>low</strong> — Entrée datée "Reversements sidebar" ajoutée dans le decision log</li>
+      </ul>
     </div>
-    <div class="finding-location">§ EXPERIENCE.md IA <code>/admin/editions/:id</code> · <code>mockups/mock-admin-edition-create.html</code></div>
-    <p class="finding-desc">Le mockup couvre FR-008, FR-017, FR-018, FR-080 (création/détail d'édition) mais aucun composant ni lien ne l'intègre dans EXPERIENCE.md. Un développeur n'a ni spec comportementale ni pointer vers la maquette pour implémenter cette surface.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter composant "Formulaire édition — création / détail" dans Component Patterns + lien <code>→ Maquette : mockups/mock-admin-edition-create.html</code> dans le bloc IA.</div>
-  </div>
 
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title">Topbar sans entrée YAML dans DESIGN.md <code>components</code></span>
-    </div>
-    <div class="finding-location">§ DESIGN.md components YAML</div>
-    <p class="finding-desc">Décrite en prose (Layout & Spacing) et en Component Patterns (EXPERIENCE.md), mais aucune clé dans le YAML <code>components</code>. Background, hauteur 56px et règle d'ombre accessibles uniquement par lecture prose.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>topbar: &#123; background: '{colors.surface}', height: '56px', border-bottom: 'none', shadow: 'none' &#125;</code> dans DESIGN.md.</div>
+    <footer class="report-footer">
+      <div class="meta">
+        <span>Spines: ux-designs/ux-PluriBourse-2026-06-09/DESIGN.md · EXPERIENCE.md</span>
+        <span>Reviewers: review-rubric.md · review-coherence.md · review-prd-coverage.md</span>
+        <span>Generated: 2026-06-15T00:00:00</span>
+      </div>
+    </footer>
   </div>
-
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title">Scanner input sans spec visuelle dans DESIGN.md</span>
-    </div>
-    <div class="finding-location">§ DESIGN.md components · EXPERIENCE.md Component Patterns Scanner input</div>
-    <p class="finding-desc">Spec comportementale complète dans EXPERIENCE.md, aucune entrée DESIGN.md pour le ring autofocus, la zone de résultat et les états visuels distincts du composant <code>input</code> générique.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter note dans l'entrée <code>input</code> de DESIGN.md : "Variante scanner — zone résultat : <code>{colors.primary-container}</code> pour succès, <code>{colors.error-container}</code> pour rejet."</div>
-  </div>
-
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Restauration du focus après fermeture de dialog non spécifiée — SC 2.4.3</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Dialog de confirmation</div>
-    <p class="finding-desc">Le piégeage du focus est correct, mais aucun composant (ni les patterns originaux, ni les 4 nouveaux dialogs de juin) ne précise où revient le focus après fermeture. Risque de renvoi en haut de page.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter au patron Dialog : "À la fermeture (Annuler, Échap, confirmation), rétablir le focus sur l'élément déclencheur."</div>
-  </div>
-
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Aucun lien de saut de navigation — SC 2.4.1</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Foundation / Layout</div>
-    <p class="finding-desc">Sidebar persistante 200px sans skip-link. Utilisateurs clavier et lecteurs d'écran doivent tabuler à travers tous les liens de navigation à chaque chargement de page.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Spécifier <code>&lt;a class="skip-link" href="#main-content"&gt;Aller au contenu principal&lt;/a&gt;</code> comme premier élément DOM, visible au focus.</div>
-  </div>
-
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Toast sans <code>aria-live</code> — SC 4.1.3</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Toast</div>
-    <p class="finding-desc">Les toasts de succès (4s) et les toasts d'erreur persistants (imprimante) n'ont aucune région <code>aria-live</code> spécifiée. Les lecteurs d'écran ne les annoncent pas.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter au composant Toast : <code>role='status'</code> + <code>aria-live='polite'</code> pour succès ; <code>role='alert'</code> + <code>aria-live='assertive'</code> pour erreurs persistantes.</div>
-  </div>
-
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Phase chip SSE sans <code>aria-live</code> — SC 4.1.3</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Phase chip</div>
-    <p class="finding-desc">La mise à jour SSE du <code>aria-label</code> de la puce de phase est silencieuse pour les lecteurs d'écran — un changement de <code>aria-label</code> seul ne déclenche pas d'annonce.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter une région <code>aria-live='polite'</code> (peut être visuellement masquée) annonçant "Phase changée : [nouvelle phase]" lors du push SSE.</div>
-  </div>
-
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Formulaire de solde vendeur : erreur inline sans <code>aria-live</code> — SC 3.3.1, 4.1.3</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Formulaire de solde vendeur</div>
-    <p class="finding-desc">Le message "Le montant saisi dépasse le reversement dû." bloque le bouton "Valider" sans annonce accessible. Erreur dynamique critique non détectable par les lecteurs d'écran.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>aria-live='polite'</code> sur le conteneur d'erreur inline + lier au champ via <code>aria-describedby</code>.</div>
-  </div>
-
-  <div class="finding high">
-    <div class="finding-header">
-      <span class="severity-badge high">High</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Refocus automatique scanner : risque de piège clavier — SC 2.1.2</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Interaction Primitives, Scanner USB HID</div>
-    <p class="finding-desc">Refocus après 500ms d'inactivité peut empêcher la navigation clavier vers les éléments du panier (lignes articles, bouton "Retirer le lot entier", bouton "Valider").</p>
-    <div class="finding-fix"><strong>Fix :</strong> Remplacer par un mécanisme explicite "Retour au scanner" (bouton ou raccourci), ou documenter une exception de désactivation (double-Tab suspend le refocus).</div>
-  </div>
-
-  <h3>Medium (14)</h3>
-
-  <details>
-    <summary>Voir les 14 findings medium</summary>
-    <div class="details-body">
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">PRD</span>
-      <span class="finding-title">Page file d'impression admin sans spec — FR-079</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md IA <code>/admin/print-queue</code></div>
-    <p class="finding-desc">Route présente dans l'IA, aucun composant. Colonnes, actions par ligne (Relancer, Ignorer), états (en attente, en erreur, traité) non définis. Sur le chemin critique de la gestion d'impression.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter composant "Page file d'impression" avec colonnes, actions par ligne, état vide "Aucun job en attente."</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">PRD</span>
-      <span class="finding-title">Bouton de clôture conditionnel + notification vendeurs non soldés non spécifiés — FR-096</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Contrôle de phase</div>
-    <p class="finding-desc">FR-096 exige le désactivation du bouton "Clôturer l'Édition" si des vendeurs sont encore non soldés, avec notification inline et lien vers /admin/settlement. Non couvert dans la spine.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Étendre le composant "Contrôle de phase" avec état désactivé + notification inline "X vendeur(s) non soldé(s) — Accéder à la page de solde."</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Cohérence</span>
-      <span class="finding-title">Token <code>{colors.warning}</code> — asymétrie composants (16 sans YAML)</span>
-    </div>
-    <div class="finding-location">§ DESIGN.md components YAML</div>
-    <p class="finding-desc">9 nouveaux composants 2026-06-12 + 7 anciens toujours manquants n'ont aucune entrée dans le YAML <code>components</code> de DESIGN.md. Risque d'incohérence visuelle lors de l'implémentation.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Priorité aux composants à structure propre : bannières, tuiles métriques, zone danger. Entrées YAML minimalistes (fond + couleur) suffisent.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Cohérence</span>
-      <span class="finding-title">Couleur "rouge" notification inline POS non tokenisée</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md State Patterns "Conflit POS" · DESIGN.md Notification d'erreur inline</div>
-    <p class="finding-desc">State Patterns utilise "rouge" pour les conflits POS, mais DESIGN.md définit la notification inline avec <code>{colors.primary-container}</code> (corail). Aucune variante rouge dans DESIGN.md. Le label de lot "rouge" dans le panier est aussi non tokenisé.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>notification-inline-error</code> dans DESIGN.md avec <code>{colors.error-container}</code> / <code>{colors.on-error-container}</code>, ou préciser dans EXPERIENCE.md que "rouge" = tokens <code>error-container</code>.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Cohérence</span>
-      <span class="finding-title">Bouton "Confirmer" style <code>secondary</code> dans dialog retour arrière — exception non documentée</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Contrôle de phase — retour arrière · DESIGN.md Composants Dialog</div>
-    <p class="finding-desc">DESIGN.md exige <code>primary</code> ou <code>error</code> pour le bouton de confirmation des dialogs. Le retour arrière utilise <code>secondary</code> — exception non documentée.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Documenter l'exception dans DESIGN.md ("retour arrière non destructif peut utiliser <code>secondary</code>"), ou aligner sur <code>primary</code>.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title"><code>/admin/users</code> sans spec comportementale</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md IA + Component Patterns</div>
-    <p class="finding-desc">Surface présente dans l'IA, aucun contenu spécifié : liste des comptes, invitation, assignation de rôle, réinitialisation de mot de passe.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter un composant minimal ou taguer explicitement "hors scope v1 spine".</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title"><code>/admin/editions</code> (liste) sans spec comportementale</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md IA</div>
-    <p class="finding-desc">État vide premier lancement, colonnes, bouton de création non spécifiés.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter composant minimal ou état vide "Aucune édition. Créez votre première édition."</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title">Page Rapports : pas d'état pour changement de phase pendant consultation</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Page Rapports · State Patterns</div>
-    <p class="finding-desc">Si la phase change alors que la Page Rapports est ouverte, le contenu conditionnel devient obsolète sans transition définie.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter un state "Phase change while Reports open — bannière d'actualisation ou re-render conditionnel".</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title"><code>status-chip-success</code> avec couleurs hardcodées</span>
-    </div>
-    <div class="finding-location">§ DESIGN.md components lignes 141–142</div>
-    <p class="finding-desc">Les valeurs vert <code>#F0FDF4</code> / <code>#166534</code> ne sont pas définies dans le bloc <code>colors</code> — incohérence avec la discipline token des autres chips.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>success-container</code> et <code>on-success-container</code> dans <code>colors:</code>, ou documenter l'exception.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title">Skeleton rows et Segmented control sans spec visuelle</span>
-    </div>
-    <div class="finding-location">§ DESIGN.md components</div>
-    <p class="finding-desc">Skeleton rows (State Patterns) et Segmented control (Formulaire dépôt) référencés sans entrée YAML dans DESIGN.md.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>skeleton-row</code> avec animation pulse et <code>segmented-control</code> avec tokens actif/inactif dans DESIGN.md.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Rubric</span>
-      <span class="finding-title">Références mockups non répétées dans les Component Patterns</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns</div>
-    <p class="finding-desc">Les liens vers les mockups sont regroupés dans le bloc IA mais non répétés dans les entrées des composants (POS caisse, admin-vendors, phase-control).</p>
-    <div class="finding-fix"><strong>Fix :</strong> Répliquer <code>→ Maquette :</code> dans chaque entrée Component Patterns ayant un mockup.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Boutons d'action contextuels dans les listes sans noms accessibles distincts — SC 4.1.2</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Component Patterns, Page Reversements</div>
-    <p class="finding-desc">"Solder" × N, "Imprimer le bilan" × N — indiscernables pour un lecteur d'écran sans nom incluant le contexte vendeur.</p>
-    <div class="finding-fix"><strong>Fix :</strong> <code>aria-label="Solder [prénom nom]"</code>, <code>aria-label="Imprimer le bilan de [prénom nom]"</code>. Idem bouton <code>close</code> panier caisse : <code>aria-label="Retirer [nom de l'article] du panier"</code>.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Taille de cible sidebar &lt; 44px — SC 2.5.8 WCAG 2.2</span>
-    </div>
-    <div class="finding-location">§ DESIGN.md <code>components.sidebar-item</code></div>
-    <p class="finding-desc"><code>padding: '8px 12px'</code> + texte 14px = hauteur ≈ 37px. En dessous du minimum 44px de SC 2.5.8.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Passer à <code>padding: '12px 12px'</code> ou documenter l'exception de décalage.</div>
-  </div>
-
-  <div class="finding medium">
-    <div class="finding-header">
-      <span class="severity-badge medium">Medium</span>
-      <span class="lens-badge">Accessibilité</span>
-      <span class="finding-title"><code>TitleStrategy</code> Angular non spécifiée — SC 2.4.2</span>
-    </div>
-    <div class="finding-location">§ EXPERIENCE.md Accessibility Floor</div>
-    <p class="finding-desc">Mise à jour de <code>&lt;title&gt;</code> requise sans préciser l'implémentation Angular. Sans <code>TitleStrategy</code>, le titre ne sera pas mis à jour lors de la navigation SPA.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Spécifier <code>TitleStrategy</code> avec modèle "[Surface] — PluriBourse" pour toutes les routes.</div>
-  </div>
-
-    </div>
-  </details>
-
-  <h3>Low (17)</h3>
-
-  <details>
-    <summary>Voir les 17 findings low</summary>
-    <div class="details-body">
-
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Bannière "Premier lancement" sans <code>role="alert"</code> — SC 4.1.3</span></div>
-    <p class="finding-desc">La bannière critique ne sera pas annoncée immédiatement par les lecteurs d'écran à l'arrivée sur la page.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>role='alert'</code> à la bannière.</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Exports CSV Page Rapports sans feedback accessible — SC 4.1.3</span></div>
-    <p class="finding-desc">Téléchargement direct sans spinner, toast, ni <code>aria-live</code>.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter spinner dans bouton + toast succès + région <code>aria-live</code> standard.</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">État "Retour arrière indisponible" sans <code>role='status'</code> — SC 4.1.2</span></div>
-    <p class="finding-desc">Message inline icône <code>lock</code> post-Nettoyage sans annotation pour les technologies d'assistance.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>role='status'</code> sur l'élément contenant le message.</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Ordre DOM topbar en dernier — SC 2.4.3</span></div>
-    <p class="finding-desc">Topbar visuellement en haut, DOM en dernier. Non conventionnel. Le skip-link atténue partiellement.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Accessibilité</span>
-      <span class="finding-title"><code>aria-label</code> des listes non mis à jour dynamiquement — SC 1.3.1</span></div>
-    <p class="finding-desc">Comptage dans <code>aria-label</code> de la Page Reversements doit être réactif aux changements de filtre.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">Injection d'erreur <code>aria-describedby</code> non clarifiée — SC 3.3.1</span></div>
-    <p class="finding-desc">Conteneurs d'erreur pré-rendus ou injectés ? Sans clarification, les liens <code>aria-describedby</code> peuvent ne pas fonctionner.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Préciser "Conteneurs d'erreur pré-rendus vides avec <code>aria-live='polite'</code>, remplis à la validation, jamais injectés."</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Accessibilité</span>
-      <span class="finding-title">SC 2.4.11 WCAG 2.2 — apparence du focus à vérifier</span></div>
-    <p class="finding-desc">Focus ring hérité d'Angular Material — superficie minimale et contraste 3:1 entre états focus/non-focus non vérifiés.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">PRD</span>
-      <span class="finding-title">Article incomplet scanné en caisse sans State Pattern — FR-037</span></div>
-    <p class="finding-desc">Type de notification et contenu (affichage du commentaire d'incomplétude) non spécifiés pour un article individuel incomplet.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter State Pattern "Article incomplet scanné — caisse" : notification inline orange, message incluant commentaire d'incomplétude, sans blocage de transaction.</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title">Flow 1 : chemin "vendeur non trouvé → créer" non narraté</span></div>
-    <p class="finding-desc">Fork documenté dans Component Patterns mais absent du flow narratif.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter étape 2b "Si absent, elle clique 'Créer un profil', saisit prénom/nom/email, puis arrive au formulaire de saisie."</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title"><code>button-primary.hover-background</code> hardcodé <code>#A83A1E</code></span></div>
-    <p class="finding-desc">Couleur de survol sans token ni règle documentée.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Ajouter <code>primary-hover: '#A83A1E'</code> dans <code>colors:</code> ou documenter la règle de calcul.</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title"><code>sidebar-item.foreground</code> opacité hardcodée</span></div>
-    <p class="finding-desc"><code>rgba(245,238,234,0.65)</code> devrait être un token <code>on-surface-muted</code>.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric / Cohérence</span>
-      <span class="finding-title">Nom composant divergent : "Notification d'erreur inline" vs "Notification inline"</span></div>
-    <p class="finding-desc">Même composant, deux noms dans les deux spines. Causera divergence dans le nommage Angular.</p>
-    <div class="finding-fix"><strong>Fix :</strong> Standardiser sur "Notification inline" (couvre warning et error).</div>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title">Casing "Post-Vente" dans <code>.decision-log.md</code></span></div>
-    <p class="finding-desc">Toutes les spines utilisent "Post-vente" ; le log utilise "Post-Vente". Mismatches grep dans les story tools.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title">"Reversements" absent du sidebar récapitulatif dans <code>.decision-log.md</code></span></div>
-    <p class="finding-desc">Le log est antérieur à l'ajout de "Reversements" dans la sidebar IA.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title">Chemin source <code>architecture.md</code> potentiellement non résolvable</span></div>
-    <p class="finding-desc">Chemin plat vs chemins profonds pour les deux autres sources. Vérifier la règle de résolution du toolchain.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title">Aucune surface admin catalogue ni gestion labels dans les flows</span></div>
-    <p class="finding-desc"><code>/admin/catalog</code> présent dans l'IA sans flow narratif pour la consultation, édition d'articles, réimpression d'étiquettes.</p>
-  </div>
-  <div class="finding low">
-    <div class="finding-header"><span class="severity-badge low">Low</span><span class="lens-badge">Rubric</span>
-      <span class="finding-title">Section "Inspiration" absente des spines et du log</span></div>
-    <p class="finding-desc">Aucun référentiel produit documenté. Décisions enregistrées, mais pas les benchmarks UX consultés.</p>
-  </div>
-
-    </div>
-  </details>
-</section>
-
-<!-- PRD Progress -->
-<section>
-  <h2>PRD Coverage Progress</h2>
-  <div class="progress-box">
-    <div class="progress-card">
-      <h4>Failures résolus</h4>
-      <div class="progress-num">2 / 2</div>
-      <div class="progress-label">Édition archivée + impression post-vente</div>
-    </div>
-    <div class="progress-card">
-      <h4>Concerns résolus</h4>
-      <div class="progress-num">9 / 9</div>
-      <div class="progress-label">Retour arrière, RGPD, settings, print, etc.</div>
-    </div>
-  </div>
-  <p style="font-size:14px; color: var(--on-surface-variant);">Nouveaux gaps : 2 medium (file d'impression admin FR-079, clôture conditionnelle FR-096) + 1 low (article incomplet POS FR-037).</p>
-</section>
-
-<!-- Reviewer files -->
-<section>
-  <h2>Reviewer Files</h2>
-  <ul class="reviewer-list">
-    <li>
-      <a href="review-rubric.md">review-rubric.md</a>
-      <span class="rev-counts">critical 1 · high 3 · medium 9 · low 10</span>
-    </li>
-    <li>
-      <a href="review-accessibility.md">review-accessibility.md</a>
-      <span class="rev-counts">ÉCHEC 1 · PRÉOCCUPATION (élevé) 8 · moyen 3 · faible 5</span>
-    </li>
-    <li>
-      <a href="review-coherence.md">review-coherence.md</a>
-      <span class="rev-counts">ÉCHEC 1 · PRÉOCCUPATION 3 · PASS 13</span>
-    </li>
-    <li>
-      <a href="review-prd-coverage.md">review-prd-coverage.md</a>
-      <span class="rev-counts">2/2 failures résolus · 9/9 concerns résolus · 2 moyen + 1 faible nouveaux</span>
-    </li>
-  </ul>
-</section>
-
 </body>
 </html>
