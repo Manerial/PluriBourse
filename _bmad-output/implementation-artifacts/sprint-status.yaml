@@ -1,5 +1,5 @@
 # generated: 2026-06-11
-# last_updated: 2026-06-12
+# last_updated: 2026-06-15
 # project: PluriBourse
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-06-12"
+last_updated: "2026-06-15"  # Story 1.1 → ready-for-dev, epic-1 → in-progress
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -43,8 +43,8 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # ─── Epic 1 : Fondation applicative, Authentification & i18n ───────────────
-  epic-1: backlog
-  1-1-mise-en-place-du-squelette-de-projet-baseline-docker-compose: backlog
+  epic-1: in-progress
+  1-1-mise-en-place-du-squelette-de-projet-baseline-docker-compose: ready-for-dev
   1-2-authentification-spring-security-controle-dacces-base-sur-les-roles: backlog
   1-3-gestion-des-comptes-benevoles: backlog
   1-4-recuperation-du-mot-de-passe-admin-via-cli: backlog
@@ -61,7 +61,7 @@ development_status:
   2-2-controle-du-cycle-de-phases-boites-de-dialogue-de-confirmation: backlog
   2-3-categories-de-ledition-correspondance-des-tables: backlog
   2-4-notification-de-phase-en-temps-reel-via-sse: backlog
-  2-5-cloture-de-ledition-nettoyage-de-ledition: backlog
+  2-5-cloture-de-ledition-archivage-de-ledition: backlog
   2-6-annulation-du-panier-lors-dune-transition-de-phase-cote-serveur: backlog
   epic-2-retrospective: optional
 
@@ -70,10 +70,12 @@ development_status:
   3-1-gestion-des-profils-vendeurs: backlog
   3-2-enregistrement-darticles-assignation-automatique-de-table: backlog
   3-3-creation-et-gestion-des-lots: backlog
-  3-4-infrastructure-dimpression-files-dattente-cote-serveur: backlog
+  3-4-infrastructure-dimpression-registre-dimprimantes-et-files-dynamiques: backlog
   3-5-generation-impression-des-etiquettes-thermiques: backlog
   3-6-generation-impression-automatique-du-bordereau-de-depot-pdf: backlog
-  3-7-vue-admin-de-diagnostic-de-la-file-dimpression: backlog
+  3-7-vue-admin-de-diagnostic-des-imprimantes: backlog
+  3-8-registre-des-imprimantes-admin: backlog
+  3-9-selection-dimprimante-par-le-benevole-a-la-connexion: backlog
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────
@@ -93,6 +95,7 @@ development_status:
   5-3-rapport-de-ventes-journalier-admin: backlog
   5-4-bilan-dedition-rapports-des-vendeurs-non-soldes: backlog
   5-5-page-des-rapports-admin: backlog
+  5-6-impression-groupee-des-bilans-de-vente-admin: backlog
   epic-5-retrospective: optional
 
   # ─── Epic 6 : Catalogue articles ────────────────────────────────────────────
