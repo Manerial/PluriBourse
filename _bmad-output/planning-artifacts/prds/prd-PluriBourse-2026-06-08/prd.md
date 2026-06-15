@@ -2,7 +2,7 @@
 title: "PRD : PluriBourse v1"
 status: final
 created: 2026-06-08
-updated: 2026-06-11
+updated: 2026-06-15
 ---
 
 # PRD : PluriBourse v1
@@ -67,7 +67,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 - Dialogue de confirmation requis pour toute transition de phase (avant ou arrière)
 - Retour en arrière disponible phase par phase ; données toujours préservées
 - À la clôture, les vendeurs non soldés sont automatiquement marqués Non réclamé (montant intégral → recettes de l'association) ; une alerte dans la dialog de confirmation indique le nombre de vendeurs concernés et le montant total avant confirmation
-- Action optionnelle post-clôture « Nettoyer l'Édition » : supprime définitivement les enregistrements articles et les profils vendeurs de l'édition, et désactive le retour en arrière
+- Action post-clôture « Archiver l'Édition » : copie chaque article de l'édition (nom, catégorie, statut vendu/invendu) dans une table d'archivage, puis supprime définitivement les enregistrements articles et les profils vendeurs de l'édition, et désactive le retour en arrière
 - Taux de commission configurable par édition (initialisé depuis un paramètre instance, défaut 20 %)
 
 **Gestion des Vendeurs & Articles**
@@ -108,7 +108,7 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 - Rôles Admin et Bénévole, strictement séparés
 - Support multi-poste (minimum 3 simultanés)
 - Déploiement Docker Compose (Spring Boot + MariaDB)
-- Deux imprimantes USB connectées au serveur : thermique (étiquettes) + standard (documents)
+- N imprimantes thermiques Bluetooth et N imprimantes A4 réseau (WiFi), connectées au serveur — chaque bénévole sélectionne sa paire d'imprimantes préférée à la connexion
 - Point d'impression centralisé — aucune imprimante requise sur les postes clients
 - Guide d'installation pour utilisateurs non techniques, avec instructions spécifiques par OS (Linux, macOS, Windows)
 
@@ -150,13 +150,13 @@ Le guide d'installation est un produit à part entière — c'est ce qui transfo
 | FR-010 | Une seule édition peut être active à la fois. Une édition est « active » tant qu'elle est en phase Préparation, Dépôt, Vente ou Post-vente. Une édition Clôturée n'est plus active. |
 | FR-011 | Toute transition de phase — avant ou arrière — nécessite une confirmation explicite de l'admin via un dialogue. |
 | FR-012 | La phase active de l'édition courante est affichée clairement à tous les utilisateurs connectés. |
-| FR-013 | L'admin déclenche la clôture de l'édition via un bouton « Clôturer l'Édition » en phase Post-vente. Tous les documents sont générés en PDF dans les deux langues (EN et FR). L'édition passe en lecture seule. Les enregistrements articles restent en base jusqu'à ce que l'admin déclenche explicitement l'action Nettoyer. |
+| FR-013 | L'admin déclenche la clôture de l'édition via un bouton « Clôturer l'Édition » en phase Post-vente. Tous les documents sont générés en PDF dans les deux langues (EN et FR). L'édition passe en lecture seule. Les enregistrements articles restent en base jusqu'à ce que l'admin déclenche explicitement l'action Archiver l'Édition. |
 | FR-014 | Une édition ayant dépassé la phase Préparation ne peut pas être supprimée. |
 | FR-015 | Les données de chaque édition sont strictement cloisonnées — articles, ventes et rapports ne se mélangent jamais entre éditions. |
 | FR-016 | Chaque édition possède son propre taux de commission, initialisé depuis le paramètre instance au moment de la création (défaut 20 %). L'admin peut le modifier en phase Préparation. Une fois la phase Dépôt démarrée, le taux est gelé pour cette édition et s'applique à tous ses articles. |
 | FR-080 | Lors de la création d'une nouvelle édition, l'admin peut soit configurer les catégories et le mapping catégorie-table depuis zéro, soit copier la structure d'une édition clôturée. La copie inclut les catégories d'articles et le mapping catégorie-table uniquement. Le taux de commission et la langue de documents sont initialisés depuis les paramètres instance (FR-016, FR-006). |
-| FR-082 | L'admin peut revenir en arrière d'une phase à la fois : Clôturé → Post-vente, Post-vente → Vente, Vente → Dépôt, Dépôt → Préparation. Les données enregistrées dans la phase annulée sont intégralement préservées — rien n'est supprimé ni annulé. En particulier : les ventes enregistrées restent marquées comme vendues lors d'un retour Vente → Dépôt ; les soldes enregistrés restent valides lors d'un retour Post-vente → Vente. Les articles appartenant à un vendeur déjà soldé ne peuvent plus être mis en vente (le vendeur est supposé avoir récupéré ses invendus). Le retour depuis Clôturé n'est disponible qu'avant le déclenchement de l'action Nettoyer l'Édition (FR-088). |
-| FR-088 | Après clôture, l'admin peut déclencher une action **« Nettoyer l'Édition »** qui supprime définitivement les enregistrements articles et les profils vendeurs de cette édition. Après nettoyage, le retour en arrière vers Post-vente est définitivement désactivé pour cette édition. Cette action nécessite une confirmation explicite. |
+| FR-082 | L'admin peut revenir en arrière d'une phase à la fois : Clôturé → Post-vente, Post-vente → Vente, Vente → Dépôt, Dépôt → Préparation. Les données enregistrées dans la phase annulée sont intégralement préservées — rien n'est supprimé ni annulé. En particulier : les ventes enregistrées restent marquées comme vendues lors d'un retour Vente → Dépôt ; les soldes enregistrés restent valides lors d'un retour Post-vente → Vente. Les articles appartenant à un vendeur déjà soldé ne peuvent plus être mis en vente (le vendeur est supposé avoir récupéré ses invendus). Le retour depuis Clôturé n'est disponible qu'avant le déclenchement de l'action Archiver l'Édition (FR-088). |
+| FR-088 | Après clôture, l'admin peut déclencher une action **« Archiver l'Édition »** qui : (1) copie chaque article de l'édition dans une table d'archivage avec son nom, sa catégorie et son statut (vendu ou invendu) — les articles de lot sont archivés individuellement, sans conserver la notion de lot ; (2) supprime définitivement les enregistrements articles et les profils vendeurs de cette édition. Après archivage, le retour en arrière vers Post-vente est définitivement désactivé pour cette édition. Cette action nécessite une confirmation explicite. |
 | FR-096 | À la clôture de l'édition, tous les vendeurs non soldés sont automatiquement marqués « Non réclamé » : leur montant net dû est enregistré en recettes de l'association (même logique que FR-052), de manière atomique avec la transition de phase. Si au moins un vendeur est non soldé au moment de la clôture, la boîte de dialogue de confirmation affiche : « X vendeur(s) non soldé(s) seront automatiquement marqués Non réclamé. Montant total transféré aux recettes de l'association : Y,YY €. » Le bouton « Clôturer l'édition » n'est plus désactivé en présence de vendeurs non soldés. |
 
 ---
@@ -208,7 +208,7 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 | FR-029 | Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.                                                                                                                                                                                             |
 | FR-030 | Le rouleau imprimé suit ce format par vendeur : [séparateur vendeur : nom vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …                                                                                                                        |
 | FR-031 | Un bordereau de dépôt est imprimable par vendeur : liste des articles, prix unitaires et reversement net attendu après commission.                                                                                                                                                         |
-| FR-032 | La largeur du ticket thermique est configurable dans les paramètres admin (défaut : 57mm). Cette largeur s'applique à l'imprimante thermique décrite en FR-076.                                                                                                                             |
+| FR-032 | La largeur du ticket thermique (57 mm ou 80 mm) est configurable par imprimante thermique enregistrée — ce n'est plus un paramètre global d'instance. Voir FR-076. |
 
 ---
 
@@ -263,7 +263,7 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 | FR-094 | Le bilan journalier et le bilan d'édition incluent une ventilation des recettes par moyen de paiement (espèces, chèque, carte).                                                                                                                                                   |
 | FR-057 | Tous les rapports sont générés en PDF.                                                                                                                                                                                                                                            |
 | FR-058 | Les rapports sont accessibles à l'admin uniquement.                                                                                                                                                                                                                               |
-| FR-059 | Les éditions clôturées affichent les métriques agrégées en lecture seule. Les profils vendeurs et le détail des articles restent consultables jusqu'au déclenchement de l'action Nettoyer l'Édition; après nettoyage, seules les métriques agrégées sont accessibles en base.     |
+| FR-059 | Les éditions clôturées affichent les métriques agrégées en lecture seule. Les profils vendeurs et le détail des articles restent consultables jusqu'au déclenchement de l'action Archiver l'Édition ; après archivage, seules les métriques agrégées sont accessibles en base.     |
 | FR-091 | En phase Post-vente et Clôturée, l'admin peut exporter le catalogue articles au format CSV (articles avec leur statut vendu/invendu). Le téléchargement est déclenché directement sans boîte de dialogue. |
 | FR-092 | En phase Post-vente et Clôturée, l'admin peut exporter les reversements vendeurs au format CSV. Le téléchargement est déclenché directement sans boîte de dialogue. |
 
@@ -293,7 +293,7 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 | FR-070 | L'application est déployée via Docker Compose (application Spring Boot + MariaDB) — un seul fichier `docker-compose.yml`. Les données sont stockées dans des volumes Docker persistants. |
 | FR-071 | Les mises à jour s'appliquent avec deux commandes : `docker compose pull && docker compose up -d`. Les données persistantes sont préservées. |
 | FR-072 | Les postes clients accèdent à l'application via navigateur — aucune installation locale requise sur les postes. |
-| FR-073 | Une page de paramètres admin centralise la configuration de l'instance : nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket thermique. |
+| FR-073 | Une page de paramètres admin centralise la configuration de l'instance : nom de l'association, taux de commission par défaut, langue des documents par défaut. |
 | FR-074 | Le guide d'installation est un livrable à part entière, destiné à un non-technicien. Il couvre 7 sections obligatoires (prérequis, installation de Docker par OS, déploiement, premier lancement, configuration initiale, réinitialisation du mot de passe admin, mise à jour) et doit pouvoir être suivi de A à Z sans assistance. Voir détail ci-dessous. |
 
 #### Détail FR-074 — Guide d'installation
@@ -306,7 +306,7 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 2. **Installation de Docker** — instructions séparées par OS : Docker Desktop pour Windows et macOS (lien de téléchargement officiel, étapes d'installation GUI) ; Docker Engine pour Linux et Raspberry Pi (commandes `apt` / `apt-get`, activation du service).
 3. **Téléchargement et lancement** — récupération du `docker-compose.yml`, commande `docker compose up -d`, vérification que l'application répond dans le navigateur à `http://localhost:8080` (ou le port configuré).
 4. **Premier lancement** — accès à l'interface, connexion avec `Admin` / `Admin`, procédure de changement de mot de passe obligatoire.
-5. **Configuration initiale** — paramétrage du nom de l'association, du taux de commission par défaut, de la langue des documents et de la largeur du ticket thermique via la page Paramètres.
+5. **Configuration initiale** — paramétrage du nom de l'association, du taux de commission par défaut et de la langue des documents via la page Paramètres ; enregistrement des imprimantes thermiques et A4 via la page Gestion des imprimantes.
 6. **Réinitialisation du mot de passe admin** — commande CLI exacte à exécuter sur le serveur (avec les étapes pour ouvrir un terminal selon l'OS), résultat attendu affiché dans la console, procédure de connexion avec le mot de passe temporaire.
 7. **Mise à jour** — commande exacte `docker compose pull && docker compose up -d`, confirmation que les données sont préservées.
 
@@ -323,11 +323,12 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 | ID | Exigence |
 |---|---|
 | FR-075 | Toute impression est routée via le serveur central — aucune imprimante requise sur les postes clients. |
-| FR-076 | **Imprimante thermique** (étiquettes articles) : connectée au serveur via USB. Largeur du ticket : voir FR-032. Voir FR-029 pour le comportement de la file d'impression. |
-| FR-077 | **Imprimante standard** (documents A4) : connectée au serveur via USB. PDF généré côté serveur, envoyé directement à l'imprimante sans aperçu. |
-| | [ASSUMPTION: les deux imprimantes sont connectées et opérationnelles au démarrage de l'événement. Une édition sans imprimante thermique ne peut pas opérer la phase Dépôt — aucune étiquette ne peut être générée.] |
+| FR-076 | **Imprimantes thermiques** (étiquettes articles) : l'admin enregistre une ou plusieurs imprimantes thermiques Bluetooth dans l'interface d'administration. Chaque imprimante est nommée et associée à un port série sélectionné depuis la liste des périphériques Bluetooth déjà appairés au niveau OS (`SerialPort.getCommPorts()`). La largeur du ticket (57 mm ou 80 mm) est configurable par imprimante (FR-032). Chaque imprimante dispose de sa propre file d'impression indépendante (FR-029). L'appairage Bluetooth est réalisé au niveau OS avant l'événement (documenté dans le guide d'installation FR-074) ; l'application consomme uniquement les ports série déjà disponibles. |
+| FR-077 | **Imprimantes A4** (documents) : l'admin enregistre une ou plusieurs imprimantes A4 réseau dans l'interface d'administration. Chaque imprimante est nommée et adressée par IP ou hostname et port TCP (défaut : 9100). PDF généré côté serveur, envoyé directement à l'imprimante via TCP sans aperçu. Chaque imprimante dispose de sa propre file d'impression indépendante (FR-029). |
+| | [ASSUMPTION: les imprimantes thermiques sont appairées en Bluetooth au serveur avant le début de l'événement. Une édition sans imprimante thermique enregistrée et accessible ne peut pas opérer la phase Dépôt — aucune étiquette ne peut être générée.] |
 | FR-078 | Un utilisateur déclenche l'impression depuis l'interface ; la requête est traitée par le serveur sans action requise sur le poste client. |
-| FR-079 | En cas d'erreur d'impression (imprimante hors ligne, bourrage papier, manque de papier), l'utilisateur est notifié dans l'interface avec un message explicite indiquant la cause de l'erreur. La file d'impression est suspendue. L'utilisateur peut relancer le job en erreur ou l'ignorer pour reprendre la file. L'admin dispose d'une vue de l'état de la file et des erreurs en cours pour diagnostiquer le problème. |
+| FR-079 | En cas d'erreur d'impression (imprimante hors ligne, bourrage papier, manque de papier), l'utilisateur est notifié dans l'interface avec un message explicite indiquant la cause de l'erreur. La file de l'imprimante concernée est suspendue ; les autres files ne sont pas affectées. L'utilisateur peut relancer le job en erreur ou l'ignorer pour reprendre la file. L'admin dispose d'une vue de diagnostic affichant par imprimante enregistrée : profondeur de file, statut du thread consommateur, dernière erreur. Au démarrage du serveur, les ports série des imprimantes thermiques et les adresses réseau des imprimantes A4 sont vérifiés ; toute imprimante inaccessible est signalée par une alerte dans le tableau de bord admin. |
+| FR-098 | À la connexion, le bénévole sélectionne une imprimante thermique et une imprimante A4 parmi les imprimantes enregistrées et disponibles. Cette sélection est active pour toute la durée de la session et n'est pas persistée entre les sessions. Si l'imprimante sélectionnée est indisponible au moment d'un travail d'impression, le job échoue immédiatement avec un message d'erreur explicite — pas de retry automatique ni de reroutage. |
 
 ---
 
@@ -340,7 +341,7 @@ Un lot est un ensemble indivisible d'articles vendu à un prix global unique, ch
 | FR-083 | Un catalogue d'articles filtrable et triable est accessible à l'admin et aux bénévoles pendant toutes les phases de l'édition active. |
 | FR-084 | Le catalogue peut être filtré par : nom/description, numéro de code-barres, catégorie, table, statut vendu/invendu, indicateur complet/incomplet, nom du vendeur. |
 | FR-085 | Le catalogue peut être trié par n'importe quelle colonne visible. |
-| FR-086 | Le catalogue affiche les articles de l'édition active uniquement. Les données au niveau article ne sont pas disponibles sur les éditions où l'action Nettoyer a été déclenchée. |
+| FR-086 | Le catalogue affiche les articles de l'édition active uniquement. Les données au niveau article ne sont pas disponibles sur les éditions où l'action Archiver l'Édition a été déclenchée. |
 
 ---
 

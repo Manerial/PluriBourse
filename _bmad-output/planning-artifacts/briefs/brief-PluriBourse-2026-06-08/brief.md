@@ -55,9 +55,9 @@ PluriBourse structure chaque événement en cinq phases contrôlées par l'admin
 
 **4. Phase post-vente** — Les bilans de vente par vendeur sont imprimés. Lorsqu'un vendeur revient récupérer son argent et ses invendus, un bénévole clique « Solder ». Si le vendeur ne se présente pas, le bouton « Non réclamé » transfère le montant dû aux recettes de l'association. Les rapports indiquent quels sont les vendeurs non soldés, ainsi que leur numéro de téléphone et adresse mail pour les contacter.
 
-**5. Clôture** — L'administrateur clôture l'édition : les bilans PDF sont générés, l'édition passe en lecture seule. Une action « Nettoyer l'Édition » supprimera définitivement les enregistrements articles et les profils vendeurs de cette édition, et désactivera le retour en arrière.
+**5. Clôture** — L'administrateur clôture l'édition : les bilans PDF sont générés, l'édition passe en lecture seule. Une action « Archiver l'Édition » copiera chaque article (nom, catégorie, statut vendu/invendu) dans une table d'archivage, puis supprimera définitivement les enregistrements articles et les profils vendeurs de cette édition, et désactivera le retour en arrière.
 
-Les transitions de phase nécessitent une confirmation explicite. Un retour en arrière phase par phase est possible jusqu'à l'action « Nettoyer l'Édition », les données étant toujours préservées entre chaque phase. Chaque édition est strictement cloisonnée — profils vendeurs compris.
+Les transitions de phase nécessitent une confirmation explicite. Un retour en arrière phase par phase est possible jusqu'à l'action « Archiver l'Édition », les données étant toujours préservées entre chaque phase. Chaque édition est strictement cloisonnée — profils vendeurs compris.
 
 ## À Qui Cela S'adresse
 
@@ -85,7 +85,7 @@ Les transitions de phase nécessitent une confirmation explicite. Un retour en a
 - Retour en arrière phase par phase disponible ; données toujours préservées
 - Dialogue de confirmation requis pour toute transition de phase
 - Taux de commission configurable par édition (initialisé depuis un paramètre instance, défaut 20 %)
-- Action optionnelle post-clôture « Nettoyer l'Édition » : suppression définitive des articles et des profils vendeurs de l'édition
+- Action post-clôture « Archiver l'Édition » : copie chaque article (nom, catégorie, statut) dans une table d'archivage, puis suppression définitive des articles et des profils vendeurs de l'édition
 
 *Gestion des vendeurs et articles*
 

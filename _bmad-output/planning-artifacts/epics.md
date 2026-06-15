@@ -42,8 +42,8 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-017 : L'administrateur configure la liste des catégories d'articles par édition.
 - FR-018 : L'administrateur configure la correspondance catégorie-table par édition. Une même table peut être assignée à plusieurs catégories (relation many-to-many). Chaque catégorie doit avoir au moins une table — la sauvegarde est bloquée sinon. Modifiable en phase Préparation, figé au démarrage de Dépôt, à nouveau modifiable en cas de retour arrière vers Préparation (FR-082).
 - FR-080 : Lors de la création d'une nouvelle édition, l'administrateur peut copier les catégories et la correspondance tables depuis une édition clôturée.
-- FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les ventes et les soldes sont préservés. Les articles des vendeurs déjà soldés ne peuvent plus être vendus. Le retour arrière depuis l'état Clôturé est désactivé après le Nettoyage de l'édition.
-- FR-088 : Après clôture, l'administrateur peut déclencher le « Nettoyage de l'édition » — supprime définitivement les enregistrements d'articles et les profils vendeurs de l'édition. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
+- FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les ventes et les soldes sont préservés. Les articles des vendeurs déjà soldés ne peuvent plus être vendus. Le retour arrière depuis l'état Clôturé est désactivé après l'Archivage de l'édition.
+- FR-088 : Après clôture, l'administrateur peut déclencher l'« Archivage de l'édition » — copie chaque article (nom, catégorie, statut vendu/invendu) dans une table d'archivage, puis supprime définitivement les enregistrements d'articles et les profils vendeurs de l'édition. Les articles de lot sont archivés individuellement sans conserver la notion de lot. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
 - FR-096 : À la clôture de l'édition, tous les vendeurs non soldés sont automatiquement marqués « Non réclamé » et leurs montants enregistrés en recettes de l'association (même logique que FR-052), de manière atomique avec la transition de phase. Si au moins un vendeur est non soldé, la boîte de dialogue de confirmation affiche le nombre de vendeurs concernés et le montant total à transférer. Le bouton « Clôturer l'édition » n'est plus désactivé en présence de vendeurs non soldés.
 
 **F3 — Gestion des vendeurs et des articles (Phase Dépôt)**
@@ -105,7 +105,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-057 : Tous les rapports sont générés en PDF.
 - FR-058 : Les rapports sont accessibles à l'administrateur uniquement.
 - FR-094 : Le bilan journalier et le bilan d'édition incluent une ventilation des recettes par moyen de paiement (espèces, chèque, carte).
-- FR-059 : Les éditions clôturées affichent les métriques agrégées en lecture seule. Les profils vendeurs et le détail des articles restent consultables jusqu'au déclenchement de l'action Nettoyer l'Édition ; après nettoyage, seules les métriques agrégées sont accessibles en base.
+- FR-059 : Les éditions clôturées affichent les métriques agrégées en lecture seule. Les profils vendeurs et le détail des articles restent consultables jusqu'au déclenchement de l'action Archiver l'Édition ; après archivage, seules les métriques agrégées sont accessibles en base.
 
 **F7 — Comptes utilisateurs et contrôle d'accès**
 
@@ -125,23 +125,24 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-070 : L'application est déployée via Docker Compose (Spring Boot + MariaDB). Les données sont dans des volumes Docker persistants.
 - FR-071 : Les mises à jour s'appliquent avec : `docker compose pull && docker compose up -d`. Les données sont préservées.
 - FR-072 : Les postes clients accèdent à l'application via un navigateur — aucune installation locale requise.
-- FR-073 : Une page de paramètres administrateur centralise la configuration de l'instance : nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket thermique.
+- FR-073 : Une page de paramètres administrateur centralise la configuration de l'instance : nom de l'association, taux de commission par défaut, langue des documents par défaut.
 - FR-074 : Le guide d'installation cible les utilisateurs non techniques. Couvre l'installation de Docker, le démarrage, la configuration initiale, la réinitialisation du mot de passe et la procédure de mise à jour par OS (Linux, macOS, Windows).
 
 **F9 — Infrastructure d'impression**
 
 - FR-075 : Toute l'impression est acheminée via le serveur central — aucune imprimante n'est requise sur les postes clients.
-- FR-076 : Imprimante thermique (étiquettes articles) : connectée en USB. File d'attente séquentielle.
-- FR-077 : Imprimante standard (documents A4) : connectée en USB. Le PDF est envoyé directement à l'imprimante sans aperçu.
+- FR-076 : N imprimantes thermiques Bluetooth enregistrées par l'admin : nom, port série sélectionné depuis la liste OS (SerialPort.getCommPorts()), largeur (57 mm ou 80 mm). Chaque imprimante dispose d'une file indépendante.
+- FR-077 : N imprimantes A4 réseau enregistrées par l'admin : nom, adresse IP/hostname, port TCP (défaut 9100). Chaque imprimante dispose d'une file indépendante.
 - FR-078 : Un utilisateur déclenche l'impression depuis l'interface ; traité par le serveur, aucune action requise côté client.
-- FR-079 : En cas d'erreur d'impression, l'utilisateur est notifié dans l'interface avec un message explicite.
+- FR-079 : En cas d'erreur d'impression, l'utilisateur est notifié dans l'interface avec un message explicite. La file de l'imprimante concernée est suspendue ; les autres files ne sont pas affectées. Vue de diagnostic par imprimante (profondeur de file, statut thread, dernière erreur). Au démarrage, les ports série et adresses réseau configurés sont vérifiés ; toute imprimante inaccessible est signalée dans le tableau de bord admin.
+- FR-098 : À la connexion, le bénévole sélectionne une imprimante thermique et une imprimante A4 parmi les imprimantes enregistrées et disponibles. Sélection active pour toute la session, non persistée. Si l'imprimante sélectionnée est indisponible au moment d'un job, le job échoue immédiatement avec un message d'erreur.
 
 **F10 — Catalogue articles**
 
 - FR-083 : Un catalogue articles filtrable et triable est accessible aux administrateurs et aux bénévoles durant toutes les phases de l'édition active.
 - FR-084 : Catalogue filtré par : nom/description, numéro de code-barres, catégorie, table, statut vendu/invendu, indicateur complet/incomplet, nom du vendeur.
 - FR-085 : Catalogue triable par n'importe quelle colonne visible.
-- FR-086 : Le catalogue affiche uniquement les articles de l'édition active. Non disponible après l'action Nettoyage de l'édition.
+- FR-086 : Le catalogue affiche uniquement les articles de l'édition active. Non disponible après l'action Archiver l'Édition.
 - FR-089 : La commission s'applique normalement aux articles vendus avec l'indicateur incomplet.
 
 ### Exigences non fonctionnelles
@@ -166,7 +167,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - ARCH-006 : Migrations Liquibase : 4 changesets initiaux — 001-core-schema (users + FK nullable seller_profile_id), 002-spring-session, 003-category-table-mapping, 004-instance-config.
 - ARCH-007 : MapStruct pour toute la correspondance entité↔DTO (ajouté manuellement après Spring Initializr, absent de l'interface Initializr).
 - ARCH-008 : OpenPDF 3.0.0 (LGPL) pour toute la génération de PDF. iText 7 (AGPL) explicitement rejeté.
-- ARCH-009 : escpos-coffee (ou équivalent) pour l'impression thermique ESC/POS. Deux instances indépendantes de `LinkedBlockingQueue` (thermique / A4) — livraison au plus une fois, redéclenchable depuis l'interface.
+- ARCH-009 : escpos-coffee (ou équivalent) pour l'impression thermique ESC/POS via jSerialComm (port série RFCOMM Bluetooth). N files `LinkedBlockingQueue` dynamiques — une par imprimante enregistrée (thermique ou A4) — livraison au plus une fois, redéclenchable depuis l'interface. Les files sont instanciées au démarrage depuis la liste des imprimantes configurées en base.
 - ARCH-010 : ZXing pour la génération de codes-barres Code 128 (Apache 2.0).
 - ARCH-011 : Le rôle `SELLER` est déclaré dans le code et bloqué en 403 dans la v1 via `SecurityConfig`. Aucun endpoint ni interface SELLER jusqu'à la v2.
 - ARCH-012 : SSE (`SseEmitterRegistry`) doit être initialisé avant les endpoints de transition de phase. Événements : `phase-changed` (payload : editionId, newPhase, previousPhase) et `basket-cancelled`.
@@ -194,7 +195,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR15 : Implémenter le flux formulaire de dépôt (bénévole) : recherche vendeur par nom/email → « Créer un profil » si introuvable → enregistrement d'article (nom, prix, sélecteur de catégorie, case à cocher complet/incomplet + champ commentaire) avec affichage de la table auto-assignée. Autofocus sur le champ de recherche vendeur au chargement de la page.
 - UX-DR16 : Implémenter le composant admin catégories & tables : mode éditable avant le démarrage de la phase Dépôt, lecture seule après. Sur nouvelle édition : option « Copier depuis une édition clôturée » (liste déroulante de sélection d'édition clôturée) ou « Configurer manuellement ».
 - UX-DR17 : Implémenter la page rapports admin avec des sections de contenu conditionnelles selon la phase : section bilan journalier (phase Vente uniquement, bouton actualiser), section synthèse (Post-vente + Clôturée, lecture seule), boutons d'export CSV (catalogue + reversements, Post-vente + Clôturée, téléchargement direct sans boîte de dialogue). La liste des vendeurs non soldés est accessible via la page de solde, commune aux bénévoles (`/volunteer/settlement`) et à l'admin (`/admin/settlement`) — pas de section dédiée dans les rapports. L'admin voit en plus les colonnes téléphone et email, affichées conditionnellement selon le rôle.
-- UX-DR18 : Implémenter l'action « Nettoyage de l'édition » : bouton secondaire couleur d'erreur, boîte de dialogue de confirmation irréversible (« Supprimer tous les articles de cette édition. Cette action est irréversible. »), état vide post-nettoyage « Édition nettoyée — aucun article. » sans action, bouton disparaît après le nettoyage. Bouton visible uniquement si des articles existent encore.
+- UX-DR18 : Implémenter l'action « Archiver l'édition » : bouton secondaire couleur d'erreur, boîte de dialogue de confirmation irréversible (« Archiver et supprimer tous les articles de cette édition. Cette action est irréversible. »), état vide post-archivage « Édition archivée — aucun article. » sans action, bouton disparaît après l'archivage. Bouton visible uniquement si des articles existent encore.
 - UX-DR19 : Implémenter le pattern de retour visuel du bouton d'impression : spinner dans le bouton pendant la soumission à la file d'attente, toast de succès (4s), toast d'erreur persistant si l'imprimante est hors ligne avec bouton « Fermer ». Toujours redéclenchable.
 - UX-DR20 : Implémenter le socle d'accessibilité WCAG 2.2 AA : anneaux de focus sur tous les éléments interactifs (jamais supprimés), ordre de tabulation suivant l'ordre de lecture visuel, piège de focus dans les boîtes de dialogue de confirmation, annonces pour lecteurs d'écran via aria-live/aria-label/aria-describedby, cibles tactiles minimales de 44×44px, icônes décoratives aria-hidden="true", icônes sémantiques avec texte accompagnateur ou aria-label.
 - UX-DR21 : Implémenter la gestion des transitions de phase dans l'interface POS bénévole : événement SSE `basket-cancelled` → toast persistant « La phase a changé. Votre panier a été annulé. » → panier vidé → scanner désactivé jusqu'au rechargement de la page.
@@ -233,7 +234,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-029 : Epic 3 — Travaux d'impression mis en file d'attente séquentiellement côté serveur
 - FR-030 : Epic 3 — Format du rouleau thermique : séparateur vendeur → étiquettes articles
 - FR-031 : Epic 3 — Bordereau de dépôt imprimable par vendeur
-- FR-032 : Epic 3 — Largeur du ticket thermique configurable (défaut 57 mm)
+- FR-032 : Epic 3 — Largeur du ticket thermique (57 mm ou 80 mm) configurable par imprimante enregistrée
 - FR-033 : Epic 4 — Interface caissier avec scanner USB HID
 - FR-034 : Epic 4 — Gestion transparente AZERTY/QWERTY via correspondance de codes de touches
 - FR-035 : Epic 4 — Article scanné ajouté au panier avec nom et prix
@@ -261,7 +262,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-095 : Epic 5 — Page de solde : liste de tous les vendeurs filtrable par statut (soldé / non soldé), actions par ligne (imprimer bilan, solder, non réclamé) ; accessible bénévoles (`/volunteer/settlement`) et admin (`/admin/settlement`) ; l'admin voit en plus téléphone et email ; composant Angular unique
 - FR-057 : Epic 5 — Tous les rapports générés en PDF
 - FR-058 : Epic 5 — Rapports accessibles à l'admin uniquement
-- FR-059 : Epic 5 — Éditions clôturées : métriques agrégées + profils vendeurs + détail articles en lecture seule jusqu'au Nettoyage ; après nettoyage, seules les métriques agrégées en base
+- FR-059 : Epic 5 — Éditions clôturées : métriques agrégées + profils vendeurs + détail articles en lecture seule jusqu'à l'Archivage ; après archivage, seules les métriques agrégées en base
 - FR-060 : Epic 1 — L'admin crée/modifie/désactive les comptes bénévoles, réinitialise les mots de passe
 - FR-061 : Epic 1 — Un seul compte admin par instance
 - FR-062 : Epic 1 — Premier lancement : identifiants Admin/Admin, changement de mot de passe forcé
@@ -275,21 +276,22 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-070 : Epic 1 — Déployé via Docker Compose, données dans des volumes persistants
 - FR-071 : Epic 1 — Mises à jour via `docker compose pull && docker compose up -d`
 - FR-072 : Epic 1 — Postes clients accèdent via navigateur, aucune installation locale
-- FR-073 : Epic 1 — Page paramètres admin : nom de l'association, taux de commission par défaut, langue des documents par défaut, largeur du ticket
+- FR-073 : Epic 1 — Page paramètres admin : nom de l'association, taux de commission par défaut, langue des documents par défaut
 - FR-074 : Epic 1 — Guide d'installation pour utilisateurs non techniques, par OS (Linux/macOS/Windows)
 - FR-075 : Epic 3 — Toute l'impression acheminée via le serveur central
-- FR-076 : Epic 3 — Imprimante thermique (étiquettes) via USB, file d'attente séquentielle
-- FR-077 : Epic 3 — Imprimante standard (A4) via USB, PDF envoyé directement
+- FR-076 : Epic 3 — N imprimantes thermiques Bluetooth enregistrées par l'admin, une file indépendante par imprimante
+- FR-077 : Epic 3 — N imprimantes A4 réseau enregistrées par l'admin, une file indépendante par imprimante
 - FR-078 : Epic 3 — L'utilisateur déclenche l'impression ; aucune action requise côté client
-- FR-079 : Epic 3 — Erreur d'impression : notification explicite à l'utilisateur dans l'interface
+- FR-079 : Epic 3 — Erreur d'impression : notification explicite ; diagnostic par imprimante ; vérification au démarrage
+- FR-098 : Epic 3 — Sélection des imprimantes thermique + A4 par le bénévole à la connexion
 - FR-080 : Epic 2 — Nouvelle édition peut copier catégories/correspondance tables depuis une édition clôturée
 - FR-081 : Epic 4 — Le caissier peut retirer l'ensemble d'un lot du panier
 - FR-082 : Epic 2 — L'admin peut revenir en arrière d'une phase à la fois, données préservées
 - FR-083 : Epic 6 — Catalogue articles filtrable/triable accessible durant toutes les phases
 - FR-084 : Epic 6 — Filtres du catalogue : nom, code-barres, catégorie, table, vendu/invendu, complet/incomplet, vendeur
 - FR-085 : Epic 6 — Catalogue triable par n'importe quelle colonne visible
-- FR-086 : Epic 6 — Catalogue affiche l'édition active uniquement ; indisponible après Nettoyage de l'édition
-- FR-088 : Epic 2 — « Nettoyage de l'édition » supprime définitivement les enregistrements d'articles ; désactive le retour arrière vers Post-vente
+- FR-086 : Epic 6 — Catalogue affiche l'édition active uniquement ; indisponible après Archivage de l'édition
+- FR-088 : Epic 2 — « Archivage de l'édition » archive chaque article (nom, catégorie, statut) puis supprime les enregistrements ; désactive le retour arrière vers Post-vente
 - FR-096 : Epic 2 — À la clôture, vendeurs non soldés auto-marqués Non réclamé (atomique avec la phase) ; dialog de confirmation enrichie si vendeurs non soldés
 - FR-089 : Epic 3 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
 - FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
@@ -308,7 +310,7 @@ Les administrateurs et les bénévoles peuvent déployer l'application, se conne
 **UX :** UX-DR1, UX-DR2, UX-DR3, UX-DR5, UX-DR6, UX-DR7, UX-DR8, UX-DR9, UX-DR12, UX-DR13, UX-DR20
 
 ### Epic 2 : Gestion du cycle de vie des éditions
-Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/archiver les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
 **FR couvertes :** FR-008–018, FR-080, FR-082, FR-088, FR-090 (côté serveur), FR-096
 **Architecture :** ARCH-012, ARCH-015 (prérequis machine de phases)
@@ -317,7 +319,7 @@ Les administrateurs peuvent créer des éditions, piloter l'intégralité du cyc
 ### Epic 3 : Enregistrement des vendeurs & Dépôt
 Les bénévoles peuvent enregistrer les vendeurs et tous leurs articles (y compris les lots) avec assignation automatique de table, et imprimer les étiquettes et bordereaux de dépôt via l'imprimante thermique centralisée.
 
-**FR couvertes :** FR-019–032, FR-043–045, FR-075–079, FR-089
+**FR couvertes :** FR-019–032, FR-043–045, FR-075–079, FR-089, FR-098
 **Architecture :** ARCH-003, ARCH-008, ARCH-009, ARCH-010, ARCH-015 (prérequis file d'impression), ARCH-016
 **UX :** UX-DR15, UX-DR16, UX-DR19, UX-DR22
 
@@ -473,7 +475,7 @@ afin que l'application reflète l'identité et les paramètres opérationnels de
 
 **Étant donné** que l'admin navigue vers `/admin/settings`
 **Quand** la page se charge
-**Alors** la configuration courante est affichée : nom de l'association, taux de commission par défaut (défaut 20 %), langue des documents par défaut (EN/FR), largeur du ticket thermique (défaut 57 mm)
+**Alors** la configuration courante est affichée : nom de l'association, taux de commission par défaut (défaut 20 %), langue des documents par défaut (EN/FR)
 
 **Étant donné** que l'admin met à jour le nom de l'association et sauvegarde
 **Quand** le serveur redémarre
@@ -487,10 +489,6 @@ afin que l'application reflète l'identité et les paramètres opérationnels de
 **Quand** la valeur est sauvegardée
 **Alors** toute nouvelle édition créée ultérieurement hérite de la langue « FR » (FR-006)
 **Et** les éditions existantes conservent leur propre valeur inchangée
-
-**Étant donné** que l'admin modifie la largeur du ticket thermique et sauvegarde
-**Quand** un travail d'impression est ultérieurement envoyé
-**Alors** la nouvelle largeur (BigDecimal, mm) est utilisée pour ce travail d'impression
 
 ### Story 1.6 : Préférence de langue utilisateur & Infrastructure i18n
 
@@ -656,7 +654,7 @@ afin de pouvoir déployer et configurer PluriBourse seul, sans connaissances pr�
 
 ## Epic 2 : Gestion du cycle de vie des éditions
 
-Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/nettoyer les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/archiver les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
 ### Story 2.1 : CRUD d'édition & Configuration du taux de commission
 
@@ -737,9 +735,9 @@ afin que les transitions de phase soient intentionnelles et que leurs conséquen
 **Alors** les catégories et la correspondance des tables redeviennent modifiables (FR-018)
 **Et** le taux de commission redevient modifiable (FR-016)
 
-**Étant donné** qu'une édition a été clôturée et que le Nettoyage de l'édition a été déclenché
+**Étant donné** qu'une édition a été clôturée et que l'Archivage de l'édition a été déclenché
 **Quand** l'admin consulte la page de contrôle des phases
-**Alors** le bouton de retour arrière depuis Clôturée est absent (FR-082 : retour arrière désactivé après nettoyage)
+**Alors** le bouton de retour arrière depuis Clôturée est absent (FR-082 : retour arrière désactivé après archivage)
 
 **Étant donné** qu'une transition de phase se termine
 **Quand** le serveur la traite
@@ -809,10 +807,10 @@ afin de toujours savoir quelle interface utiliser sans recharger manuellement la
 **Alors** tous les clients connectés reçoivent l'événement `phase-changed`
 **Et** le `SseEmitterRegistry` ferme l'émetteur après la diffusion
 
-### Story 2.5 : Clôture de l'édition & Nettoyage de l'édition
+### Story 2.5 : Clôture de l'édition & Archivage de l'édition
 
 En tant qu'administrateur,
-je veux clôturer officiellement une édition et optionnellement nettoyer ses enregistrements d'articles,
+je veux clôturer officiellement une édition et optionnellement archiver ses enregistrements d'articles,
 afin que l'édition soit correctement archivée et que le stockage puisse être libéré après l'événement.
 
 **Critères d'acceptation :**
@@ -834,17 +832,18 @@ afin que l'édition soit correctement archivée et que le stockage puisse être 
 
 **Étant donné** que l'édition est Clôturée et que des enregistrements d'articles existent
 **Quand** l'admin consulte le détail de l'édition
-**Alors** un bouton « Nettoyer l'édition » est visible (style secondaire couleur erreur)
+**Alors** un bouton « Archiver l'édition » est visible (style secondaire couleur erreur)
 
-**Étant donné** que l'admin clique sur « Nettoyer l'édition » et confirme
+**Étant donné** que l'admin clique sur « Archiver l'édition » et confirme
 **Quand** l'action se termine
-**Alors** tous les enregistrements d'articles de cette édition sont définitivement supprimés
+**Alors** chaque article de l'édition est copié dans la table d'archivage avec son nom, sa catégorie et son statut (vendu ou invendu) — les articles de lot sont archivés individuellement
+**Et** tous les enregistrements d'articles de cette édition sont définitivement supprimés de la table principale
 **Et** tous les profils vendeurs de cette édition sont définitivement supprimés
-**Et** le bouton « Nettoyer l'édition » disparaît
-**Et** le catalogue affiche l'état vide « Édition nettoyée — aucun article. »
+**Et** le bouton « Archiver l'édition » disparaît
+**Et** le catalogue affiche l'état vide « Édition archivée — aucun article. »
 **Et** le retour arrière depuis Clôturée est définitivement désactivé pour cette édition (FR-088)
 
-**Étant donné** qu'une édition Clôturée a été nettoyée
+**Étant donné** qu'une édition Clôturée a été archivée
 **Quand** l'admin consulte l'édition
 **Alors** les métriques agrégées (total des ventes, recettes, commission) restent visibles en lecture seule (FR-059)
 
@@ -977,24 +976,32 @@ afin que les ensembles vendus ensemble soient traités comme une unité atomique
 **Alors** elle affiche « Prix du lot : X€ » à la place du prix individuel
 **Et** « Lot indivisible : X/N » où X est la position de l'article et N est le total (FR-045)
 
-### Story 3.4 : Infrastructure d'impression — Files d'attente côté serveur
+### Story 3.4 : Infrastructure d'impression — Registre d'imprimantes & Files dynamiques
 
-> **Story technique prérequise (spike accepté)** — Aucune valeur utilisateur visible en sprint review. Livrée avant les Stories 3.5, 3.6 et 3.7 qui l'utilisent. La Definition of Done est basée sur les ACs techniques ci-dessous.
+> **Story technique prérequise (spike accepté)** — Aucune valeur utilisateur visible en sprint review. Livrée avant les Stories 3.5, 3.6, 3.7, 3.8 et 3.9 qui l'utilisent. La Definition of Done est basée sur les ACs techniques ci-dessous.
 
 En tant que bénévole déclenchant une impression,
-je veux que les travaux d'impression soient traités côté serveur sans imprimante sur mon poste de travail,
+je veux que les travaux d'impression soient traités côté serveur et routés vers l'imprimante que j'ai sélectionnée,
 afin que l'impression fonctionne depuis n'importe quel poste connecté via navigateur pendant l'événement.
 
 **Critères d'acceptation :**
 
-**Étant donné** que l'application Spring Boot démarre
-**Quand** le contexte est initialisé
-**Alors** deux beans `LinkedBlockingQueue` existent : un pour les étiquettes thermiques, un pour les documents A4
-**Et** chaque file d'attente dispose d'un thread consommateur dédié fonctionnant en tant que bean Spring
+**Étant donné** que des imprimantes sont enregistrées en base
+**Quand** l'application Spring Boot démarre
+**Alors** une `LinkedBlockingQueue` et un thread consommateur dédié sont instanciés par imprimante enregistrée (ARCH-009)
+**Et** les queues thermiques utilisent jSerialComm pour écrire sur le port série RFCOMM Bluetooth
+**Et** les queues A4 utilisent une socket TCP vers l'adresse réseau configurée
 
-**Étant donné** que plusieurs travaux d'impression sont soumis de manière concurrente
-**Quand** ils entrent dans la file thermique
+**Étant donné** que le serveur démarre
+**Quand** le contexte est initialisé
+**Alors** chaque port série thermique configuré est testé en accessibilité
+**Et** chaque adresse réseau A4 configurée est testée en accessibilité
+**Et** toute imprimante inaccessible est marquée en erreur dans son état de statut (FR-079)
+
+**Étant donné** que plusieurs travaux d'impression sont soumis vers la même imprimante
+**Quand** ils entrent dans sa file
 **Alors** les travaux sont exécutés séquentiellement — un à la fois (FR-029)
+**Et** les files d'imprimantes différentes s'exécutent indépendamment sans se bloquer
 
 **Étant donné** qu'un utilisateur déclenche l'impression depuis l'interface
 **Quand** la requête est reçue
@@ -1005,9 +1012,10 @@ afin que l'impression fonctionne depuis n'importe quel poste connecté via navig
 **Quand** le thread consommateur termine
 **Alors** un toast de succès apparaît pendant 4 secondes
 
-**Étant donné** que l'imprimante est hors ligne ou en erreur
-**Quand** un travail d'impression échoue
-**Alors** un toast d'erreur persistant apparaît : « L'imprimante [thermique/A4] ne répond pas. Vérifiez la connexion USB. » (FR-079)
+**Étant donné** que l'imprimante sélectionnée est hors ligne ou en erreur au moment du job
+**Quand** le travail d'impression échoue
+**Alors** un toast d'erreur persistant apparaît identifiant l'imprimante concernée (FR-079)
+**Et** la file de cette imprimante est suspendue ; les autres files ne sont pas affectées
 **Et** l'action d'impression reste redéclenchable depuis l'interface
 
 ### Story 3.5 : Génération & Impression des étiquettes thermiques
@@ -1036,9 +1044,9 @@ afin que les articles soient physiquement étiquetés immédiatement après le d
 **Quand** rendue
 **Alors** elle affiche « Prix du lot : X€ » et « Lot indivisible : X/N » (FR-045)
 
-**Étant donné** que la configuration de l'instance a une largeur de ticket thermique définie
+**Étant donné** que l'imprimante thermique sélectionnée a une largeur configurée
 **Quand** le travail ESC/POS est préparé
-**Alors** cette largeur est appliquée (FR-032, défaut 57 mm)
+**Alors** la largeur de cette imprimante est appliquée (FR-032 : 57 mm ou 80 mm selon la configuration par imprimante)
 
 ### Story 3.6 : Génération & Impression automatique du bordereau de dépôt PDF
 
@@ -1062,25 +1070,25 @@ afin que le vendeur dispose d'un justificatif papier de ce qu'il a déposé et d
 **Quand** il clique sur « Réimprimer le bordereau »
 **Alors** le bordereau est régénéré et remis en file d'attente — l'impression est toujours rejouable depuis la fiche vendeur
 
-### Story 3.7 : Vue admin de diagnostic de la file d'impression
+### Story 3.7 : Vue admin de diagnostic des imprimantes
 
 En tant qu'administrateur,
-je veux consulter l'état en temps réel des files d'impression et des erreurs en cours,
+je veux consulter l'état en temps réel de chaque imprimante enregistrée et de ses jobs en cours,
 afin de diagnostiquer les problèmes d'imprimante sans interrompre l'événement.
 
 **Critères d'acceptation :**
 
-**Étant donné** que l'admin navigue vers la page de gestion des impressions
+**Étant donné** que l'admin navigue vers `/admin/print-queue`
 **Quand** la page se charge
-**Alors** l'état des deux files (thermique et A4) est affiché : jobs en attente, job en cours, jobs en erreur (FR-079)
+**Alors** toutes les imprimantes enregistrées sont listées (thermiques et A4), chacune avec : nom, type, statut de connexion, profondeur de file, job en cours, dernière erreur (FR-079)
 
-**Étant donné** qu'un job est en erreur dans une file
+**Étant donné** que le serveur a détecté une imprimante inaccessible au démarrage
 **Quand** l'admin consulte la vue de diagnostic
-**Alors** le job en erreur est visible avec la cause de l'erreur
+**Alors** cette imprimante est signalée en erreur avec la cause (port série introuvable / adresse réseau injoignable)
 
-**Étant donné** qu'un job est en erreur
+**Étant donné** qu'un job est en erreur dans la file d'une imprimante
 **Quand** l'admin clique sur « Relancer »
-**Alors** le job est remis en tête de file et la file reprend (FR-079)
+**Alors** le job est remis en tête de file et la file de cette imprimante reprend (FR-079)
 
 **Étant donné** qu'un job est en erreur
 **Quand** l'admin clique sur « Ignorer »
@@ -1089,6 +1097,70 @@ afin de diagnostiquer les problèmes d'imprimante sans interrompre l'événement
 **Étant donné** qu'un bénévole tente d'accéder à la page de diagnostic
 **Quand** la route est chargée
 **Alors** l'accès est refusé avec un 403 — vue admin uniquement
+
+### Story 3.8 : Registre des imprimantes (Admin)
+
+En tant qu'administrateur,
+je veux enregistrer et gérer les imprimantes thermiques et A4 disponibles,
+afin que les bénévoles puissent les sélectionner à leur connexion et que chaque imprimante dispose de sa propre file d'impression.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin navigue vers `/admin/printers`
+**Quand** la page se charge
+**Alors** la liste des imprimantes enregistrées est affichée (nom, type, statut de connexion)
+
+**Étant donné** que l'admin ajoute une imprimante thermique
+**Quand** le formulaire s'affiche
+**Alors** une liste déroulante présente les ports série disponibles sur le serveur (SerialPort.getCommPorts() — nom descriptif de l'appareil Bluetooth appairé)
+**Et** l'admin saisit un nom d'affichage et sélectionne la largeur (57 mm ou 80 mm) (FR-032)
+**Et** à la sauvegarde, une file `LinkedBlockingQueue` est instanciée pour cette imprimante (ARCH-009)
+
+**Étant donné** que l'admin ajoute une imprimante A4
+**Quand** le formulaire est soumis
+**Alors** l'admin a saisi un nom d'affichage, une adresse IP ou hostname, et un port TCP (défaut 9100) (FR-077)
+**Et** à la sauvegarde, une file `LinkedBlockingQueue` est instanciée pour cette imprimante
+
+**Étant donné** que l'admin supprime une imprimante
+**Quand** la suppression est confirmée
+**Alors** l'imprimante est retirée du registre et sa file est détruite
+**Et** les bénévoles ayant cette imprimante sélectionnée en session reçoivent un message d'erreur au prochain job d'impression
+
+**Étant donné** qu'un bénévole tente d'accéder à `/admin/printers`
+**Quand** la route est chargée
+**Alors** l'accès est refusé avec un 403 — vue admin uniquement
+
+### Story 3.9 : Sélection d'imprimante par le bénévole à la connexion (FR-098)
+
+En tant que bénévole,
+je veux choisir mon imprimante thermique et mon imprimante A4 à ma connexion,
+afin que mes travaux d'impression soient routés vers l'imprimante la plus proche de mon poste.
+
+**Critères d'acceptation :**
+
+**Étant donné** que le bénévole se connecte avec succès
+**Quand** la connexion aboutit
+**Alors** un écran de sélection d'imprimante s'affiche avant l'accès à l'interface principale
+**Et** deux listes déroulantes sont présentées : une pour les imprimantes thermiques, une pour les imprimantes A4 (parmi celles enregistrées et dont le statut de connexion est disponible)
+
+**Étant donné** que le bénévole valide sa sélection
+**Quand** la confirmation est soumise
+**Alors** la sélection est stockée en session (non persistée en base)
+**Et** le bénévole est redirigé vers l'interface correspondant à la phase active
+
+**Étant donné** qu'un bénévole déclenche une impression thermique pendant sa session
+**Quand** le job est soumis
+**Alors** il est routé vers la file de l'imprimante thermique sélectionnée en session
+
+**Étant donné** que l'imprimante sélectionnée est indisponible au moment du job
+**Quand** le job est traité
+**Alors** le job échoue immédiatement avec un toast d'erreur persistant (FR-098)
+**Et** aucun retry automatique ni reroutage n'est effectué
+
+**Étant donné** qu'aucune imprimante n'est enregistrée ou disponible
+**Quand** l'écran de sélection s'affiche
+**Alors** un message d'avertissement indique qu'aucune imprimante n'est disponible
+**Et** le bénévole peut tout de même accéder à l'interface (l'impression sera en erreur jusqu'à la résolution par l'admin)
 
 ---
 
@@ -1386,11 +1458,11 @@ afin d'avoir une vision financière complète à la clôture de l'événement.
 **Quand** il consulte la page de solde (`/admin/settlement`)
 **Alors** les vendeurs non soldés sont visibles avec leur numéro de téléphone et leur adresse email, via le filtre « non soldés » de la liste (FR-095)
 
-**Étant donné** qu'une édition est Clôturée et que le Nettoyage n'a pas été déclenché
+**Étant donné** qu'une édition est Clôturée et que l'Archivage n'a pas été déclenché
 **Quand** un admin consulte l'édition
 **Alors** les métriques agrégées, les profils vendeurs et le détail des articles sont accessibles en lecture seule (FR-059)
 
-**Étant donné** que le Nettoyage de l'édition a été déclenché
+**Étant donné** que l'Archivage de l'édition a été déclenché
 **Quand** un admin consulte l'édition
 **Alors** seules les métriques agrégées restent accessibles — les articles et profils vendeurs ne sont plus disponibles en base (FR-059, FR-088)
 
@@ -1488,9 +1560,9 @@ afin de localiser rapidement n'importe quel article quelle que soit la phase de 
 **Quand** JPageFlow traite le tri BigDecimal
 **Alors** le tri est tenté ; si le bug connu (JPageFlow v1.5.0) est présent, le test documente ceci comme un échec connu en attente du correctif de la bibliothèque (ARCH-005)
 
-**Étant donné** que l'action Nettoyage de l'édition a été déclenchée
+**Étant donné** que l'action Archiver l'édition a été déclenchée
 **Quand** un utilisateur navigue vers le catalogue
-**Alors** un état vide apparaît : « Édition nettoyée — aucun article. » sans action (FR-086)
+**Alors** un état vide apparaît : « Édition archivée — aucun article. » sans action (FR-086)
 
 **Étant donné** que plusieurs utilisateurs filtrent le catalogue simultanément
 **Quand** chacun soumet des combinaisons de filtres différentes
