@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-core-schema" author="pluribourse">
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- VARCHAR(20) instead of ENUM for H2/MariaDB portability; JPA maps via @Enumerated(STRING) -->
+            <column name="role" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="preferred_language" type="VARCHAR(2)" defaultValue="FR">
+                <constraints nullable="false"/>
+            </column>
+            <!-- FK to seller_profiles (Epic 3) — no FK constraint yet; table does not exist in this story -->
+            <column name="seller_profile_id" type="BIGINT"/>
+            <column name="force_password_change" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Default admin account — force_password_change=true enforces reset on first login (Story 1.2) -->
+        <insert tableName="users">
+            <column name="username" value="Admin"/>
+            <!-- BCrypt hash of "Admin" (cost 10) — generated via: new BCryptPasswordEncoder().encode("Admin") -->
+            <column name="password" value="$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBpwTTyVDyP7fi"/>
+            <column name="role" value="ADMIN"/>
+            <column name="preferred_language" value="FR"/>
+            <column name="force_password_change" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

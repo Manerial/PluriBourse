@@ -1,0 +1,26 @@
+version: '3.8'
+name: pluribourse-dev
+
+services:
+  db:
+    image: mariadb:11
+    container_name: mariadb_pluribourse
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: pluribourse
+      MARIADB_USER: pluribourse
+      MARIADB_PASSWORD: ${DB_PASSWORD:-password_dev}
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password_dev}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_dev_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_dev_data:

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+        PII POLICY: Never log seller name, email, phone number, or any personal data.
+        Use anonymous identifiers (user ID, seller profile ID) in log messages instead.
+    -->
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProfile name="dev">
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="org.pluribourse" level="DEBUG"/>
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="liquibase" level="INFO"/>
+    </springProfile>
+
+    <springProfile name="prod | default">
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="org.pluribourse" level="INFO"/>
+        <logger name="liquibase" level="WARN"/>
+    </springProfile>
+
+</configuration>

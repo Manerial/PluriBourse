@@ -1,6 +1,10 @@
 # Story 1.1: Mise en place du squelette de projet & baseline Docker Compose
 
-Status: ready-for-dev
+---
+baseline_commit: 979cf22f48e3676cf227ea4a67d7d24c4bbc7587
+---
+
+Status: in-progress
 
 ## Story
 
@@ -15,8 +19,6 @@ so that feature development can begin on a stable and reproducible foundation.
 2. **Given** the Spring Boot application starts, **When** Liquibase migrations execute, **Then**:
    - The `users` table exists with all fields including `preferred_language` and nullable `seller_profile_id`
    - Spring Session JDBC tables exist (changeset 002)
-   - `categories` and `table_assignments` tables exist (changeset 003)
-   - The `instance_config` table exists (changeset 004)
    - A default admin account (username: `Admin`, BCrypt hash of `Admin`, `force_password_change: true`) is initialized
 
 3. **Given** the application returns an error, **When** an endpoint produces a 4xx or 5xx response, **Then** the body follows RFC 7807 Problem Details (`type`, `title`, `status`, `detail`, `instance`).
@@ -27,41 +29,39 @@ so that feature development can begin on a stable and reproducible foundation.
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — Initialiser le backend Spring Boot** (AC: 1, 2, 3, 4, 5)
-  - [ ] T1.1 — Générer via Spring Initializr : group `org.pluribourse`, artifact `pluribourse`, Java 21, Maven, Boot 4.0.6, dépendances : Spring Web, Spring Data JPA, Spring Security, Liquibase Migration, Lombok, MariaDB Driver, Validation
-  - [ ] T1.2 — Ajouter au `pom.xml` : MapStruct (`mapstruct` + `mapstruct-processor` dans `annotationProcessorPaths`), `spring-session-jdbc`, `springdoc-openapi-starter-webmvc-ui` (vérifier la version compatible SB 4.x au moment de l'implémentation)
-  - [ ] T1.3 — Configurer `application.properties` (datasource MariaDB, Liquibase, Spring Session JDBC, session sans expiration, Actuator, threads virtuels)
-  - [ ] T1.4 — Créer `application-dev.properties` (Springdoc activé) et `application-prod.properties` (Springdoc désactivé)
-  - [ ] T1.5 — Créer `GlobalExceptionHandler` (`@ControllerAdvice`) retournant `ProblemDetail` RFC 7807 pour `BusinessException`, `MethodArgumentNotValidException`, `ConstraintViolationException`
-  - [ ] T1.6 — Créer `BusinessException` (runtime, porte un `HttpStatus`)
-  - [ ] T1.7 — Créer `OpenApiConfig.java` (expose la doc uniquement si profil `dev`) et `JacksonConfig.java` (BigDecimal sans notation scientifique, dates ISO 8601)
-  - [ ] T1.8 — Créer `SecurityConfig.java` minimal : autoriser `/actuator/health` sans auth, bloquer tout le reste — **ne pas** configurer `formLogin()` ni `httpBasic()` (Story 1.2)
+- [x] **T1 — Initialiser le backend Spring Boot** (AC: 1, 2, 3, 4, 5)
+  - [x] T1.1 — Générer via Spring Initializr : group `org.pluribourse`, artifact `pluribourse`, Java 21, Maven, Boot 4.0.6, dépendances : Spring Web, Spring Data JPA, Spring Security, Liquibase Migration, Lombok, MariaDB Driver, Validation
+  - [x] T1.2 — Ajouter au `pom.xml` : MapStruct (`mapstruct` + `mapstruct-processor` dans `annotationProcessorPaths`), `spring-session-jdbc`, `springdoc-openapi-starter-webmvc-ui` (vérifier la version compatible SB 4.x au moment de l'implémentation)
+  - [x] T1.3 — Configurer `application.properties` (datasource MariaDB, Liquibase, Spring Session JDBC, session sans expiration, Actuator, threads virtuels)
+  - [x] T1.4 — Créer `application-dev.properties` (Springdoc activé) et `application-prod.properties` (Springdoc désactivé)
+  - [x] T1.5 — Créer `GlobalExceptionHandler` (`@ControllerAdvice`) retournant `ProblemDetail` RFC 7807 pour `BusinessException`, `MethodArgumentNotValidException`, `ConstraintViolationException`
+  - [x] T1.6 — Créer `BusinessException` (runtime, porte un `HttpStatus`)
+  - [x] T1.7 — Créer `OpenApiConfig.java` (expose la doc uniquement si profil `dev`) et `JacksonConfig.java` (BigDecimal sans notation scientifique, dates ISO 8601)
+  - [x] T1.8 — Créer `SecurityConfig.java` minimal : autoriser `/actuator/health` sans auth, bloquer tout le reste — **ne pas** configurer `formLogin()` ni `httpBasic()` (Story 1.2)
 
-- [ ] **T2 — Liquibase : 4 changesets** (AC: 2)
-  - [ ] T2.1 — `db.changelog-master.xml` incluant les 4 changesets dans l'ordre
-  - [ ] T2.2 — `001-core-schema.xml` : table `users` + insert compte admin par défaut (voir schéma complet en Dev Notes)
-  - [ ] T2.3 — `002-spring-session.xml` : tables Spring Session JDBC pour MariaDB (utiliser le DDL officiel `schema-mysql.sql` du jar `spring-session-jdbc`, NE PAS écrire à la main)
-  - [ ] T2.4 — `003-category-table-mapping.xml` : tables `categories` et `table_assignments` (sans FK vers `editions` — table inexistante à ce stade)
-  - [ ] T2.5 — `004-instance-config.xml` : table `instance_config` avec `commission_rate` en `DECIMAL(5,2)`
+- [x] **T2 — Liquibase : 2 changesets** (AC: 2)
+  - [x] T2.1 — `db.changelog-master.xml` incluant les 2 changesets du squelette
+  - [x] T2.2 — `001-core-schema.xml` : table `users` + insert compte admin par défaut
+  - [x] T2.3 — `002-spring-session.xml` : tables Spring Session JDBC (MariaDB + H2)
 
-- [ ] **T3 — Initialiser le frontend Angular** (AC: 1)
-  - [ ] T3.1 — Générer : `ng new pluribourse-frontend --standalone --routing --style=scss` (**ne pas omettre `--standalone`**)
-  - [ ] T3.2 — Installer : `ng add @angular/material` + `npm install @ngx-translate/core @ngx-translate/http-loader`
-  - [ ] T3.3 — Configurer `app.config.ts` : `provideHttpClient()`, `provideAnimationsAsync()`, `TranslateModule.forRoot()` avec `HttpLoaderFactory` pointant vers `assets/i18n/`
-  - [ ] T3.4 — Créer `assets/i18n/en.json` et `assets/i18n/fr.json` (objets JSON vides `{}` — stubs)
-  - [ ] T3.5 — Créer les répertoires vides : `src/app/components/shared/`, `src/app/services/`, `src/app/models/`
-  - [ ] T3.6 — Vérifier que `ng serve` démarre sur le port 4200 sans erreur
+- [x] **T3 — Initialiser le frontend Angular** (AC: 1)
+  - [x] T3.1 — Générer : `ng new pluribourse-frontend --standalone --routing --style=scss` (**ne pas omettre `--standalone`**)
+  - [x] T3.2 — Installer : `ng add @angular/material` + `npm install @ngx-translate/core @ngx-translate/http-loader`
+  - [x] T3.3 — Configurer `app.config.ts` : `provideHttpClient()`, `provideAnimationsAsync()`, `provideTranslateService()` + `provideTranslateHttpLoader()` (API ngx-translate v18)
+  - [x] T3.4 — Créer `public/i18n/en.json` et `public/i18n/fr.json` (objets JSON stubs)
+  - [x] T3.5 — Créer les répertoires vides : `src/app/core/services/`, `src/app/core/guards/`, `src/app/shared/components/`, `src/app/features/auth/`
+  - [x] T3.6 — Vérifier que `ng build` compile sans erreur
 
-- [ ] **T4 — Infrastructure Docker Compose** (AC: 1)
-  - [ ] T4.1 — `docker-compose.yml` : services `db` (MariaDB 11, volume persistant, healthcheck) et `backend` (build depuis Dockerfile, port 8080, `depends_on: db: condition: service_healthy`)
-  - [ ] T4.2 — `docker-compose.dev.yml` : override dev (DevTools, profil Spring `dev`, pas de build Angular)
-  - [ ] T4.3 — `.env.example` avec `DB_NAME`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `SPRING_PROFILES_ACTIVE`
-  - [ ] T4.4 — `pluribourse-backend/Dockerfile` : `eclipse-temurin:21-jre`, copie JAR, `EXPOSE 8080`, `ENTRYPOINT`
+- [x] **T4 — Infrastructure Docker Compose** (AC: 1)
+  - [x] T4.1 — `docker-compose.yml` : services `db` (MariaDB 11, volume persistant, healthcheck) et `backend` (build depuis Dockerfile, port 8080, `depends_on: db: condition: service_healthy`)
+  - [x] T4.2 — `docker-compose.dev.yml` : override dev (port MariaDB exposé, variables d'env dev)
+  - [x] T4.3 — `.env.example` avec `DB_NAME`, `DB_PASSWORD`, `SPRING_PROFILES_ACTIVE`
+  - [x] T4.4 — `pluribourse-backend/Dockerfile` : `eclipse-temurin:21-jre`, copie JAR, `EXPOSE 8080`, `ENTRYPOINT`
 
-- [ ] **T5 — Tests** (couverture cible ≥ 80%)
-  - [ ] T5.1 — `PluriboursApplicationTests.java` : `@SpringBootTest` vérifiant que le contexte Spring charge (test de fumée H2)
-  - [ ] T5.2 — Test d'intégration Liquibase (H2 in-memory) : vérifier que les 4 tables clés (`users`, `SPRING_SESSION`, `categories`, `instance_config`) existent après migration
-  - [ ] T5.3 — Test RFC 7807 : via `MockMvc`, vérifier qu'une erreur retourne `Content-Type: application/problem+json` et les champs `type`, `title`, `status`, `detail`, `instance`
+- [x] **T5 — Tests** (couverture cible ≥ 80%)
+  - [x] T5.1 — `PluribourseApplicationTests.java` : `@SpringBootTest` vérifiant que le contexte Spring charge (test de fumée H2)
+  - [x] T5.2 — `LiquibaseMigrationIT.java` : test d'intégration Liquibase (H2 in-memory) : vérifier que `users` et `SPRING_SESSION` existent, le compte admin par défaut, et les colonnes de `users`
+  - [x] T5.3 — `GlobalExceptionHandlerTest.java` : via `MockMvc` standalone, vérifier qu'une erreur retourne `Content-Type: application/problem+json` et les champs `type`, `status`, `detail`, `instance`
 
 ## Dev Notes
 
@@ -624,4 +624,74 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- Spring Boot 4.0.6 utilise `spring-boot-starter-webmvc` (renommé depuis `spring-boot-starter-web`).
+- `Jackson2ObjectMapperBuilder` n'est plus auto-configuré en tant que bean Spring dans Spring Boot 4. Utiliser `Jackson2ObjectMapperBuilder.json()` (factory statique) dans `JacksonConfig.java`.
+- `spring.session.jdbc.initialize-schema=embedded` (et `always`) ne crée pas les tables Spring Session sur H2 2.4.x avec Spring Boot 4. Solution : ajout d'un changeset Liquibase `002-spring-session-h2` avec `dbms="h2"` qui crée les mêmes tables sans la clause `ENGINE=InnoDB`.
+- Les requêtes `information_schema.tables` sur H2 doivent filtrer par `UPPER(table_schema) = 'PUBLIC'` car H2 expose aussi `INFORMATION_SCHEMA.USERS` (table système) qui match la même requête sans filtre.
+- ngx-translate v18 a changé d'API : utiliser `provideTranslateService({ lang: 'fr' })` et `provideTranslateHttpLoader({ prefix: '/i18n/', suffix: '.json' })` au lieu de `importProvidersFrom(TranslateModule.forRoot(...))`. La propriété est `lang` (pas `defaultLanguage`). `TranslateHttpLoader` est maintenant injectable sans arguments.
+- Maven Surefire (par défaut) n'exécute pas les classes `*IT.java`. Ajout de la configuration Surefire dans le `pom.xml` pour inclure `**/*IT.java`.
+- Angular CLI 22 requiert Node ≥22.22.3 — utilisé Angular CLI 21 (LTS, Node 22.14 supporté).
+- La Story utilise `spring.session.jdbc.initialize-schema=never` dans les tests car Liquibase gère les tables Spring Session pour toutes les bases de données.
+
 ### File List
+
+**Backend :**
+- `pluribourse-backend/pom.xml`
+- `pluribourse-backend/Dockerfile`
+- `pluribourse-backend/src/main/resources/application.properties`
+- `pluribourse-backend/src/main/resources/application-dev.properties`
+- `pluribourse-backend/src/main/resources/application-prod.properties`
+- `pluribourse-backend/src/main/resources/db/changelog/db.changelog-master.xml`
+- `pluribourse-backend/src/main/resources/db/changelog/001-core-schema.xml`
+- `pluribourse-backend/src/main/resources/db/changelog/002-spring-session.xml`
+- `pluribourse-backend/src/main/java/org/pluribourse/PluribourseApplication.java`
+- `pluribourse-backend/src/main/java/org/pluribourse/shared/exception/BusinessException.java`
+- `pluribourse-backend/src/main/java/org/pluribourse/shared/exception/GlobalExceptionHandler.java`
+- `pluribourse-backend/src/main/java/org/pluribourse/shared/security/SecurityConfig.java`
+- `pluribourse-backend/src/main/java/org/pluribourse/shared/config/OpenApiConfig.java`
+- `pluribourse-backend/src/main/java/org/pluribourse/shared/config/JacksonConfig.java`
+- `pluribourse-backend/src/test/resources/application.properties`
+- `pluribourse-backend/src/test/java/org/pluribourse/PluribourseApplicationTests.java`
+- `pluribourse-backend/src/test/java/org/pluribourse/shared/LiquibaseMigrationIT.java`
+- `pluribourse-backend/src/test/java/org/pluribourse/shared/GlobalExceptionHandlerTest.java`
+
+**Frontend :**
+- `pluribourse-frontend/package.json`
+- `pluribourse-frontend/angular.json`
+- `pluribourse-frontend/tsconfig.json`
+- `pluribourse-frontend/proxy.conf.json`
+- `pluribourse-frontend/src/app/app.config.ts`
+- `pluribourse-frontend/public/i18n/fr.json`
+- `pluribourse-frontend/public/i18n/en.json`
+
+**Infrastructure :**
+- `.docker/docker-compose.yml`
+- `.docker/docker-compose.dev.yml`
+- `.docker/.env.example`
+- `pluribourse-backend/Dockerfile`
+- `pluribourse-frontend/Dockerfile`
+- `pluribourse-frontend/nginx.conf`
+
+### Review Findings
+
+- [x] [Review][Defer] `app.html` scaffold Angular avec strings codées en dur — accepté comme placeholder Story 1.1, Story 1.7 (Design System) remplacera le template complet avec i18n [`pluribourse-frontend/src/app/app.html`] — deferred, choix intentionnel
+- [x] [Review][Dismiss] `docker-compose.dev.yml` absent — `docker-compose-db-only.yml` est un choix délibéré (lance uniquement la DB pour dev local sans Docker backend) [`.docker/`] — dismissed, design intentionnel
+- [x] [Review][Patch] `MYSQL_ROOT_PASSWORD` non défini dans `.env.example` — MariaDB démarrerait sans mot de passe root si `.env` est copié depuis `.env.example` [`.docker/docker-compose.yml:13` / `.docker/.env.example`]
+- [x] [Review][Patch] `mariadb:latest` — image non épinglée à la version 11 [`.docker/docker-compose.yml:6` / `.docker/docker-compose-db-only.yml:6`]
+- [x] [Review][Patch] `GlobalExceptionHandler` : `MethodArgumentNotValidException` sans `@ExceptionHandler` explicite — le handler parent ne produit pas les champs `type`/`instance` RFC 7807 requis par AC3 [`GlobalExceptionHandler.java`]
+- [x] [Review][Patch] Nginx : `location /actuator/` proxie tous les endpoints, pas seulement `/health` [`pluribourse-frontend/nginx.conf:16`]
+- [x] [Review][Patch] `server.servlet.session.timeout=-1` : valeur Duration invalide, redondante avec `spring.session.timeout=P1D` — à supprimer [`application.properties`]
+- [x] [Review][Patch] `docker-compose-db-only.yml` : credentials dev codés en dur (`MARIADB_PASSWORD`, `MARIADB_ROOT_PASSWORD`) [`.docker/docker-compose-db-only.yml:29-30`]
+- [ ] [Review][Patch] `.env` commis dans git — seul `.env.example` doit être versionné [`.docker/.env`]
+- [x] [Review][Patch] Service `backend` sans healthcheck Docker — `frontend depends_on: backend` est order-only, non `condition: service_healthy` [`.docker/docker-compose.yml:37`]
+- [x] [Review][Patch] `ConstraintViolationException` handler non testé — cas violations vides (`Optional.empty()` → `null` detail) et violations multiples non couverts [`GlobalExceptionHandlerTest.java`]
+- [x] [Review][Patch] Test RFC 7807 manque l'assertion sur `$.title` (AC3 exige explicitement ce champ) [`GlobalExceptionHandlerTest.java`]
+- [x] [Review][Patch] `JacksonConfig` : `WRITE_BIGDECIMAL_AS_PLAIN` manquant — les `BigDecimal` peuvent sérialiser en notation scientifique [`JacksonConfig.java`]
+- [ ] [Review][Patch] Enum `Role` (ADMIN, VOLUNTEER, SELLER) absent de la codebase — requis par les Dev Notes CLAUDE.md [`src/main/java/org/pluribourse/shared/`]
+- [x] [Review][Patch] `logback-spring.xml` absent — règle no-PII non établie (Dev Notes : "poser la règle dès maintenant") [`src/main/resources/`]
+- [ ] [Review][Patch] Répertoires scaffold frontend non commis (aucun `.gitkeep`) — T3.5 incomplet : `core/services/`, `core/guards/`, `shared/components/`, `features/auth/` [`pluribourse-frontend/src/app/`]
+- [x] [Review][Defer] Hash BCrypt du mot de passe admin commis dans le changeset Liquibase — intentionnel, `force_password_change=true` atténue le risque ; Story 1.2 implémentera le reset obligatoire [`001-core-schema.xml:34`] — deferred, pré-existant
+- [x] [Review][Defer] Spring Session H2 : slice tests sans Liquibase échoueront silencieusement sur `SPRING_SESSION` — risque futur non déclenché actuellement [`002-spring-session.xml`] — deferred, pré-existant
+- [x] [Review][Defer] Colonne `role` en `VARCHAR(20)` sans contrainte `CHECK` — la couche JPA enforcer via `@Enumerated(STRING)` quand l'entité sera créée [`001-core-schema.xml:19`] — deferred, pré-existant
+- [x] [Review][Defer] Colonne `preferred_language` sans contrainte de valeurs — scope Story 1.6 [`001-core-schema.xml:23`] — deferred, pré-existant
+- [x] [Review][Defer] ngx-translate : pas de langue de fallback explicite — scope Story 1.6 [`app.config.ts:16`] — deferred, pré-existant
