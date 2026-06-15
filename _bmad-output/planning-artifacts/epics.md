@@ -697,6 +697,10 @@ afin que chaque événement soit correctement identifié et configuré financiè
 **Quand** l'admin tente de la supprimer
 **Alors** le système refuse la suppression (FR-014)
 
+**Étant donné** que l'admin soumet le formulaire de création d'édition avec un nom vide
+**Quand** la requête est traitée
+**Alors** une réponse 422 est retournée au format RFC 7807 avec un message d'erreur explicite sur le champ nom
+
 ### Story 2.2 : Contrôle du cycle de phases & Boîtes de dialogue de confirmation
 
 En tant qu'administrateur,
@@ -899,6 +903,14 @@ afin que les vendeurs puissent être associés à leurs articles sans ressaisir 
 **Quand** le formulaire est soumis
 **Alors** un nouveau profil vendeur est créé et immédiatement sélectionnable pour l'enregistrement d'articles
 
+**Étant donné** que le bénévole soumet le formulaire de création vendeur avec un e-mail au format invalide
+**Quand** la requête est traitée
+**Alors** une réponse 422 est retournée au format RFC 7807 avec un message d'erreur sur le champ e-mail
+
+**Étant donné** que le bénévole soumet le formulaire avec un champ obligatoire vide (nom, prénom, e-mail ou téléphone)
+**Quand** la requête est traitée
+**Alors** une réponse 422 est retournée avec un message d'erreur identifiant le champ manquant (FR-019)
+
 **Étant donné** que l'admin supprime un vendeur en phase de Dépôt et confirme
 **Quand** la suppression se termine
 **Alors** le profil vendeur et tous ses articles sont définitivement supprimés de cette édition (FR-021)
@@ -978,7 +990,7 @@ afin que les ensembles vendus ensemble soient traités comme une unité atomique
 
 ### Story 3.4 : Infrastructure d'impression — Registre d'imprimantes & Files dynamiques
 
-> **Story technique prérequise (spike accepté)** — Aucune valeur utilisateur visible en sprint review. Livrée avant les Stories 3.5, 3.6, 3.7, 3.8 et 3.9 qui l'utilisent. La Definition of Done est basée sur les ACs techniques ci-dessous.
+> **Story technique prérequise (infrastructure enabler)** — Aucune valeur utilisateur visible en sprint review. Livrée avant les Stories 3.5, 3.6, 3.7, 3.8 et 3.9 qui l'utilisent. La Definition of Done est basée sur les ACs techniques ci-dessous.
 
 En tant que bénévole déclenchant une impression,
 je veux que les travaux d'impression soient traités côté serveur et routés vers l'imprimante que j'ai sélectionnée,

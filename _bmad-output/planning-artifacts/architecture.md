@@ -624,9 +624,12 @@ pluribourse-backend/
     │   │   │   ├── mapper/      UserMapper.java
     │   │   │   └── cli/         AdminPasswordResetRunner.java  ← FR-063
     │   │   ├── print/                            ← F9
-    │   │   │   ├── controller/  PrintController.java
+    │   │   │   ├── controller/  PrintController.java, PrinterController.java
     │   │   │   ├── service/     PrintQueueService.java, ThermalPrintService.java, DocumentPrintService.java
-    │   │   │   └── dto/         PrintJobDto.java
+    │   │   │   ├── repository/  PrinterRepository.java
+    │   │   │   ├── entity/      Printer.java  (type: THERMAL | A4, port série ou IP/port)
+    │   │   │   ├── dto/         PrintJobDto.java, PrinterDto.java, CreatePrinterDto.java
+    │   │   │   └── mapper/      PrinterMapper.java
     │   │   └── shared/
     │   │       ├── exception/        GlobalExceptionHandler.java, BusinessException.java
     │   │       ├── security/         SecurityConfig.java, SessionConfig.java
@@ -707,7 +710,8 @@ pluribourse-frontend/
     │   │   └── shared/
     │   │       ├── nav.component.ts
     │   │       ├── phase-banner.component.ts
-    │   │       └── confirm-dialog.component.ts
+    │   │       ├── confirm-dialog.component.ts
+    │   │       └── printer-selection.component.ts  ← FR-098 (sélection imprimante post-connexion)
     │   ├── services/
     │   │   ├── auth.service.ts
     │   │   ├── edition.service.ts
@@ -769,7 +773,7 @@ pluribourse-frontend/
 
 **Frontière d'Impression**
 
-- `PrintQueueService` possède deux instances `LinkedBlockingQueue` (thermique / document)
+- `PrintQueueService` gère N files `LinkedBlockingQueue` dynamiques (une par imprimante enregistrée — thermique ou A4) instanciées au démarrage depuis la liste des imprimantes configurées en base (ARCH-009)
 - `ThermalPrintService` et `DocumentPrintService` sont des consommateurs de file s'exécutant sur des threads dédiés
 - Pas d'appel d'impression direct depuis les contrôleurs — toujours via `PrintQueueService`
 
