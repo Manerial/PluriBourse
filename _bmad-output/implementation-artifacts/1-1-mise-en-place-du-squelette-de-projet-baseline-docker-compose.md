@@ -4,7 +4,7 @@
 baseline_commit: 979cf22f48e3676cf227ea4a67d7d24c4bbc7587
 ---
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -682,16 +682,29 @@ claude-sonnet-4-6
 - [x] [Review][Patch] Nginx : `location /actuator/` proxie tous les endpoints, pas seulement `/health` [`pluribourse-frontend/nginx.conf:16`]
 - [x] [Review][Patch] `server.servlet.session.timeout=-1` : valeur Duration invalide, redondante avec `spring.session.timeout=P1D` — à supprimer [`application.properties`]
 - [x] [Review][Patch] `docker-compose-db-only.yml` : credentials dev codés en dur (`MARIADB_PASSWORD`, `MARIADB_ROOT_PASSWORD`) [`.docker/docker-compose-db-only.yml:29-30`]
-- [ ] [Review][Patch] `.env` commis dans git — seul `.env.example` doit être versionné [`.docker/.env`]
+- [x] [Review][Dismiss] `.env` commis dans git — confirmé gitignored (`.gitignore:31`), uniquement `.env.example` versionné [`.docker/.env`] — dismissed, déjà protégé
 - [x] [Review][Patch] Service `backend` sans healthcheck Docker — `frontend depends_on: backend` est order-only, non `condition: service_healthy` [`.docker/docker-compose.yml:37`]
 - [x] [Review][Patch] `ConstraintViolationException` handler non testé — cas violations vides (`Optional.empty()` → `null` detail) et violations multiples non couverts [`GlobalExceptionHandlerTest.java`]
 - [x] [Review][Patch] Test RFC 7807 manque l'assertion sur `$.title` (AC3 exige explicitement ce champ) [`GlobalExceptionHandlerTest.java`]
 - [x] [Review][Patch] `JacksonConfig` : `WRITE_BIGDECIMAL_AS_PLAIN` manquant — les `BigDecimal` peuvent sérialiser en notation scientifique [`JacksonConfig.java`]
-- [ ] [Review][Patch] Enum `Role` (ADMIN, VOLUNTEER, SELLER) absent de la codebase — requis par les Dev Notes CLAUDE.md [`src/main/java/org/pluribourse/shared/`]
+- [x] [Review][Defer] Enum `Role` (ADMIN, VOLUNTEER, SELLER) absent de la codebase — différé Story 1.3 (Gestion comptes bénévoles) où l'entité `User` JPA sera créée [`src/main/java/org/pluribourse/shared/`] — deferred Story 1.3
 - [x] [Review][Patch] `logback-spring.xml` absent — règle no-PII non établie (Dev Notes : "poser la règle dès maintenant") [`src/main/resources/`]
-- [ ] [Review][Patch] Répertoires scaffold frontend non commis (aucun `.gitkeep`) — T3.5 incomplet : `core/services/`, `core/guards/`, `shared/components/`, `features/auth/` [`pluribourse-frontend/src/app/`]
+- [x] [Review][Defer] Répertoires scaffold frontend non commis (aucun `.gitkeep`) — T3.5 incomplet : `core/services/`, `core/guards/`, `shared/components/`, `features/auth/` — différé, ces répertoires seront créés naturellement lors des stories qui y déposent du code [`pluribourse-frontend/src/app/`] — deferred
 - [x] [Review][Defer] Hash BCrypt du mot de passe admin commis dans le changeset Liquibase — intentionnel, `force_password_change=true` atténue le risque ; Story 1.2 implémentera le reset obligatoire [`001-core-schema.xml:34`] — deferred, pré-existant
 - [x] [Review][Defer] Spring Session H2 : slice tests sans Liquibase échoueront silencieusement sur `SPRING_SESSION` — risque futur non déclenché actuellement [`002-spring-session.xml`] — deferred, pré-existant
 - [x] [Review][Defer] Colonne `role` en `VARCHAR(20)` sans contrainte `CHECK` — la couche JPA enforcer via `@Enumerated(STRING)` quand l'entité sera créée [`001-core-schema.xml:19`] — deferred, pré-existant
 - [x] [Review][Defer] Colonne `preferred_language` sans contrainte de valeurs — scope Story 1.6 [`001-core-schema.xml:23`] — deferred, pré-existant
 - [x] [Review][Defer] ngx-translate : pas de langue de fallback explicite — scope Story 1.6 [`app.config.ts:16`] — deferred, pré-existant
+
+### Re-run Review Findings (2026-06-16 — post-patches)
+
+- [x] [Re-run][Patch] `handleMethodArgumentNotValid` : cast `(ServletWebRequest)` non protégé → `ClassCastException` si invoqué hors contexte servlet — remplacé par guard `instanceof` avec fallback `"unknown"` [`GlobalExceptionHandler.java:47`]
+- [x] [Re-run][Patch] Dockerfile backend : `eclipse-temurin:21-jre-alpine` sans `wget` — le healthcheck Docker Compose échouait systématiquement (exit 127) → frontend bloqué sur `depends_on: condition: service_healthy` — `apk add --no-cache wget` ajouté [`pluribourse-backend/Dockerfile`]
+- [x] [Re-run][Patch] Test `handleMethodArgumentNotValid` absent — handler RFC 7807 le plus courant (400) sans couverture AC3 — stub `@PostMapping /test/validation-error` + test ajoutés [`GlobalExceptionHandlerTest.java`]
+- [x] [Re-run][Patch] Assertions `$.title` manquantes sur les 2 tests `ConstraintViolationException` — RFC 7807 exige `title`, couvert uniquement pour `BusinessException` — assertions ajoutées [`GlobalExceptionHandlerTest.java`]
+- [x] [Re-run][Defer] `index.html` : `<title>PluribourseFrontend</title>` hardcodé — même bucket que `app.html`, différé Story 1.7 [`pluribourse-frontend/src/index.html:4`]
+- [x] [Re-run][Defer] `handleMethodArgumentNotValid` : `getGlobalErrors()` non inclus — ne concerne que les `@ScriptAssert` / validateurs de classe, aucun actuellement — différé lors de l'introduction de validateurs objet
+- [x] [Re-run][Defer] `getConstraintViolations()` : guard null manquant — Jakarta spec garantit non-null ; défense superflue à ce stade — différé
+- [x] [Re-run][Defer] `proxy.conf.json` expose tous les `/actuator/*` vs nginx exact-match — inconsistance dev-only, sans impact prod — différé, à documenter
+- [x] [Re-run][Defer] `app.spec.ts` : assertion sur le titre scaffold cassera lors du remplacement de `app.html` — différé Story 1.7 [`pluribourse-frontend/src/app/app.spec.ts`]
+- [x] [Re-run][Defer] `logback-spring.xml` : politique PII en commentaire uniquement, pas de `TurboFilter` structurel — enforcement structurel hors scope story skeleton [`src/main/resources/logback-spring.xml`]
