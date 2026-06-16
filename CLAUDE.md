@@ -22,6 +22,7 @@ Stack: Spring Boot (backend) + Angular (frontend), deployed via Docker Compose w
 ### Frontend (Angular)
 - Standalone components (latest Angular version)
 - State management: Signals — no NgRx
+- No inline template. Always create a new html file
 
 ## JavaDoc
 - Required on complex methods: non-trivial logic, non-obvious parameters or return values

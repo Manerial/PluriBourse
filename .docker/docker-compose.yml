@@ -27,7 +27,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       DB_NAME: ${DB_NAME:-pluribourse}
-      DB_PASSWORD: ${DB_PASSWORD:-change_me}
+      DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8080:8080"
     healthcheck:

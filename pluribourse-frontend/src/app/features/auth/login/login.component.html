@@ -1,0 +1,23 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <h1>{{ 'auth.login.title' | translate }}</h1>
+  <div>
+    <label>{{ 'auth.login.username' | translate }}</label>
+    <input
+      formControlName="username"
+      type="text"
+      autocomplete="username" />
+  </div>
+  <div>
+    <label>{{ 'auth.login.password' | translate }}</label>
+    <input
+      formControlName="password"
+      type="password"
+      autocomplete="current-password" />
+  </div>
+  @if (error()) {
+    <p role="alert">{{ 'auth.login.error.' + error() | translate }}</p>
+  }
+  <button type="submit" [disabled]="form.invalid || loading()">
+    {{ 'auth.login.submit' | translate }}
+  </button>
+</form>

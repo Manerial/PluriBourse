@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-06-16"  # Story 1.1 → done (re-run review patches applied)
+last_updated: "2026-06-16"  # Story 1.2 → done
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -45,7 +45,7 @@ development_status:
   # ─── Epic 1 : Fondation applicative, Authentification & i18n ───────────────
   epic-1: in-progress
   1-1-mise-en-place-du-squelette-de-projet-baseline-docker-compose: done
-  1-2-authentification-spring-security-controle-dacces-base-sur-les-roles: backlog
+  1-2-authentification-spring-security-controle-dacces-base-sur-les-roles: done
   1-3-gestion-des-comptes-benevoles: backlog
   1-4-recuperation-du-mot-de-passe-admin-via-cli: backlog
   1-5-configuration-de-linstance-page-de-parametres-admin: backlog

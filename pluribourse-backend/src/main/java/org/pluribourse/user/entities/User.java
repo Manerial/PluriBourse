@@ -1,0 +1,41 @@
+package org.pluribourse.user.entities;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.pluribourse.user.enums.*;
+
+import java.io.*;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 50)
+    private String username;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "preferred_language", nullable = false, length = 2)
+    private Language preferredLanguage;
+
+    @Column(name = "seller_profile_id")
+    private Long sellerProfileId;
+
+    @Column(name = "force_password_change", nullable = false)
+    private boolean forcePasswordChange;
+}

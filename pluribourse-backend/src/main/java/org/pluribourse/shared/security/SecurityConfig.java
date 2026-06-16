@@ -1,28 +1,87 @@
 package org.pluribourse.shared.security;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.web.SecurityFilterChain;
+import com.fasterxml.jackson.databind.*;
+import org.pluribourse.shared.security.handlers.*;
+import org.pluribourse.user.services.*;
+import org.springframework.context.annotation.*;
+import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.dao.*;
+import org.springframework.security.authorization.*;
+import org.springframework.security.config.annotation.web.builders.*;
+import org.springframework.security.config.annotation.web.configuration.*;
+import org.springframework.security.crypto.bcrypt.*;
+import org.springframework.security.crypto.password.*;
+import org.springframework.security.web.*;
+import org.springframework.security.web.authentication.*;
+import org.springframework.security.web.csrf.*;
 
-/**
- * Minimal security config for Story 1.1: allows /actuator/health, blocks everything else.
- * Form login, Spring Session JDBC, roles and CSRF are wired in Story 1.2.
- */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public ForcePasswordChangeFilter forcePasswordChangeFilter(ObjectMapper objectMapper) {
+        return new ForcePasswordChangeFilter(objectMapper);
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           PluriBourseUserDetailsService uds,
+                                           PasswordEncoder pe,
+                                           LoginSuccessHandler loginSuccessHandler,
+                                           LoginFailureHandler loginFailureHandler,
+                                           LogoutSuccessHandler logoutSuccessHandler,
+                                           ForcePasswordChangeFilter forcePasswordChangeFilter) {
+
+        // Build the provider inline — not a @Bean — so Spring Security's
+        // global AuthenticationManager does not register a duplicate via
+        // AuthenticationProviderBeanManagerConfigurer.
+        var authProvider = new DaoAuthenticationProvider(uds);
+        authProvider.setPasswordEncoder(pe);
+
         http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health").permitAll()
-                .anyRequest().authenticated()
-            )
-            // CSRF disabled until Story 1.2 configures form login + session management
-            .csrf(csrf -> csrf.disable());
+                .authenticationProvider(authProvider)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .ignoringRequestMatchers("/login")
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new ProblemDetailAuthenticationEntryPoint())
+                        .accessDeniedHandler(new ProblemDetailAccessDeniedHandler())
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health", "/login").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Require authenticated non-anonymous user AND block SELLER role
+                        .anyRequest().access((authentication, context) -> {
+                            var a = authentication.get();
+                            boolean isAuthenticated = a.isAuthenticated()
+                                    && !(a instanceof AnonymousAuthenticationToken);
+                            boolean notSeller = a.getAuthorities().stream()
+                                    .noneMatch(ga -> ga.getAuthority().equals("ROLE_SELLER"));
+                            return new AuthorizationDecision(isAuthenticated && notSeller);
+                        })
+                )
+                .formLogin(form -> form
+                        .loginProcessingUrl("/login")
+                        .successHandler(loginSuccessHandler)
+                        .failureHandler(loginFailureHandler)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessHandler(logoutSuccessHandler)
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID", "SESSION")
+                )
+                .addFilterAfter(forcePasswordChangeFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

@@ -30,11 +30,17 @@
             </column>
         </createTable>
 
-        <!-- Default admin account — force_password_change=true enforces reset on first login (Story 1.2) -->
+    </changeSet>
+
+    <!-- Separated from 001-core-schema to make the seed idempotent via precondition -->
+    <changeSet id="001-admin-seed" author="pluribourse">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM users WHERE username = 'Admin'</sqlCheck>
+        </preConditions>
+        <!-- BCrypt(10) hash of "Admin" — force_password_change=true enforces reset on first login (Story 1.2) -->
         <insert tableName="users">
             <column name="username" value="Admin"/>
-            <!-- BCrypt hash of "Admin" (cost 10) — generated via: new BCryptPasswordEncoder().encode("Admin") -->
-            <column name="password" value="$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBpwTTyVDyP7fi"/>
+            <column name="password" value="$2a$10$p/ss7jITZbA3ynvXulje2.NFSNXpmJ/HVI7QO8DhUvdokiO0QZXYW"/>
             <column name="role" value="ADMIN"/>
             <column name="preferred_language" value="FR"/>
             <column name="force_password_change" valueBoolean="true"/>

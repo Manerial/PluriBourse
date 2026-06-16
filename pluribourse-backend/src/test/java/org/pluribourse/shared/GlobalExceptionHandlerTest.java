@@ -79,7 +79,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("https://pluribourse/errors/validation-failed"))
-                .andExpect(jsonPath("$.title").value("Unprocessable Entity"))
+                .andExpect(jsonPath("$.title").value("Unprocessable Content"))
                 .andExpect(jsonPath("$.status").value(422))
                 .andExpect(jsonPath("$.detail").value("Validation failed"))
                 .andExpect(jsonPath("$.instance").value("/test/constraint-violation"));
@@ -91,7 +91,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("https://pluribourse/errors/validation-failed"))
-                .andExpect(jsonPath("$.title").value("Unprocessable Entity"))
+                .andExpect(jsonPath("$.title").value("Unprocessable Content"))
                 .andExpect(jsonPath("$.detail").exists());
     }
 

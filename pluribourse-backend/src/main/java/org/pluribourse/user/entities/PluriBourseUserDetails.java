@@ -1,0 +1,45 @@
+package org.pluribourse.user.entities;
+
+import org.springframework.security.core.*;
+import org.springframework.security.core.authority.*;
+import org.springframework.security.core.userdetails.*;
+
+import java.util.*;
+
+public class PluriBourseUserDetails implements UserDetails {
+
+    private static final long serialVersionUID = 1L;
+
+    private final User user;
+
+    public PluriBourseUserDetails(User user) {
+        this.user = user;
+    }
+
+    public Long getUserId() {
+        return user.getId();
+    }
+
+    public String getRole() {
+        return user.getRole().name();
+    }
+
+    public boolean isForcePasswordChange() {
+        return user.isForcePasswordChange();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+    }
+
+    @Override
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUsername();
+    }
+}

@@ -1,0 +1,57 @@
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
+import { AuthService } from '../../../services/auth.service';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [ReactiveFormsModule, TranslatePipe],
+  templateUrl: './login.component.html'
+})
+export class LoginComponent {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+
+  readonly form = this.fb.nonNullable.group({
+    username: ['', Validators.required],
+    password: ['', Validators.required]
+  });
+
+  readonly loading = signal(false);
+  readonly error = signal<'invalid-credentials' | 'unauthorized-role' | null>(null);
+
+  async onSubmit(): Promise<void> {
+    if (this.form.invalid) {
+      return;
+    }
+    this.error.set(null);
+    this.loading.set(true);
+    const { username, password } = this.form.getRawValue();
+    try {
+      const user = await this.auth.login(username, password);
+      if (user.forcePasswordChange) {
+        await this.router.navigate(['/change-password']);
+        return;
+      }
+      switch (user.role) {
+        case 'ADMIN':
+          await this.router.navigate(['/admin']);
+          break;
+        case 'VOLUNTEER':
+          await this.router.navigate(['/volunteer']);
+          break;
+        default:
+          // Unexpected role (e.g. SELLER blocked server-side) — show error and clear session
+          this.auth.currentUser.set(null);
+          this.error.set('unauthorized-role');
+      }
+    } catch {
+      this.error.set('invalid-credentials');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+}

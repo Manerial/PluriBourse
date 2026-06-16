@@ -1,5 +1,25 @@
 {
   "app": {
     "title": "PluriBourse"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "username": "Nom d'utilisateur",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "error": {
+        "invalid-credentials": "Identifiant ou mot de passe invalide.",
+        "unauthorized-role": "Votre compte n'est pas autorisé à accéder à cette application."
+      }
+    },
+    "changePassword": {
+      "title": "Changer le mot de passe",
+      "description": "Vous devez changer votre mot de passe avant de continuer.",
+      "newPassword": "Nouveau mot de passe",
+      "minLength": "Le mot de passe doit comporter au moins 8 caractères.",
+      "submit": "Changer le mot de passe",
+      "error": "Impossible de changer le mot de passe. Veuillez réessayer."
+    }
   }
 }

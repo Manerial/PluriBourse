@@ -9,6 +9,24 @@
 - **Colonne `preferred_language` sans contrainte de valeurs** — `001-core-schema.xml:23` — Scope Story 1.6 (i18n complet). À adresser lors de la mise en place de la préférence de langue utilisateur.
 - **ngx-translate : pas de langue de fallback explicite** — `app.config.ts:16` — Scope Story 1.6. Si un utilisateur switche vers une langue non supportée, ngx-translate retourne la clé brute. À corriger avec `defaultLang: 'fr'` lors de l'implémentation de la sélection de langue.
 
+## Deferred from: code review of 1-2-authentification-spring-security-controle-dacces-base-sur-les-roles (2026-06-16)
+
+- **`authGuard` ne vérifie pas `forcePasswordChange`** — fonctionne via fallback intercepteur (403 → interceptor → `/change-password`) mais cause un aller-retour serveur évitable. La spec montre le check dans le guard. À ajouter lors d'un refacto UX.
+- **`adminGuard` redirige VOLUNTEER vers `/login`** — un VOLUNTEER authentifié accédant à `/admin` est redirigé vers `/login` au lieu de `/volunteer`. Mauvaise UX, pas de boucle infinie. À corriger Story 1.7 ou plus.
+- **Pas de rate limiting sur `/login`** — protection brute-force à prévoir (Spring Security `LockingUserDetailsService` ou Bucket4j). Epic de hardening sécurité.
+- **`loadUserByUsername` sans `@Transactional(readOnly = true)`** — optimisation mineure ; chaque auth ouvre une transaction RW. `PluriBourseUserDetailsService.java`.
+- **`PluriBourseUserDetails` manque de `isEnabled`/`isAccountNonLocked`** — pas de colonne `enabled` sur `User` ; nécessaire pour verrouillage de compte Story 1.3+.
+- **Colonne `preferred_language` sans contrainte CHECK DB** — valeurs invalides → `IllegalArgumentException` JPA. À ajouter en hardening schéma.
+- **Changement de mot de passe concurrent depuis deux onglets** — second onglet garde contexte de sécurité périmé. Secondaire au Patch stale-forcePasswordChange.
+
+## Deferred from: 2nd code review pass of 1-2-authentification-spring-security-controle-dacces-base-sur-les-roles (2026-06-16)
+
+- **SELLER reçoit 200 au login puis 403 partout** — un compte SELLER peut s'authentifier (`/login` est `permitAll()`), obtient une session et un body JSON 200, puis est bloqué 403 sur tout autre endpoint. UX confuse mais comportement intentionnel : les SELLER ne sont pas des utilisateurs de l'interface web. À clarifier si des comptes SELLER avec accès web devaient exister.
+- **`getRequestURI()` incluant le context-path dans `ForcePasswordChangeFilter`** — si `server.servlet.context-path` est configuré, les EXEMPT_PATHS ne matcheront plus. Latent ; Spring Boot déploie sans context-path par défaut. Passer à `getServletPath()` si un context-path est introduit.
+- **`UserService.changePassword` lève `IllegalArgumentException` → 500** — si l'utilisateur est supprimé pendant sa session active, le changement de mot de passe retourne 500 au lieu de 404. Edge case extrême. À mapper en `EntityNotFoundException` dans un epic de hardening.
+- **Changement de mot de passe n'invalide pas les autres sessions actives** — les sessions parallèles (autre navigateur/onglet) restent valides jusqu'à leur expiration (P1D). À adresser avec Spring Session registry si le besoin d'invalidation immédiate émerge.
+- **Test AC3 ne prouve pas la persistence cross-restart** — `SecurityConfigIT.ac3_real_login_creates_spring_session_and_subsequent_request_succeeds` réutilise une `MockHttpSession` en mémoire, ne valide pas que la session est réellement lue depuis JDBC après redémarrage. La garantie de persistance repose sur le changeset 002 Liquibase et la config Spring Session.
+
 ## Deferred from: re-run code review of 1-1 (2026-06-16)
 
 - **`index.html` `<title>` hardcodé** — `pluribourse-frontend/src/index.html:4` — `<title>PluribourseFrontend</title>` n'est pas i18n-compliant. Différé Story 1.7 (même scope que `app.html`). À remplacer par un appel dynamique via Angular `Title` service + clé ngx-translate.
