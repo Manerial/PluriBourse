@@ -44,7 +44,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .orElse("Validation failed");
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
         pd.setType(URI.create("https://pluribourse/errors/validation-failed"));
-        pd.setInstance(URI.create(((ServletWebRequest) request).getRequest().getRequestURI()));
+        String uri = request instanceof ServletWebRequest swr
+                ? swr.getRequest().getRequestURI()
+                : "unknown";
+        pd.setInstance(URI.create(uri));
         return ResponseEntity.badRequest().body(pd);
     }
 

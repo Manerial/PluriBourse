@@ -9,12 +9,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -24,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class GlobalExceptionHandlerTest {
 
     private MockMvc mockMvc;
+
+    record SampleRequest(@NotBlank String name) {}
 
     @RestController
     static class StubController {
@@ -41,6 +48,9 @@ class GlobalExceptionHandlerTest {
         void throwConstraintViolationNullMessage() {
             throw new ConstraintViolationException(null, Set.of());
         }
+
+        @PostMapping("/test/validation-error")
+        void triggerValidation(@RequestBody @Valid SampleRequest body) {}
     }
 
     @BeforeEach
@@ -69,6 +79,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("https://pluribourse/errors/validation-failed"))
+                .andExpect(jsonPath("$.title").value("Unprocessable Entity"))
                 .andExpect(jsonPath("$.status").value(422))
                 .andExpect(jsonPath("$.detail").value("Validation failed"))
                 .andExpect(jsonPath("$.instance").value("/test/constraint-violation"));
@@ -80,6 +91,21 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("https://pluribourse/errors/validation-failed"))
+                .andExpect(jsonPath("$.title").value("Unprocessable Entity"))
                 .andExpect(jsonPath("$.detail").exists());
+    }
+
+    @Test
+    void methodArgumentNotValidReturnsBadRequestWithProblemDetail() throws Exception {
+        mockMvc.perform(post("/test/validation-error")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("https://pluribourse/errors/validation-failed"))
+                .andExpect(jsonPath("$.title").value("Bad Request"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.instance").value("/test/validation-error"));
     }
 }
