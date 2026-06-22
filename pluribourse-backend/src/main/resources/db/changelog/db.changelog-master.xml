@@ -7,5 +7,6 @@
 
     <include file="db/changelog/001-core-schema.xml"/>
     <include file="db/changelog/002-spring-session.xml"/>
+    <include file="db/changelog/005-user-volunteer-fields.xml"/>
 
 </databaseChangeLog>

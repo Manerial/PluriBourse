@@ -1,13 +1,17 @@
 package org.pluribourse.user.entities;
 
+import org.jspecify.annotations.*;
 import org.springframework.security.core.*;
 import org.springframework.security.core.authority.*;
 import org.springframework.security.core.userdetails.*;
 
+import java.io.*;
 import java.util.*;
 
+@NullMarked
 public class PluriBourseUserDetails implements UserDetails {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final User user;
@@ -41,5 +45,11 @@ public class PluriBourseUserDetails implements UserDetails {
     @Override
     public String getUsername() {
         return user.getUsername();
+    }
+
+    // null = old deserialized session with no enabled field → treat as enabled
+    @Override
+    public boolean isEnabled() {
+        return user.getEnabled() == null || user.getEnabled();
     }
 }

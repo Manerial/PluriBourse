@@ -2,6 +2,9 @@
   "app": {
     "title": "PluriBourse"
   },
+  "common": {
+    "loading": "Loading..."
+  },
   "auth": {
     "login": {
       "title": "Sign in",
@@ -10,7 +13,8 @@
       "submit": "Sign in",
       "error": {
         "invalid-credentials": "Invalid username or password.",
-        "unauthorized-role": "Your account is not authorized to access this application."
+        "unauthorized-role": "Your account is not authorized to access this application.",
+        "account-disabled": "This account has been disabled."
       }
     },
     "changePassword": {
@@ -20,6 +24,45 @@
       "minLength": "Password must be at least 8 characters.",
       "submit": "Change password",
       "error": "Unable to change password. Please try again."
+    }
+  },
+  "admin": {
+    "users": {
+      "title": "Volunteer Accounts",
+      "columns": {
+        "name": "Name",
+        "username": "Username",
+        "role": "Role",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "actions": {
+        "create": "Add volunteer",
+        "disable": "Disable",
+        "enable": "Enable",
+        "resetPassword": "Reset password",
+        "confirmReset": "Confirm"
+      },
+      "create": {
+        "title": "Create volunteer",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "username": "Username",
+        "password": "Temporary password",
+        "submit": "Create",
+        "cancel": "Cancel"
+      },
+      "error": {
+        "load": "Failed to load volunteers.",
+        "create": "Failed to create volunteer.",
+        "disable": "Failed to disable account.",
+        "enable": "Failed to enable account.",
+        "resetPassword": "Failed to reset password."
+      }
     }
   }
 }

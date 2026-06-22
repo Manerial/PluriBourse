@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.*;
+import org.jspecify.annotations.*;
 import org.pluribourse.user.entities.*;
 import org.springframework.http.*;
 import org.springframework.security.core.*;
@@ -14,6 +15,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+@NullMarked
 @RequiredArgsConstructor
 public class ForcePasswordChangeFilter extends OncePerRequestFilter {
 

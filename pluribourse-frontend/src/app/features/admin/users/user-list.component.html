@@ -1,0 +1,64 @@
+<h1>{{ 'admin.users.title' | translate }}</h1>
+
+@if (isLoading()) {
+  <p>{{ 'common.loading' | translate }}</p>
+}
+
+@if (error()) {
+  <p role="alert">{{ error()! | translate }}</p>
+}
+
+@if (actionError()) {
+  <p role="alert">{{ actionError()! | translate }}</p>
+}
+
+@if (!isLoading() && !error()) {
+  <table>
+    <thead>
+      <tr>
+        <th>{{ 'admin.users.columns.name' | translate }}</th>
+        <th>{{ 'admin.users.columns.username' | translate }}</th>
+        <th>{{ 'admin.users.columns.role' | translate }}</th>
+        <th>{{ 'admin.users.columns.status' | translate }}</th>
+        <th>{{ 'admin.users.columns.actions' | translate }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (user of users(); track user.id) {
+        <tr>
+          <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.role }}</td>
+          <td>
+            {{ (user.enabled ? 'admin.users.status.active' : 'admin.users.status.inactive') | translate }}
+          </td>
+          <td>
+            <button type="button" (click)="toggleEnabled(user)">
+              {{ (user.enabled ? 'admin.users.actions.disable' : 'admin.users.actions.enable') | translate }}
+            </button>
+            @if (resetPasswordFor() !== user.id) {
+              <button type="button" (click)="showResetPassword(user.id)">
+                {{ 'admin.users.actions.resetPassword' | translate }}
+              </button>
+            } @else {
+              <form [formGroup]="resetPasswordForm" (ngSubmit)="submitResetPassword(user.id)">
+                <input
+                  formControlName="newPassword"
+                  type="password"
+                  [attr.aria-label]="'admin.users.create.password' | translate" />
+                <button type="submit" [disabled]="resetPasswordForm.invalid || submitting()">
+                  {{ 'admin.users.actions.confirmReset' | translate }}
+                </button>
+                <button type="button" (click)="cancelResetPassword()">
+                  {{ 'admin.users.create.cancel' | translate }}
+                </button>
+              </form>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <a routerLink="create">{{ 'admin.users.actions.create' | translate }}</a>
+}

@@ -1,11 +1,13 @@
 package org.pluribourse.user.services;
 
 import lombok.*;
+import org.jspecify.annotations.*;
 import org.pluribourse.user.entities.*;
 import org.pluribourse.user.repositories.*;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.*;
 
+@NullMarked
 @Service
 @RequiredArgsConstructor
 public class PluriBourseUserDetailsService implements UserDetailsService {

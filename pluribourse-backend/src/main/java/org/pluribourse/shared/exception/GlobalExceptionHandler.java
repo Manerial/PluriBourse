@@ -1,25 +1,21 @@
 package org.pluribourse.shared.exception;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.ServletWebRequest;
-import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import jakarta.servlet.http.*;
+import jakarta.validation.*;
+import org.jspecify.annotations.*;
+import org.springframework.http.*;
+import org.springframework.web.bind.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.*;
+import org.springframework.web.servlet.mvc.method.annotation.*;
 
-import java.net.URI;
+import java.net.*;
 
 /**
  * Global exception handler returning RFC 7807 Problem Details for all errors.
  * Extends {@link ResponseEntityExceptionHandler} to inherit Spring MVC default handlers.
  */
+@NullMarked
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -58,9 +54,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .map(v -> v.getPropertyPath() + ": " + v.getMessage())
                 .reduce((a, b) -> a + "; " + b)
                 .orElse(ex.getMessage() != null ? ex.getMessage() : "Constraint violation");
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, detail);
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, detail);
         pd.setType(URI.create("https://pluribourse/errors/validation-failed"));
         pd.setInstance(URI.create(request.getRequestURI()));
-        return ResponseEntity.unprocessableEntity().body(pd);
+        return ResponseEntity.unprocessableContent().body(pd);
     }
 }

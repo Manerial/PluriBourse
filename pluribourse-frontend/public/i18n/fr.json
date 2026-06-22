@@ -2,6 +2,9 @@
   "app": {
     "title": "PluriBourse"
   },
+  "common": {
+    "loading": "Chargement..."
+  },
   "auth": {
     "login": {
       "title": "Connexion",
@@ -10,7 +13,8 @@
       "submit": "Se connecter",
       "error": {
         "invalid-credentials": "Identifiant ou mot de passe invalide.",
-        "unauthorized-role": "Votre compte n'est pas autorisé à accéder à cette application."
+        "unauthorized-role": "Votre compte n'est pas autorisé à accéder à cette application.",
+        "account-disabled": "Ce compte a été désactivé."
       }
     },
     "changePassword": {
@@ -20,6 +24,45 @@
       "minLength": "Le mot de passe doit comporter au moins 8 caractères.",
       "submit": "Changer le mot de passe",
       "error": "Impossible de changer le mot de passe. Veuillez réessayer."
+    }
+  },
+  "admin": {
+    "users": {
+      "title": "Comptes bénévoles",
+      "columns": {
+        "name": "Nom",
+        "username": "Identifiant",
+        "role": "Rôle",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif"
+      },
+      "actions": {
+        "create": "Ajouter un bénévole",
+        "disable": "Désactiver",
+        "enable": "Activer",
+        "resetPassword": "Réinitialiser le mot de passe",
+        "confirmReset": "Confirmer"
+      },
+      "create": {
+        "title": "Créer un bénévole",
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "username": "Identifiant",
+        "password": "Mot de passe temporaire",
+        "submit": "Créer",
+        "cancel": "Annuler"
+      },
+      "error": {
+        "load": "Impossible de charger les bénévoles.",
+        "create": "Impossible de créer le bénévole.",
+        "disable": "Impossible de désactiver le compte.",
+        "enable": "Impossible d'activer le compte.",
+        "resetPassword": "Impossible de réinitialiser le mot de passe."
+      }
     }
   }
 }

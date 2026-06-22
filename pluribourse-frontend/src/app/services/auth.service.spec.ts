@@ -41,7 +41,7 @@ describe('AuthService', () => {
     it('propagates error and leaves currentUser null on failure', async () => {
       const promise = service.login('Admin', 'wrong');
       httpMock.expectOne('/login').flush(null, { status: 401, statusText: 'Unauthorized' });
-      await expect(promise).rejects.toThrow();
+      expect(promise).rejects.toThrow();
       expect(service.currentUser()).toBeNull();
     });
   });

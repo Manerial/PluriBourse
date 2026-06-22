@@ -1,11 +1,13 @@
 package org.pluribourse.shared.security.handlers;
 
 import jakarta.servlet.http.*;
+import org.jspecify.annotations.*;
 import org.springframework.security.core.*;
 import org.springframework.security.web.*;
 
 import java.io.*;
 
+@NullMarked
 public class ProblemDetailAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override

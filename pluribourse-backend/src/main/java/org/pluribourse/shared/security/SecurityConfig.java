@@ -7,6 +7,7 @@ import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.*;
 import org.springframework.security.authorization.*;
+import org.springframework.security.config.annotation.method.configuration.*;
 import org.springframework.security.config.annotation.web.builders.*;
 import org.springframework.security.config.annotation.web.configuration.*;
 import org.springframework.security.crypto.bcrypt.*;
@@ -17,6 +18,7 @@ import org.springframework.security.web.csrf.*;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean

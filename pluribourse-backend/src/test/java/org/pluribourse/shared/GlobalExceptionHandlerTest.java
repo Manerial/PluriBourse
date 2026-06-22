@@ -1,25 +1,18 @@
 package org.pluribourse.shared;
 
-import jakarta.validation.ConstraintViolationException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.pluribourse.shared.exception.BusinessException;
-import org.pluribourse.shared.exception.GlobalExceptionHandler;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.*;
+import jakarta.validation.constraints.*;
+import org.junit.jupiter.api.*;
+import org.pluribourse.shared.exception.*;
+import org.springframework.http.*;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.test.web.servlet.*;
+import org.springframework.test.web.servlet.setup.*;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Set;
+import java.util.*;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -30,7 +23,8 @@ class GlobalExceptionHandlerTest {
 
     private MockMvc mockMvc;
 
-    record SampleRequest(@NotBlank String name) {}
+    record SampleRequest(@NotBlank String name) {
+    }
 
     @RestController
     static class StubController {
@@ -50,7 +44,8 @@ class GlobalExceptionHandlerTest {
         }
 
         @PostMapping("/test/validation-error")
-        void triggerValidation(@RequestBody @Valid SampleRequest body) {}
+        void triggerValidation(@RequestBody @Valid SampleRequest body) {
+        }
     }
 
     @BeforeEach
@@ -76,7 +71,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void constraintViolationReturnsUnprocessableEntityWithFallbackMessage() throws Exception {
         mockMvc.perform(get("/test/constraint-violation"))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("https://pluribourse/errors/validation-failed"))
                 .andExpect(jsonPath("$.title").value("Unprocessable Content"))
@@ -88,7 +83,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void constraintViolationWithNullMessageReturnsSafeDetail() throws Exception {
         mockMvc.perform(get("/test/constraint-violation-null"))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("https://pluribourse/errors/validation-failed"))
                 .andExpect(jsonPath("$.title").value("Unprocessable Content"))

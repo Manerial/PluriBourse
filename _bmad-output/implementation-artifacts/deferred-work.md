@@ -34,3 +34,12 @@
 - **`proxy.conf.json` expose tous `/actuator/*`** — `pluribourse-frontend/proxy.conf.json` — Le proxy de dev (`ng serve`) proxie tous les sous-chemins actuator, contrairement à nginx (exact-match `/actuator/health`). Inconsistance dev-only. À tightener à `/actuator/health` pour aligner prod/dev.
 - **`app.spec.ts` test scaffold cassera en Story 1.7** — `pluribourse-frontend/src/app/app.spec.ts` — Assertion `'Hello, pluribourse-frontend'` couplée au template scaffold. À supprimer ou remplacer (ex : `<router-outlet>` présent) lors du remplacement de `app.html`.
 - **`logback-spring.xml` : enforcement PII structurel absent** — `src/main/resources/logback-spring.xml` — La politique no-PII est documentée en commentaire. Aucun `TurboFilter` ou masquage pattern n'est en place. Acceptable pour le skeleton ; à adresser si le besoin de garantie formelle émerge.
+
+## Deferred from: code review of 1-3-gestion-des-comptes-benevoles (2026-06-22)
+
+- **Route Angular `'users/create'` plate dans `adminRoutes`** — `pluribourse-frontend/src/app/features/admin/admin.routes.ts` — La route `{ path: 'users/create', ... }` est un sibling plat au lieu d'un enfant de `users`. Fonctionnel, mais non-idiomatique Angular et bloque le nesting futur (ex: `users/:id`). À restructurer en `{ path: 'users', children: [...] }` lors d'un refacto de routing.
+
+## Deferred from: code review of 1-3-gestion-des-comptes-benevoles 2ème passe (2026-06-22)
+
+- **Session active d'un bénévole désactivé reste valide jusqu'à expiration** — `UserService.java:disableVolunteer()` — `setEnabled(false)` en DB ne révoque pas la session Spring Session JDBC en cours. Le bénévole désactivé peut continuer à faire des requêtes jusqu'à l'expiration de sa session (défaut : 1 jour). Pré-existant, identique au defer Story 1.2 "Changement de mot de passe n'invalide pas les autres sessions actives". À adresser avec Spring Session registry si invalidation immédiate requise.
+- **URL d'erreur `account-disabled` dupliquée en magic string Java + TypeScript** — `LoginFailureHandler.java` et `login.component.ts` — `"https://pluribourse/errors/account-disabled"` hardcodé dans les deux couches sans constante partagée. Une divergence silencieuse casse la détection côté frontend. Cross-langage, pas de solution compile-time. Risque faible à court terme.

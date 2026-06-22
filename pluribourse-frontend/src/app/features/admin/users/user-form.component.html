@@ -1,0 +1,30 @@
+<h1>{{ 'admin.users.create.title' | translate }}</h1>
+
+@if (error()) {
+  <p role="alert">{{ error()! | translate }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div>
+    <label for="firstName">{{ 'admin.users.create.firstName' | translate }}</label>
+    <input id="firstName" formControlName="firstName" type="text" autocomplete="given-name" />
+  </div>
+  <div>
+    <label for="lastName">{{ 'admin.users.create.lastName' | translate }}</label>
+    <input id="lastName" formControlName="lastName" type="text" autocomplete="family-name" />
+  </div>
+  <div>
+    <label for="username">{{ 'admin.users.create.username' | translate }}</label>
+    <input id="username" formControlName="username" type="text" autocomplete="username" />
+  </div>
+  <div>
+    <label for="password">{{ 'admin.users.create.password' | translate }}</label>
+    <input id="password" formControlName="password" type="password" autocomplete="new-password" />
+  </div>
+  <button type="submit" [disabled]="form.invalid || loading()">
+    {{ 'admin.users.create.submit' | translate }}
+  </button>
+  <button type="button" (click)="cancel()">
+    {{ 'admin.users.create.cancel' | translate }}
+  </button>
+</form>

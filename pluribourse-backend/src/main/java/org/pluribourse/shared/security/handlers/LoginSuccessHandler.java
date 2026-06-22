@@ -2,6 +2,7 @@ package org.pluribourse.shared.security.handlers;
 
 import com.fasterxml.jackson.databind.*;
 import jakarta.servlet.http.*;
+import org.jspecify.annotations.*;
 import org.pluribourse.user.dtos.*;
 import org.pluribourse.user.entities.*;
 import org.springframework.security.core.*;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.*;
 
 import java.io.*;
 
+@NullMarked
 @Component
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
@@ -20,9 +22,14 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                        Authentication authentication) throws IOException {
-        PluriBourseUserDetails userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
+    public void onAuthenticationSuccess(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication) throws IOException {
+        if (!(authentication.getPrincipal() instanceof PluriBourseUserDetails userDetails)) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
         var dto = new UserSessionDto(
                 userDetails.getUsername(),
                 userDetails.getRole(),

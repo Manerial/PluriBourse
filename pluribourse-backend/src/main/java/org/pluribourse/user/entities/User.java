@@ -13,6 +13,7 @@ import java.io.*;
 @NoArgsConstructor
 public class User implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -38,4 +39,15 @@ public class User implements Serializable {
 
     @Column(name = "force_password_change", nullable = false)
     private boolean forcePasswordChange;
+
+    @Column(name = "first_name", nullable = false, length = 50)
+    private String firstName = "";
+
+    @Column(name = "last_name", nullable = false, length = 50)
+    private String lastName = "";
+
+    // Nullable wrapper: primitive boolean defaults to false during Java deserialization
+    // of old Spring Session JDBC sessions, which would lock out existing users on upgrade.
+    @Column(nullable = false)
+    private Boolean enabled = true;
 }

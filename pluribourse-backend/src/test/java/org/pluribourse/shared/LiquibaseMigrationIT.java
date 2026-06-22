@@ -49,6 +49,7 @@ class LiquibaseMigrationIT {
                 String.class);
         assertThat(columns).containsExactlyInAnyOrder(
                 "ID", "USERNAME", "PASSWORD", "ROLE",
-                "PREFERRED_LANGUAGE", "SELLER_PROFILE_ID", "FORCE_PASSWORD_CHANGE");
+                "PREFERRED_LANGUAGE", "SELLER_PROFILE_ID", "FORCE_PASSWORD_CHANGE",
+                "FIRST_NAME", "LAST_NAME", "ENABLED");
     }
 }

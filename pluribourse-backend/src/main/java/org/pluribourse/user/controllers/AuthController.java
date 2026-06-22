@@ -6,6 +6,7 @@ import org.pluribourse.user.dtos.*;
 import org.pluribourse.user.entities.*;
 import org.pluribourse.user.services.*;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.*;
 import org.springframework.security.core.context.*;
@@ -19,6 +20,7 @@ public class AuthController {
     private final UserService userService;
 
     @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<UserSessionDto> me(Authentication authentication) {
         var userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
         var dto = new UserSessionDto(
@@ -30,6 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/change-password")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<Void> changePassword(
             @Valid @RequestBody ChangePasswordDto dto,
             Authentication authentication) {
