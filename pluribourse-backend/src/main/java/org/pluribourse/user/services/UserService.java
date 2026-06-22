@@ -1,6 +1,7 @@
 package org.pluribourse.user.services;
 
 import lombok.*;
+import org.jspecify.annotations.NonNull;
 import org.pluribourse.shared.exception.*;
 import org.pluribourse.user.dtos.*;
 import org.pluribourse.user.entities.*;
@@ -23,10 +24,14 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
+    private @NonNull User getUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "user-not-found", "User not found"));
+    }
+
     @Transactional
     public PluriBourseUserDetails changePassword(Long userId, String newRawPassword) {
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "user-not-found", "User not found"));
+        var user = getUser(userId);
         user.setPassword(passwordEncoder.encode(newRawPassword));
         user.setForcePasswordChange(false);
         userRepository.save(user);
@@ -62,8 +67,7 @@ public class UserService {
 
     @Transactional
     public void resetVolunteerPassword(Long id, String newPassword) {
-        var user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "user-not-found", "User not found"));
+        var user = getUser(id);
         if (user.getRole() != Role.VOLUNTEER) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-modify-admin", "Admin account cannot be modified");
         }
@@ -74,8 +78,7 @@ public class UserService {
 
     @Transactional
     public void disableVolunteer(Long id) {
-        var user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "user-not-found", "User not found"));
+        var user = getUser(id);
         if (user.getRole() != Role.VOLUNTEER) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-disable-admin", "Admin account cannot be disabled");
         }
@@ -85,8 +88,7 @@ public class UserService {
 
     @Transactional
     public void enableVolunteer(Long id) {
-        var user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "user-not-found", "User not found"));
+        var user = getUser(id);
         if (user.getRole() != Role.VOLUNTEER) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-enable-admin", "Admin account cannot be modified");
         }
