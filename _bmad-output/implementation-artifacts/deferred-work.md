@@ -41,5 +41,21 @@
 
 ## Deferred from: code review of 1-3-gestion-des-comptes-benevoles 2ème passe (2026-06-22)
 
+## Deferred from: code review of 1-5-configuration-de-linstance-page-de-parametres-admin (2026-06-23)
+
+- **Pas de cache sur `findConfig()`** — `InstanceConfigService.java` — Chaque appel à `getDefaultDocumentLanguage()` et `getDefaultCommissionRate()` déclenche une requête DB séparée. Les appels depuis Story 2.1 dans la même transaction ouvriront des transactions imbriquées sans partage du cache JPA first-level. À adresser avec `@Cacheable` si les performances s'avèrent insuffisantes.
+- **`Language.valueOf()` non-guardé dans `updateConfig()`** — `InstanceConfigService.java:28` — La protection repose uniquement sur `@Valid` au niveau contrôleur. Si le service est appelé directement (tâche planifiée, autre service), une valeur invalide lève une `IllegalArgumentException` → HTTP 500. À protéger avec `try/catch + ResponseStatusException` lors de l'introduction d'appels directs au service.
+- **`IllegalStateException` depuis `findConfig()` non mappée** — `InstanceConfigService.java:43` — Si la ligne singleton id=1 est absente (migration non exécutée ou supprimée manuellement), l'exception remonte comme HTTP 500 avec message interne. Comportement 500 acceptable pour une panne d'infrastructure ; à revoir si un health-check expose ce cas.
+- **Pas de bouton "Réessayer" après échec de chargement** — `admin-settings.component.html` — En cas d'erreur réseau transitoire au chargement, le formulaire est masqué sans possibilité de réessayer sans rechargement de page. Amélioration UX hors scope spec actuelle.
+- **Soumission silencieuse sur formulaire invalide** — `admin-settings.component.ts:45` — Le guard `if (this.form.invalid || this.isSaving()) return` ne déclenche pas `markAllAsTouched()` ni n'affiche de message. L'utilisateur ne voit aucun retour visuel. Amélioration UX hors scope spec actuelle.
+
+## Deferred from: code review of 1-5-configuration-de-linstance-page-de-parametres-admin 2ème passe (2026-06-23)
+
+- **`InstanceConfigMapper` NPE si `defaultDocumentLanguage` null** — `InstanceConfigMapper.java:10` — `config.getDefaultDocumentLanguage().name()` dans l'expression MapStruct explose si le champ est `null`. Protégé par la contrainte DB `NOT NULL`, mais sans garantie Java de nullsafety. À adresser si la couche de persistance est contournée (migration, import direct).
+- **Order(5) n'assert pas les champs non modifiés après PUT** — `InstanceConfigIT.java:Order(5)` — Le test ne vérifie que `defaultCommissionRate` après la mise à jour. Un bug de partial-write (autres champs remis à zéro) ne serait pas détecté. Les autres champs sont couverts par leurs propres tests dédiés.
+- **État intermédiaire `isSaving()` non testé dans le spec** — `admin-settings.component.spec.ts` — Les tests ne vérifient que la valeur finale de `isSaving()`. Si `isSaving.set(true)` était supprimé d'`onSubmit()`, les tests passeraient quand même.
+
+## Deferred from: code review of 1-3-gestion-des-comptes-benevoles (2026-06-22)
+
 - **Session active d'un bénévole désactivé reste valide jusqu'à expiration** — `UserService.java:disableVolunteer()` — `setEnabled(false)` en DB ne révoque pas la session Spring Session JDBC en cours. Le bénévole désactivé peut continuer à faire des requêtes jusqu'à l'expiration de sa session (défaut : 1 jour). Pré-existant, identique au defer Story 1.2 "Changement de mot de passe n'invalide pas les autres sessions actives". À adresser avec Spring Session registry si invalidation immédiate requise.
 - **URL d'erreur `account-disabled` dupliquée en magic string Java + TypeScript** — `LoginFailureHandler.java` et `login.component.ts` — `"https://pluribourse/errors/account-disabled"` hardcodé dans les deux couches sans constante partagée. Une divergence silencieuse casse la détection côté frontend. Cross-langage, pas de solution compile-time. Risque faible à court terme.

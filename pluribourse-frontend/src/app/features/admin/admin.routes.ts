@@ -8,5 +8,10 @@ export const adminRoutes: Routes = [
   {
     path: 'users/create',
     loadComponent: () => import('./users/user-form.component').then(m => m.UserFormComponent)
+  },
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('./settings/admin-settings.component').then(m => m.AdminSettingsComponent)
   }
 ];

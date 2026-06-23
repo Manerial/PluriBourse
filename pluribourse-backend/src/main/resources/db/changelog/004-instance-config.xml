@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-instance-config" author="pluribourse">
+        <createTable tableName="global_instance_config">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="association_name" type="VARCHAR(255)" defaultValue="">
+                <constraints nullable="false"/>
+            </column>
+            <!-- DECIMAL(5,2): supports 0.00–999.99 — commission rate in percent -->
+            <column name="default_commission_rate" type="DECIMAL(5,2)" defaultValueNumeric="20.00">
+                <constraints nullable="false"/>
+            </column>
+            <!-- VARCHAR(2) instead of ENUM for H2/MariaDB portability — same rationale as users.role -->
+            <column name="default_document_language" type="VARCHAR(2)" defaultValue="EN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <!-- Singleton: exactly one row, id=1 always -->
+        <insert tableName="global_instance_config">
+            <column name="id" valueNumeric="1"/>
+            <column name="association_name" value=""/>
+            <column name="default_commission_rate" valueNumeric="20.00"/>
+            <column name="default_document_language" value="EN"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

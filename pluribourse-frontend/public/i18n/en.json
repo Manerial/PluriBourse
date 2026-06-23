@@ -63,6 +63,22 @@
         "enable": "Failed to enable account.",
         "resetPassword": "Failed to reset password."
       }
+    },
+    "settings": {
+      "title": "Instance Settings",
+      "associationName": "Association name",
+      "defaultCommissionRate": "Default commission rate (%)",
+      "defaultDocumentLanguage": "Default document language",
+      "language": {
+        "EN": "English",
+        "FR": "French"
+      },
+      "save": "Save settings",
+      "success": "Settings saved.",
+      "error": {
+        "load": "Failed to load settings.",
+        "save": "Failed to save settings."
+      }
     }
   }
 }

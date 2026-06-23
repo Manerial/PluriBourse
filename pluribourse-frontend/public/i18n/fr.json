@@ -63,6 +63,22 @@
         "enable": "Impossible d'activer le compte.",
         "resetPassword": "Impossible de réinitialiser le mot de passe."
       }
+    },
+    "settings": {
+      "title": "Paramètres de l'instance",
+      "associationName": "Nom de l'association",
+      "defaultCommissionRate": "Taux de commission par défaut (%)",
+      "defaultDocumentLanguage": "Langue des documents par défaut",
+      "language": {
+        "EN": "Anglais",
+        "FR": "Français"
+      },
+      "save": "Enregistrer les paramètres",
+      "success": "Paramètres enregistrés.",
+      "error": {
+        "load": "Impossible de charger les paramètres.",
+        "save": "Impossible d'enregistrer les paramètres."
+      }
     }
   }
 }
