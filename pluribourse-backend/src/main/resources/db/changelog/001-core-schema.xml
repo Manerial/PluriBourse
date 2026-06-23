@@ -35,7 +35,7 @@
     <!-- Separated from 001-core-schema to make the seed idempotent via precondition -->
     <changeSet id="001-admin-seed" author="pluribourse">
         <preConditions onFail="MARK_RAN">
-            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM users WHERE username = 'Admin'</sqlCheck>
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM users WHERE role = 'ADMIN'</sqlCheck>
         </preConditions>
         <!-- BCrypt(10) hash of "Admin" — force_password_change=true enforces reset on first login (Story 1.2) -->
         <insert tableName="users">

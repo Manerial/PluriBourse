@@ -1,13 +1,27 @@
 package org.pluribourse;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.pluribourse.user.cli.*;
+import org.springframework.boot.*;
+import org.springframework.boot.autoconfigure.*;
+
+import java.util.*;
 
 @SpringBootApplication
 public class PluribourseApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(PluribourseApplication.class, args);
-	}
+    private static final Set<String> CLI_OPTIONS = Set.of(
+            "--" + AdminCliSupport.RESET_ADMIN_PASSWORD,
+            "--" + AdminCliSupport.CREATE_ADMIN
+    );
+
+    public static void main(String[] args) {
+        var app = new SpringApplication(PluribourseApplication.class);
+        boolean isCLI = Arrays.stream(args)
+                .anyMatch(CLI_OPTIONS::contains);
+        if (isCLI) {
+            app.setWebApplicationType(WebApplicationType.NONE);
+        }
+        app.run(args);
+    }
 
 }
