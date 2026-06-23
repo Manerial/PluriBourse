@@ -28,7 +28,7 @@ class PasswordChangeFlowIT extends IntegrationTest {
     @Test
     @Order(1)
     void login_with_wrong_credentials_returns_401() throws Exception {
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "Admin")
                         .param("password", "wrongpassword"))
@@ -38,7 +38,7 @@ class PasswordChangeFlowIT extends IntegrationTest {
     @Test
     @Order(2)
     void admin_logs_in_with_initial_credentials() throws Exception {
-        MvcResult result = mockMvc.perform(post("/login")
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "Admin")
                         .param("password", "Admin"))
@@ -121,7 +121,7 @@ class PasswordChangeFlowIT extends IntegrationTest {
     @Test
     @Order(10)
     void logout_returns_200_and_clears_session() throws Exception {
-        mockMvc.perform(post("/logout")
+        mockMvc.perform(post("/api/auth/logout")
                         .session(session)
                         .with(csrf()))
                 .andExpect(status().isOk());

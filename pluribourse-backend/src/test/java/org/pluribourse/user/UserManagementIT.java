@@ -34,7 +34,7 @@ class UserManagementIT extends IntegrationTest {
 
     @BeforeAll
     void setUpSessions() throws Exception {
-        MvcResult adminLogin = mockMvc.perform(post("/login")
+        MvcResult adminLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "test_admin")
                         .param("password", "Admin"))
@@ -42,7 +42,7 @@ class UserManagementIT extends IntegrationTest {
                 .andReturn();
         adminSession = (MockHttpSession) adminLogin.getRequest().getSession(false);
 
-        MvcResult volunteerLogin = mockMvc.perform(post("/login")
+        MvcResult volunteerLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "volunteer1")
                         .param("password", "Admin"))
@@ -251,7 +251,7 @@ class UserManagementIT extends IntegrationTest {
                         .with(csrf()))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "alice")
                         .param("password", "NewPass1!"))

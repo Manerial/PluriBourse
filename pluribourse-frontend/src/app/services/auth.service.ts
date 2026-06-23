@@ -20,7 +20,7 @@ export class AuthService {
   async login(username: string, password: string): Promise<CurrentUser> {
     const body = new URLSearchParams({ username, password });
     const user = await firstValueFrom(
-      this.http.post<CurrentUser>('/login', body.toString(), {
+      this.http.post<CurrentUser>('/api/auth/login', body.toString(), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       })
     );
@@ -30,7 +30,7 @@ export class AuthService {
 
   async logout(): Promise<void> {
     try {
-      await firstValueFrom(this.http.post<void>('/logout', {}));
+      await firstValueFrom(this.http.post<void>('/api/auth/logout', {}));
     } finally {
       this.currentUser.set(null);
       await this.router.navigate(['/login']);

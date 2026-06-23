@@ -46,14 +46,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers("/login")
+                        .ignoringRequestMatchers("/api/auth/login")
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new ProblemDetailAuthenticationEntryPoint())
                         .accessDeniedHandler(new ProblemDetailAccessDeniedHandler())
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/login").permitAll()
+                        .requestMatchers("/actuator/health", "/api/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Require authenticated non-anonymous user AND block SELLER role
                         .anyRequest().access((authentication, context) -> {
@@ -66,13 +66,13 @@ public class SecurityConfig {
                         })
                 )
                 .formLogin(form -> form
-                        .loginProcessingUrl("/login")
+                        .loginProcessingUrl("/api/auth/login")
                         .successHandler(loginSuccessHandler)
                         .failureHandler(loginFailureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
+                        .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler(logoutSuccessHandler)
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID", "SESSION")
