@@ -32,7 +32,7 @@ class AdminCreateRunnerTest {
 
     @Test
     void run_without_create_flag_does_nothing() throws Exception {
-        var args = mock(ApplicationArguments.class);
+        ApplicationArguments args = mock(ApplicationArguments.class);
         when(args.containsOption("create-admin")).thenReturn(false);
 
         runner.run(args);
@@ -51,7 +51,7 @@ class AdminCreateRunnerTest {
         runner.performCreate("NewAdmin");
 
         verify(support, never()).requireAdminAuth();
-        var captor = ArgumentCaptor.forClass(User.class);
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());
         assertThat(captor.getValue().getUsername()).isEqualTo("NewAdmin");
         assertThat(captor.getValue().getRole()).isEqualTo(Role.ADMIN);
@@ -61,7 +61,7 @@ class AdminCreateRunnerTest {
 
     @Test
     void performCreate_requires_auth_when_admin_already_exists() {
-        var existing = new User();
+        User existing = new User();
         existing.setUsername("Admin");
         existing.setRole(Role.ADMIN);
         existing.setPreferredLanguage(Language.FR);

@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { GlobalInstanceConfigService } from '../../../services/global-instance-config.service';
+import { Language } from '../../../models/language.enum';
 
 @Component({
   selector: 'app-admin-settings',
@@ -23,7 +24,7 @@ export class AdminSettingsComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     associationName: ['', [Validators.required, Validators.maxLength(255)]],
     defaultCommissionRate: [20, [Validators.required, Validators.min(0), Validators.max(100)]],
-    defaultDocumentLanguage: ['EN' as 'EN' | 'FR', [Validators.required]]
+    defaultDocumentLanguage: [Language.EN, [Validators.required]]
   });
 
   async ngOnInit(): Promise<void> {
@@ -41,7 +42,9 @@ export class AdminSettingsComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid || this.isSaving()) return;
+    if (this.form.invalid || this.isSaving()) {
+      return;
+    }
     this.saveSuccess.set(false);
     this.saveError.set(null);
     this.isSaving.set(true);

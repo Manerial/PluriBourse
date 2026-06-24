@@ -2,21 +2,25 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, UrlTree } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { AuthService, CurrentUser } from '../../services/auth.service';
 import { authGuard } from './auth.guard';
+import { Language } from '../../models/language.enum';
 
 describe('authGuard', () => {
   let authService: AuthService;
   let router: Router;
 
-  const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false };
+  const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false, preferredLanguage: Language.FR };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        { provide: TranslateService, useValue: { use: () => of({}) } }
       ]
     });
     authService = TestBed.inject(AuthService);
@@ -45,7 +49,7 @@ describe('authGuard', () => {
   });
 
   it('returns true for VOLUNTEER without forcePasswordChange', () => {
-    authService.currentUser.set({ username: 'vol1', role: 'VOLUNTEER', forcePasswordChange: false });
+    authService.currentUser.set({ username: 'vol1', role: 'VOLUNTEER', forcePasswordChange: false, preferredLanguage: Language.EN });
     expect(runGuard()).toBe(true);
   });
 });

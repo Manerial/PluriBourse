@@ -4,11 +4,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { firstValueFrom } from 'rxjs';
 import { GlobalInstanceConfigService } from './global-instance-config.service';
 import { GlobalInstanceConfigDto } from '../models/global-instance-config.model';
+import { Language } from '../models/language.enum';
 
 const MOCK_CONFIG: GlobalInstanceConfigDto = {
   associationName: 'Mon Asso',
   defaultCommissionRate: 20,
-  defaultDocumentLanguage: 'EN'
+  defaultDocumentLanguage: Language.EN
 };
 
 describe('GlobalInstanceConfigService', () => {
@@ -42,7 +43,7 @@ describe('GlobalInstanceConfigService', () => {
       const update: GlobalInstanceConfigDto = {
         associationName: 'Nouvelle Asso',
         defaultCommissionRate: 15,
-        defaultDocumentLanguage: 'FR'
+        defaultDocumentLanguage: Language.FR
       };
       const updated: GlobalInstanceConfigDto = { ...update };
 

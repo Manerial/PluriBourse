@@ -68,7 +68,9 @@ export class UserListComponent implements OnInit {
   }
 
   async submitResetPassword(userId: number): Promise<void> {
-    if (this.resetPasswordForm.invalid || this.submitting()) return;
+    if (this.resetPasswordForm.invalid || this.submitting()) {
+      return;
+    }
     this.actionError.set(null);
     this.submitting.set(true);
     try {

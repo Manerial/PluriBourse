@@ -25,7 +25,7 @@ public class GlobalInstanceConfigService {
 
     @Transactional
     public GlobalInstanceConfigDto updateConfig(GlobalInstanceConfigDto dto) {
-        var config = findConfig();
+        GlobalInstanceConfig config = findConfig();
         config.setAssociationName(dto.associationName());
         config.setDefaultCommissionRate(dto.defaultCommissionRate());
         config.setDefaultDocumentLanguage(dto.defaultDocumentLanguage());

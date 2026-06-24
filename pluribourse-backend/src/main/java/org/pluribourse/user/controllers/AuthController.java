@@ -22,11 +22,12 @@ public class AuthController {
     @GetMapping("/me")
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<UserSessionDto> me(Authentication authentication) {
-        var userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
-        var dto = new UserSessionDto(
+        PluriBourseUserDetails userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
+        UserSessionDto dto = new UserSessionDto(
                 userDetails.getUsername(),
                 userDetails.getRole(),
-                userDetails.isForcePasswordChange()
+                userDetails.isForcePasswordChange(),
+                userDetails.getPreferredLanguage().name()
         );
         return ResponseEntity.ok(dto);
     }
@@ -36,11 +37,11 @@ public class AuthController {
     public ResponseEntity<Void> changePassword(
             @Valid @RequestBody ChangePasswordDto dto,
             Authentication authentication) {
-        var userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
-        var newDetails = userService.changePassword(userDetails.getUserId(), dto.newPassword());
+        PluriBourseUserDetails userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
+        PluriBourseUserDetails newDetails = userService.changePassword(userDetails.getUserId(), dto.newPassword());
 
         // Refresh the SecurityContext so ForcePasswordChangeFilter sees the updated flag
-        var newAuth = UsernamePasswordAuthenticationToken.authenticated(
+        UsernamePasswordAuthenticationToken newAuth = UsernamePasswordAuthenticationToken.authenticated(
                 newDetails, null, newDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(newAuth);
 

@@ -6,6 +6,7 @@ import org.pluribourse.user.services.*;
 import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.authorization.*;
 import org.springframework.security.config.annotation.method.configuration.*;
 import org.springframework.security.config.annotation.web.builders.*;
@@ -38,7 +39,7 @@ public class SecurityConfig {
         // Build the provider inline — not a @Bean — so Spring Security's
         // global AuthenticationManager does not register a duplicate via
         // AuthenticationProviderBeanManagerConfigurer.
-        var authProvider = new DaoAuthenticationProvider(uds);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(uds);
         authProvider.setPasswordEncoder(pe);
 
         http
@@ -57,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Require authenticated non-anonymous user AND block SELLER role
                         .anyRequest().access((authentication, context) -> {
-                            var a = authentication.get();
+                            Authentication a = authentication.get();
                             boolean isAuthenticated = a.isAuthenticated()
                                     && !(a instanceof AnonymousAuthenticationToken);
                             boolean notSeller = a.getAuthorities().stream()

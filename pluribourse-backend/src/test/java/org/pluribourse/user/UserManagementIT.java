@@ -3,6 +3,7 @@ package org.pluribourse.user;
 import com.fasterxml.jackson.databind.*;
 import org.junit.jupiter.api.*;
 import org.pluribourse.shared.*;
+import org.pluribourse.user.entities.*;
 import org.pluribourse.user.repositories.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.http.MediaType;
@@ -82,7 +83,7 @@ class UserManagementIT extends IntegrationTest {
 
         aliceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
 
-        var alice = userRepository.findById(aliceId).orElseThrow();
+        User alice = userRepository.findById(aliceId).orElseThrow();
         assertThat(alice.getRole().name()).isEqualTo("VOLUNTEER");
         assertThat(alice.getEnabled()).isTrue();
         assertThat(alice.isForcePasswordChange()).isFalse();
@@ -145,7 +146,7 @@ class UserManagementIT extends IntegrationTest {
     @Test
     @Order(9)
     void admin_cannot_disable_admin_account() throws Exception {
-        var adminUser = userRepository.findByUsername("Admin").orElseThrow();
+        User adminUser = userRepository.findByUsername("Admin").orElseThrow();
 
         mockMvc.perform(put("/api/admin/users/" + adminUser.getId() + "/disable")
                         .session(adminSession)
@@ -174,7 +175,7 @@ class UserManagementIT extends IntegrationTest {
                         .content("{\"newPassword\":\"NewPass1!\"}"))
                 .andExpect(status().isOk());
 
-        var alice = userRepository.findById(aliceId).orElseThrow();
+        User alice = userRepository.findById(aliceId).orElseThrow();
         assertThat(alice.isForcePasswordChange()).isTrue();
         assertThat(passwordEncoder.matches("NewPass1!", alice.getPassword())).isTrue();
     }
@@ -182,7 +183,7 @@ class UserManagementIT extends IntegrationTest {
     @Test
     @Order(12)
     void admin_cannot_reset_admin_account_password() throws Exception {
-        var adminUser = userRepository.findByUsername("Admin").orElseThrow();
+        User adminUser = userRepository.findByUsername("Admin").orElseThrow();
 
         mockMvc.perform(put("/api/admin/users/" + adminUser.getId() + "/reset-password")
                         .session(adminSession)

@@ -18,6 +18,7 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 - DTOs pour la couche API ; MapStruct pour le mapping entité↔DTO
 - Lombok pour le code répétitif (getters, setters, builders, constructeurs)
 - Migrations de base de données : Liquibase
+- Interdiction du mot-clé `var` — toujours déclarer le type explicite des variables
 
 ### Frontend (Angular)
 - Composants standalone (dernière version Angular)
@@ -27,6 +28,10 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 ## JavaDoc
 - Obligatoire sur les méthodes complexes : logique non triviale, paramètres ou valeurs de retour non évidents
 - Non requise sur les getters, setters simples ou les opérations CRUD explicites
+
+## Style de code (back + front)
+- Toujours utiliser des accolades pour les blocs `if`, `else`, `for`, `while` — même si le corps tient sur une ligne
+- Interdiction du style inline : `if (condition) return;` → toujours développer avec `{ }` sur plusieurs lignes
 
 ## Commentaires
 - Ajouter des commentaires inline uniquement quand le **pourquoi** n'est pas évident depuis le code
@@ -47,6 +52,7 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
   - Les données de référence sont dans `src/test/resources/db/changelog/test-data.sql` : `test_admin` (ADMIN, `forcePasswordChange=false`), `volunteer1`, `volunteer2`
 - **Ce qu'on ne teste pas séparément :** migrations Liquibase, config Spring Security, handlers d'erreur, filtres — ils sont couverts implicitement par les scénarios E2E
 - Couverture minimale cible : 80 %
+
 
 ### Frontend (Angular)
 - Frameworks : Jest + Jasmine

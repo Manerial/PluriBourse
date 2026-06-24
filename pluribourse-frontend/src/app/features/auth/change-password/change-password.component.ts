@@ -23,7 +23,9 @@ export class ChangePasswordComponent {
   readonly loading = signal(false);
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      return;
+    }
     this.error.set(false);
     this.loading.set(true);
     try {

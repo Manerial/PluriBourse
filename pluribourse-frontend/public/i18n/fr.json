@@ -26,6 +26,19 @@
       "error": "Impossible de changer le mot de passe. Veuillez réessayer."
     }
   },
+  "account": {
+    "title": "Paramètres du compte",
+    "language": {
+      "label": "Langue de l'interface",
+      "EN": "Anglais",
+      "FR": "Français"
+    },
+    "save": "Enregistrer",
+    "success": "Préférence de langue enregistrée.",
+    "error": {
+      "save": "Impossible d'enregistrer la préférence de langue."
+    }
+  },
   "admin": {
     "users": {
       "title": "Comptes bénévoles",

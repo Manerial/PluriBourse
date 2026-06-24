@@ -27,7 +27,9 @@ export class UserFormComponent {
   readonly error = signal<string | null>(null);
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      return;
+    }
     this.error.set(null);
     this.loading.set(true);
     try {

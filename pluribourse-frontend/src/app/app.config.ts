@@ -15,7 +15,7 @@ export const appConfig: ApplicationConfig = {
       withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' }),
       withInterceptors([authInterceptor])
     ),
-    provideTranslateService({ lang: 'fr' }),
+    provideTranslateService({ lang: 'en' }),
     provideTranslateHttpLoader({ prefix: '/i18n/', suffix: '.json' }),
     provideAppInitializer(() => inject(AuthService).restoreSession())
   ]

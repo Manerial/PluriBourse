@@ -31,7 +31,7 @@ public class UserService {
 
     @Transactional
     public PluriBourseUserDetails changePassword(Long userId, String newRawPassword) {
-        var user = getUser(userId);
+        User user = getUser(userId);
         user.setPassword(passwordEncoder.encode(newRawPassword));
         user.setForcePasswordChange(false);
         userRepository.save(user);
@@ -49,13 +49,14 @@ public class UserService {
         if (userRepository.existsByUsername(dto.username())) {
             throw new BusinessException(HttpStatus.CONFLICT, "username-already-taken", "Username already taken");
         }
-        var user = new User();
+        User user = new User();
         user.setFirstName(dto.firstName());
         user.setLastName(dto.lastName());
         user.setUsername(dto.username());
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(Role.VOLUNTEER);
-        user.setPreferredLanguage(Language.FR);
+        user.setPreferredLanguage(Language.EN);
+        user.setLanguageInitialized(false);
         user.setForcePasswordChange(false);
         user.setEnabled(true);
         try {
@@ -67,7 +68,7 @@ public class UserService {
 
     @Transactional
     public void resetVolunteerPassword(Long id, String newPassword) {
-        var user = getUser(id);
+        User user = getUser(id);
         if (user.getRole() != Role.VOLUNTEER) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-modify-admin", "Admin account cannot be modified");
         }
@@ -78,7 +79,7 @@ public class UserService {
 
     @Transactional
     public void disableVolunteer(Long id) {
-        var user = getUser(id);
+        User user = getUser(id);
         if (user.getRole() != Role.VOLUNTEER) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-disable-admin", "Admin account cannot be disabled");
         }
@@ -88,11 +89,29 @@ public class UserService {
 
     @Transactional
     public void enableVolunteer(Long id) {
-        var user = getUser(id);
+        User user = getUser(id);
         if (user.getRole() != Role.VOLUNTEER) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-enable-admin", "Admin account cannot be modified");
         }
         user.setEnabled(true);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public PluriBourseUserDetails initializeLanguage(Long userId, Language lang) {
+        User user = getUser(userId);
+        user.setPreferredLanguage(lang);
+        user.setLanguageInitialized(true);
+        userRepository.save(user);
+        return new PluriBourseUserDetails(user);
+    }
+
+    @Transactional
+    public PluriBourseUserDetails updateLanguagePreference(Long userId, Language lang) {
+        User user = getUser(userId);
+        user.setPreferredLanguage(lang);
+        user.setLanguageInitialized(true);
+        userRepository.save(user);
+        return new PluriBourseUserDetails(user);
     }
 }

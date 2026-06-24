@@ -55,6 +55,15 @@
 - **Order(5) n'assert pas les champs non modifiés après PUT** — `InstanceConfigIT.java:Order(5)` — Le test ne vérifie que `defaultCommissionRate` après la mise à jour. Un bug de partial-write (autres champs remis à zéro) ne serait pas détecté. Les autres champs sont couverts par leurs propres tests dédiés.
 - **État intermédiaire `isSaving()` non testé dans le spec** — `admin-settings.component.spec.ts` — Les tests ne vérifient que la valeur finale de `isSaving()`. Si `isSaving.set(true)` était supprimé d'`onSubmit()`, les tests passeraient quand même.
 
+## Deferred from: code review of 1-6-preference-de-langue-utilisateur-infrastructure-i18n (2026-06-24)
+
+- **Race condition sur premier login concurrent** — `LoginSuccessHandler.java` — Deux logins simultanés du même nouvel utilisateur lisent tous deux `languageInitialized=false` dans le principal d'authentification et appellent `initializeLanguage()` ; le second écrase le premier. Probabilité négligeable dans le cas d'usage cible (bourse).
+- **NPE dans `LanguagePreferenceIT` Order(11) si Order(9) échoue** — `LanguagePreferenceIT.java` — `frUserUsername` est null si Order(9) ne s'exécute pas (filtre de test IDE). Limitation inhérente au pattern de scénario ordonné documenté dans CLAUDE.md.
+- **Bannière `saveSuccess` persistante après changement de select sans resoumission** — `account.component.ts` — Amélioration UX : effacer `saveSuccess` sur `valueChanges`. Non spécifié dans les AC.
+- **Admin seedé perd sa langue FR au 1er login post-migration 006** — `006-user-language-initialized.xml` — Migration ajoute `language_initialized = false` sur tous les utilisateurs existants. L'admin reçoit la langue du navigateur au 1er login. Comportement intentionnel selon la spec ; pas de backfill prévu.
+- **`Language.valueOf()` non gardé dans AccountController** — `AccountController.java` — Si `@Pattern` est correctement ancré (patch P1), ce cas ne peut pas survenir. À garder en tête si le DTO évolue.
+- **`restoreSession()` ne restaure pas la langue sur le chemin 403 `forcePasswordChange`** — `pluribourse-frontend/src/app/services/auth.service.ts:61` — La page `/change-password` s'affiche en 'en' quelle que soit la préférence langue de l'utilisateur. Un fix propre nécessiterait d'inclure `preferredLanguage` dans le body de la réponse 403, ce qui est hors scope de cette story.
+
 ## Deferred from: code review of 1-3-gestion-des-comptes-benevoles (2026-06-22)
 
 - **Session active d'un bénévole désactivé reste valide jusqu'à expiration** — `UserService.java:disableVolunteer()` — `setEnabled(false)` en DB ne révoque pas la session Spring Session JDBC en cours. Le bénévole désactivé peut continuer à faire des requêtes jusqu'à l'expiration de sa session (défaut : 1 jour). Pré-existant, identique au defer Story 1.2 "Changement de mot de passe n'invalide pas les autres sessions actives". À adresser avec Spring Session registry si invalidation immédiate requise.

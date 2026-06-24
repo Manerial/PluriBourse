@@ -2,23 +2,29 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { AuthService, CurrentUser } from './auth.service';
+import { Language } from '../models/language.enum';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
   let routerMock: { navigate: ReturnType<typeof vi.fn> };
+  let translateServiceMock: { use: ReturnType<typeof vi.fn> };
 
-  const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false };
+  const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false, preferredLanguage: Language.FR };
 
   beforeEach(() => {
     routerMock = { navigate: vi.fn().mockResolvedValue(true) };
+    translateServiceMock = { use: vi.fn().mockReturnValue(of({})) };
 
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: Router, useValue: routerMock }
+        { provide: Router, useValue: routerMock },
+        { provide: TranslateService, useValue: translateServiceMock }
       ]
     });
 
@@ -31,7 +37,7 @@ describe('AuthService', () => {
   describe('login', () => {
     it('sets currentUser and returns user on success', async () => {
       const promise = service.login('Admin', 'Secret1');
-      httpMock.expectOne('/login').flush(adminUser);
+      httpMock.expectOne('/api/auth/login').flush(adminUser);
       const result = await promise;
       expect(result).toEqual(adminUser);
       expect(service.currentUser()).toEqual(adminUser);
@@ -40,7 +46,7 @@ describe('AuthService', () => {
 
     it('propagates error and leaves currentUser null on failure', async () => {
       const promise = service.login('Admin', 'wrong');
-      httpMock.expectOne('/login').flush(null, { status: 401, statusText: 'Unauthorized' });
+      httpMock.expectOne('/api/auth/login').flush(null, { status: 401, statusText: 'Unauthorized' });
       expect(promise).rejects.toThrow();
       expect(service.currentUser()).toBeNull();
     });
@@ -50,7 +56,7 @@ describe('AuthService', () => {
     it('clears currentUser and navigates to /login on success', async () => {
       service.currentUser.set(adminUser);
       const promise = service.logout();
-      httpMock.expectOne('/logout').flush(null);
+      httpMock.expectOne('/api/auth/logout').flush(null);
       await promise;
       expect(service.currentUser()).toBeNull();
       expect(routerMock.navigate).toHaveBeenCalledWith(['/login']);
@@ -59,7 +65,7 @@ describe('AuthService', () => {
     it('still clears currentUser and navigates even when server call fails', async () => {
       service.currentUser.set(adminUser);
       const promise = service.logout().catch(() => {});
-      httpMock.expectOne('/logout').flush(null, { status: 500, statusText: 'Server Error' });
+      httpMock.expectOne('/api/auth/logout').flush(null, { status: 500, statusText: 'Server Error' });
       await promise;
       expect(service.currentUser()).toBeNull();
       expect(routerMock.navigate).toHaveBeenCalledWith(['/login']);
@@ -121,6 +127,30 @@ describe('AuthService', () => {
       );
       await promise;
       expect(service.currentUser()).toBeNull();
+    });
+  });
+
+  describe('language switching', () => {
+    it('applies preferredLanguage from server on login', async () => {
+      const promise = service.login('Admin', 'Admin');
+      httpMock.expectOne('/api/auth/login').flush(adminUser);
+      await promise;
+      expect(translateServiceMock.use).toHaveBeenCalledWith('fr');
+    });
+
+    it('applies preferredLanguage from server on session restore', async () => {
+      const promise = service.restoreSession();
+      httpMock.expectOne('/api/auth/me').flush(adminUser);
+      await promise;
+      expect(translateServiceMock.use).toHaveBeenCalledWith('fr');
+    });
+
+    it('resets to en on logout', async () => {
+      service.currentUser.set(adminUser);
+      const promise = service.logout();
+      httpMock.expectOne('/api/auth/logout').flush(null);
+      await promise;
+      expect(translateServiceMock.use).toHaveBeenCalledWith('en');
     });
   });
 });

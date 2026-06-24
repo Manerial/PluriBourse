@@ -4,13 +4,14 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { AdminSettingsComponent } from './admin-settings.component';
-import { GlobalGlobalInstanceConfigService } from '../../../services/global-instance-config.service';
-import { GlobalGlobalInstanceConfigDto } from '../../../models/global-instance-config.model';
+import { GlobalInstanceConfigService } from '../../../services/global-instance-config.service';
+import { GlobalInstanceConfigDto } from '../../../models/global-instance-config.model';
+import { Language } from '../../../models/language.enum';
 
 const MOCK_CONFIG: GlobalInstanceConfigDto = {
   associationName: 'Mon Asso',
   defaultCommissionRate: 20,
-  defaultDocumentLanguage: 'EN'
+  defaultDocumentLanguage: Language.EN
 };
 
 describe('AdminSettingsComponent', () => {
@@ -45,7 +46,7 @@ describe('AdminSettingsComponent', () => {
     expect(instanceConfigServiceMock.getConfig).toHaveBeenCalledTimes(1);
     expect(component.form.getRawValue().associationName).toBe('Mon Asso');
     expect(component.form.getRawValue().defaultCommissionRate).toBe(20);
-    expect(component.form.getRawValue().defaultDocumentLanguage).toBe('EN');
+    expect(component.form.getRawValue().defaultDocumentLanguage).toBe(Language.EN);
     expect(component.isLoading()).toBe(false);
     expect(component.loadError()).toBeNull();
   });
@@ -61,24 +62,24 @@ describe('AdminSettingsComponent', () => {
     const updated: GlobalInstanceConfigDto = {
       associationName: 'Nouvelle Asso',
       defaultCommissionRate: 15,
-      defaultDocumentLanguage: 'FR'
+      defaultDocumentLanguage: Language.FR
     };
     instanceConfigServiceMock.updateConfig.mockReturnValue(of(updated));
-    component.form.setValue({ associationName: 'Nouvelle Asso', defaultCommissionRate: 15, defaultDocumentLanguage: 'FR' });
+    component.form.setValue({ associationName: 'Nouvelle Asso', defaultCommissionRate: 15, defaultDocumentLanguage: Language.FR });
 
     await component.onSubmit();
 
     expect(instanceConfigServiceMock.updateConfig).toHaveBeenCalledWith({
       associationName: 'Nouvelle Asso',
       defaultCommissionRate: 15,
-      defaultDocumentLanguage: 'FR'
+      defaultDocumentLanguage: Language.FR
     });
     expect(component.saveSuccess()).toBe(true);
     expect(component.saveError()).toBeNull();
     expect(component.isSaving()).toBe(false);
     expect(component.form.getRawValue().associationName).toBe('Nouvelle Asso');
     expect(component.form.getRawValue().defaultCommissionRate).toBe(15);
-    expect(component.form.getRawValue().defaultDocumentLanguage).toBe('FR');
+    expect(component.form.getRawValue().defaultDocumentLanguage).toBe(Language.FR);
   });
 
   it('sets saveError key and clears saving when updateConfig fails', async () => {

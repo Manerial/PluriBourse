@@ -37,13 +37,14 @@ public class AdminCreateRunner implements ApplicationRunner {
         if (userRepository.existsByUsername(login)) {
             throw new IllegalStateException("Username '" + login + "' is already taken.");
         }
-        var admin = new User();
+        User admin = new User();
         admin.setUsername(login);
         admin.setRole(Role.ADMIN);
         admin.setPreferredLanguage(Language.FR);
+        admin.setLanguageInitialized(false);
         admin.setEnabled(true);
 
-        var temporaryPassword = support.generatePassword();
+        String temporaryPassword = support.generatePassword();
         admin.setPassword(passwordEncoder.encode(temporaryPassword));
         admin.setForcePasswordChange(true);
         userRepository.save(admin);

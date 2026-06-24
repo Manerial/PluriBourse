@@ -3,8 +3,11 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpClient } from '@angular/common/http';
 import { provideRouter, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { AuthService, CurrentUser } from '../../services/auth.service';
 import { authInterceptor } from './auth.interceptor';
+import { Language } from '../../models/language.enum';
 
 describe('authInterceptor', () => {
   let http: HttpClient;
@@ -12,14 +15,15 @@ describe('authInterceptor', () => {
   let authService: AuthService;
   let router: Router;
 
-  const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false };
+  const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false, preferredLanguage: Language.FR };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
-        provideRouter([])
+        provideRouter([]),
+        { provide: TranslateService, useValue: { use: () => of({}) } }
       ]
     });
     http = TestBed.inject(HttpClient);

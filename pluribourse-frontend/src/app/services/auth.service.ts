@@ -2,17 +2,21 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { Language } from '../models/language.enum';
 
 export interface CurrentUser {
   username: string;
   role: string;
   forcePasswordChange: boolean;
+  preferredLanguage: Language;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly translateService = inject(TranslateService);
 
   readonly currentUser = signal<CurrentUser | null>(null);
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
@@ -25,6 +29,7 @@ export class AuthService {
       })
     );
     this.currentUser.set(user);
+    await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
     return user;
   }
 
@@ -33,6 +38,7 @@ export class AuthService {
       await firstValueFrom(this.http.post<void>('/api/auth/logout', {}));
     } finally {
       this.currentUser.set(null);
+      this.translateService.use('en').subscribe();
       await this.router.navigate(['/login']);
     }
   }
@@ -49,6 +55,7 @@ export class AuthService {
     try {
       const user = await firstValueFrom(this.http.get<CurrentUser>('/api/auth/me'));
       this.currentUser.set(user);
+      await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
     } catch (error: any) {
       // 403 password-change-required means the session is valid but the password must change.
       // Keep currentUser non-null so authGuard lets the user through to /change-password.

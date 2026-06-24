@@ -1,13 +1,16 @@
 package org.pluribourse.user.cli;
 
 import lombok.RequiredArgsConstructor;
+import org.pluribourse.user.entities.User;
 import org.pluribourse.user.enums.Role;
 import org.pluribourse.user.repositories.UserRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.io.Console;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
@@ -25,14 +28,14 @@ public class AdminCliSupport {
     private final PasswordEncoder passwordEncoder;
 
     String generatePassword() {
-        var random = new SecureRandom();
+        SecureRandom random = new SecureRandom();
         return random.ints(PASSWORD_LENGTH, 0, CHARS.length())
                 .mapToObj(i -> String.valueOf(CHARS.charAt(i)))
                 .collect(Collectors.joining());
     }
 
     String extractLogin(ApplicationArguments args) {
-        var values = args.getOptionValues("login");
+        List<String> values = args.getOptionValues("login");
         if (values == null || values.isEmpty()) {
             throw new IllegalStateException("Missing required argument: --login=<username>");
         }
@@ -46,10 +49,10 @@ public class AdminCliSupport {
     void requireAdminAuth() {
         System.out.println("Authentication required — enter credentials of an existing admin:");
         System.out.print("Login: ");
-        var login = readLine();
-        var password = readPassword();
+        String login = readLine();
+        char[] password = readPassword();
 
-        var admin = userRepository.findByUsername(login)
+        User admin = userRepository.findByUsername(login)
                 .filter(u -> u.getRole() == Role.ADMIN)
                 .orElseThrow(() -> new IllegalStateException("Authentication failed."));
         if (!passwordEncoder.matches(new String(password), admin.getPassword())) {
@@ -62,7 +65,7 @@ public class AdminCliSupport {
     }
 
     char[] readPassword() {
-        var console = System.console();
+        Console console = System.console();
         if (console != null) {
             return console.readPassword("Password: ");
         }

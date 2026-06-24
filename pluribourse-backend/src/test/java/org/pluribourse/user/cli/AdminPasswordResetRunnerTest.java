@@ -32,7 +32,7 @@ class AdminPasswordResetRunnerTest {
 
     @Test
     void run_without_reset_flag_does_nothing() throws Exception {
-        var args = mock(ApplicationArguments.class);
+        ApplicationArguments args = mock(ApplicationArguments.class);
         when(args.containsOption("reset-admin-password")).thenReturn(false);
 
         runner.run(args);
@@ -42,7 +42,7 @@ class AdminPasswordResetRunnerTest {
 
     @Test
     void performReset_resets_single_admin_without_auth() {
-        var admin = new User();
+        User admin = new User();
         admin.setUsername("Admin");
         admin.setRole(Role.ADMIN);
         admin.setPreferredLanguage(Language.FR);
@@ -57,7 +57,7 @@ class AdminPasswordResetRunnerTest {
         runner.performReset("Admin");
 
         verify(support, never()).requireAdminAuth();
-        var captor = ArgumentCaptor.forClass(User.class);
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());
         assertThat(captor.getValue().isForcePasswordChange()).isTrue();
         assertThat(captor.getValue().getPassword()).isEqualTo("newEncoded");
@@ -65,13 +65,13 @@ class AdminPasswordResetRunnerTest {
 
     @Test
     void performReset_requires_auth_when_multiple_admins_exist() {
-        var admin1 = new User();
+        User admin1 = new User();
         admin1.setUsername("Admin1");
         admin1.setRole(Role.ADMIN);
         admin1.setPreferredLanguage(Language.FR);
         admin1.setPassword("encoded1");
 
-        var admin2 = new User();
+        User admin2 = new User();
         admin2.setUsername("Admin2");
         admin2.setRole(Role.ADMIN);
         admin2.setPreferredLanguage(Language.FR);
@@ -99,7 +99,7 @@ class AdminPasswordResetRunnerTest {
 
     @Test
     void performReset_throws_when_login_not_found() {
-        var admin = new User();
+        User admin = new User();
         admin.setUsername("Admin");
         admin.setRole(Role.ADMIN);
         admin.setPreferredLanguage(Language.FR);

@@ -3,6 +3,7 @@ package org.pluribourse.shared;
 import com.fasterxml.jackson.databind.*;
 import org.junit.jupiter.api.*;
 import org.pluribourse.shared.instanceconfig.dto.*;
+import org.pluribourse.shared.instanceconfig.entity.*;
 import org.pluribourse.shared.instanceconfig.repository.*;
 import org.pluribourse.user.enums.*;
 import org.springframework.beans.factory.annotation.*;
@@ -71,7 +72,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test @Order(4)
     void admin_put_updates_association_name_and_persists() throws Exception {
-        var dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("20.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("20.00"), Language.EN);
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -80,13 +81,13 @@ class GlobalInstanceConfigIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.associationName").value("Mon Association"));
 
-        var config = repository.findById(1L).orElseThrow();
+        GlobalInstanceConfig config = repository.findById(1L).orElseThrow();
         assertThat(config.getAssociationName()).isEqualTo("Mon Association");
     }
 
     @Test @Order(5)
     void admin_put_commission_rate_stored_as_bigdecimal() throws Exception {
-        var dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.EN);
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -94,14 +95,14 @@ class GlobalInstanceConfigIT extends IntegrationTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        var config = repository.findById(1L).orElseThrow();
+        GlobalInstanceConfig config = repository.findById(1L).orElseThrow();
         assertThat(config.getDefaultCommissionRate().compareTo(new BigDecimal("15"))).isZero();
         assertThat(config.getDefaultCommissionRate().scale()).isEqualTo(2);
     }
 
     @Test @Order(6)
     void admin_put_document_language_fr_persists() throws Exception {
-        var dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.FR);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.FR);
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -110,7 +111,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.defaultDocumentLanguage").value("FR"));
 
-        var config = repository.findById(1L).orElseThrow();
+        GlobalInstanceConfig config = repository.findById(1L).orElseThrow();
         assertThat(config.getDefaultDocumentLanguage().name()).isEqualTo("FR");
     }
 
@@ -192,7 +193,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test @Order(14)
     void admin_put_association_name_too_long_returns_400() throws Exception {
-        var dto = new GlobalInstanceConfigDto("A".repeat(256), new BigDecimal("20.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("A".repeat(256), new BigDecimal("20.00"), Language.EN);
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -203,7 +204,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test @Order(15)
     void admin_put_commission_rate_100_accepted() throws Exception {
-        var dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("100.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("100.00"), Language.EN);
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -214,7 +215,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test @Order(16)
     void admin_put_commission_rate_0_accepted() throws Exception {
-        var dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("0.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("0.00"), Language.EN);
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())

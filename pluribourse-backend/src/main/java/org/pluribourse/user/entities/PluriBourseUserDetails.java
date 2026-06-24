@@ -1,6 +1,7 @@
 package org.pluribourse.user.entities;
 
 import org.jspecify.annotations.*;
+import org.pluribourse.user.enums.*;
 import org.springframework.security.core.*;
 import org.springframework.security.core.authority.*;
 import org.springframework.security.core.userdetails.*;
@@ -30,6 +31,14 @@ public class PluriBourseUserDetails implements UserDetails {
 
     public boolean isForcePasswordChange() {
         return user.isForcePasswordChange();
+    }
+
+    public Language getPreferredLanguage() {
+        return user.getPreferredLanguage();
+    }
+
+    public boolean isLanguageInitialized() {
+        return user.isLanguageInitialized();
     }
 
     @Override

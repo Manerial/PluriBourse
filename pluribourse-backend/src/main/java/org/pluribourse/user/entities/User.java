@@ -46,6 +46,9 @@ public class User implements Serializable {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName = "";
 
+    @Column(name = "language_initialized", nullable = false)
+    private boolean languageInitialized;
+
     // Nullable wrapper: primitive boolean defaults to false during Java deserialization
     // of old Spring Session JDBC sessions, which would lock out existing users on upgrade.
     @Column(nullable = false)

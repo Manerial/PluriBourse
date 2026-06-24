@@ -5,10 +5,12 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <include file="db/changelog/001-core-schema.xml"/>
-    <include file="db/changelog/002-spring-session.xml"/>
-    <include file="db/changelog/004-instance-config.xml"/>
-    <include file="db/changelog/005-user-volunteer-fields.xml"/>
-    <include file="db/changelog/006-user-language-initialized.xml"/>
+    <changeSet id="006-user-language-initialized" author="pluribourse">
+        <addColumn tableName="users">
+            <column name="language_initialized" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>

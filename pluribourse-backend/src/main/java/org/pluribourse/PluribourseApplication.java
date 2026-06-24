@@ -15,7 +15,7 @@ public class PluribourseApplication {
     );
 
     public static void main(String[] args) {
-        var app = new SpringApplication(PluribourseApplication.class);
+        SpringApplication app = new SpringApplication(PluribourseApplication.class);
         boolean isCLI = Arrays.stream(args)
                 .anyMatch(CLI_OPTIONS::contains);
         if (isCLI) {
