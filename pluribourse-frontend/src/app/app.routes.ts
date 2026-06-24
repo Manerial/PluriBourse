@@ -30,9 +30,12 @@ export const routes: Routes = [
         redirectTo: () => {
           const auth = inject(AuthService);
           switch (auth.currentUser()?.role) {
-            case 'ADMIN': return '/admin';
-            case 'VOLUNTEER': return '/volunteer';
-            default: return '/login';
+            case 'ADMIN':
+              return '/admin';
+            case 'VOLUNTEER':
+              return '/volunteer';
+            default:
+              return '/login';
           }
         },
       },

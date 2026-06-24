@@ -16,7 +16,7 @@ export class ChangePasswordComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly form = this.fb.nonNullable.group({
-    newPassword: ['', [Validators.required, Validators.minLength(8)]]
+    newPassword: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/.*[A-Z].*/), Validators.pattern(/.*[0-9].*/)]]
   });
 
   readonly error = signal(false);

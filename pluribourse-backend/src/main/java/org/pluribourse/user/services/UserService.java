@@ -98,15 +98,6 @@ public class UserService {
     }
 
     @Transactional
-    public PluriBourseUserDetails initializeLanguage(Long userId, Language lang) {
-        User user = getUser(userId);
-        user.setPreferredLanguage(lang);
-        user.setLanguageInitialized(true);
-        userRepository.save(user);
-        return new PluriBourseUserDetails(user);
-    }
-
-    @Transactional
     public PluriBourseUserDetails updateLanguagePreference(Long userId, Language lang) {
         User user = getUser(userId);
         user.setPreferredLanguage(lang);

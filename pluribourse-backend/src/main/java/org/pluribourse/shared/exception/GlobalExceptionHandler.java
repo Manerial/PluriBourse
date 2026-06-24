@@ -47,6 +47,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(pd);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalState(
+            IllegalStateException ex, HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+        pd.setType(URI.create("https://pluribourse/errors/internal-error"));
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.internalServerError().body(pd);
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ProblemDetail> handleConstraintViolation(
             ConstraintViolationException ex, HttpServletRequest request) {

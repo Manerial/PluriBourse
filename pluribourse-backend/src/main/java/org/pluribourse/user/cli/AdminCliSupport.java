@@ -1,18 +1,17 @@
 package org.pluribourse.user.cli;
 
-import lombok.RequiredArgsConstructor;
-import org.pluribourse.user.entities.User;
-import org.pluribourse.user.enums.Role;
-import org.pluribourse.user.repositories.UserRepository;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+import lombok.*;
+import org.pluribourse.user.entities.*;
+import org.pluribourse.user.enums.*;
+import org.pluribourse.user.repositories.*;
+import org.springframework.boot.*;
+import org.springframework.security.crypto.password.*;
+import org.springframework.stereotype.*;
 
-import java.io.Console;
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.security.*;
+import java.util.*;
+import java.util.stream.*;
 
 @Component
 @RequiredArgsConstructor
@@ -23,6 +22,8 @@ public class AdminCliSupport {
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final int PASSWORD_LENGTH = 12;
+    // Shared so that buffered bytes read by readLine() are not lost when readPassword() reads next
+    private static final Scanner STDIN = new Scanner(System.in);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -61,7 +62,7 @@ public class AdminCliSupport {
     }
 
     String readLine() {
-        return new Scanner(System.in).nextLine().strip();
+        return STDIN.nextLine().strip();
     }
 
     char[] readPassword() {
@@ -69,7 +70,8 @@ public class AdminCliSupport {
         if (console != null) {
             return console.readPassword("Password: ");
         }
+        // If the system console is not defined, read it from the normal STDIN
         System.out.print("Password (warning: input not hidden): ");
-        return new Scanner(System.in).nextLine().toCharArray();
+        return STDIN.nextLine().toCharArray();
     }
 }

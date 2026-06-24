@@ -65,6 +65,10 @@
       "settings": "Paramètres"
     }
   },
+  "notFound": {
+    "message": "La page que vous recherchez n'existe pas ou n'est pas encore disponible.",
+    "back": "Retour à l'accueil"
+  },
   "admin": {
     "users": {
       "title": "Comptes bénévoles",

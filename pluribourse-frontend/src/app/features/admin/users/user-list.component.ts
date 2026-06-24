@@ -24,7 +24,7 @@ export class UserListComponent implements OnInit {
   readonly submitting = signal(false);
 
   readonly resetPasswordForm = this.fb.nonNullable.group({
-    newPassword: ['', [Validators.required, Validators.minLength(8)]]
+    newPassword: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/.*[A-Z].*/), Validators.pattern(/.*[0-9].*/)]]
   });
 
   async ngOnInit(): Promise<void> {

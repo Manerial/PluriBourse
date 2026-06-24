@@ -10,6 +10,7 @@ import org.pluribourse.user.enums.*;
 import org.pluribourse.user.services.*;
 import org.springframework.security.core.*;
 import org.springframework.security.web.authentication.*;
+import org.springframework.security.web.csrf.*;
 import org.springframework.stereotype.*;
 
 import java.io.*;
@@ -40,8 +41,16 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         Language effectiveLanguage = userDetails.getPreferredLanguage();
         if (!userDetails.isLanguageInitialized()) {
             effectiveLanguage = detectLanguage(request);
-            PluriBourseUserDetails newDetails = userService.initializeLanguage(userDetails.getUserId(), effectiveLanguage);
-            securityContextHelper.refreshSessionPrincipal(newDetails, request);
+            userDetails = userService.updateLanguagePreference(userDetails.getUserId(), effectiveLanguage);
+            securityContextHelper.refreshSessionPrincipal(userDetails, request);
+        }
+        // Force the CSRF cookie to be written before the response body is committed.
+        // CsrfFilter loads a deferred token for all requests (including CSRF-ignored ones like /api/auth/login),
+        // but the cookie is only written when the token is actually accessed. Without this, the browser
+        // has no XSRF-TOKEN cookie after login and the next POST (/api/auth/change-password) fails CSRF.
+        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        if (csrfToken != null) {
+            csrfToken.getToken();
         }
         UserSessionDto dto = new UserSessionDto(
                 userDetails.getUsername(),

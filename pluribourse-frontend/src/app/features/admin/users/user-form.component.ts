@@ -20,7 +20,7 @@ export class UserFormComponent {
     firstName: ['', [Validators.required, Validators.maxLength(50)]],
     lastName: ['', [Validators.required, Validators.maxLength(50)]],
     username: ['', [Validators.required, Validators.maxLength(50)]],
-    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]]
+    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128), Validators.pattern(/.*[A-Z].*/), Validators.pattern(/.*[0-9].*/)]]
   });
 
   readonly loading = signal(false);

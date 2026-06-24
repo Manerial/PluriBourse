@@ -31,7 +31,7 @@ public class AdminCreateRunner implements ApplicationRunner {
     }
 
     void performCreate(String login) {
-        if (!userRepository.findByRole(Role.ADMIN).isEmpty()) {
+        if (userRepository.existsByRole(Role.ADMIN)) {
             support.requireAdminAuth();
         }
         if (userRepository.existsByUsername(login)) {

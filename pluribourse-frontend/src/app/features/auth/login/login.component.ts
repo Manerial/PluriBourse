@@ -44,7 +44,7 @@ export class LoginComponent {
           await this.router.navigate(['/volunteer']);
           break;
         default:
-          // Unexpected role (e.g. SELLER blocked server-side) — show error and clear session
+          // SELLER and any future roles are blocked server-side; surface a generic error
           this.auth.currentUser.set(null);
           this.error.set('unauthorized-role');
       }

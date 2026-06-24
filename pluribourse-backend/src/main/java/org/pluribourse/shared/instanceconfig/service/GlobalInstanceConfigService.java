@@ -32,17 +32,13 @@ public class GlobalInstanceConfigService {
         return mapper.toDto(repository.save(config));
     }
 
-    /**
-     * Used by Story 2.1 (EditionService) to initialize new editions.
-     */
+    // Used by Story 2.1 (EditionService) to initialize new editions.
     @Transactional(readOnly = true)
     public Language getDefaultDocumentLanguage() {
         return findConfig().getDefaultDocumentLanguage();
     }
 
-    /**
-     * Used by Story 2.1 (EditionService) to initialize new editions.
-     */
+    // Used by Story 2.1 (EditionService) to initialize new editions.
     @Transactional(readOnly = true)
     public BigDecimal getDefaultCommissionRate() {
         return findConfig().getDefaultCommissionRate();

@@ -65,6 +65,10 @@
       "settings": "Settings"
     }
   },
+  "notFound": {
+    "message": "The page you are looking for does not exist or is not yet available.",
+    "back": "Back to home"
+  },
   "admin": {
     "users": {
       "title": "Volunteer Accounts",

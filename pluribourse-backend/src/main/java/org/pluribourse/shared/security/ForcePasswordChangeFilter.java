@@ -13,14 +13,14 @@ import org.springframework.web.filter.*;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.Set;
 
 @NullMarked
 @RequiredArgsConstructor
 public class ForcePasswordChangeFilter extends OncePerRequestFilter {
 
-    private static final List<String> EXEMPT_PATHS =
-            List.of("/api/auth/change-password", "/api/auth/me", "/logout", "/login", "/actuator/health");
+    private static final Set<String> EXEMPT_PATHS =
+            Set.of("/api/auth/change-password", "/api/auth/me", "/api/auth/logout", "/api/auth/login", "/actuator/health");
 
     private final ObjectMapper objectMapper;
 
@@ -33,7 +33,7 @@ public class ForcePasswordChangeFilter extends OncePerRequestFilter {
         if (auth != null && auth.isAuthenticated() &&
                 auth.getPrincipal() instanceof PluriBourseUserDetails ud) {
             if (ud.isForcePasswordChange() &&
-                    EXEMPT_PATHS.stream().noneMatch(request.getRequestURI()::equals)) {
+                    !EXEMPT_PATHS.contains(request.getRequestURI())) {
                 ProblemDetail pd = ProblemDetail.forStatusAndDetail(
                         org.springframework.http.HttpStatus.FORBIDDEN,
                         "You must change your password before accessing this resource");
