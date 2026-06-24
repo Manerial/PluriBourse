@@ -39,6 +39,32 @@
       "save": "Impossible d'enregistrer la préférence de langue."
     }
   },
+  "nav": {
+    "logout": "Se déconnecter",
+    "phase": {
+      "current": "Phase actuelle",
+      "preparation": "Préparation",
+      "deposit": "Dépôt",
+      "sale": "Vente",
+      "post-sale": "Post-vente",
+      "closed": "Clôturée"
+    },
+    "role": {
+      "admin": "Admin",
+      "volunteer": "Bénévole"
+    },
+    "sections": {
+      "activeEdition": "Édition active",
+      "management": "Gestion"
+    },
+    "sidebar": {
+      "label": "Navigation principale"
+    },
+    "admin": {
+      "users": "Bénévoles",
+      "settings": "Paramètres"
+    }
+  },
   "admin": {
     "users": {
       "title": "Comptes bénévoles",

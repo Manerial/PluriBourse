@@ -1,1 +1,84 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+// M3 theme — red palette is closest to coral
+// NOTE: mat.core() is a no-op in Angular Material 21 (deprecated empty stub) — do NOT call it
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$red-palette,
+      tertiary: mat.$azure-palette,
+    ),
+    typography: 'DM Sans',
+    density: 0,
+  ));
+}
+
+:root {
+  // Override M3 primary system variables with PluriBourse coral
+  --mat-sys-primary: #C44626;
+  --mat-sys-on-primary: #FFFFFF;
+  --mat-sys-primary-container: #FFF4EE;
+  --mat-sys-on-primary-container: #8C2910;
+
+  // Warm beige surfaces
+  --mat-sys-surface: #FFFBF9;
+  --mat-sys-on-surface: #1A0A05;
+  --mat-sys-surface-variant: #F5EEEA;
+  --mat-sys-on-surface-variant: #6B6460;
+  --mat-sys-background: #FFFBF9;
+  --mat-sys-outline: #8A7870;
+  --mat-sys-outline-variant: #F0E4DC;
+
+  // Secondary (warm brown)
+  --mat-sys-secondary: #8C5C4E;
+  --mat-sys-on-secondary: #FFFFFF;
+  --mat-sys-secondary-container: #F5EEEA;
+  --mat-sys-on-secondary-container: #3D1A10;
+
+  // Error
+  --mat-sys-error: #BA1A1A;
+  --mat-sys-on-error: #FFFFFF;
+  --mat-sys-error-container: #FFDAD6;
+  --mat-sys-on-error-container: #410002;
+
+  // PluriBourse custom tokens (non-M3)
+  --pb-sidebar-bg: #2A100A;
+  --pb-primary-hover: #A83A1E;
+  --pb-success-container: #F0FDF4;
+  --pb-on-success-container: #166534;
+  --pb-on-surface-muted: rgba(245, 238, 234, 0.65);
+
+  // Shape tokens
+  --pb-rounded-sm: 4px;
+  --pb-rounded-md: 8px;
+  --pb-rounded-lg: 12px;
+  --pb-rounded-xl: 20px;
+  --pb-rounded-full: 999px;
+
+  // Spacing tokens
+  --pb-space-xs: 4px;
+  --pb-space-sm: 8px;
+  --pb-space-md: 16px;
+  --pb-space-lg: 24px;
+  --pb-space-xl: 32px;
+  --pb-space-2xl: 48px;
+  --pb-space-3xl: 64px;
+
+  // Elevation tokens
+  --pb-elevation-1: 0 1px 4px rgba(28,10,5,.08);
+  --pb-elevation-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
+  --pb-elevation-3: 0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  background-color: var(--mat-sys-background);
+  color: var(--mat-sys-on-surface);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}

@@ -39,6 +39,32 @@
       "save": "Failed to save language preference."
     }
   },
+  "nav": {
+    "logout": "Sign out",
+    "phase": {
+      "current": "Current phase",
+      "preparation": "Preparation",
+      "deposit": "Deposit",
+      "sale": "Sale",
+      "post-sale": "Post-sale",
+      "closed": "Closed"
+    },
+    "role": {
+      "admin": "Admin",
+      "volunteer": "Volunteer"
+    },
+    "sections": {
+      "activeEdition": "Active Edition",
+      "management": "Management"
+    },
+    "sidebar": {
+      "label": "Main navigation"
+    },
+    "admin": {
+      "users": "Volunteers",
+      "settings": "Settings"
+    }
+  },
   "admin": {
     "users": {
       "title": "Volunteer Accounts",

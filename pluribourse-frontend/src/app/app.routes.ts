@@ -1,45 +1,61 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { AppLayoutComponent } from './layout/app-layout/app-layout.component';
+import { AuthService } from './services/auth.service';
 
 export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./features/auth/login/login.component').then((m) => m.LoginComponent),
+      import('./features/auth/login/login.component').then(m => m.LoginComponent),
   },
   {
     path: 'change-password',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/auth/change-password/change-password.component').then(
-        (m) => m.ChangePasswordComponent,
+        m => m.ChangePasswordComponent,
       ),
   },
   {
-    path: 'admin',
-    canActivate: [authGuard, adminGuard],
-    loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
-  },
-  {
-    path: 'account',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/account/account.component').then((m) => m.AccountComponent),
-  },
-  {
-    path: 'volunteer',
-    canActivate: [authGuard],
-    loadChildren: () =>
-      import('./features/volunteer/volunteer.routes').then((m) => m.volunteerRoutes),
-  },
-  {
     path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
+    component: AppLayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: () => {
+          const auth = inject(AuthService);
+          switch (auth.currentUser()?.role) {
+            case 'ADMIN': return '/admin';
+            case 'VOLUNTEER': return '/volunteer';
+            default: return '/login';
+          }
+        },
+      },
+      {
+        path: 'admin',
+        canActivate: [adminGuard],
+        loadChildren: () =>
+          import('./features/admin/admin.routes').then(m => m.adminRoutes),
+      },
+      {
+        path: 'account',
+        loadComponent: () =>
+          import('./features/account/account.component').then(m => m.AccountComponent),
+      },
+      {
+        path: 'volunteer',
+        loadChildren: () =>
+          import('./features/volunteer/volunteer.routes').then(m => m.volunteerRoutes),
+      },
+    ],
   },
   {
     path: '**',
-    redirectTo: 'login'
+    redirectTo: '/login',
   },
 ];

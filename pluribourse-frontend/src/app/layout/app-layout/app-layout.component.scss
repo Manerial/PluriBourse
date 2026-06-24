@@ -1,0 +1,177 @@
+.app-shell {
+  display: grid;
+  grid-template-areas:
+    'topbar'
+    'content';
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+
+  &.has-sidebar {
+    grid-template-areas:
+      'topbar topbar'
+      'sidebar content';
+    grid-template-columns: 200px 1fr;
+  }
+}
+
+// ── Topbar ────────────────────────────────────────────────────────────────────
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 var(--pb-space-md);
+  background: var(--mat-sys-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  &__logo {
+    flex: 0 0 auto;
+  }
+
+  &__center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--pb-space-sm);
+  }
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--mat-sys-primary);
+  letter-spacing: -0.01em;
+}
+
+// ── Phase chip ────────────────────────────────────────────────────────────────
+.phase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-radius: var(--pb-rounded-full);
+  font-size: 14px;
+  font-weight: 600;
+
+  &__dot {
+    color: var(--mat-sys-primary);
+    font-size: 10px;
+    line-height: 1;
+  }
+}
+
+// ── Role badge ────────────────────────────────────────────────────────────────
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+  border-radius: var(--pb-rounded-full);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &--admin {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+}
+
+// ── Ghost button (logout) ─────────────────────────────────────────────────────
+.btn-ghost {
+  background: transparent;
+  border: none;
+  padding: 9px var(--pb-space-md);
+  border-radius: var(--pb-rounded-md);
+  color: var(--mat-sys-on-surface-variant);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+
+  &:hover { background: var(--mat-sys-surface-variant); }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+.sidebar {
+  grid-area: sidebar;
+  background: var(--pb-sidebar-bg);
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--pb-space-md) 0;
+  overflow-y: auto;
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--pb-space-sm);
+  }
+
+  &__section-label {
+    padding: var(--pb-space-sm) var(--pb-space-md);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pb-on-surface-muted);
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: var(--pb-space-sm);
+    padding: 12px var(--pb-space-md);
+    color: var(--pb-on-surface-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: var(--pb-rounded-md);
+    margin: 0 var(--pb-space-xs);
+
+    .material-symbols-outlined {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      line-height: 1;
+    }
+
+    &:hover { background: rgba(255, 255, 255, 0.08); }
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: 2px;
+    }
+
+    &--active {
+      background: var(--mat-sys-primary) !important;
+      color: var(--mat-sys-on-primary) !important;
+    }
+  }
+}
+
+// ── Content area ──────────────────────────────────────────────────────────────
+.content {
+  grid-area: content;
+  padding: var(--pb-space-lg);
+  overflow-y: auto;
+}

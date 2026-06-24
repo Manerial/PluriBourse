@@ -1,0 +1,68 @@
+<div class="app-shell" [class.has-sidebar]="isAdmin()">
+
+  <!-- Topbar (56px fixed) -->
+  <header class="topbar" role="banner">
+    <div class="topbar__logo">
+      <span class="logo-text">PluriBourse</span>
+    </div>
+
+    <div class="topbar__center">
+      <!-- Phase chip — static in Story 1.7, SSE-driven in Story 2.4 -->
+      <span class="phase-chip">
+        <span class="phase-chip__dot" aria-hidden="true">●</span>
+        {{ 'nav.phase.preparation' | translate }}
+      </span>
+    </div>
+
+    <div class="topbar__actions">
+      <span
+        class="role-badge"
+        [class.role-badge--admin]="isAdmin()">
+        {{ isAdmin() ? ('nav.role.admin' | translate) : ('nav.role.volunteer' | translate) }}
+      </span>
+      <button class="btn-ghost" type="button" (click)="logout()">
+        {{ 'nav.logout' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Admin sidebar (200px, dark) -->
+  @if (isAdmin()) {
+    <nav class="sidebar" [attr.aria-label]="'nav.sidebar.label' | translate">
+
+      <div class="sidebar__section">
+        <span class="sidebar__section-label">{{ 'nav.sections.activeEdition' | translate }}</span>
+        <!-- Edition nav items added in Epic 2 (Story 2.1+) -->
+      </div>
+
+      <div class="sidebar__section">
+        <span class="sidebar__section-label">{{ 'nav.sections.management' | translate }}</span>
+
+        <a
+          routerLink="/admin/users"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item">
+          <span class="material-symbols-outlined" aria-hidden="true">group</span>
+          <span>{{ 'nav.admin.users' | translate }}</span>
+        </a>
+
+        <a
+          routerLink="/admin/settings"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item">
+          <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+          <span>{{ 'nav.admin.settings' | translate }}</span>
+        </a>
+
+      </div>
+    </nav>
+  }
+
+  <!-- Main content area -->
+  <main class="content">
+    <router-outlet />
+  </main>
+
+</div>

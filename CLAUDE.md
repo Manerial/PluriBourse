@@ -55,7 +55,8 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 
 
 ### Frontend (Angular)
-- Frameworks : Jest + Jasmine
+- Frameworks : Vitest (via `ng test` / `npm test` dans `pluribourse-frontend/`)
+- Commande : `npm test` (dans `pluribourse-frontend/`) — ne pas utiliser `npx vitest run` directement
 - Couverture minimale cible : 80 %
 
 ## Git

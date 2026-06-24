@@ -1,5 +1,21 @@
 # Deferred Work
 
+## Résolutions constatées lors de l'audit du 2026-06-24
+
+Les items suivants ont été résolus dans des stories ultérieures et ne nécessitent plus d'action :
+
+- ~~**`app.html` scaffold Angular avec strings codées en dur**~~ → ✅ Résolu Story 1.7 : `app.html` = `<router-outlet />` uniquement
+- ~~**`authGuard` ne vérifie pas `forcePasswordChange`**~~ → ✅ Résolu Story 1.2/1.3 : `auth.guard.ts` contient le check
+- ~~**`adminGuard` redirige VOLUNTEER vers `/login`**~~ → ✅ Résolu Story 1.7 : redirige vers `/volunteer` si authentifié
+- ~~**`index.html <title>` hardcodé `PluribourseFrontend`**~~ → ✅ Résolu Story 1.7 : `<title>PluriBourse</title>` (TitleStrategy dynamique = nouveau defer existant)
+- ~~**`app.spec.ts` test scaffold cassera en Story 1.7**~~ → ✅ Résolu Story 1.7 : spec mis à jour avec tests router-outlet
+
+## Correctifs appliqués hors story — 2026-06-24
+
+- ~~**`proxy.conf.json` expose tous `/actuator/*`**~~ → ✅ Corrigé : path restreint à `/actuator/health`
+- ~~**`ngx-translate` : pas de langue de fallback explicite**~~ → ✅ Corrigé : `defaultLang: 'fr'` ajouté dans `app.config.ts`
+- ~~**`aria-label="Current phase"` masque la valeur de phase**~~ → ✅ Corrigé : `[attr.aria-label]` retiré du phase-chip ; texte visible = nom accessible
+
 ## Deferred from: code review of 1-1-mise-en-place-du-squelette-de-projet-baseline-docker-compose (2026-06-15)
 
 - **`app.html` scaffold Angular avec strings codées en dur** — `pluribourse-frontend/src/app/app.html` — Accepté comme placeholder Story 1.1. Story 1.7 (Design System / Angular Material) remplacera le template complet avec composants i18n-compliant.
@@ -68,3 +84,27 @@
 
 - **Session active d'un bénévole désactivé reste valide jusqu'à expiration** — `UserService.java:disableVolunteer()` — `setEnabled(false)` en DB ne révoque pas la session Spring Session JDBC en cours. Le bénévole désactivé peut continuer à faire des requêtes jusqu'à l'expiration de sa session (défaut : 1 jour). Pré-existant, identique au defer Story 1.2 "Changement de mot de passe n'invalide pas les autres sessions actives". À adresser avec Spring Session registry si invalidation immédiate requise.
 - **URL d'erreur `account-disabled` dupliquée en magic string Java + TypeScript** — `LoginFailureHandler.java` et `login.component.ts` — `"https://pluribourse/errors/account-disabled"` hardcodé dans les deux couches sans constante partagée. Une divergence silencieuse casse la détection côté frontend. Cross-langage, pas de solution compile-time. Risque faible à court terme.
+
+## Deferred from: code review of 1-7-systeme-de-design-angular-material-mise-en-page-applicative — Pass 2 (2026-06-24)
+
+- **`volunteerRoutes` array vide** — `pluribourse-frontend/src/app/features/volunteer/volunteer.routes.ts` — Un admin redirigé vers `/volunteer` par `adminGuard` voit un contenu vide. Pré-existant ; routes bénévoles définies à partir de l'Epic 3.
+- **`authInterceptor` coupe la session sur tout 403** — `pluribourse-frontend/src/app/core/interceptors/auth.interceptor.ts` — Le 403 d'une ressource admin protégée (feature flag, permission granulaire) déconnecte l'utilisateur comme un 403 d'expiration de session. Pré-existant.
+- **Hard reload `forcePasswordChange=true` bloque `/change-password`** — `auth.service.ts:63 / auth.guard.ts` — `restoreSession()` retourne early sans setter `currentUser`, `authGuard` refuse alors `/change-password`. Variante du defer Story 1.6 "restoreSession ne restaure pas la langue sur le chemin 403". Pré-existant.
+
+## Deferred from: code review of 1-7-systeme-de-design-angular-material-mise-en-page-applicative (2026-06-24)
+
+- **"Édition active" section sans liens de navigation** — `app-layout.component.html:34-37` — La section "Édition active" affiche uniquement son label sans `<a>` items. Explicitement différé à l'Epic 2 (Story 2.1+) dans les notes de dev de la story.
+- **Topbar `position: sticky` vs spec "fixed"** — `app-layout.component.scss:27` — La spec dit "fixed topbar" mais l'implémentation utilise `sticky`. Comportement équivalent dans le layout CSS grid actuel (`.app-shell` sans overflow, scroll au niveau document). À surveiller si la structure du shell évolue.
+- **`forcePasswordChange: undefined` contourne le guard** — `auth.guard.ts` — Si l'API retourne un 200 sans le champ `forcePasswordChange`, le guard ne redirige pas vers `/change-password`. Pré-existant, non introduit par cette story.
+- **Race condition de restauration de session** — `auth.guard.ts` / `app.config.ts` — Entre le lancement de `restoreSession` et la fin de la résolution, si le guard évalue `currentUser === null`, un utilisateur valide est renvoyé au login. Pré-existant.
+- **`logout()` sans gestion d'erreur / flash cosmétique** — `app-layout.component.ts:22-24` — `AuthService.logout()` utilise un `finally` qui navigue toujours vers `/login`. Un échec POST n'empêche pas la déconnexion, mais l'absence de `try/catch` dans le composant supprime tout feedback d'erreur visible. Flash d'un frame : role-badge passe à "volunteer" avant la navigation.
+- **Google Fonts sans attributs SRI ni crossorigin** — `index.html:9-10` — Deux `<link>` Google Fonts sans `integrity` ni `crossorigin`. Risque de sécurité faible pour un outil auto-hébergé ; les polices pourraient être intégrées localement en hardening.
+- **Double source CSS (`mat.theme()` + `:root`) fragile aux mises à jour** — `styles.scss` — Angular Material M3 génère ses variables `--mat-sys-*` via `mat.theme()`, puis `:root` les écrase immédiatement. Les variables émises par les composants Material dans leur propre portée (`:host`) peuvent re-overrider ces valeurs. À surveiller lors des upgrades Angular Material.
+- **`!important` sur `.sidebar__item--active`** — `app-layout.component.scss` — `routerLinkActive` injecte la classe sur l'élément ; `!important` est nécessaire uniquement si des styles Material conflictuels interfèrent. À retirer si plus nécessaire lors d'une revue CSS.
+- **`aria-label="Current phase"` ne correspond pas au texte visible** — `app-layout.component.html:13` — Le chip affiche "Préparation" / "Preparation" mais son `aria-label` dit "Phase actuelle" / "Current phase". Un lecteur d'écran annonce "Phase actuelle" sans la valeur de la phase. Amélioration accessibilité mineure.
+- **Tokens CSS non utilisés définis dans `:root`** — `styles.scss` — `--pb-primary-hover`, `--pb-success-container`, `--pb-on-success-container` sont déclarés sans usage dans cette story. Tokens intentionnels pour usage futur ; à supprimer si jamais implémentés dans un composant.
+- **Pas de `TitleStrategy` pour les routes enfants** — Chaque page affiche "PluriBourse" dans l'onglet navigateur. À adresser avec `TitleStrategy` + clés i18n pour améliorer la lisibilité de l'historique et les annonces de changement de page pour les lecteurs d'écran.
+- **`routerLinkActive` en mode prefix sur les liens sidebar** — `app-layout.component.html:43-47` — `/admin/users/create` activera le lien "Bénévoles" (prefixe match). Comportement intentionnel pour l'UX actuelle ; à surveiller si des routes enfants profondes créent des ambiguïtés.
+- **Pas de breakpoint responsive pour le sidebar** — `app-layout.component.scss` — `has-sidebar` = `200px 1fr` sans `min-width` sur la colonne content. La story est explicitement desktop-only (v1). À adresser en Epic de responsive design.
+- **Logo et position du bouton logout non assertés dans les tests** — `app-layout.component.spec.ts` — Tests vérifient la présence de `.topbar` mais pas `.topbar__logo` ni que `.btn-ghost` est enfant de `.topbar__actions`. Couverture suffisante pour la story, à renforcer si des régressions surviennent.
+- **`button-primary` CSS absent des global styles** — `styles.scss` — DESIGN.md spécifie un composant `button-primary` (`background: #C44626, padding: 10px 20px`). Aucune classe ni token dédié n'est défini dans `styles.scss`. À implémenter lors de la première story introduisant un bouton primaire dans le shell ou les pages enfants.
