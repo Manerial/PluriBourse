@@ -8,6 +8,7 @@ import { AccountComponent } from './account.component';
 import { AccountService } from '../../services/account.service';
 import { AuthService, CurrentUser } from '../../services/auth.service';
 import { Language } from '../../models/language.enum';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 const MOCK_USER: CurrentUser = {
   username: 'test',
@@ -30,6 +31,11 @@ describe('AccountComponent', () => {
     currentUser: currentUserSignal
   };
 
+  const toastMock = {
+    showSuccess: vi.fn(),
+    showError: vi.fn(),
+  };
+
   beforeEach(async () => {
     vi.clearAllMocks();
     accountServiceMock.updateLanguage.mockReturnValue(of(undefined));
@@ -40,7 +46,8 @@ describe('AccountComponent', () => {
       providers: [
         provideTranslateService({ lang: 'en' }),
         { provide: AccountService, useValue: accountServiceMock },
-        { provide: AuthService, useValue: authServiceMock }
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: ToastService, useValue: toastMock },
       ]
     }).compileComponents();
 
@@ -61,17 +68,17 @@ describe('AccountComponent', () => {
     expect(currentUserSignal()?.preferredLanguage).toBe(Language.EN);
   });
 
-  it('sets saveSuccess on successful submit', async () => {
+  it('shows success toast on successful submit', async () => {
     await component.onSubmit();
-    expect(component.saveSuccess()).toBe(true);
-    expect(component.saveError()).toBeNull();
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(toastMock.showError).not.toHaveBeenCalled();
   });
 
-  it('sets saveError key on failed submit', async () => {
+  it('shows error toast on failed submit', async () => {
     accountServiceMock.updateLanguage.mockReturnValue(throwError(() => new Error('server error')));
     await component.onSubmit();
-    expect(component.saveError()).toBe('account.error.save');
-    expect(component.saveSuccess()).toBe(false);
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+    expect(toastMock.showSuccess).not.toHaveBeenCalled();
   });
 
   it('does not call updateLanguage when form is invalid', async () => {

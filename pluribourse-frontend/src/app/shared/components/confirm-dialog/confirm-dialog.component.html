@@ -1,0 +1,19 @@
+<div class="dialog">
+  <h2 id="dialog-title" class="dialog__title">{{ data.title }}</h2>
+  <p id="dialog-desc" class="dialog__description">{{ data.description }}</p>
+  <div class="dialog__actions">
+    <button
+      type="button"
+      class="btn-ghost"
+      cdkFocusInitial
+      (click)="cancel()">
+      {{ data.cancelLabel ?? ('common.dialog.cancel' | translate) }}
+    </button>
+    <button
+      type="button"
+      [class]="data.confirmVariant === 'error' ? 'btn-error' : 'btn-primary'"
+      (click)="confirm()">
+      {{ data.confirmLabel ?? ('common.dialog.confirm' | translate) }}
+    </button>
+  </div>
+</div>

@@ -71,46 +71,6 @@
   }
 }
 
-// ── Role badge ────────────────────────────────────────────────────────────────
-.role-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  background: var(--mat-sys-surface-variant);
-  color: var(--mat-sys-on-surface-variant);
-  border-radius: var(--pb-rounded-full);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-
-  &--admin {
-    background: var(--mat-sys-primary-container);
-    color: var(--mat-sys-on-primary-container);
-  }
-}
-
-// ── Ghost button (logout) ─────────────────────────────────────────────────────
-.btn-ghost {
-  background: transparent;
-  border: none;
-  padding: 9px var(--pb-space-md);
-  border-radius: var(--pb-rounded-md);
-  color: var(--mat-sys-on-surface-variant);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  line-height: 1;
-
-  &:hover { background: var(--mat-sys-surface-variant); }
-
-  &:focus-visible {
-    outline: 2px solid var(--mat-sys-primary);
-    outline-offset: 2px;
-  }
-}
-
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 .sidebar {
   grid-area: sidebar;
@@ -156,11 +116,6 @@
     }
 
     &:hover { background: rgba(255, 255, 255, 0.08); }
-
-    &:focus-visible {
-      outline: 2px solid var(--mat-sys-primary);
-      outline-offset: 2px;
-    }
 
     &--active {
       background: var(--mat-sys-primary) !important;

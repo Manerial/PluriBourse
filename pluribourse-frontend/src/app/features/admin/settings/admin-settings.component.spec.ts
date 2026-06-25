@@ -7,6 +7,7 @@ import { AdminSettingsComponent } from './admin-settings.component';
 import { GlobalInstanceConfigService } from '../../../services/global-instance-config.service';
 import { GlobalInstanceConfigDto } from '../../../models/global-instance-config.model';
 import { Language } from '../../../models/language.enum';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 const MOCK_CONFIG: GlobalInstanceConfigDto = {
   associationName: 'Mon Asso',
@@ -23,6 +24,11 @@ describe('AdminSettingsComponent', () => {
     updateConfig: vi.fn().mockReturnValue(of(MOCK_CONFIG))
   };
 
+  const toastMock = {
+    showSuccess: vi.fn(),
+    showError: vi.fn(),
+  };
+
   beforeEach(async () => {
     vi.clearAllMocks();
     instanceConfigServiceMock.getConfig.mockReturnValue(of(MOCK_CONFIG));
@@ -32,7 +38,8 @@ describe('AdminSettingsComponent', () => {
       imports: [AdminSettingsComponent],
       providers: [
         provideTranslateService({ lang: 'en' }),
-        { provide: GlobalInstanceConfigService, useValue: instanceConfigServiceMock }
+        { provide: GlobalInstanceConfigService, useValue: instanceConfigServiceMock },
+        { provide: ToastService, useValue: toastMock },
       ]
     }).compileComponents();
 
@@ -58,7 +65,7 @@ describe('AdminSettingsComponent', () => {
     expect(component.isLoading()).toBe(false);
   });
 
-  it('calls updateConfig with form values and sets saveSuccess on submit', async () => {
+  it('calls updateConfig with form values and shows success toast on submit', async () => {
     const updated: GlobalInstanceConfigDto = {
       associationName: 'Nouvelle Asso',
       defaultCommissionRate: 15,
@@ -74,19 +81,19 @@ describe('AdminSettingsComponent', () => {
       defaultCommissionRate: 15,
       defaultDocumentLanguage: Language.FR
     });
-    expect(component.saveSuccess()).toBe(true);
-    expect(component.saveError()).toBeNull();
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(toastMock.showError).not.toHaveBeenCalled();
     expect(component.isSaving()).toBe(false);
     expect(component.form.getRawValue().associationName).toBe('Nouvelle Asso');
     expect(component.form.getRawValue().defaultCommissionRate).toBe(15);
     expect(component.form.getRawValue().defaultDocumentLanguage).toBe(Language.FR);
   });
 
-  it('sets saveError key and clears saving when updateConfig fails', async () => {
+  it('shows error toast and clears saving when updateConfig fails', async () => {
     instanceConfigServiceMock.updateConfig.mockReturnValue(throwError(() => new Error('server error')));
     await component.onSubmit();
-    expect(component.saveError()).toBe('admin.settings.error.save');
-    expect(component.saveSuccess()).toBe(false);
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+    expect(toastMock.showSuccess).not.toHaveBeenCalled();
     expect(component.isSaving()).toBe(false);
   });
 

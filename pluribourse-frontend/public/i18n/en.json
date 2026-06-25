@@ -3,7 +3,17 @@
     "title": "PluriBourse"
   },
   "common": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "dialog": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "toast": {
+      "close": "Close"
+    },
+    "empty": {
+      "clearFilters": "Clear filters"
+    }
   },
   "auth": {
     "login": {
@@ -23,6 +33,7 @@
       "newPassword": "New password",
       "minLength": "Password must be at least 8 characters.",
       "submit": "Change password",
+      "success": "Password changed successfully.",
       "error": "Unable to change password. Please try again."
     }
   },
@@ -74,7 +85,6 @@
       "title": "Volunteer Accounts",
       "columns": {
         "name": "Name",
-        "username": "Username",
         "role": "Role",
         "status": "Status",
         "actions": "Actions"
@@ -99,6 +109,12 @@
         "submit": "Create",
         "cancel": "Cancel"
       },
+      "success": {
+        "disable": "Account disabled.",
+        "enable": "Account enabled.",
+        "resetPassword": "Password reset successfully."
+      },
+      "empty": "No volunteers registered yet.",
       "error": {
         "load": "Failed to load volunteers.",
         "create": "Failed to create volunteer.",

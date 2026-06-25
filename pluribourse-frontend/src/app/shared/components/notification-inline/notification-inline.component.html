@@ -1,0 +1,10 @@
+<div
+  class="notification"
+  [class.notification--error]="variant() === 'error'"
+  [attr.role]="variant() === 'error' ? 'alert' : 'status'"
+  [attr.aria-live]="variant() === 'error' ? 'assertive' : 'polite'">
+  <span class="material-symbols-outlined notification__icon" aria-hidden="true">
+    {{ variant() === 'error' ? 'error' : 'warning' }}
+  </span>
+  <span class="notification__message">{{ message() }}</span>
+</div>

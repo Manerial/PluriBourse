@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-06-24"  # Story 1.7 → done
+last_updated: "2026-06-25"  # Story 1.8 → done
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -51,7 +51,7 @@ development_status:
   1-5-configuration-de-linstance-page-de-parametres-admin: done
   1-6-preference-de-langue-utilisateur-infrastructure-i18n: done
   1-7-systeme-de-design-angular-material-mise-en-page-applicative: done
-  1-8-composants-ui-partages-boites-de-dialogue-notifications-accessibilite: backlog
+  1-8-composants-ui-partages-boites-de-dialogue-notifications-accessibilite: done
   1-9-guide-dinstallation: backlog
   epic-1-retrospective: optional
 

@@ -31,10 +31,10 @@ html {
   --mat-sys-outline-variant: #F0E4DC;
 
   // Secondary (warm brown)
-  --mat-sys-secondary: #8C5C4E;
+  --mat-sys-secondary: #8C5C42;
   --mat-sys-on-secondary: #FFFFFF;
-  --mat-sys-secondary-container: #F5EEEA;
-  --mat-sys-on-secondary-container: #3D1A10;
+  --mat-sys-secondary-container: #FFDCC5;
+  --mat-sys-on-secondary-container: #331200;
 
   // Error
   --mat-sys-error: #BA1A1A;
@@ -69,6 +69,234 @@ html {
   --pb-elevation-1: 0 1px 4px rgba(28,10,5,.08);
   --pb-elevation-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);
   --pb-elevation-3: 0 8px 24px rgba(28,10,5,.18), 0 2px 6px rgba(28,10,5,.10);
+}
+
+// ── Card layouts ──────────────────────────────────────────────────────────────
+.card {
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--pb-rounded-lg);
+  box-shadow: var(--pb-elevation-1);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: var(--pb-space-md) var(--pb-space-lg);
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.form-card {
+  max-width: 640px;
+
+  .card__header {
+    gap: var(--pb-space-sm);
+  }
+
+  .card__body {
+    padding: var(--pb-space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--pb-space-md);
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--pb-space-md);
+    }
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  .card__actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--pb-space-sm);
+    margin-top: var(--pb-space-xs);
+  }
+}
+
+// ── Auth card ─────────────────────────────────────────────────────────────────
+.auth-card {
+  background: var(--mat-sys-surface);
+  border-radius: var(--pb-rounded-xl);
+  box-shadow: var(--pb-elevation-2);
+  padding: var(--pb-space-xl);
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-md);
+
+  &__title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__description {
+    margin: 0;
+    font-size: 14px;
+    color: var(--mat-sys-on-surface-variant);
+    line-height: 1.5;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--pb-rounded-full);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+
+  &--active {
+    background: var(--pb-success-container);
+    color: var(--pb-on-success-container);
+  }
+
+  &--inactive {
+    background: var(--mat-sys-surface-variant);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &--admin {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  &--volunteer {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+}
+
+.badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+// ── Form helpers ──────────────────────────────────────────────────────────────
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pb-space-md);
+}
+
+// ── Global button classes ─────────────────────────────────────────────────────
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  border-radius: var(--pb-rounded-md);
+  padding: 10px 20px;
+  min-height: 44px;
+  font: 600 14px/1 'DM Sans', sans-serif;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+
+  &:disabled, &[disabled] { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-error {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
+  border-radius: var(--pb-rounded-md);
+  padding: 10px 20px;
+  min-height: 44px;
+  font: 600 14px/1 'DM Sans', sans-serif;
+  cursor: pointer;
+  border: none;
+
+  &:disabled, &[disabled] { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: var(--pb-rounded-md);
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  line-height: 0;
+
+  &:hover { background: var(--mat-sys-surface-variant); }
+}
+
+.btn-ghost {
+  background: transparent;
+  border: none;
+  padding: 9px var(--pb-space-md);
+  min-height: 44px;
+  border-radius: var(--pb-rounded-md);
+  color: var(--mat-sys-on-surface-variant);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+
+  &:hover { background: var(--mat-sys-surface-variant); }
+}
+
+// ── Accessibility baseline ────────────────────────────────────────────────────
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// ── CDK Dialog overlay ────────────────────────────────────────────────────────
+.dialog-backdrop {
+  background: rgba(0, 0, 0, 0.5);
 }
 
 *, *::before, *::after { box-sizing: border-box; }

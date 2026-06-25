@@ -81,9 +81,9 @@ describe('AppLayoutComponent', () => {
     });
 
     it('renders admin role badge', () => {
-      const badge = fixture.nativeElement.querySelector('.role-badge');
+      const badge = fixture.nativeElement.querySelector('.badge');
       expect(badge).toBeTruthy();
-      expect(badge.classList).toContain('role-badge--admin');
+      expect(badge.classList).toContain('badge--admin');
     });
 
     it('applies active class to the sidebar link matching the current route', async () => {
@@ -108,12 +108,12 @@ describe('AppLayoutComponent', () => {
     });
 
     it('does not apply admin class to role badge', () => {
-      const badge = fixture.nativeElement.querySelector('.role-badge');
-      expect(badge.classList).not.toContain('role-badge--admin');
+      const badge = fixture.nativeElement.querySelector('.badge');
+      expect(badge.classList).not.toContain('badge--admin');
     });
 
     it('shows the role badge', () => {
-      expect(fixture.nativeElement.querySelector('.role-badge')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.badge')).toBeTruthy();
     });
   });
 

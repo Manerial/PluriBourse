@@ -1,53 +1,44 @@
-<h1>{{ 'admin.settings.title' | translate }}</h1>
+<div class="card form-card">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.settings.title' | translate }}</h1>
+  </div>
 
-@if (isLoading()) {
-  <p>{{ 'common.loading' | translate }}</p>
-}
-
-@if (loadError()) {
-  <p role="alert">{{ loadError()! | translate }}</p>
-}
-
-@if (!isLoading() && !loadError()) {
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div>
-      <label for="associationName">{{ 'admin.settings.associationName' | translate }}</label>
-      <input
-        id="associationName"
-        formControlName="associationName"
-        type="text"
-        maxlength="255" />
-    </div>
-
-    <div>
-      <label for="defaultCommissionRate">{{ 'admin.settings.defaultCommissionRate' | translate }}</label>
-      <input
-        id="defaultCommissionRate"
-        formControlName="defaultCommissionRate"
-        type="number"
-        min="0"
-        max="100"
-        step="0.01" />
-    </div>
-
-    <div>
-      <label for="defaultDocumentLanguage">{{ 'admin.settings.defaultDocumentLanguage' | translate }}</label>
-      <select id="defaultDocumentLanguage" formControlName="defaultDocumentLanguage">
-        <option value="EN">{{ 'admin.settings.language.EN' | translate }}</option>
-        <option value="FR">{{ 'admin.settings.language.FR' | translate }}</option>
-      </select>
-    </div>
-
-    @if (saveSuccess()) {
-      <p role="status">{{ 'admin.settings.success' | translate }}</p>
+  <div class="card__body">
+    @if (isLoading()) {
+      <app-skeleton-row [rows]="4" />
     }
 
-    @if (saveError()) {
-      <p role="alert">{{ saveError()! | translate }}</p>
+    @if (loadError()) {
+      <app-notification-inline [message]="loadError()! | translate" variant="error" />
     }
 
-    <button type="submit" [disabled]="form.invalid || isSaving()">
-      {{ 'admin.settings.save' | translate }}
-    </button>
-  </form>
-}
+    @if (!isLoading() && !loadError()) {
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'admin.settings.associationName' | translate }}</mat-label>
+          <input matInput formControlName="associationName" type="text" maxlength="255" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'admin.settings.defaultCommissionRate' | translate }}</mat-label>
+          <input matInput formControlName="defaultCommissionRate" type="number" min="0" max="100" step="0.01" />
+          <span matTextSuffix>%</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'admin.settings.defaultDocumentLanguage' | translate }}</mat-label>
+          <mat-select formControlName="defaultDocumentLanguage">
+            <mat-option value="EN">{{ 'admin.settings.language.EN' | translate }}</mat-option>
+            <mat-option value="FR">{{ 'admin.settings.language.FR' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="card__actions">
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || isSaving()">
+            {{ 'admin.settings.save' | translate }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

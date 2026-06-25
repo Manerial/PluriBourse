@@ -38,14 +38,14 @@ export class AuthService {
       await firstValueFrom(this.http.post<void>('/api/auth/logout', null));
     } finally {
       this.currentUser.set(null);
-      this.translateService.use('en').subscribe();
+      await firstValueFrom(this.translateService.use(Language.EN.toLowerCase()));
       await this.router.navigate(['/login']);
     }
   }
 
   async changePassword(newPassword: string): Promise<void> {
-    const updated = await firstValueFrom(this.http.post<CurrentUser>('/api/auth/change-password', { newPassword }));
-    this.currentUser.set(updated);
+    await firstValueFrom(this.http.post<void>('/api/auth/change-password', { newPassword }));
+    this.currentUser.update(user => user ? { ...user, forcePasswordChange: false } : null);
   }
 
   async restoreSession(): Promise<void> {
@@ -54,11 +54,13 @@ export class AuthService {
       this.currentUser.set(user);
       await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
     } catch (error: any) {
-      // 403 password-change-required means the session is valid but the password must change.
-      // Set a sentinel so isAuthenticated()=true and authGuard routes to /change-password.
-      // Real user data is populated after the user changes their password successfully.
+      // 403 password-change-required: session is still valid. If currentUser is already
+      // populated (e.g., after changePassword), keep it unchanged. On a cold load where
+      // currentUser is null, set the sentinel so authGuard can route to /change-password.
       if (error?.status === 403 && error?.error?.type?.includes('password-change-required')) {
-        this.currentUser.set({ username: '', role: '', forcePasswordChange: true, preferredLanguage: Language.EN });
+        if (!this.currentUser()) {
+          this.currentUser.set({ username: '', role: '', forcePasswordChange: true, preferredLanguage: Language.EN });
+        }
         return;
       }
       this.currentUser.set(null);

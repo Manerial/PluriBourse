@@ -1,0 +1,22 @@
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pb-space-md);
+  padding: var(--pb-space-3xl) var(--pb-space-md);
+  text-align: center;
+
+  &__icon {
+    font-size: 48px;
+    color: var(--mat-sys-on-surface-variant);
+    opacity: 0.6;
+  }
+
+  &__message {
+    margin: 0;
+    font-size: 14px;
+    color: var(--mat-sys-on-surface-variant);
+    max-width: 320px;
+  }
+}

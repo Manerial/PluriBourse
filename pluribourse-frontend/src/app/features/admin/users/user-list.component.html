@@ -1,64 +1,88 @@
-<h1>{{ 'admin.users.title' | translate }}</h1>
+<div class="card">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.users.title' | translate }}</h1>
+    <a routerLink="create" class="btn-primary">{{ 'admin.users.actions.create' | translate }}</a>
+  </div>
 
-@if (isLoading()) {
-  <p>{{ 'common.loading' | translate }}</p>
-}
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="5" />
+  }
 
-@if (error()) {
-  <p role="alert">{{ error()! | translate }}</p>
-}
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
 
-@if (actionError()) {
-  <p role="alert">{{ actionError()! | translate }}</p>
-}
+  @if (!isLoading() && !error()) {
+    @if (users().length === 0) {
+      <app-empty-state
+        icon="group"
+        [message]="'admin.users.empty' | translate"
+        [actionLabel]="'admin.users.actions.create' | translate"
+        (action)="navigateToCreate()"
+      />
+    } @else {
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.users.columns.name' | translate }}</th>
+            <th>{{ 'admin.users.columns.role' | translate }}</th>
+            <th>{{ 'admin.users.columns.status' | translate }}</th>
+            <th>{{ 'admin.users.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>
+                <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
+                <span class="user-username">{{ user.username }}</span>
+              </td>
+              <td>
+                <span class="badge" [class]="'badge--' + user.role.toLowerCase()">
+                  {{ ('nav.role.' + user.role.toLowerCase()) | translate }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [class]="user.enabled ? 'badge--active' : 'badge--inactive'">
+                  <span class="badge__dot" aria-hidden="true"></span>
+                  {{ (user.enabled ? 'admin.users.status.active' : 'admin.users.status.inactive') | translate }}
+                </span>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button
+                    type="button"
+                    class="btn-ghost"
+                    (click)="toggleEnabled(user)">
+                    {{ (user.enabled ? 'admin.users.actions.disable' : 'admin.users.actions.enable') | translate }}
+                  </button>
 
-@if (!isLoading() && !error()) {
-  <table>
-    <thead>
-      <tr>
-        <th>{{ 'admin.users.columns.name' | translate }}</th>
-        <th>{{ 'admin.users.columns.username' | translate }}</th>
-        <th>{{ 'admin.users.columns.role' | translate }}</th>
-        <th>{{ 'admin.users.columns.status' | translate }}</th>
-        <th>{{ 'admin.users.columns.actions' | translate }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (user of users(); track user.id) {
-        <tr>
-          <td>{{ user.firstName }} {{ user.lastName }}</td>
-          <td>{{ user.username }}</td>
-          <td>{{ user.role }}</td>
-          <td>
-            {{ (user.enabled ? 'admin.users.status.active' : 'admin.users.status.inactive') | translate }}
-          </td>
-          <td>
-            <button type="button" (click)="toggleEnabled(user)">
-              {{ (user.enabled ? 'admin.users.actions.disable' : 'admin.users.actions.enable') | translate }}
-            </button>
-            @if (resetPasswordFor() !== user.id) {
-              <button type="button" (click)="showResetPassword(user.id)">
-                {{ 'admin.users.actions.resetPassword' | translate }}
-              </button>
-            } @else {
-              <form [formGroup]="resetPasswordForm" (ngSubmit)="submitResetPassword(user.id)">
-                <input
-                  formControlName="newPassword"
-                  type="password"
-                  [attr.aria-label]="'admin.users.create.password' | translate" />
-                <button type="submit" [disabled]="resetPasswordForm.invalid || submitting()">
-                  {{ 'admin.users.actions.confirmReset' | translate }}
-                </button>
-                <button type="button" (click)="cancelResetPassword()">
-                  {{ 'admin.users.create.cancel' | translate }}
-                </button>
-              </form>
-            }
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
-
-  <a routerLink="create">{{ 'admin.users.actions.create' | translate }}</a>
-}
+                  @if (resetPasswordFor() !== user.id) {
+                    <button type="button" class="btn-ghost" (click)="showResetPassword(user.id)">
+                      {{ 'admin.users.actions.resetPassword' | translate }}
+                    </button>
+                  } @else {
+                    <form class="reset-form" [formGroup]="resetPasswordForm" (ngSubmit)="submitResetPassword(user.id)">
+                      <input
+                        class="reset-input"
+                        formControlName="newPassword"
+                        type="password"
+                        autocomplete="new-password"
+                        [attr.aria-label]="'admin.users.create.password' | translate" />
+                      <button type="submit" class="btn-primary" [disabled]="resetPasswordForm.invalid || submitting()">
+                        {{ 'admin.users.actions.confirmReset' | translate }}
+                      </button>
+                      <button type="button" class="btn-ghost" (click)="cancelResetPassword()">
+                        {{ 'admin.users.create.cancel' | translate }}
+                      </button>
+                    </form>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</div>

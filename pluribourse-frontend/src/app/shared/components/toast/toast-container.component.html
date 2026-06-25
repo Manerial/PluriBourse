@@ -1,0 +1,23 @@
+@if (toastService.toast(); as toast) {
+  <div
+    class="toast"
+    [class.toast--success]="toast.type === 'success'"
+    [class.toast--error]="toast.type === 'error'"
+    [attr.role]="toast.type === 'error' ? 'alert' : 'status'"
+    [attr.aria-live]="toast.type === 'error' ? 'assertive' : 'polite'"
+    aria-atomic="true">
+    <span class="material-symbols-outlined toast__icon" aria-hidden="true">
+      {{ toast.type === 'success' ? 'check_circle' : 'error' }}
+    </span>
+    <span class="toast__message">{{ toast.message }}</span>
+    @if (toast.type === 'error') {
+      <button
+        type="button"
+        class="toast__close"
+        (click)="toastService.close()"
+        [attr.aria-label]="'common.toast.close' | translate">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    }
+  </div>
+}

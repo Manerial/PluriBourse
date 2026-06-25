@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { AccountService } from '../../services/account.service';
 import { Language } from '../../models/language.enum';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-account',
@@ -17,10 +18,9 @@ export class AccountComponent implements OnInit {
   private readonly accountService = inject(AccountService);
   private readonly translateService = inject(TranslateService);
   private readonly fb = inject(FormBuilder);
+  private readonly toast = inject(ToastService);
 
   readonly isSaving = signal(false);
-  readonly saveSuccess = signal(false);
-  readonly saveError = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     language: [Language.EN, [Validators.required]]
@@ -34,20 +34,22 @@ export class AccountComponent implements OnInit {
     if (this.form.invalid || this.isSaving()) {
       return;
     }
-    this.saveSuccess.set(false);
-    this.saveError.set(null);
     this.isSaving.set(true);
     const lang = this.form.getRawValue().language;
     try {
       await firstValueFrom(this.accountService.updateLanguage(lang));
-      this.translateService.use(lang.toLowerCase()).subscribe();
       const current = this.auth.currentUser();
       if (current) {
         this.auth.currentUser.set({ ...current, preferredLanguage: lang });
       }
-      this.saveSuccess.set(true);
+      try {
+        await firstValueFrom(this.translateService.use(lang.toLowerCase()));
+      } catch {
+        // language switch failed locally; preference already saved server-side
+      }
+      this.toast.showSuccess(this.translateService.instant('account.success'));
     } catch {
-      this.saveError.set('account.error.save');
+      this.toast.showError(this.translateService.instant('account.error.save'));
     } finally {
       this.isSaving.set(false);
     }

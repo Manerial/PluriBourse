@@ -1,0 +1,29 @@
+.dialog {
+  background: var(--mat-sys-surface);
+  border-radius: var(--pb-rounded-xl);
+  box-shadow: var(--pb-elevation-3);
+  padding: var(--pb-space-lg);
+  max-width: 480px;
+  width: 100%;
+  outline: none;
+
+  &__title {
+    margin: 0 0 var(--pb-space-sm);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__description {
+    margin: 0 0 var(--pb-space-lg);
+    font-size: 14px;
+    color: var(--mat-sys-on-surface-variant);
+    line-height: 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pb-space-sm);
+  }
+}

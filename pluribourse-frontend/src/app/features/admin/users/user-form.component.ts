@@ -1,14 +1,17 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { UserService } from '../../../services/user.service';
+import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 
 @Component({
   selector: 'app-user-form',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe],
+  imports: [ReactiveFormsModule, TranslatePipe, MatFormFieldModule, MatInputModule, NotificationInlineComponent],
   templateUrl: './user-form.component.html'
 })
 export class UserFormComponent {

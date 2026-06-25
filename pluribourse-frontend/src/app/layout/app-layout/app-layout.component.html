@@ -16,8 +16,9 @@
 
     <div class="topbar__actions">
       <span
-        class="role-badge"
-        [class.role-badge--admin]="isAdmin()">
+        class="badge"
+        [class.badge--admin]="isAdmin()"
+        [class.badge--volunteer]="!isAdmin()">
         {{ isAdmin() ? ('nav.role.admin' | translate) : ('nav.role.volunteer' | translate) }}
       </span>
       <button class="btn-ghost" type="button" (click)="logout()">
@@ -64,5 +65,7 @@
   <main class="content">
     <router-outlet />
   </main>
+
+  <app-toast-container />
 
 </div>

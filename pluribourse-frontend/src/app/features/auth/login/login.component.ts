@@ -1,14 +1,18 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../../services/auth.service';
+import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe],
-  templateUrl: './login.component.html'
+  imports: [ReactiveFormsModule, TranslatePipe, MatFormFieldModule, MatInputModule, NotificationInlineComponent],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss'
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);

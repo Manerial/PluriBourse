@@ -1,26 +1,33 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { Router, RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { UserDto } from '../../../models/user.model';
 import { UserService } from '../../../services/user.service';
+import { ToastService } from '../../../shared/components/toast/toast.service';
+import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/skeleton-row.component';
+import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe, RouterLink],
-  templateUrl: './user-list.component.html'
+  imports: [ReactiveFormsModule, TranslatePipe, RouterLink, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
+  templateUrl: './user-list.component.html',
+  styleUrl: './user-list.component.scss'
 })
 export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly fb = inject(FormBuilder);
+  private readonly toast = inject(ToastService);
+  private readonly translate = inject(TranslateService);
+  private readonly router = inject(Router);
 
   readonly users = signal<UserDto[]>([]);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly resetPasswordFor = signal<number | null>(null);
-  readonly actionError = signal<string | null>(null);
   readonly submitting = signal(false);
 
   readonly resetPasswordForm = this.fb.nonNullable.group({
@@ -41,25 +48,29 @@ export class UserListComponent implements OnInit {
   }
 
   async toggleEnabled(user: UserDto): Promise<void> {
-    this.actionError.set(null);
+    const action = user.enabled ? 'disable' : 'enable';
     try {
       if (user.enabled) {
         await firstValueFrom(this.userService.disableVolunteer(user.id));
       } else {
         await firstValueFrom(this.userService.enableVolunteer(user.id));
       }
+      this.toast.showSuccess(this.translate.instant(`admin.users.success.${action}`));
       this.users.update(list =>
         list.map(u => u.id === user.id ? { ...u, enabled: !u.enabled } : u)
       );
     } catch {
-      this.actionError.set(user.enabled ? 'admin.users.error.disable' : 'admin.users.error.enable');
+      this.toast.showError(this.translate.instant(`admin.users.error.${action}`));
     }
+  }
+
+  navigateToCreate(): void {
+    this.router.navigateByUrl('/admin/users/create');
   }
 
   showResetPassword(userId: number): void {
     this.resetPasswordFor.set(userId);
     this.resetPasswordForm.reset();
-    this.actionError.set(null);
   }
 
   cancelResetPassword(): void {
@@ -71,15 +82,15 @@ export class UserListComponent implements OnInit {
     if (this.resetPasswordForm.invalid || this.submitting()) {
       return;
     }
-    this.actionError.set(null);
     this.submitting.set(true);
     try {
       const { newPassword } = this.resetPasswordForm.getRawValue();
       await firstValueFrom(this.userService.resetPassword(userId, newPassword));
       this.resetPasswordFor.set(null);
       this.resetPasswordForm.reset();
+      this.toast.showSuccess(this.translate.instant('admin.users.success.resetPassword'));
     } catch {
-      this.actionError.set('admin.users.error.resetPassword');
+      this.toast.showError(this.translate.instant('admin.users.error.resetPassword'));
     } finally {
       this.submitting.set(false);
     }

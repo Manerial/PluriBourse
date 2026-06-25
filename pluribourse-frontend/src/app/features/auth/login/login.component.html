@@ -1,23 +1,19 @@
-<form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <h1>{{ 'auth.login.title' | translate }}</h1>
-  <div>
-    <label>{{ 'auth.login.username' | translate }}</label>
-    <input
-      formControlName="username"
-      type="text"
-      autocomplete="username" />
-  </div>
-  <div>
-    <label>{{ 'auth.login.password' | translate }}</label>
-    <input
-      formControlName="password"
-      type="password"
-      autocomplete="current-password" />
-  </div>
+<form class="auth-card" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <h1 class="auth-card__title">{{ 'auth.login.title' | translate }}</h1>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'auth.login.username' | translate }}</mat-label>
+    <input matInput formControlName="username" type="text" autocomplete="username" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'auth.login.password' | translate }}</mat-label>
+    <input matInput formControlName="password" type="password" autocomplete="current-password" />
+  </mat-form-field>
   @if (error()) {
-    <p role="alert">{{ 'auth.login.error.' + error() | translate }}</p>
+    <app-notification-inline
+      [message]="('auth.login.error.' + error()!) | translate"
+      variant="error" />
   }
-  <button type="submit" [disabled]="form.invalid || loading()">
+  <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
     {{ 'auth.login.submit' | translate }}
   </button>
 </form>

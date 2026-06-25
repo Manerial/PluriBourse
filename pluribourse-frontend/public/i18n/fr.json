@@ -3,7 +3,17 @@
     "title": "PluriBourse"
   },
   "common": {
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "dialog": {
+      "cancel": "Annuler",
+      "confirm": "Confirmer"
+    },
+    "toast": {
+      "close": "Fermer"
+    },
+    "empty": {
+      "clearFilters": "Effacer les filtres"
+    }
   },
   "auth": {
     "login": {
@@ -23,6 +33,7 @@
       "newPassword": "Nouveau mot de passe",
       "minLength": "Le mot de passe doit comporter au moins 8 caractères.",
       "submit": "Changer le mot de passe",
+      "success": "Mot de passe modifié avec succès.",
       "error": "Impossible de changer le mot de passe. Veuillez réessayer."
     }
   },
@@ -74,7 +85,6 @@
       "title": "Comptes bénévoles",
       "columns": {
         "name": "Nom",
-        "username": "Identifiant",
         "role": "Rôle",
         "status": "Statut",
         "actions": "Actions"
@@ -99,6 +109,12 @@
         "submit": "Créer",
         "cancel": "Annuler"
       },
+      "success": {
+        "disable": "Compte désactivé.",
+        "enable": "Compte activé.",
+        "resetPassword": "Mot de passe réinitialisé avec succès."
+      },
+      "empty": "Aucun bénévole enregistré pour le moment.",
       "error": {
         "load": "Impossible de charger les bénévoles.",
         "create": "Impossible de créer le bénévole.",
