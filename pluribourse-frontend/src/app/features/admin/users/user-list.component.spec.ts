@@ -4,10 +4,12 @@ import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
+import { Dialog } from '@angular/cdk/dialog';
 import { UserListComponent } from './user-list.component';
 import { UserService } from '../../../services/user.service';
 import { UserDto } from '../../../models/user.model';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-password-dialog.component';
 
 const MOCK_VOLUNTEERS: UserDto[] = [
   { id: 1, firstName: 'Alice', lastName: 'Smith', username: 'alice', role: 'VOLUNTEER', enabled: true },
@@ -30,9 +32,14 @@ describe('UserListComponent', () => {
     showError: vi.fn(),
   };
 
+  const dialogMock = {
+    open: vi.fn().mockReturnValue({ closed: of('NewPassword1') })
+  };
+
   beforeEach(async () => {
     vi.clearAllMocks();
     userServiceMock.getVolunteers.mockReturnValue(of(MOCK_VOLUNTEERS));
+    dialogMock.open.mockReturnValue({ closed: of('NewPassword1') });
 
     await TestBed.configureTestingModule({
       imports: [UserListComponent],
@@ -41,6 +48,7 @@ describe('UserListComponent', () => {
         provideTranslateService({ lang: 'en' }),
         { provide: UserService, useValue: userServiceMock },
         { provide: ToastService, useValue: toastMock },
+        { provide: Dialog, useValue: dialogMock },
       ]
     }).compileComponents();
 
@@ -91,16 +99,36 @@ describe('UserListComponent', () => {
     expect(toastMock.showSuccess).not.toHaveBeenCalled();
   });
 
-  it('showResetPassword sets resetPasswordFor signal', () => {
-    component.showResetPassword(1);
-    expect(component.resetPasswordFor()).toBe(1);
+  it('opens reset dialog with correct user name', async () => {
+    component.openResetPasswordDialog(MOCK_VOLUNTEERS[0]);
+    await fixture.whenStable();
+    expect(dialogMock.open).toHaveBeenCalledWith(
+      ResetPasswordDialogComponent,
+      expect.objectContaining({ data: { userName: 'Alice Smith' } })
+    );
   });
 
-  it('shows success toast after resetting password', async () => {
-    component.showResetPassword(1);
-    component.resetPasswordForm.setValue({ newPassword: 'NewPass1' });
-    await component.submitResetPassword(1);
+  it('calls resetPassword API and shows success toast after dialog confirms', async () => {
+    component.openResetPasswordDialog(MOCK_VOLUNTEERS[0]);
+    await fixture.whenStable();
+    expect(userServiceMock.resetPassword).toHaveBeenCalledWith(1, 'NewPassword1');
     expect(toastMock.showSuccess).toHaveBeenCalledOnce();
-    expect(component.resetPasswordFor()).toBeNull();
+    expect(component.submitting()).toBe(false);
+  });
+
+  it('does not call resetPassword when dialog is cancelled', async () => {
+    dialogMock.open.mockReturnValueOnce({ closed: of(undefined) });
+    component.openResetPasswordDialog(MOCK_VOLUNTEERS[0]);
+    await fixture.whenStable();
+    expect(userServiceMock.resetPassword).not.toHaveBeenCalled();
+  });
+
+  it('shows error toast when resetPassword API fails', async () => {
+    userServiceMock.resetPassword.mockReturnValueOnce(throwError(() => new Error('server')));
+    component.openResetPasswordDialog(MOCK_VOLUNTEERS[0]);
+    await fixture.whenStable();
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+    expect(toastMock.showSuccess).not.toHaveBeenCalled();
+    expect(component.submitting()).toBe(false);
   });
 });

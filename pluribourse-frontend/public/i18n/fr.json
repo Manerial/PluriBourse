@@ -31,7 +31,11 @@
       "title": "Changer le mot de passe",
       "description": "Vous devez changer votre mot de passe avant de continuer.",
       "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmRequired": "Veuillez confirmer votre mot de passe.",
+      "newPasswordRequired": "Le mot de passe est obligatoire.",
       "minLength": "Le mot de passe doit comporter au moins 8 caractères.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
       "submit": "Changer le mot de passe",
       "success": "Mot de passe modifié avec succès.",
       "error": "Impossible de changer le mot de passe. Veuillez réessayer."
@@ -113,6 +117,10 @@
         "disable": "Compte désactivé.",
         "enable": "Compte activé.",
         "resetPassword": "Mot de passe réinitialisé avec succès."
+      },
+      "resetDialog": {
+        "title": "Réinitialiser le mot de passe",
+        "description": "Définissez un nouveau mot de passe temporaire pour {{ name }}."
       },
       "empty": "Aucun bénévole enregistré pour le moment.",
       "error": {

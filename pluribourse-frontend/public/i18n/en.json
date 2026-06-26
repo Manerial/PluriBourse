@@ -31,7 +31,11 @@
       "title": "Change password",
       "description": "You must change your password before continuing.",
       "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "confirmRequired": "Please confirm your password.",
+      "newPasswordRequired": "Password is required.",
       "minLength": "Password must be at least 8 characters.",
+      "passwordMismatch": "Passwords do not match.",
       "submit": "Change password",
       "success": "Password changed successfully.",
       "error": "Unable to change password. Please try again."
@@ -113,6 +117,10 @@
         "disable": "Account disabled.",
         "enable": "Account enabled.",
         "resetPassword": "Password reset successfully."
+      },
+      "resetDialog": {
+        "title": "Reset password",
+        "description": "Set a new temporary password for {{ name }}."
       },
       "empty": "No volunteers registered yet.",
       "error": {

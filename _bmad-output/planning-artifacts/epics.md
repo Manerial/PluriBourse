@@ -650,6 +650,35 @@ afin de pouvoir déployer et configurer PluriBourse seul, sans connaissances pr�
 **Quand** elle atteint la fin de la section « Configuration initiale »
 **Alors** l'application est déployée, le mot de passe admin a été changé, et les paramètres de l'instance sont configurés — sans étape nécessitant une connaissance Docker préalable
 
+### Story 1.10 : Améliorations UX des mots de passe
+
+En tant qu'utilisateur gérant les mots de passe,
+je veux une confirmation lors du changement de mot de passe et une popup lors de la réinitialisation,
+afin d'éviter les erreurs de saisie et d'avoir une interface cohérente avec les autres actions destructives.
+
+**Dépendances :** Story 1.2 (auth), Story 1.3 (gestion bénévoles), Story 1.8 (CDK Dialog)
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'utilisateur saisit un nouveau mot de passe sur `/change-password`
+**Quand** il remplit le formulaire
+**Alors** un second champ « Confirmer le mot de passe » est présent
+**Et** le bouton de soumission reste désactivé si les deux champs ne correspondent pas
+**Et** un message d'erreur inline indique que les mots de passe ne correspondent pas
+
+**Étant donné** que l'admin clique sur « Réinitialiser le mot de passe » dans la liste des bénévoles
+**Quand** le clic est effectué
+**Alors** une boîte de dialogue (CDK Dialog) s'ouvre avec le nom du bénévole, un champ mot de passe et les boutons Confirmer / Annuler
+**Et** le champ mot de passe applique les mêmes règles de validation que le formulaire de changement de mot de passe
+
+**Étant donné** que l'admin confirme la réinitialisation dans la popup
+**Quand** la demande API réussit
+**Then** la popup se ferme et un toast de succès s'affiche
+
+**Étant donné** que l'admin annule ou ferme la popup
+**Quand** la fermeture est déclenchée (bouton Annuler ou Échap)
+**Alors** aucune action API n'est effectuée
+
 ---
 
 ## Epic 2 : Gestion du cycle de vie des éditions

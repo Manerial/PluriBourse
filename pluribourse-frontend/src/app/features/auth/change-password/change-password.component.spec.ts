@@ -19,6 +19,9 @@ describe('ChangePasswordComponent', () => {
     showError: vi.fn(),
   };
 
+  let fixture: ReturnType<typeof TestBed.createComponent<ChangePasswordComponent>>;
+  let component: ChangePasswordComponent;
+
   beforeEach(async () => {
     vi.clearAllMocks();
     await TestBed.configureTestingModule({
@@ -31,33 +34,48 @@ describe('ChangePasswordComponent', () => {
         { provide: ToastService, useValue: toastMock },
       ],
     }).compileComponents();
+
+    fixture = TestBed.createComponent(ChangePasswordComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   it('renders newPassword field', () => {
-    const fixture = TestBed.createComponent(ChangePasswordComponent);
-    fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('input[autocomplete="new-password"]')).not.toBeNull();
   });
 
   it('submit button is disabled when form is empty', () => {
-    const fixture = TestBed.createComponent(ChangePasswordComponent);
-    fixture.detectChanges();
     const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[type="submit"]');
     expect(btn.disabled).toBe(true);
   });
 
   it('shows error alert when error signal is true', () => {
-    const fixture = TestBed.createComponent(ChangePasswordComponent);
-    fixture.detectChanges();
-    fixture.componentInstance.error.set(true);
+    component.error.set(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
   });
 
   it('submit button has btn-primary class', () => {
-    const fixture = TestBed.createComponent(ChangePasswordComponent);
-    fixture.detectChanges();
     const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[type="submit"]');
     expect(btn.classList).toContain('btn-primary');
+  });
+
+  it('disables submit when passwords do not match', () => {
+    component.form.controls.newPassword.setValue('Password1');
+    component.form.controls.confirmPassword.setValue('Password2');
+    expect(component.form.invalid).toBe(true);
+    expect(component.form.controls.confirmPassword.hasError('passwordsMismatch')).toBe(true);
+  });
+
+  it('enables submit when passwords match and meet requirements', () => {
+    component.form.controls.newPassword.setValue('Password1');
+    component.form.controls.confirmPassword.setValue('Password1');
+    expect(component.form.valid).toBe(true);
+  });
+
+  it('keeps submit disabled when confirmPassword is empty', () => {
+    component.form.controls.newPassword.setValue('Password1');
+    component.form.controls.confirmPassword.setValue('');
+    expect(component.form.invalid).toBe(true);
   });
 });

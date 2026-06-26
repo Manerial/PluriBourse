@@ -109,6 +109,18 @@ Les items suivants ont été résolus dans des stories ultérieures et ne néces
 - **Logo et position du bouton logout non assertés dans les tests** — `app-layout.component.spec.ts` — Tests vérifient la présence de `.topbar` mais pas `.topbar__logo` ni que `.btn-ghost` est enfant de `.topbar__actions`. Couverture suffisante pour la story, à renforcer si des régressions surviennent.
 - **`button-primary` CSS absent des global styles** — `styles.scss` — DESIGN.md spécifie un composant `button-primary` (`background: #C44626, padding: 10px 20px`). Aucune classe ni token dédié n'est défini dans `styles.scss`. À implémenter lors de la première story introduisant un bouton primaire dans le shell ou les pages enfants.
 
+## Deferred from: code review of 1-10-ameliorations-ux-mots-de-passe (2026-06-26)
+
+- **Multiple `Validators.pattern()` calls collide on same `pattern` error key** — `passwords-match.validator.ts`, `reset-password-dialog.component.ts`, `change-password.component.ts` — Both pattern validators (`/.*[A-Z]*/` and `/.*[0-9]*/`) write under the Angular-reserved `pattern` key; the second silently overwrites the first. Pre-existing across the codebase, not introduced by this story. To fix: replace with a custom named validator (`Validators.pattern` → dedicated `hasUppercase`, `hasDigit` validators).
+- **`mat-error` in reset dialog shows only minLength regardless of which pattern failed** — `reset-password-dialog.component.html` — Consistent with existing `change-password` form behavior. No per-validator error messages specified in AC2. To fix when the full validation error strategy is revisited.
+- **Shared `submitting` signal creates table-wide lock on all reset buttons** — `user-list.component.ts` — While a password reset is in flight, all other reset buttons in the user table are disabled. The old inline form only gated its own submit button. Acceptable for single-user-at-a-time admin workflows; to refactor to per-row state if concurrent admin scenarios are introduced.
+
+## Deferred from: code review of 1-9-guide-dinstallation (2026-06-26)
+
+- **Pas de recommandation de sauvegarde avant mise à jour** — `GUIDE_INSTALLATION.md` § Mise à jour — Bonne pratique non requise par la spec (AC6 précise seulement que les données sont préservées). À ajouter si un incident de migration survient en production.
+- **Pas d'instruction pour arrêter l'application** — `GUIDE_INSTALLATION.md` — `docker compose down` / `docker compose stop` non couverts. Hors scope story 1.9 ; à inclure dans une révision ultérieure du guide.
+- **Promesse "aucune connaissance technique requise" partiellement contredite** — `GUIDE_INSTALLATION.md` introduction — Tension inhérente entre la promesse d'accessibilité totale et les étapes en terminal nécessaires. Non actionnable sans réécriture du positionnement du guide.
+
 ## Deferred from: code review of 1-8-composants-ui-partages-boites-de-dialogue-notifications-accessibilite (2026-06-25)
 
 - **confirm-dialog — fermeture backdrop émet `undefined`** — `confirm-dialog.service.ts` — `disableClose: false` permet à CDK de fermer sans valeur. Aucun appelant dans ce diff ; à gérer avec `filter(v => v !== undefined)` ou en mapant undefined → false dans le service lors de l'implémentation de l'appelant.

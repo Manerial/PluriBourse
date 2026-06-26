@@ -57,26 +57,9 @@
                     {{ (user.enabled ? 'admin.users.actions.disable' : 'admin.users.actions.enable') | translate }}
                   </button>
 
-                  @if (resetPasswordFor() !== user.id) {
-                    <button type="button" class="btn-ghost" (click)="showResetPassword(user.id)">
-                      {{ 'admin.users.actions.resetPassword' | translate }}
-                    </button>
-                  } @else {
-                    <form class="reset-form" [formGroup]="resetPasswordForm" (ngSubmit)="submitResetPassword(user.id)">
-                      <input
-                        class="reset-input"
-                        formControlName="newPassword"
-                        type="password"
-                        autocomplete="new-password"
-                        [attr.aria-label]="'admin.users.create.password' | translate" />
-                      <button type="submit" class="btn-primary" [disabled]="resetPasswordForm.invalid || submitting()">
-                        {{ 'admin.users.actions.confirmReset' | translate }}
-                      </button>
-                      <button type="button" class="btn-ghost" (click)="cancelResetPassword()">
-                        {{ 'admin.users.create.cancel' | translate }}
-                      </button>
-                    </form>
-                  }
+                  <button type="button" class="btn-ghost" (click)="openResetPasswordDialog(user)" [disabled]="submitting()">
+                    {{ 'admin.users.actions.resetPassword' | translate }}
+                  </button>
                 </div>
               </td>
             </tr>

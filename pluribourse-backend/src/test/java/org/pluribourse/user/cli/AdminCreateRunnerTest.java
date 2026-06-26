@@ -7,14 +7,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.pluribourse.user.entities.User;
-import org.pluribourse.user.enums.Language;
 import org.pluribourse.user.enums.Role;
 import org.pluribourse.user.repositories.UserRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,7 +39,7 @@ class AdminCreateRunnerTest {
 
     @Test
     void performCreate_creates_admin_directly_when_none_exist() {
-        when(userRepository.findByRole(Role.ADMIN)).thenReturn(List.of());
+        when(userRepository.existsByRole(Role.ADMIN)).thenReturn(false);
         when(userRepository.existsByUsername("NewAdmin")).thenReturn(false);
         when(support.generatePassword()).thenReturn("TempPass1234");
         when(passwordEncoder.encode("TempPass1234")).thenReturn("encodedTemp");
@@ -61,12 +58,7 @@ class AdminCreateRunnerTest {
 
     @Test
     void performCreate_requires_auth_when_admin_already_exists() {
-        User existing = new User();
-        existing.setUsername("Admin");
-        existing.setRole(Role.ADMIN);
-        existing.setPreferredLanguage(Language.FR);
-
-        when(userRepository.findByRole(Role.ADMIN)).thenReturn(List.of(existing));
+        when(userRepository.existsByRole(Role.ADMIN)).thenReturn(true);
         when(userRepository.existsByUsername("NewAdmin")).thenReturn(false);
         when(support.generatePassword()).thenReturn("TempPass1234");
         when(passwordEncoder.encode(any())).thenReturn("encodedTemp");
@@ -80,7 +72,7 @@ class AdminCreateRunnerTest {
 
     @Test
     void performCreate_throws_when_username_already_taken() {
-        when(userRepository.findByRole(Role.ADMIN)).thenReturn(List.of());
+        when(userRepository.existsByRole(Role.ADMIN)).thenReturn(false);
         when(userRepository.existsByUsername("Admin")).thenReturn(true);
 
         assertThatThrownBy(() -> runner.performCreate("Admin"))
