@@ -9,13 +9,12 @@ Ce guide vous accompagne pas à pas dans l'installation et la configuration de P
 1. [Prérequis](#prérequis)
 2. [Ouvrir et utiliser le terminal](#ouvrir-et-utiliser-le-terminal)
 3. [Installation de Docker (Obligatoire)](#installation-de-docker-obligatoire)
-4. [Installation de Git (Recommandé)](#installation-de-git-recommandé)
-5. [Téléchargement et lancement](#téléchargement-et-lancement)
-6. [Premier lancement](#premier-lancement)
-7. [Configuration initiale](#configuration-initiale)
-8. [Réinitialisation du mot de passe admin](#réinitialisation-du-mot-de-passe-admin)
-9. [Mise à jour](#mise-à-jour)
-10. [Dépannage rapide](#dépannage-rapide)
+4. [Téléchargement et lancement](#téléchargement-et-lancement)
+5. [Premier lancement](#premier-lancement)
+6. [Configuration initiale](#configuration-initiale)
+7. [Réinitialisation du mot de passe admin](#réinitialisation-du-mot-de-passe-admin)
+8. [Mise à jour](#mise-à-jour)
+9. [Dépannage rapide](#dépannage-rapide)
 
 ---
 
@@ -25,8 +24,7 @@ Avant de commencer, vérifiez que vous disposez de :
 
 - Un ordinateur sous **Windows**, **macOS** ou **Linux** — ou un **Raspberry Pi 4** avec au moins 2 Go de RAM
 - Au moins **5 Go d'espace disque libre** (pour les images Docker et la base de données)
-- Une **connexion Internet** (pour télécharger Docker et les sources de l'application lors du premier lancement)
-- Git installé, **ou** la possibilité de télécharger une archive ZIP depuis GitHub
+- Une **connexion Internet** (pour télécharger Docker et les images de l'application lors du premier lancement)
 
 > **Windows uniquement :** Docker Desktop nécessite que la **virtualisation matérielle** soit activée dans le BIOS/UEFI de votre ordinateur. Sur la plupart des PC récents, elle l'est déjà. L'installateur de Docker Desktop vous guidera si ce n'est pas le cas.
 
@@ -137,129 +135,47 @@ La version de Docker doit s'afficher. Si c'est le cas, Docker est prêt.
 
 ---
 
-## Installation de Git (Recommandé)
-
-Git est l'outil qui vous permet de télécharger PluriBourse et de le mettre à jour facilement. Si vous avez choisi l'Option B (archive ZIP) pour l'installation, vous pouvez passer cette section. Sinon, installez Git selon votre système d'exploitation.
-
-### Windows
-
-1. Rendez-vous sur [https://git-scm.com/download/win](https://git-scm.com/download/win) — le téléchargement démarre automatiquement pour la version 64 bits (Standalone Installer / version x64 Setup).
-2. Lancez le fichier d'installation et suivez l'assistant en acceptant les paramètres par défaut.
-
-**Vérification :** Ouvrez un terminal et tapez :
-
-```
-git --version
-```
-
-Vous devriez voir s'afficher quelque chose comme `git version 2.x.x`. Git est prêt.
-
----
-
-### macOS
-
-Ouvrez le **Terminal** (Applications → Utilitaires → Terminal) et tapez :
-
-```bash
-xcode-select --install
-```
-
-Une fenêtre s'affiche pour proposer l'installation des outils de développement — cliquez sur **Installer**. Git est inclus dans ces outils.
-
-**Vérification :**
-
-```bash
-git --version
-```
-
-Git est prêt dès que la version s'affiche.
-
----
-
-### Linux / Raspberry Pi
-
-Ouvrez un terminal et tapez :
-
-```bash
-sudo apt install git
-```
-
-**Vérification :**
-
-```bash
-git --version
-```
-
----
-
 ## Téléchargement et lancement
 
-### 1. Récupérer les fichiers de PluriBourse
+### 1. Récupérer les fichiers de configuration
 
-**Option A — avec Git :**
+Créez un dossier `PluriBourse` à l'emplacement de votre choix (par exemple sur le Bureau).
 
-```bash
-git clone https://github.com/Manerial/PluriBourse
-```
+Deux fichiers sont nécessaires. Depuis la page GitHub du projet ([github.com/Manerial/PluriBourse](https://github.com/Manerial/PluriBourse)), naviguez dans le dossier `.docker` et téléchargez-les un par un dans votre dossier `PluriBourse` :
 
-**Option B — sans Git :** Téléchargez l'archive ZIP depuis la page [GitHub](https://github.com/Manerial/PluriBourse) du projet et extrayez-la. Un dossier `PluriBourse` apparaît — notez bien l'emplacement où vous l'avez extrait (par exemple dans votre dossier `Téléchargements` ou sur le `Bureau`).
+- `docker-compose.yml`
+- `.env.example`
 
-> **Note :** L'Option B ne permet pas de bénéficier des mises à jour automatiques décrites en section [Mise à jour](#mise-à-jour). Nous recommandons l'Option A si Git est disponible.
+Pour télécharger un fichier depuis GitHub : cliquez sur le fichier, puis sur le bouton **Raw** en haut à droite, et enfin **Ctrl+S** (ou **Cmd+S** sur Mac) pour l'enregistrer.
 
-### 2. Naviguer dans le dossier Docker
+### 2. Configurer l'environnement
 
-Ouvrez un terminal **dans le dossier qui contient le dossier `PluriBourse`** (c'est-à-dire le dossier où vous avez cloné ou extrait le projet), puis tapez :
+Dans votre dossier `PluriBourse`, renommez le fichier `.env.example` en `.env` (clic droit → Renommer).
 
-```bash
-cd PluriBourse
-cd .docker
-```
+> **Windows :** une fenêtre peut vous avertir que changer l'extension risque de rendre le fichier inutilisable — confirmez en cliquant sur **Oui**.
 
-> Toutes les commandes qui suivent doivent être exécutées depuis ce dossier `.docker`.
-
-### 3. Configurer l'environnement
-
-Copiez le fichier de configuration modèle :
-
-- **Linux / macOS :**
-
-```bash
-cp .env.example .env
-```
-
-- **Windows (PowerShell) :**
-
-```
-Copy-Item .env.example .env
-```
-
-- **Windows (invite de commandes) :**
-
-```
-copy .env.example .env
-```
-
-Ouvrez ensuite le fichier `.env` dans un éditeur de texte :
-
-- **Linux / macOS :** `nano .env` (puis **Ctrl+O** pour sauvegarder, **Ctrl+X** pour quitter)
-- **Windows :** `notepad .env`
-
-Modifiez les valeurs suivantes :
+Ouvrez ensuite le fichier `.env` dans un éditeur de texte (clic droit → Ouvrir avec → Bloc-notes sur Windows, TextEdit sur macOS) et modifiez les valeurs suivantes :
 
 ```
 DB_PASSWORD=un_mot_de_passe_solide
 MYSQL_ROOT_PASSWORD=un_autre_mot_de_passe_solide
 ```
 
-Choisissez des mots de passe d'au moins 12 caractères pour la base de données, mélangeant lettres et chiffres. Notez-les dans un endroit sûr.
+Choisissez des mots de passe d'au moins 12 caractères, mélangeant lettres et chiffres. Notez-les dans un endroit sûr.
+
+### 3. Télécharger les images de l'application
+
+```bash
+docker compose pull
+```
+
+Cette commande télécharge les composants de PluriBourse. Les images de l'application (`backend` et `frontend`) proviennent de GitHub Container Registry (`ghcr.io`), et l'image de la base de données (`mariadb`) provient de Docker Hub (`registry-1.docker.io`). Selon votre connexion Internet, cette étape peut prendre plusieurs minutes.
 
 ### 4. Lancer l'application
 
 ```bash
 docker compose up -d
 ```
-
-Docker compile et démarre les trois composants de l'application. Lors du premier lancement, les images de base sont téléchargées — cette étape peut prendre quelques minutes selon votre connexion.
 
 **Attendez environ 60 à 90 secondes** avant d'ouvrir votre navigateur (jusqu'à 3 minutes sur Raspberry Pi lors du premier lancement).
 
@@ -351,15 +267,15 @@ Notez le mot de passe temporaire affiché, puis connectez-vous à `http://localh
 
 ## Mise à jour
 
-Pour mettre à jour PluriBourse vers la dernière version, ouvrez un terminal, naviguez dans le **dossier racine `PluriBourse`** (pas dans `.docker`), puis exécutez :
+Pour mettre à jour PluriBourse vers la dernière version, naviguez dans le dossier `.docker` (voir la section [Ouvrir et utiliser le terminal](#ouvrir-et-utiliser-le-terminal)) et exécutez :
 
 ```bash
-git pull && docker compose -f .docker/docker-compose.yml up -d --build
+docker compose pull && docker compose up -d
 ```
 
-Cette commande télécharge les dernières modifications du code source (`git pull`) puis reconstruit et redémarre les conteneurs avec les nouvelles versions (`docker compose up -d --build`).
+Cette commande récupère les nouvelles images depuis GitHub puis redémarre les conteneurs avec ces nouvelles versions. Aucune compilation locale n'est nécessaire.
 
-> **Si vous avez utilisé l'Option B (archive ZIP) lors de l'installation**, la commande `git pull` ne fonctionnera pas. Téléchargez la nouvelle version de l'archive ZIP, extrayez-la dans un nouveau dossier, copiez votre fichier `.docker/.env` dans le nouveau dossier, puis relancez l'application avec `docker compose up -d --build` depuis le nouveau dossier `.docker`.
+> Si les notes de version mentionnent un changement de configuration, re-téléchargez l'archive ZIP, copiez votre fichier `.docker/.env` dans le nouveau dossier `.docker`, puis relancez la commande ci-dessus.
 
 **Vos données sont préservées.** Toutes les données de votre association (éditions, vendeurs, articles, bilans) sont stockées dans un volume Docker (un espace de stockage persistant qui garde vos données même si l'application est arrêtée) nommé `pluribourse_db_data`. Ce volume n'est jamais supprimé lors d'une mise à jour — vos données sont conservées.
 
@@ -402,3 +318,29 @@ Puis redémarrez Docker Desktop. Si le problème persiste, redémarrez l'ordinat
 **« Hardware assisted virtualization and data execution protection must be enabled »** — La virtualisation matérielle n'est pas activée sur votre ordinateur. Redémarrez le PC, entrez dans le BIOS/UEFI (généralement en appuyant sur F2, F10, Suppr ou Échap au démarrage — le message affiché au démarrage indique la touche exacte) et activez l'option « Virtualization Technology », « VT-x » ou « AMD-V » selon votre processeur.
 
 **Docker Desktop demande une mise à jour avant de démarrer** — Acceptez la mise à jour et attendez qu'elle se termine. Docker Desktop redémarre automatiquement ensuite.
+
+---
+
+### Erreur lors du téléchargement des images (`docker compose pull`)
+
+**« TLS handshake timeout »** ou **« net/http: TLS handshake timeout »** — Docker n'arrive pas à établir une connexion sécurisée avec le registre d'images (Docker Hub). Essayez les solutions suivantes dans l'ordre :
+
+1. **Vérifiez l'accès au registre Docker** — Ouvrez `https://registry-1.docker.io/v2/` dans votre navigateur. Vous devez voir s'afficher `{}` (deux accolades). Si la page ne s'affiche pas ou que la connexion expire, le domaine `registry-1.docker.io` (le registre Docker Hub, distinct du site `hub.docker.com`) est inaccessible depuis votre réseau.
+
+2. **Redémarrez Docker Desktop** — Clic droit sur l'icône Docker dans la barre des tâches → « Restart Docker Desktop », puis relancez `docker compose pull`.
+
+3. **Configurez les serveurs DNS de Docker** — Ouvrez Docker Desktop, allez dans *Settings → Docker Engine* et ajoutez les serveurs DNS de Google dans la configuration JSON :
+
+   ```json
+   {
+     "dns": ["8.8.8.8", "8.8.4.4"]
+   }
+   ```
+
+   Cliquez sur **Apply & restart**, puis relancez `docker compose pull`.
+
+4. **Désactivez temporairement votre antivirus ou pare-feu** — Certains logiciels de sécurité (Kaspersky, ESET, Bitdefender, etc.) interceptent les connexions TLS et peuvent bloquer Docker Hub. Désactivez-les le temps du téléchargement, puis réactivez-les.
+
+5. **Configurez un proxy réseau** — Si vous êtes dans un environnement d'entreprise ou d'école, votre réseau passe peut-être par un proxy. Configurez-le dans Docker Desktop : *Settings → Resources → Proxies*, en renseignant l'adresse de votre proxy. Contactez votre administrateur réseau si vous ne connaissez pas cette adresse.
+
+6. **Testez depuis un autre réseau** — Essayez en partageant la connexion 4G/5G de votre téléphone via le point d'accès mobile. Si le téléchargement réussit depuis ce réseau, le blocage vient de votre réseau habituel (box internet, réseau d'entreprise).
