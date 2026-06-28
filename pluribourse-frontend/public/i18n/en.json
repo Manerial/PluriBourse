@@ -77,7 +77,106 @@
     },
     "admin": {
       "users": "Volunteers",
-      "settings": "Settings"
+      "settings": "Settings",
+      "editions": "Editions"
+    }
+  },
+  "edition": {
+    "list": {
+      "title": "Editions",
+      "createButton": "Create Edition",
+      "empty": "No editions created yet.",
+      "emptyAction": "Create the first edition",
+      "columns": {
+        "name": "Name",
+        "phase": "Phase",
+        "commissionRate": "Commission (%)",
+        "documentLanguage": "Document language",
+        "createdAt": "Created on",
+        "actions": "Actions"
+      }
+    },
+    "create": {
+      "title": "Create Edition",
+      "name": {
+        "label": "Edition name",
+        "required": "Edition name is required.",
+        "maxLength": "Edition name must not exceed 255 characters."
+      },
+      "commissionRate": {
+        "label": "Commission rate (%)",
+        "required": "Commission rate is required.",
+        "min": "Commission rate cannot be negative.",
+        "max": "Commission rate cannot exceed 100%.",
+        "maxDecimals": "Commission rate cannot have more than 2 decimal places."
+      },
+      "documentLanguage": {
+        "label": "Document language"
+      },
+      "submit": "Create",
+      "cancel": "Cancel",
+      "backToList": "Back to editions list",
+      "error": {
+        "alreadyActive": "An edition is already active. Close it before creating a new one.",
+        "save": "Failed to create edition."
+      },
+      "success": "Edition created."
+    },
+    "edit": {
+      "title": "Edit Edition",
+      "submit": "Save",
+      "cancel": "Cancel",
+      "error": {
+        "load": "Failed to load edition.",
+        "save": "Failed to update edition.",
+        "commissionRateFrozen": "Commission rate cannot be changed once the deposit phase has started."
+      },
+      "success": "Edition updated."
+    },
+    "phase": {
+      "PREPARATION": "Preparation",
+      "DEPOSIT": "Deposit",
+      "SALE": "Sale",
+      "POST_SALE": "Post-sale",
+      "CLOSED": "Closed"
+    },
+    "actions": {
+      "edit": "Edit",
+      "editCommissionRate": "Edit commission",
+      "editDocumentLanguage": "Edit language",
+      "delete": "Delete",
+      "error": {
+        "delete": "Failed to delete edition.",
+        "load": "Failed to load editions.",
+        "updateCommissionRate": "Failed to update commission rate.",
+        "commissionRateFrozen": "Commission rate cannot be changed once the deposit phase has started.",
+        "updateDocumentLanguage": "Failed to update document language."
+      },
+      "success": {
+        "delete": "Edition deleted.",
+        "updateCommissionRate": "Commission rate updated.",
+        "updateDocumentLanguage": "Document language updated."
+      }
+    },
+    "updateCommissionRateDialog": {
+      "title": "Update commission rate",
+      "label": "Commission rate (%)",
+      "confirm": "Save",
+      "error": {
+        "required": "Commission rate is required.",
+        "min": "Commission rate cannot be negative.",
+        "max": "Commission rate cannot exceed 100%.",
+        "maxDecimals": "Commission rate cannot have more than 2 decimal places."
+      }
+    },
+    "updateDocumentLanguageDialog": {
+      "title": "Update document language",
+      "label": "Document language",
+      "confirm": "Save"
+    },
+    "deleteDialog": {
+      "title": "Delete edition?",
+      "description": "This edition will be permanently deleted. This action cannot be undone."
     }
   },
   "notFound": {
@@ -102,7 +201,8 @@
         "disable": "Disable",
         "enable": "Enable",
         "resetPassword": "Reset password",
-        "confirmReset": "Confirm"
+        "confirmReset": "Confirm",
+        "delete": "Delete"
       },
       "create": {
         "title": "Create volunteer",
@@ -116,11 +216,16 @@
       "success": {
         "disable": "Account disabled.",
         "enable": "Account enabled.",
-        "resetPassword": "Password reset successfully."
+        "resetPassword": "Password reset successfully.",
+        "delete": "Volunteer deleted."
       },
       "resetDialog": {
         "title": "Reset password",
         "description": "Set a new temporary password for {{ name }}."
+      },
+      "deleteDialog": {
+        "title": "Delete volunteer?",
+        "description": "This account will be permanently deleted. This action cannot be undone."
       },
       "empty": "No volunteers registered yet.",
       "error": {
@@ -128,7 +233,8 @@
         "create": "Failed to create volunteer.",
         "disable": "Failed to disable account.",
         "enable": "Failed to enable account.",
-        "resetPassword": "Failed to reset password."
+        "resetPassword": "Failed to reset password.",
+        "delete": "Failed to delete volunteer."
       }
     },
     "settings": {

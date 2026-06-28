@@ -1,6 +1,7 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
+import { MatIconRegistry } from '@angular/material/icon';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { routes } from './app.routes';
@@ -13,10 +14,13 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' }),
-      withInterceptors([authInterceptor])
+      withInterceptors([authInterceptor]),
     ),
     provideTranslateService({ lang: 'en', fallbackLang: 'fr' }),
     provideTranslateHttpLoader({ prefix: '/i18n/', suffix: '.json', useHttpBackend: true }),
-    provideAppInitializer(() => inject(AuthService).restoreSession())
-  ]
+    provideAppInitializer(() => inject(AuthService).restoreSession()),
+    provideAppInitializer(async () =>
+      inject(MatIconRegistry).setDefaultFontSetClass('material-symbols-outlined'),
+    ),
+  ],
 };

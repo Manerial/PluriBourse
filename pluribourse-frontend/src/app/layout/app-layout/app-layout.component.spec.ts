@@ -40,6 +40,7 @@ describe('AppLayoutComponent', () => {
         provideRouter([
           { path: 'admin/users', component: StubComponent },
           { path: 'admin/settings', component: StubComponent },
+          { path: 'admin/editions', component: StubComponent },
         ]),
         provideTranslateService({ lang: 'en' }),
         { provide: AuthService, useValue: { currentUser: mockCurrentUser, logout: mockLogout } },
@@ -80,6 +81,13 @@ describe('AppLayoutComponent', () => {
       expect(links.some(l => l.getAttribute('href') === '/admin/settings')).toBe(true);
     });
 
+    it('contains nav link to /admin/editions', () => {
+      const links: HTMLAnchorElement[] = Array.from(
+        fixture.nativeElement.querySelectorAll('a.sidebar__item')
+      );
+      expect(links.some(l => l.getAttribute('href') === '/admin/editions')).toBe(true);
+    });
+
     it('renders admin role badge', () => {
       const badge = fixture.nativeElement.querySelector('.badge');
       expect(badge).toBeTruthy();
@@ -118,7 +126,7 @@ describe('AppLayoutComponent', () => {
   });
 
   it('calls auth.logout() when logout button is clicked', () => {
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.btn-ghost');
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-button]');
     btn.click();
     expect(mockLogout).toHaveBeenCalledOnce();
   });

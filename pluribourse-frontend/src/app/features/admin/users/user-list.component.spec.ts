@@ -9,6 +9,7 @@ import { UserListComponent } from './user-list.component';
 import { UserService } from '../../../services/user.service';
 import { UserDto } from '../../../models/user.model';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-password-dialog.component';
 
 const MOCK_VOLUNTEERS: UserDto[] = [
@@ -24,7 +25,8 @@ describe('UserListComponent', () => {
     getVolunteers: vi.fn().mockReturnValue(of(MOCK_VOLUNTEERS)),
     disableVolunteer: vi.fn().mockReturnValue(of(undefined)),
     enableVolunteer: vi.fn().mockReturnValue(of(undefined)),
-    resetPassword: vi.fn().mockReturnValue(of(undefined))
+    resetPassword: vi.fn().mockReturnValue(of(undefined)),
+    deleteVolunteer: vi.fn().mockReturnValue(of(undefined)),
   };
 
   const toastMock = {
@@ -36,10 +38,15 @@ describe('UserListComponent', () => {
     open: vi.fn().mockReturnValue({ closed: of('NewPassword1') })
   };
 
+  const confirmDialogMock = {
+    open: vi.fn().mockReturnValue(of(false))
+  };
+
   beforeEach(async () => {
     vi.clearAllMocks();
     userServiceMock.getVolunteers.mockReturnValue(of(MOCK_VOLUNTEERS));
     dialogMock.open.mockReturnValue({ closed: of('NewPassword1') });
+    confirmDialogMock.open.mockReturnValue(of(false));
 
     await TestBed.configureTestingModule({
       imports: [UserListComponent],
@@ -49,6 +56,7 @@ describe('UserListComponent', () => {
         { provide: UserService, useValue: userServiceMock },
         { provide: ToastService, useValue: toastMock },
         { provide: Dialog, useValue: dialogMock },
+        { provide: ConfirmDialogService, useValue: confirmDialogMock },
       ]
     }).compileComponents();
 
@@ -127,6 +135,30 @@ describe('UserListComponent', () => {
     userServiceMock.resetPassword.mockReturnValueOnce(throwError(() => new Error('server')));
     component.openResetPasswordDialog(MOCK_VOLUNTEERS[0]);
     await fixture.whenStable();
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+    expect(toastMock.showSuccess).not.toHaveBeenCalled();
+    expect(component.submitting()).toBe(false);
+  });
+
+  it('does not call deleteVolunteer when user cancels the confirm dialog', async () => {
+    confirmDialogMock.open.mockReturnValueOnce(of(false));
+    await component.confirmDelete(MOCK_VOLUNTEERS[0]);
+    expect(userServiceMock.deleteVolunteer).not.toHaveBeenCalled();
+  });
+
+  it('calls deleteVolunteer and removes user from list after confirm', async () => {
+    confirmDialogMock.open.mockReturnValueOnce(of(true));
+    await component.confirmDelete(MOCK_VOLUNTEERS[0]);
+    expect(userServiceMock.deleteVolunteer).toHaveBeenCalledWith(1);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(component.users().find(u => u.id === 1)).toBeUndefined();
+    expect(component.submitting()).toBe(false);
+  });
+
+  it('shows error toast when deleteVolunteer API fails', async () => {
+    confirmDialogMock.open.mockReturnValueOnce(of(true));
+    userServiceMock.deleteVolunteer.mockReturnValueOnce(throwError(() => new Error('server')));
+    await component.confirmDelete(MOCK_VOLUNTEERS[0]);
     expect(toastMock.showError).toHaveBeenCalledOnce();
     expect(toastMock.showSuccess).not.toHaveBeenCalled();
     expect(component.submitting()).toBe(false);

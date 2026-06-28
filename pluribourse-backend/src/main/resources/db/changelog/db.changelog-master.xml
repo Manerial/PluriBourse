@@ -10,5 +10,6 @@
     <include file="db/changelog/004-instance-config.xml"/>
     <include file="db/changelog/005-user-volunteer-fields.xml"/>
     <include file="db/changelog/006-user-language-initialized.xml"/>
+    <include file="db/changelog/007-editions.xml"/>
 
 </databaseChangeLog>

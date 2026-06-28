@@ -98,6 +98,15 @@ public class UserService {
     }
 
     @Transactional
+    public void deleteVolunteer(Long id) {
+        User user = getUser(id);
+        if (user.getRole() != Role.VOLUNTEER) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-delete-admin", "Admin account cannot be deleted");
+        }
+        userRepository.delete(user);
+    }
+
+    @Transactional
     public PluriBourseUserDetails updateLanguagePreference(Long userId, Language lang) {
         User user = getUser(userId);
         user.setPreferredLanguage(lang);

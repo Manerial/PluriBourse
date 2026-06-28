@@ -26,4 +26,8 @@ export class UserService {
   enableVolunteer(id: number): Observable<void> {
     return this.http.put<void>(`/api/admin/users/${id}/enable`, {});
   }
+
+  deleteVolunteer(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/admin/users/${id}`);
+  }
 }

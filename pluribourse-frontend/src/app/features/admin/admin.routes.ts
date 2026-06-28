@@ -20,5 +20,20 @@ export const adminRoutes: Routes = [
     path: 'settings',
     loadComponent: () =>
       import('./settings/admin-settings.component').then((m) => m.AdminSettingsComponent),
-  }
+  },
+  {
+    path: 'editions',
+    loadComponent: () =>
+      import('./editions/edition-list.component').then((m) => m.EditionListComponent),
+  },
+  {
+    path: 'editions/create',
+    loadComponent: () =>
+      import('./editions/edition-form.component').then((m) => m.EditionFormComponent),
+  },
+  {
+    path: 'editions/:id/edit',
+    loadComponent: () =>
+      import('./editions/edition-form.component').then((m) => m.EditionFormComponent),
+  },
 ];

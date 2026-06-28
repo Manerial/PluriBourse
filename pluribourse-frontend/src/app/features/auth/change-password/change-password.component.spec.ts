@@ -55,9 +55,9 @@ describe('ChangePasswordComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
   });
 
-  it('submit button has btn-primary class', () => {
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[type="submit"]');
-    expect(btn.classList).toContain('btn-primary');
+  it('submit button uses mat-flat-button with primary color', () => {
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-flat-button][color="primary"]');
+    expect(btn).not.toBeNull();
   });
 
   it('disables submit when passwords do not match', () => {

@@ -259,4 +259,42 @@ class UserManagementIT extends IntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.type").value("https://pluribourse/errors/account-disabled"));
     }
+
+    @Test
+    @Order(19)
+    void admin_deletes_alice_returns_204() throws Exception {
+        mockMvc.perform(delete("/api/admin/users/" + aliceId)
+                        .session(adminSession)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById(aliceId)).isEmpty();
+    }
+
+    @Test
+    @Order(20)
+    void alice_no_longer_appears_in_list() throws Exception {
+        mockMvc.perform(get("/api/admin/users").session(adminSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].username", not(hasItem("alice"))));
+    }
+
+    @Test
+    @Order(21)
+    void admin_cannot_delete_admin_account() throws Exception {
+        User adminUser = userRepository.findByUsername("Admin").orElseThrow();
+        mockMvc.perform(delete("/api/admin/users/" + adminUser.getId())
+                        .session(adminSession)
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(22)
+    void admin_delete_nonexistent_user_returns_404() throws Exception {
+        mockMvc.perform(delete("/api/admin/users/99999")
+                        .session(adminSession)
+                        .with(csrf()))
+                .andExpect(status().isNotFound());
+    }
 }

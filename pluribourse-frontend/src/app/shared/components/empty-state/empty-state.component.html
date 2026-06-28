@@ -2,7 +2,7 @@
   <span class="material-symbols-outlined empty-state__icon" aria-hidden="true">{{ icon() }}</span>
   <p class="empty-state__message">{{ message() }}</p>
   @if (actionLabel()) {
-    <button type="button" class="btn-primary" (click)="action.emit()">
+    <button type="button" mat-flat-button color="primary" (click)="action.emit()">
       {{ actionLabel() }}
     </button>
   }

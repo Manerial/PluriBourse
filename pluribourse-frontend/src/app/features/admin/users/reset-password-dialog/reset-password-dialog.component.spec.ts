@@ -71,10 +71,10 @@ describe('ResetPasswordDialogComponent', () => {
     expect(btn.disabled).toBe(false);
   });
 
-  it('has cancel button with btn-ghost class', () => {
+  it('has cancel button with mat-button', () => {
     const fixture = TestBed.createComponent(ResetPasswordDialogComponent);
     fixture.detectChanges();
-    const cancelBtn = fixture.nativeElement.querySelector('button.btn-ghost');
+    const cancelBtn = fixture.nativeElement.querySelector('button[mat-button]');
     expect(cancelBtn).not.toBeNull();
   });
 

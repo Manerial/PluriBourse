@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { ToastContainerComponent } from '../../shared/components/toast/toast-container.component';
@@ -9,7 +10,7 @@ import { ToastContainerComponent } from '../../shared/components/toast/toast-con
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, ToastContainerComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, TranslatePipe, ToastContainerComponent],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.scss'
 })

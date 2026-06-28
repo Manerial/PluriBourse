@@ -16,6 +16,7 @@ public class JacksonConfig {
     @Primary
     public ObjectMapper objectMapper() {
         return JsonMapper.builder()
+                .findAndAddModules()
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)

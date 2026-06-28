@@ -50,18 +50,20 @@ describe('ConfirmDialogComponent', () => {
   it('renders cancel button with cdkFocusInitial attribute', () => {
     const fixture = TestBed.createComponent(ConfirmDialogComponent);
     fixture.detectChanges();
-    const cancelBtn = fixture.nativeElement.querySelector('.btn-ghost');
+    const cancelBtn = fixture.nativeElement.querySelector('button[mat-button][cdkfocusinitial]');
     expect(cancelBtn).not.toBeNull();
   });
 
-  it('renders confirm button with btn-primary class by default', () => {
+  it('renders confirm button with primary color by default', () => {
     const fixture = TestBed.createComponent(ConfirmDialogComponent);
     fixture.detectChanges();
-    const confirmBtn = fixture.nativeElement.querySelector('.btn-primary');
+    // [color] is a bound Angular input — Angular Material applies it as a CSS class, not an HTML attribute
+    const confirmBtn = fixture.nativeElement.querySelector('button[mat-flat-button]');
     expect(confirmBtn).not.toBeNull();
+    expect(confirmBtn.classList.contains('mat-primary')).toBe(true);
   });
 
-  it('renders confirm button with btn-error class when confirmVariant is error', async () => {
+  it('renders confirm button with warn color when confirmVariant is error', async () => {
     const errorData: ConfirmDialogData = {
       title: 'Delete',
       description: 'This will delete permanently.',
@@ -77,6 +79,8 @@ describe('ConfirmDialogComponent', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(ConfirmDialogComponent);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.btn-error')).not.toBeNull();
+    const confirmBtn = fixture.nativeElement.querySelector('button[mat-flat-button]');
+    expect(confirmBtn).not.toBeNull();
+    expect(confirmBtn.classList.contains('mat-warn')).toBe(true);
   });
 });

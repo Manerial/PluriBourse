@@ -1,0 +1,70 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'edition.list.title' | translate }}</h1>
+    <a routerLink="create" mat-flat-button color="primary">{{ 'edition.list.createButton' | translate }}</a>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="5" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error()) {
+    @if (editions().length === 0) {
+      <app-empty-state
+        icon="event"
+        [message]="'edition.list.empty' | translate"
+        [actionLabel]="'edition.list.emptyAction' | translate"
+        (action)="navigateToCreate()"
+      />
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'edition.list.columns.name' | translate }}</th>
+            <th>{{ 'edition.list.columns.phase' | translate }}</th>
+            <th>{{ 'edition.list.columns.commissionRate' | translate }}</th>
+            <th>{{ 'edition.list.columns.documentLanguage' | translate }}</th>
+            <th>{{ 'edition.list.columns.createdAt' | translate }}</th>
+            <th>{{ 'edition.list.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (edition of editions(); track edition.id) {
+            <tr>
+              <td>{{ edition.name }}</td>
+              <td>{{ ('edition.phase.' + edition.phase) | translate }}</td>
+              <td>{{ edition.commissionRate | number:'1.0-2' }}</td>
+              <td>{{ ('admin.settings.language.' + edition.documentLanguage) | translate }}</td>
+              <td>{{ edition.createdAt }}</td>
+              <td>
+                <div class="actions-cell">
+                  <button
+                    type="button"
+                    mat-button
+                    (click)="navigateToEdit(edition)">
+                    <mat-icon>edit</mat-icon>
+                    {{ 'edition.actions.edit' | translate }}
+                  </button>
+                  @if (isEditable(edition)) {
+                    <button
+                      type="button"
+                      mat-button
+                      color="warn"
+                      (click)="confirmDelete(edition)">
+                      <mat-icon>delete</mat-icon>
+                      {{ 'edition.actions.delete' | translate }}
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</div>

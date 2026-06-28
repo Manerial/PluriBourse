@@ -34,7 +34,7 @@
         </mat-form-field>
 
         <div class="card__actions">
-          <button type="submit" class="btn-primary" [disabled]="form.invalid || isSaving()">
+          <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || isSaving()">
             {{ 'admin.settings.save' | translate }}
           </button>
         </div>

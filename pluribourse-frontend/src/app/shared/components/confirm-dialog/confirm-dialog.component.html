@@ -4,14 +4,15 @@
   <div class="dialog__actions">
     <button
       type="button"
-      class="btn-ghost"
+      mat-button
       cdkFocusInitial
       (click)="cancel()">
       {{ data.cancelLabel ?? ('common.dialog.cancel' | translate) }}
     </button>
     <button
       type="button"
-      [class]="data.confirmVariant === 'error' ? 'btn-error' : 'btn-primary'"
+      mat-flat-button
+      [color]="data.confirmVariant === 'error' ? 'warn' : 'primary'"
       (click)="confirm()">
       {{ data.confirmLabel ?? ('common.dialog.confirm' | translate) }}
     </button>

@@ -9,7 +9,7 @@
     </select>
   </div>
 
-  <button type="submit" class="btn-primary" [disabled]="form.invalid || isSaving()">
+  <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || isSaving()">
     {{ 'account.save' | translate }}
   </button>
 </form>

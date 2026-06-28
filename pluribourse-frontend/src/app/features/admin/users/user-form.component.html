@@ -1,7 +1,7 @@
 <div class="card form-card">
   <div class="card__header">
-    <button type="button" class="btn-icon" (click)="cancel()" [attr.aria-label]="'admin.users.create.cancel' | translate">
-      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+    <button type="button" mat-icon-button (click)="cancel()" [attr.aria-label]="'admin.users.create.cancel' | translate">
+      <mat-icon>arrow_back</mat-icon>
     </button>
     <h1 class="card__title">{{ 'admin.users.create.title' | translate }}</h1>
   </div>
@@ -34,10 +34,10 @@
       </mat-form-field>
 
       <div class="card__actions">
-        <button type="button" class="btn-ghost" (click)="cancel()">
+        <button type="button" mat-button (click)="cancel()">
           {{ 'admin.users.create.cancel' | translate }}
         </button>
-        <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+        <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
           {{ 'admin.users.create.submit' | translate }}
         </button>
       </div>

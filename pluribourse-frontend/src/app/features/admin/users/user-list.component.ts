@@ -1,6 +1,8 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { Dialog } from '@angular/cdk/dialog';
@@ -11,11 +13,12 @@ import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/sk
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ResetPasswordDialogComponent, ResetPasswordDialogData } from './reset-password-dialog/reset-password-dialog.component';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [TranslatePipe, RouterLink, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.scss'
 })
@@ -26,6 +29,7 @@ export class UserListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly users = signal<UserDto[]>([]);
   readonly isLoading = signal(false);
@@ -59,6 +63,29 @@ export class UserListComponent implements OnInit {
       );
     } catch {
       this.toast.showError(this.translate.instant(`admin.users.error.${action}`));
+    }
+  }
+
+  async confirmDelete(user: UserDto): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this.confirmDialog.open({
+        title: this.translate.instant('admin.users.deleteDialog.title'),
+        description: this.translate.instant('admin.users.deleteDialog.description'),
+        confirmVariant: 'error',
+      })
+    );
+    if (!confirmed) {
+      return;
+    }
+    this.submitting.set(true);
+    try {
+      await firstValueFrom(this.userService.deleteVolunteer(user.id));
+      this.toast.showSuccess(this.translate.instant('admin.users.success.delete'));
+      this.users.update(list => list.filter(u => u.id !== user.id));
+    } catch {
+      this.toast.showError(this.translate.instant('admin.users.error.delete'));
+    } finally {
+      this.submitting.set(false);
     }
   }
 

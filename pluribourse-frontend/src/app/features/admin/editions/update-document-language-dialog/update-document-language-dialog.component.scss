@@ -1,0 +1,28 @@
+.dialog {
+  background: var(--mat-sys-surface);
+  border-radius: var(--pb-rounded-xl);
+  box-shadow: var(--pb-elevation-3);
+  padding: var(--pb-space-lg);
+  min-width: 360px;
+  max-width: 480px;
+  width: 100%;
+  outline: none;
+
+  &__title {
+    margin: 0 0 var(--pb-space-sm);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__field {
+    width: 100%;
+    margin-bottom: var(--pb-space-md);
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pb-space-sm);
+  }
+}

@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -10,7 +11,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe],
+  imports: [ReactiveFormsModule, MatButtonModule, TranslatePipe],
   templateUrl: './account.component.html'
 })
 export class AccountComponent implements OnInit {

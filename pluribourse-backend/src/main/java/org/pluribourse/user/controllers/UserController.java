@@ -54,4 +54,10 @@ public class UserController {
         userService.enableVolunteer(id);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteVolunteer(@PathVariable Long id) {
+        userService.deleteVolunteer(id);
+        return ResponseEntity.noContent().build();
+    }
 }

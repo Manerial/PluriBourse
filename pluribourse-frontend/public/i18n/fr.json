@@ -77,7 +77,106 @@
     },
     "admin": {
       "users": "Bénévoles",
-      "settings": "Paramètres"
+      "settings": "Paramètres",
+      "editions": "Éditions"
+    }
+  },
+  "edition": {
+    "list": {
+      "title": "Éditions",
+      "createButton": "Créer une édition",
+      "empty": "Aucune édition créée.",
+      "emptyAction": "Créer la première édition",
+      "columns": {
+        "name": "Nom",
+        "phase": "Phase",
+        "commissionRate": "Commission (%)",
+        "documentLanguage": "Langue des documents",
+        "createdAt": "Créée le",
+        "actions": "Actions"
+      }
+    },
+    "create": {
+      "title": "Créer une édition",
+      "name": {
+        "label": "Nom de l'édition",
+        "required": "Le nom de l'édition est obligatoire.",
+        "maxLength": "Le nom de l'édition ne doit pas dépasser 255 caractères."
+      },
+      "commissionRate": {
+        "label": "Taux de commission (%)",
+        "required": "Le taux de commission est obligatoire.",
+        "min": "Le taux de commission ne peut pas être négatif.",
+        "max": "Le taux de commission ne peut pas dépasser 100 %.",
+        "maxDecimals": "Le taux de commission ne peut pas avoir plus de 2 décimales."
+      },
+      "documentLanguage": {
+        "label": "Langue des documents"
+      },
+      "submit": "Créer",
+      "cancel": "Annuler",
+      "backToList": "Retour à la liste des éditions",
+      "error": {
+        "alreadyActive": "Une édition est déjà active. Clôturez-la avant d'en créer une nouvelle.",
+        "save": "Impossible de créer l'édition."
+      },
+      "success": "Édition créée."
+    },
+    "edit": {
+      "title": "Modifier l'édition",
+      "submit": "Enregistrer",
+      "cancel": "Annuler",
+      "error": {
+        "load": "Impossible de charger l'édition.",
+        "save": "Impossible de modifier l'édition.",
+        "commissionRateFrozen": "Le taux de commission ne peut plus être modifié une fois la phase de dépôt commencée."
+      },
+      "success": "Édition modifiée."
+    },
+    "phase": {
+      "PREPARATION": "Préparation",
+      "DEPOSIT": "Dépôt",
+      "SALE": "Vente",
+      "POST_SALE": "Post-vente",
+      "CLOSED": "Clôturée"
+    },
+    "actions": {
+      "edit": "Modifier",
+      "editCommissionRate": "Modifier la commission",
+      "editDocumentLanguage": "Modifier la langue",
+      "delete": "Supprimer",
+      "error": {
+        "delete": "Impossible de supprimer l'édition.",
+        "load": "Impossible de charger les éditions.",
+        "updateCommissionRate": "Impossible de modifier le taux de commission.",
+        "commissionRateFrozen": "Le taux de commission ne peut plus être modifié une fois la phase de dépôt commencée.",
+        "updateDocumentLanguage": "Impossible de modifier la langue des documents."
+      },
+      "success": {
+        "delete": "Édition supprimée.",
+        "updateCommissionRate": "Taux de commission mis à jour.",
+        "updateDocumentLanguage": "Langue des documents mise à jour."
+      }
+    },
+    "updateCommissionRateDialog": {
+      "title": "Modifier le taux de commission",
+      "label": "Taux de commission (%)",
+      "confirm": "Enregistrer",
+      "error": {
+        "required": "Le taux de commission est obligatoire.",
+        "min": "Le taux de commission ne peut pas être négatif.",
+        "max": "Le taux de commission ne peut pas dépasser 100 %.",
+        "maxDecimals": "Le taux de commission ne peut pas avoir plus de 2 décimales."
+      }
+    },
+    "updateDocumentLanguageDialog": {
+      "title": "Modifier la langue des documents",
+      "label": "Langue des documents",
+      "confirm": "Enregistrer"
+    },
+    "deleteDialog": {
+      "title": "Supprimer l'édition ?",
+      "description": "Cette édition sera définitivement supprimée. Cette action est irréversible."
     }
   },
   "notFound": {
@@ -102,7 +201,8 @@
         "disable": "Désactiver",
         "enable": "Activer",
         "resetPassword": "Réinitialiser le mot de passe",
-        "confirmReset": "Confirmer"
+        "confirmReset": "Confirmer",
+        "delete": "Supprimer"
       },
       "create": {
         "title": "Créer un bénévole",
@@ -116,11 +216,16 @@
       "success": {
         "disable": "Compte désactivé.",
         "enable": "Compte activé.",
-        "resetPassword": "Mot de passe réinitialisé avec succès."
+        "resetPassword": "Mot de passe réinitialisé avec succès.",
+        "delete": "Bénévole supprimé."
       },
       "resetDialog": {
         "title": "Réinitialiser le mot de passe",
         "description": "Définissez un nouveau mot de passe temporaire pour {{ name }}."
+      },
+      "deleteDialog": {
+        "title": "Supprimer le bénévole ?",
+        "description": "Ce compte sera définitivement supprimé. Cette action est irréversible."
       },
       "empty": "Aucun bénévole enregistré pour le moment.",
       "error": {
@@ -128,7 +233,8 @@
         "create": "Impossible de créer le bénévole.",
         "disable": "Impossible de désactiver le compte.",
         "enable": "Impossible d'activer le compte.",
-        "resetPassword": "Impossible de réinitialiser le mot de passe."
+        "resetPassword": "Impossible de réinitialiser le mot de passe.",
+        "delete": "Impossible de supprimer le bénévole."
       }
     },
     "settings": {

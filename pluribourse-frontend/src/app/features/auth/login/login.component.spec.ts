@@ -49,10 +49,10 @@ describe('LoginComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
   });
 
-  it('submit button has btn-primary class', () => {
+  it('submit button uses mat-flat-button with primary color', () => {
     const fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[type="submit"]');
-    expect(btn.classList).toContain('btn-primary');
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-flat-button][color="primary"]');
+    expect(btn).not.toBeNull();
   });
 });

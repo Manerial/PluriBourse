@@ -13,7 +13,7 @@
       [message]="('auth.login.error.' + error()!) | translate"
       variant="error" />
   }
-  <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+  <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
     {{ 'auth.login.submit' | translate }}
   </button>
 </form>

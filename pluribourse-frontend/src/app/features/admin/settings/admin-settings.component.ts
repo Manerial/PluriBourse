@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -14,7 +15,7 @@ import { NotificationInlineComponent } from '../../../shared/components/notifica
 @Component({
   selector: 'app-admin-settings',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe, MatFormFieldModule, MatInputModule, MatSelectModule, SkeletonRowComponent, NotificationInlineComponent],
+  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent],
   templateUrl: './admin-settings.component.html'
 })
 export class AdminSettingsComponent implements OnInit {

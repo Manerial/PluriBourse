@@ -1,7 +1,7 @@
-<div class="card">
+<div class="card card--list">
   <div class="card__header">
     <h1 class="card__title">{{ 'admin.users.title' | translate }}</h1>
-    <a routerLink="create" class="btn-primary">{{ 'admin.users.actions.create' | translate }}</a>
+    <a routerLink="create" mat-flat-button color="primary">{{ 'admin.users.actions.create' | translate }}</a>
   </div>
 
   @if (isLoading()) {
@@ -21,7 +21,7 @@
         (action)="navigateToCreate()"
       />
     } @else {
-      <table class="user-table">
+      <table class="data-table">
         <thead>
           <tr>
             <th>{{ 'admin.users.columns.name' | translate }}</th>
@@ -52,13 +52,20 @@
                 <div class="actions-cell">
                   <button
                     type="button"
-                    class="btn-ghost"
+                    mat-button
                     (click)="toggleEnabled(user)">
+                    <mat-icon>{{ user.enabled ? 'block' : 'check_circle' }}</mat-icon>
                     {{ (user.enabled ? 'admin.users.actions.disable' : 'admin.users.actions.enable') | translate }}
                   </button>
 
-                  <button type="button" class="btn-ghost" (click)="openResetPasswordDialog(user)" [disabled]="submitting()">
+                  <button type="button" mat-button (click)="openResetPasswordDialog(user)" [disabled]="submitting()">
+                    <mat-icon>lock_reset</mat-icon>
                     {{ 'admin.users.actions.resetPassword' | translate }}
+                  </button>
+
+                  <button type="button" mat-button color="warn" (click)="confirmDelete(user)" [disabled]="submitting()">
+                    <mat-icon>delete</mat-icon>
+                    {{ 'admin.users.actions.delete' | translate }}
                   </button>
                 </div>
               </td>

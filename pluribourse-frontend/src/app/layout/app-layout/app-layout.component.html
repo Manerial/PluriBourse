@@ -21,7 +21,7 @@
         [class.badge--volunteer]="!isAdmin()">
         {{ isAdmin() ? ('nav.role.admin' | translate) : ('nav.role.volunteer' | translate) }}
       </span>
-      <button class="btn-ghost" type="button" (click)="logout()">
+      <button mat-button type="button" (click)="logout()">
         {{ 'nav.logout' | translate }}
       </button>
     </div>
@@ -33,7 +33,14 @@
 
       <div class="sidebar__section">
         <span class="sidebar__section-label">{{ 'nav.sections.activeEdition' | translate }}</span>
-        <!-- Edition nav items added in Epic 2 (Story 2.1+) -->
+        <a
+          routerLink="/admin/editions"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item">
+          <span class="material-symbols-outlined" aria-hidden="true">event</span>
+          <span>{{ 'nav.admin.editions' | translate }}</span>
+        </a>
       </div>
 
       <div class="sidebar__section">
