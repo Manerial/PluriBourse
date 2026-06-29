@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-06-29"  # Story 2.2 → done
+last_updated: "2026-06-29"  # Stories 2.3, 2.4, 2.6 added (volunteer gate, edition dates, SSE phase chip)
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -60,10 +60,12 @@ development_status:
   epic-2: in-progress
   2-1-crud-dedition-configuration-du-taux-de-commission: done
   2-2-controle-du-cycle-de-phases-boites-de-dialogue-de-confirmation: done
-  2-3-categories-de-ledition-correspondance-des-tables: backlog
-  2-4-notification-de-phase-en-temps-reel-via-sse: backlog
-  2-5-cloture-de-ledition-archivage-de-ledition: backlog
-  2-6-annulation-du-panier-lors-dune-transition-de-phase-cote-serveur: backlog
+  2-3-blocage-benevoles-sans-edition-active: ready-for-dev
+  2-4-dates-debut-fin-edition: ready-for-dev
+  2-5-categories-de-ledition-correspondance-des-tables: backlog
+  2-6-notification-de-phase-en-temps-reel-via-sse: ready-for-dev
+  2-7-cloture-de-ledition-archivage-de-ledition: backlog
+  2-8-annulation-du-panier-lors-dune-transition-de-phase-cote-serveur: backlog
   epic-2-retrospective: optional
 
   # ─── Epic 3 : Enregistrement des vendeurs & Dépôt ──────────────────────────

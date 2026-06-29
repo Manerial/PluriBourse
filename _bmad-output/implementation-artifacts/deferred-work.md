@@ -143,6 +143,10 @@ Les items suivants ont été résolus dans des stories ultérieures et ne néces
 - **POST/PATCH/DELETE non testés avec session volunteer** — `EditionManagementIT.java` — seul GET retournant 403 est testé ; les mutations (créer, modifier, supprimer) ne vérifient pas le 403 pour un volunteer. Sécurité appliquée au niveau `SecurityConfig` + `@PreAuthorize`.
 - **`reloadEditions()` laisse l'UI dans un état visuellement incohérent** — `edition-list.component.ts:reloadEditions()` — après delete réussi suivi d'une erreur réseau sur GET, la table disparaît (`@if (!error())`) et affiche "Failed to load editions" bien que le delete ait réussi. Fix propre : optimistic update ou conserver les données précédentes si le reload échoue.
 
+## Deferred from: Story 2.3 — blocage-benevoles-sans-edition-active (2026-06-29)
+
+- **URL d'erreur `no-active-edition` dupliquée en magic string Java + TypeScript** — `LoginSuccessHandler.java` et `login.component.ts` — `"https://pluribourse/errors/no-active-edition"` hardcodé dans les deux couches sans constante partagée. Même pattern que le defer Story 1.3 sur `account-disabled`. Une divergence silencieuse casse la détection côté frontend. Cross-langage, pas de solution compile-time. Risque faible à court terme.
+
 ## Deferred from: code review of 2-2-controle-du-cycle-de-phases-boites-de-dialogue-de-confirmation (2026-06-29)
 
 - **Async callback écrit sur les signals après destruction du composant** — `phase-control.component.ts` — `takeUntilDestroyed` annule la souscription Observable mais ne cancelle pas le `firstValueFrom` en vol. Si le composant est détruit pendant une transition, le `finally` block écrit sur les signals d'un composant détruit. Pas de crash en mode Signal Angular ; orphaned write sans conséquence visible. À adresser si des `ExpressionChangedAfterItHasBeenCheckedError` sont observées en dev.

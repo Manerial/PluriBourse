@@ -45,6 +45,8 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les ventes et les soldes sont préservés. Les articles des vendeurs déjà soldés ne peuvent plus être vendus. Le retour arrière depuis l'état Clôturé est désactivé après l'Archivage de l'édition.
 - FR-088 : Après clôture, l'administrateur peut déclencher l'« Archivage de l'édition » — copie chaque article (nom, catégorie, statut vendu/invendu) dans une table d'archivage, puis supprime définitivement les enregistrements d'articles et les profils vendeurs de l'édition. Les articles de lot sont archivés individuellement sans conserver la notion de lot. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
 - FR-096 : À la clôture de l'édition, tous les vendeurs non soldés sont automatiquement marqués « Non réclamé » et leurs montants enregistrés en recettes de l'association (même logique que FR-052), de manière atomique avec la transition de phase. Si au moins un vendeur est non soldé, la boîte de dialogue de confirmation affiche le nombre de vendeurs concernés et le montant total à transférer. Le bouton « Clôturer l'édition » n'est plus désactivé en présence de vendeurs non soldés.
+- FR-099 : Si aucune édition n'est en phase active (Préparation, Dépôt, Vente, Post-vente), les bénévoles ne peuvent pas se connecter. L'authentification est rejetée avec une erreur distinguable `no-active-edition`. Les administrateurs ne sont pas affectés. Les sessions bénévoles déjà ouvertes restent valides jusqu'à déconnexion.
+- FR-100 : Une édition possède deux dates optionnelles — date de début et date de fin — à titre purement informatif et administratif. Ces dates n'ont aucune incidence sur la logique métier. Elles sont saisies dans le formulaire de création/édition, affichées dans la liste des éditions et conservées en base de données.
 
 **F3 — Gestion des vendeurs et des articles (Phase Dépôt)**
 
@@ -219,8 +221,10 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-014 : Epic 2 — Une édition ayant dépassé la phase Préparation ne peut pas être supprimée
 - FR-015 : Epic 2 — Données d'édition strictement isolées
 - FR-016 : Epic 2 — Taux de commission figé dès le démarrage de la phase Dépôt
-- FR-017 : Epic 2 — L'admin configure les catégories d'articles par édition (Story 2.3)
-- FR-018 : Epic 2 — L'admin configure la correspondance catégorie-table (Story 2.3)
+- FR-017 : Epic 2 — L'admin configure les catégories d'articles par édition (Story 2.5)
+- FR-018 : Epic 2 — L'admin configure la correspondance catégorie-table (Story 2.5)
+- FR-099 : Epic 2 — Blocage de connexion bénévole sans édition active (Story 2.3)
+- FR-100 : Epic 2 — Dates de début et de fin d'édition optionnelles (Story 2.4)
 - FR-019 : Epic 3 — Les profils vendeurs sont propres à chaque édition
 - FR-020 : Epic 3 — Le bénévole recherche/crée des profils vendeurs
 - FR-021 : Epic 3 — L'admin peut supprimer un profil vendeur (anonymisation RGPD)
@@ -312,7 +316,7 @@ Les administrateurs et les bénévoles peuvent déployer l'application, se conne
 ### Epic 2 : Gestion du cycle de vie des éditions
 Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/archiver les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
 
-**FR couvertes :** FR-008–018, FR-080, FR-082, FR-088, FR-090 (côté serveur), FR-096
+**FR couvertes :** FR-008–018, FR-080, FR-082, FR-088, FR-090 (côté serveur), FR-096, FR-099, FR-100
 **Architecture :** ARCH-012, ARCH-015 (prérequis machine de phases)
 **UX :** UX-DR4, UX-DR18
 
@@ -756,7 +760,7 @@ afin que les transitions de phase soient intentionnelles et que leurs conséquen
 **Quand** la transition se termine
 **Alors** la phase passe à « Dépôt »
 **Et** le taux de commission est gelé pour cette édition (FR-016)
-**Et** les catégories et correspondances de tables passent en lecture seule (Story 2.3)
+**Et** les catégories et correspondances de tables passent en lecture seule (Story 2.5)
 
 **Étant donné** que l'admin confirme un retour arrière de phase
 **Quand** la transition se termine
@@ -776,7 +780,63 @@ afin que les transitions de phase soient intentionnelles et que leurs conséquen
 **Quand** le serveur la traite
 **Alors** un événement SSE `phase-changed` est diffusé avec `{editionId, newPhase, previousPhase}`
 
-### Story 2.3 : Catégories de l'édition & Correspondance des tables
+### Story 2.3 : Blocage de connexion bénévole sans édition active
+
+En tant qu'administrateur,
+je veux que la connexion des bénévoles soit bloquée lorsqu'aucune édition n'est en cours,
+afin que les bénévoles n'accèdent pas au système entre deux événements.
+
+**Critères d'acceptation :**
+
+**Étant donné** qu'aucune édition n'existe en phase Préparation, Dépôt, Vente ou Post-vente
+**Quand** un bénévole tente de se connecter
+**Alors** l'authentification est rejetée avec un 401 et un type de problème `no-active-edition` (FR-099)
+
+**Étant donné** que la page de connexion reçoit un 401 avec type `no-active-edition`
+**Quand** l'erreur est affichée
+**Alors** une notification inline distincte s'affiche — différente du message « identifiants invalides »
+
+**Étant donné** qu'une édition existe en phase `CLOSED` uniquement
+**Quand** un bénévole tente de se connecter
+**Alors** la connexion est refusée — `CLOSED` n'est pas une phase active (FR-099)
+
+**Étant donné** qu'un admin tente de se connecter alors qu'aucune édition n'est active
+**Quand** les identifiants sont corrects
+**Alors** la connexion est acceptée — la vérification ne s'applique qu'aux bénévoles (FR-099)
+
+**Étant donné** qu'un bénévole est déjà connecté et que l'édition active passe en `CLOSED`
+**Quand** il navigue dans l'application
+**Alors** sa session reste valide jusqu'à déconnexion — l'invalidation de session en cours relève d'une story ultérieure (FR-099)
+
+### Story 2.4 : Dates de début et de fin d'édition
+
+En tant qu'administrateur,
+je veux saisir des dates de début et de fin optionnelles pour chaque édition,
+afin de disposer d'un enregistrement administratif indiquant quand l'événement a eu lieu.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin crée ou modifie une édition
+**Quand** le formulaire s'affiche
+**Alors** deux champs de date optionnels sont disponibles : « Date de début » et « Date de fin » (FR-100)
+
+**Étant donné** que l'admin laisse les deux champs vides
+**Quand** l'édition est sauvegardée
+**Alors** l'édition est enregistrée normalement — les deux champs sont nullable (FR-100)
+
+**Étant donné** que l'admin renseigne une ou deux dates
+**Quand** l'édition est sauvegardée
+**Alors** les dates sont persistées en base de données et retournées dans toutes les réponses API de l'édition (FR-100)
+
+**Étant donné** que la liste des éditions est affichée
+**Quand** les éditions sont chargées
+**Alors** des colonnes « Date de début » et « Date de fin » apparaissent dans le tableau, avec la valeur ou un tiret (`—`) si non renseignée (FR-100)
+
+**Étant donné** que les deux dates sont renseignées
+**Quand** l'une ou l'autre est modifiée
+**Alors** aucune validation croisée n'est appliquée — les deux champs sont indépendants (FR-100)
+
+### Story 2.5 : Catégories de l'édition & Correspondance des tables
 
 En tant qu'administrateur,
 je veux configurer les catégories d'articles et leurs attributions de tables par édition,
@@ -813,7 +873,7 @@ afin que les articles soient automatiquement dirigés vers les bonnes tables lor
 **Quand** l'admin ouvre la page des catégories
 **Alors** la page est en lecture seule avec une bannière indiquant « Catégories verrouillées »
 
-### Story 2.4 : Notification de phase en temps réel via SSE
+### Story 2.6 : Notification de phase en temps réel via SSE
 
 En tant que bénévole,
 je veux voir la phase active se mettre à jour en temps réel dans la barre supérieure sans rechargement de page,
@@ -840,7 +900,7 @@ afin de toujours savoir quelle interface utiliser sans recharger manuellement la
 **Alors** tous les clients connectés reçoivent l'événement `phase-changed`
 **Et** le `SseEmitterRegistry` ferme l'émetteur après la diffusion
 
-### Story 2.5 : Clôture de l'édition & Archivage de l'édition
+### Story 2.7 : Clôture de l'édition & Archivage de l'édition
 
 En tant qu'administrateur,
 je veux clôturer officiellement une édition et optionnellement archiver ses enregistrements d'articles,
@@ -880,7 +940,7 @@ afin que l'édition soit correctement archivée et que le stockage puisse être 
 **Quand** l'admin consulte l'édition
 **Alors** les métriques agrégées (total des ventes, recettes, commission) restent visibles en lecture seule (FR-059)
 
-### Story 2.6 : Annulation du panier lors d'une transition de phase — côté serveur
+### Story 2.8 : Annulation du panier lors d'une transition de phase — côté serveur
 
 En tant qu'administrateur déclenchant une transition de phase,
 je veux que le serveur invalide automatiquement les paniers POS actifs et notifie les clients via SSE,
@@ -1369,7 +1429,7 @@ En tant que bénévole caissier avec un panier actif,
 je veux être immédiatement notifié si l'administrateur change la phase pendant que je suis en cours de transaction,
 afin de ne pas tenter de finaliser une vente dans une phase qui n'est plus valide.
 
-**Dépendance :** Story 2.6 (émission SSE `basket-cancelled` côté serveur)
+**Dépendance :** Story 2.8 (émission SSE `basket-cancelled` côté serveur)
 
 **Critères d'acceptation :**
 
