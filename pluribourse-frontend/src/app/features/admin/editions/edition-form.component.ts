@@ -124,9 +124,15 @@ export class EditionFormComponent implements OnInit {
       this.router.navigateByUrl('/admin/editions');
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422) {
-        this.formError.set(
-          this.isEditMode() ? 'edition.edit.error.commissionRateFrozen' : 'edition.create.error.alreadyActive'
-        );
+        const errorType: string = (err.error as { type?: string })?.type ?? '';
+        if (errorType.endsWith('/commission-rate-frozen')) {
+          this.formError.set('edition.edit.error.commissionRateFrozen');
+        } else if (errorType.endsWith('/edition-already-active')) {
+          this.formError.set('edition.create.error.alreadyActive');
+        } else {
+          const key422 = this.isEditMode() ? 'edition.edit.error.save' : 'edition.create.error.save';
+          this.toast.showError(this.translate.instant(key422));
+        }
       } else {
         const key = this.isEditMode() ? 'edition.edit.error.save' : 'edition.create.error.save';
         this.toast.showError(this.translate.instant(key));

@@ -29,4 +29,12 @@ export class EditionService {
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE}/${id}`);
   }
+
+  advancePhase(id: number): Observable<EditionDto> {
+    return this.http.post<EditionDto>(`${this.BASE}/${id}/phase/advance`, {});
+  }
+
+  rollbackPhase(id: number): Observable<EditionDto> {
+    return this.http.post<EditionDto>(`${this.BASE}/${id}/phase/rollback`, {});
+  }
 }

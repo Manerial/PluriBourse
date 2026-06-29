@@ -10,7 +10,7 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
 import { EditionDto } from '../../../models/edition.model';
 
 const MOCK_EDITIONS: EditionDto[] = [
-  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01' }
+  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01', archived: false }
 ];
 
 describe('EditionListComponent', () => {

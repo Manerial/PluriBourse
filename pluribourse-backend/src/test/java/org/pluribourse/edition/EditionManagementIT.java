@@ -72,7 +72,7 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test @Order(4)
     void admin_create_edition_without_rate_and_language_uses_instance_defaults() throws Exception {
-        EditionDto dto = new EditionDto(null, "Bourse 2026", null, null, null, null);
+        EditionDto dto = new EditionDto(null, "Bourse 2026", null, null, null, null, false);
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession)
                         .with(csrf())
@@ -91,7 +91,7 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test @Order(5)
     void admin_create_second_edition_while_active_returns_422() throws Exception {
-        EditionDto dto = new EditionDto(null, "Bourse 2027", null, null, null, null);
+        EditionDto dto = new EditionDto(null, "Bourse 2027", null, null, null, null, false);
         mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession)
                         .with(csrf())
@@ -110,7 +110,7 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test @Order(7)
     void admin_update_edition_in_preparation_succeeds() throws Exception {
-        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("15.00"), Language.FR, null);
+        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("15.00"), Language.FR, null, false);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())
@@ -131,7 +131,7 @@ class EditionManagementIT extends IntegrationTest {
         edition.setPhase(PhaseType.DEPOSIT);
         repository.save(edition);
 
-        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("30.00"), Language.FR, null);
+        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("30.00"), Language.FR, null, false);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())
@@ -143,7 +143,7 @@ class EditionManagementIT extends IntegrationTest {
     @Test @Order(9)
     void admin_update_name_and_language_in_deposit_phase_succeeds() throws Exception {
         // Edition is still in DEPOSIT from Order 8 — commission rate unchanged (15.00)
-        EditionDto dto = new EditionDto(null, "Bourse 2026 Finale", null, new BigDecimal("15.00"), Language.EN, null);
+        EditionDto dto = new EditionDto(null, "Bourse 2026 Finale", null, new BigDecimal("15.00"), Language.EN, null, false);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())
@@ -214,7 +214,7 @@ class EditionManagementIT extends IntegrationTest {
     @Test @Order(15)
     void create_edition_after_closed_edition_succeeds_with_explicit_rate_and_language() throws Exception {
         // CLOSED phase is not active — creating after a CLOSED edition is allowed (FR-010)
-        EditionDto dto1 = new EditionDto(null, "Bourse Clôturée", null, null, null, null);
+        EditionDto dto1 = new EditionDto(null, "Bourse Clôturée", null, null, null, null, false);
         MvcResult r1 = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -227,7 +227,7 @@ class EditionManagementIT extends IntegrationTest {
         repository.save(edition);
 
         // Create new edition with explicit rate and language
-        EditionDto dto2 = new EditionDto(null, "Bourse Suivante", null, new BigDecimal("12.50"), Language.FR, null);
+        EditionDto dto2 = new EditionDto(null, "Bourse Suivante", null, new BigDecimal("12.50"), Language.FR, null, false);
         MvcResult r2 = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

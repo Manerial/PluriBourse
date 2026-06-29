@@ -141,6 +141,7 @@
       "CLOSED": "Closed"
     },
     "actions": {
+      "managePhase": "Manage phase",
       "edit": "Edit",
       "editCommissionRate": "Edit commission",
       "editDocumentLanguage": "Edit language",
@@ -177,6 +178,42 @@
     "deleteDialog": {
       "title": "Delete edition?",
       "description": "This edition will be permanently deleted. This action cannot be undone."
+    }
+  },
+  "phase": {
+    "control": {
+      "back": "Back to editions",
+      "error": {
+        "load": "Failed to load edition."
+      }
+    },
+    "advance": {
+      "button": "Advance to",
+      "success": "Phase advanced.",
+      "error": "Failed to advance phase.",
+      "dialog": {
+        "title": "Advance to {{nextPhase}}?",
+        "description": {
+          "PREPARATION": "The commission rate will be locked for this edition. Categories and table assignments will become read-only.",
+          "DEPOSIT": "The deposit phase ends. No new sellers or items can be registered.",
+          "SALE": "The sale phase ends. No more sales can be processed.",
+          "POST_SALE": "The edition will be closed and become read-only."
+        }
+      }
+    },
+    "rollback": {
+      "button": "Roll back to",
+      "success": "Phase rolled back.",
+      "error": "Failed to roll back phase.",
+      "dialog": {
+        "title": "Roll back to {{prevPhase}}?",
+        "description": {
+          "DEPOSIT": "The commission rate and categories become editable again.",
+          "SALE": "All recorded items remain unchanged. Deposit operations can resume.",
+          "POST_SALE": "All sales and payouts remain unchanged. Sale operations can resume.",
+          "CLOSED": "The edition becomes active again. All data is preserved."
+        }
+      }
     }
   },
   "notFound": {

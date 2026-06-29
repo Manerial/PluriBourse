@@ -11,5 +11,7 @@
     <include file="db/changelog/005-user-volunteer-fields.xml"/>
     <include file="db/changelog/006-user-language-initialized.xml"/>
     <include file="db/changelog/007-editions.xml"/>
+    <include file="db/changelog/008-edition-archived.xml"/>
+    <include file="db/changelog/009-edition-version.xml"/>
 
 </databaseChangeLog>

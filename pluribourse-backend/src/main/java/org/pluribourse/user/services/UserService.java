@@ -29,6 +29,12 @@ public class UserService {
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "user-not-found", "User not found"));
     }
 
+    private void checkNotAdmin(User user, String errorCode, String message) {
+        if (user.getRole() == Role.ADMIN) {
+            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, errorCode, message);
+        }
+    }
+
     @Transactional
     public PluriBourseUserDetails changePassword(Long userId, String newRawPassword) {
         User user = getUser(userId);
@@ -57,7 +63,7 @@ public class UserService {
         user.setRole(Role.VOLUNTEER);
         user.setPreferredLanguage(Language.EN);
         user.setLanguageInitialized(false);
-        user.setForcePasswordChange(false);
+        user.setForcePasswordChange(true);
         user.setEnabled(true);
         try {
             return userMapper.toDto(userRepository.save(user));
@@ -69,9 +75,7 @@ public class UserService {
     @Transactional
     public void resetVolunteerPassword(Long id, String newPassword) {
         User user = getUser(id);
-        if (user.getRole() != Role.VOLUNTEER) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-modify-admin", "Admin account cannot be modified");
-        }
+        checkNotAdmin(user, "cannot-modify-admin", "Admin account cannot be modified");
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setForcePasswordChange(true);
         userRepository.save(user);
@@ -80,9 +84,7 @@ public class UserService {
     @Transactional
     public void disableVolunteer(Long id) {
         User user = getUser(id);
-        if (user.getRole() != Role.VOLUNTEER) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-disable-admin", "Admin account cannot be disabled");
-        }
+        checkNotAdmin(user, "cannot-disable-admin", "Admin account cannot be disabled");
         user.setEnabled(false);
         userRepository.save(user);
     }
@@ -90,9 +92,7 @@ public class UserService {
     @Transactional
     public void enableVolunteer(Long id) {
         User user = getUser(id);
-        if (user.getRole() != Role.VOLUNTEER) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-enable-admin", "Admin account cannot be modified");
-        }
+        checkNotAdmin(user, "cannot-enable-admin", "Admin account cannot be modified");
         user.setEnabled(true);
         userRepository.save(user);
     }
@@ -100,9 +100,7 @@ public class UserService {
     @Transactional
     public void deleteVolunteer(Long id) {
         User user = getUser(id);
-        if (user.getRole() != Role.VOLUNTEER) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "cannot-delete-admin", "Admin account cannot be deleted");
-        }
+        checkNotAdmin(user, "cannot-delete-admin", "Admin account cannot be deleted");
         userRepository.delete(user);
     }
 

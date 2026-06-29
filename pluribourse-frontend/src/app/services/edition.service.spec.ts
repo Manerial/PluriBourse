@@ -3,11 +3,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
 import { EditionService } from './edition.service';
-import { EditionDto } from '../models/edition.model';
+import { EditionDto, PhaseType } from '../models/edition.model';
 
 const MOCK_EDITION: EditionDto = {
   id: 1, name: 'Bourse 2026', phase: 'PREPARATION',
-  commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01'
+  commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01',
+  archived: false
 };
 
 describe('EditionService', () => {
@@ -62,5 +63,21 @@ describe('EditionService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
     await p;
+  });
+
+  it('advancePhase() sends POST /api/admin/editions/1/phase/advance', async () => {
+    const p = firstValueFrom(service.advancePhase(1));
+    const req = http.expectOne('/api/admin/editions/1/phase/advance');
+    expect(req.request.method).toBe('POST');
+    req.flush({ ...MOCK_EDITION, phase: 'DEPOSIT' as PhaseType });
+    expect((await p).phase).toBe('DEPOSIT');
+  });
+
+  it('rollbackPhase() sends POST /api/admin/editions/1/phase/rollback', async () => {
+    const p = firstValueFrom(service.rollbackPhase(1));
+    const req = http.expectOne('/api/admin/editions/1/phase/rollback');
+    expect(req.request.method).toBe('POST');
+    req.flush({ ...MOCK_EDITION, phase: 'PREPARATION' as PhaseType });
+    expect((await p).phase).toBe('PREPARATION');
   });
 });

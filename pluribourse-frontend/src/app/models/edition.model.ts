@@ -7,4 +7,5 @@ export interface EditionDto {
   commissionRate: number;
   documentLanguage: 'EN' | 'FR';
   createdAt: string; // ISO 8601 date string "YYYY-MM-DD"
+  archived: boolean;
 }

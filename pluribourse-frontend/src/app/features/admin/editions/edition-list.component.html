@@ -42,6 +42,11 @@
               <td>{{ edition.createdAt }}</td>
               <td>
                 <div class="actions-cell">
+                  <a
+                    [routerLink]="['/admin/editions', edition.id, 'phase']"
+                    class="btn-ghost">
+                    {{ 'edition.actions.managePhase' | translate }}
+                  </a>
                   <button
                     type="button"
                     mat-button

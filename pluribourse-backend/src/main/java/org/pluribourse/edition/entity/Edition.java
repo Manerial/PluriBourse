@@ -34,4 +34,11 @@ public class Edition {
 
     @Column(name = "created_at", nullable = false)
     private LocalDate createdAt;
+
+    @Column(name = "is_archived", nullable = false)
+    private boolean archived = false;
+
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
 }

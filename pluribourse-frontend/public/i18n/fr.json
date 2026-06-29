@@ -141,6 +141,7 @@
       "CLOSED": "Clôturée"
     },
     "actions": {
+      "managePhase": "Gérer les phases",
       "edit": "Modifier",
       "editCommissionRate": "Modifier la commission",
       "editDocumentLanguage": "Modifier la langue",
@@ -177,6 +178,42 @@
     "deleteDialog": {
       "title": "Supprimer l'édition ?",
       "description": "Cette édition sera définitivement supprimée. Cette action est irréversible."
+    }
+  },
+  "phase": {
+    "control": {
+      "back": "Retour aux éditions",
+      "error": {
+        "load": "Impossible de charger l'édition."
+      }
+    },
+    "advance": {
+      "button": "Avancer vers",
+      "success": "Phase avancée.",
+      "error": "Impossible de faire avancer la phase.",
+      "dialog": {
+        "title": "Avancer vers {{nextPhase}} ?",
+        "description": {
+          "PREPARATION": "Le taux de commission sera gelé pour cette édition. Les catégories et la correspondance des tables passeront en lecture seule.",
+          "DEPOSIT": "La phase de dépôt se termine. Aucun nouveau vendeur ni article ne peut être enregistré.",
+          "SALE": "La phase de vente se termine. Aucune nouvelle vente ne peut être traitée.",
+          "POST_SALE": "L'édition sera clôturée et passera en lecture seule."
+        }
+      }
+    },
+    "rollback": {
+      "button": "Revenir à",
+      "success": "Phase revenue en arrière.",
+      "error": "Impossible de revenir en arrière.",
+      "dialog": {
+        "title": "Revenir à {{prevPhase}} ?",
+        "description": {
+          "DEPOSIT": "Le taux de commission et les catégories redeviennent modifiables.",
+          "SALE": "Tous les articles enregistrés restent inchangés. Les opérations de dépôt peuvent reprendre.",
+          "POST_SALE": "Toutes les ventes et les soldes restent inchangés. Les opérations de vente peuvent reprendre.",
+          "CLOSED": "L'édition redevient active. Toutes les données sont préservées."
+        }
+      }
     }
   },
   "notFound": {

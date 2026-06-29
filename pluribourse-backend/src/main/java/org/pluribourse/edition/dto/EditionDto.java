@@ -15,5 +15,6 @@ public record EditionDto(
         @Digits(integer = 3, fraction = 2)
         BigDecimal commissionRate,
         Language documentLanguage,
-        LocalDate createdAt
+        LocalDate createdAt,
+        Boolean archived
 ) {}

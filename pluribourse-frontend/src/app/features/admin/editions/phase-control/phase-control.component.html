@@ -1,0 +1,53 @@
+<div class="card">
+  <div class="card__header">
+    <a routerLink="/admin/editions" class="btn-ghost">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+      {{ 'phase.control.back' | translate }}
+    </a>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="3" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error() && edition()) {
+    <div class="phase-control">
+      <h1 class="phase-control__title">{{ edition()!.name }}</h1>
+
+      <div class="phase-control__current">
+        <span class="phase-chip">
+          <span class="phase-chip__dot" aria-hidden="true">●</span>
+          {{ ('edition.phase.' + edition()!.phase) | translate }}
+        </span>
+      </div>
+
+      <div class="phase-control__actions">
+        @if (canRollback()) {
+          <button
+            type="button"
+            class="btn-ghost"
+            [disabled]="isSubmitting()"
+            (click)="confirmRollback()">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            {{ 'phase.rollback.button' | translate }} {{ ('edition.phase.' + prevPhase()) | translate }}
+          </button>
+        }
+
+        @if (canAdvance()) {
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="isSubmitting()"
+            (click)="confirmAdvance()">
+            {{ 'phase.advance.button' | translate }} {{ ('edition.phase.' + nextPhase()) | translate }}
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>

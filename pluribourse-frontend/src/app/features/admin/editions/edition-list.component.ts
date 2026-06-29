@@ -33,6 +33,7 @@ export class EditionListComponent implements OnInit {
   readonly editions = signal<EditionDto[]>([]);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  private isConfirmingDelete = false;
 
   async ngOnInit(): Promise<void> {
     this.isLoading.set(true);
@@ -59,12 +60,17 @@ export class EditionListComponent implements OnInit {
   }
 
   confirmDelete(edition: EditionDto): void {
+    if (this.isConfirmingDelete) {
+      return;
+    }
+    this.isConfirmingDelete = true;
     this.confirmDialog.open({
       title: this.translate.instant('edition.deleteDialog.title'),
       description: this.translate.instant('edition.deleteDialog.description'),
       confirmVariant: 'error',
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
       if (!confirmed) {
+        this.isConfirmingDelete = false;
         return;
       }
       try {
@@ -73,6 +79,8 @@ export class EditionListComponent implements OnInit {
         await this.reloadEditions();
       } catch {
         this.toast.showError(this.translate.instant('edition.actions.error.delete'));
+      } finally {
+        this.isConfirmingDelete = false;
       }
     });
   }

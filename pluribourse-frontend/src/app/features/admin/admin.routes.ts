@@ -27,6 +27,11 @@ export const adminRoutes: Routes = [
       import('./editions/edition-list.component').then((m) => m.EditionListComponent),
   },
   {
+    path: 'editions/:id/phase',
+    loadComponent: () =>
+      import('./editions/phase-control/phase-control.component').then((m) => m.PhaseControlComponent),
+  },
+  {
     path: 'editions/create',
     loadComponent: () =>
       import('./editions/edition-form.component').then((m) => m.EditionFormComponent),

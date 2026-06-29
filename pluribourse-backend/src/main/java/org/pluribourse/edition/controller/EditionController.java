@@ -2,13 +2,13 @@ package org.pluribourse.edition.controller;
 
 import jakarta.validation.*;
 import lombok.*;
-import org.pluribourse.edition.dto.EditionDto;
-import org.pluribourse.edition.service.EditionService;
+import org.pluribourse.edition.dto.*;
+import org.pluribourse.edition.service.*;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/admin/editions")
@@ -44,5 +44,22 @@ public class EditionController {
     public ResponseEntity<Void> deleteEdition(@PathVariable Long id) {
         service.deleteEdition(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/commission-rate")
+    public ResponseEntity<EditionDto> updateCommissionRate(
+            @PathVariable Long id,
+            @Valid @RequestBody CommissionRateUpdateDto dto) {
+        return ResponseEntity.ok(service.updateCommissionRate(id, dto.commissionRate()));
+    }
+
+    @PostMapping("/{id}/phase/advance")
+    public ResponseEntity<EditionDto> advancePhase(@PathVariable Long id) {
+        return ResponseEntity.ok(service.advancePhase(id));
+    }
+
+    @PostMapping("/{id}/phase/rollback")
+    public ResponseEntity<EditionDto> rollbackPhase(@PathVariable Long id) {
+        return ResponseEntity.ok(service.rollbackPhase(id));
     }
 }
