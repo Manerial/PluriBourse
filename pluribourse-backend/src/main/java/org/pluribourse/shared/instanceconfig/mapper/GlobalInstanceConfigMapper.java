@@ -8,4 +8,7 @@ import org.pluribourse.shared.instanceconfig.entity.GlobalInstanceConfig;
 public interface GlobalInstanceConfigMapper {
 
     GlobalInstanceConfigDto toDto(GlobalInstanceConfig config);
+
+    @Mapping(target = "id", ignore = true)
+    void updateConfigFromDto(GlobalInstanceConfigDto dto, @MappingTarget GlobalInstanceConfig config);
 }

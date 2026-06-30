@@ -2,10 +2,10 @@ package org.pluribourse.edition.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.pluribourse.user.enums.Language;
+import org.pluribourse.user.enums.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.math.*;
+import java.time.*;
 
 @Entity
 @Table(name = "editions")
@@ -14,11 +14,15 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class Edition {
 
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -43,8 +47,4 @@ public class Edition {
 
     @Column(name = "end_date")
     private LocalDate endDate;
-
-    @Version
-    @Column(nullable = false)
-    private Long version = 0L;
 }

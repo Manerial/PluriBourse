@@ -8,13 +8,13 @@ import org.pluribourse.edition.repository.*;
 import org.pluribourse.shared.exception.*;
 import org.pluribourse.shared.instanceconfig.service.*;
 import org.pluribourse.shared.sse.*;
+import org.pluribourse.user.enums.*;
 import org.springframework.http.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 import org.springframework.transaction.support.*;
 
 import java.math.*;
-import java.time.*;
 import java.util.*;
 
 @Service
@@ -22,13 +22,21 @@ import java.util.*;
 public class EditionService {
 
     private static final List<PhaseType> ACTIVE_PHASES = List.of(
-            PhaseType.PREPARATION, PhaseType.DEPOSIT, PhaseType.SALE, PhaseType.POST_SALE
+            PhaseType.PREPARATION,
+            PhaseType.DEPOSIT,
+            PhaseType.SALE,
+            PhaseType.POST_SALE
     );
 
     private final EditionRepository repository;
     private final EditionMapper mapper;
     private final GlobalInstanceConfigService instanceConfigService;
     private final SseEmitterRegistry sseEmitterRegistry;
+
+    private Edition findById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "edition-not-found", "Edition not found: " + id));
+    }
 
     @Transactional(readOnly = true)
     public List<EditionDto> getAllEditions() {
@@ -40,18 +48,12 @@ public class EditionService {
     @Transactional
     public EditionDto createEdition(EditionDto dto) {
         if (repository.existsByPhaseIn(ACTIVE_PHASES)) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "edition-already-active",
-                    "An edition is already active. Close the current edition before creating a new one.");
+            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "edition-already-active", "An edition is already active. Close the current edition before creating a new one.");
         }
-        Edition edition = new Edition();
-        edition.setName(dto.name());
-        edition.setPhase(PhaseType.PREPARATION);
-        edition.setCommissionRate(dto.commissionRate() != null ? dto.commissionRate() : instanceConfigService.getDefaultCommissionRate());
-        edition.setDocumentLanguage(dto.documentLanguage() != null ? dto.documentLanguage() : instanceConfigService.getDefaultDocumentLanguage());
-        edition.setStartDate(dto.startDate());
-        edition.setEndDate(dto.endDate());
-        edition.setCreatedAt(LocalDate.now());
-        return mapper.toDto(repository.save(edition));
+        BigDecimal commissionRate = dto.commissionRate() != null ? dto.commissionRate() : instanceConfigService.getDefaultCommissionRate();
+        Language documentLanguage = dto.documentLanguage() != null ? dto.documentLanguage() : instanceConfigService.getDefaultDocumentLanguage();
+        Edition entity = mapper.toEntity(dto, commissionRate, documentLanguage);
+        return mapper.toDto(repository.save(entity));
     }
 
     @Transactional(readOnly = true)
@@ -62,19 +64,10 @@ public class EditionService {
     @Transactional
     public EditionDto updateEdition(Long id, EditionDto dto) {
         Edition edition = findById(id);
-        edition.setName(dto.name());
         if (edition.getPhase() != PhaseType.PREPARATION && dto.commissionRate() != null) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "commission-rate-frozen",
-                    "Commission rate is locked once the Deposit phase has started.");
+            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "commission-rate-frozen", "Commission rate is locked once the Deposit phase has started.");
         }
-        if (dto.commissionRate() != null) {
-            edition.setCommissionRate(dto.commissionRate());
-        }
-        if (dto.documentLanguage() != null) {
-            edition.setDocumentLanguage(dto.documentLanguage());
-        }
-        edition.setStartDate(dto.startDate());
-        edition.setEndDate(dto.endDate());
+        mapper.updateEditionFromDto(dto, edition);
         return mapper.toDto(repository.save(edition));
     }
 
@@ -82,8 +75,7 @@ public class EditionService {
     public EditionDto updateCommissionRate(Long id, BigDecimal newRate) {
         Edition edition = findById(id);
         if (edition.getPhase() != PhaseType.PREPARATION) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "commission-rate-frozen",
-                    "Commission rate is locked once the Deposit phase has started.");
+            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "commission-rate-frozen", "Commission rate is locked once the Deposit phase has started.");
         }
         edition.setCommissionRate(newRate);
         return mapper.toDto(repository.save(edition));
@@ -93,8 +85,7 @@ public class EditionService {
     public void deleteEdition(Long id) {
         Edition edition = findById(id);
         if (edition.getPhase() != PhaseType.PREPARATION) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "edition-cannot-be-deleted",
-                    "Editions that have progressed past Preparation phase cannot be deleted.");
+            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "edition-cannot-be-deleted", "Editions that have progressed past Preparation phase cannot be deleted.");
         }
         repository.delete(edition);
     }
@@ -104,16 +95,7 @@ public class EditionService {
         Edition edition = findById(id);
         PhaseType previousPhase = edition.getPhase();
         PhaseType newPhase = computeNextPhase(previousPhase);
-        edition.setPhase(newPhase);
-        Edition saved = repository.save(edition);
-        PhaseChangedEventDto event = new PhaseChangedEventDto(id, newPhase, previousPhase);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                sseEmitterRegistry.broadcast("phase-changed", event);
-            }
-        });
-        return mapper.toDto(saved);
+        return changePhase(id, edition, newPhase, previousPhase);
     }
 
     @Transactional
@@ -121,16 +103,7 @@ public class EditionService {
         Edition edition = findById(id);
         PhaseType previousPhase = edition.getPhase();
         PhaseType newPhase = computePreviousPhase(previousPhase, edition.isArchived());
-        edition.setPhase(newPhase);
-        Edition saved = repository.save(edition);
-        PhaseChangedEventDto event = new PhaseChangedEventDto(id, newPhase, previousPhase);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                sseEmitterRegistry.broadcast("phase-changed", event);
-            }
-        });
-        return mapper.toDto(saved);
+        return changePhase(id, edition, newPhase, previousPhase);
     }
 
     private PhaseType computeNextPhase(PhaseType current) {
@@ -139,31 +112,35 @@ public class EditionService {
             case DEPOSIT -> PhaseType.SALE;
             case SALE -> PhaseType.POST_SALE;
             case POST_SALE -> PhaseType.CLOSED;
-            case CLOSED -> throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "phase-already-closed",
-                    "Edition is already closed. Cannot advance further.");
+            case CLOSED -> throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "phase-already-closed", "Edition is already closed. Cannot advance further.");
         };
     }
 
     private PhaseType computePreviousPhase(PhaseType current, boolean archived) {
         return switch (current) {
-            case PREPARATION -> throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "phase-cannot-rollback-from-preparation",
-                    "Cannot roll back from Preparation phase.");
+            case PREPARATION -> throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "phase-cannot-rollback-from-preparation", "Cannot roll back from Preparation phase.");
             case DEPOSIT -> PhaseType.PREPARATION;
             case SALE -> PhaseType.DEPOSIT;
             case POST_SALE -> PhaseType.SALE;
             case CLOSED -> {
                 if (archived) {
-                    throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "phase-rollback-disabled-after-archive",
-                            "Cannot roll back from Closed phase after the edition has been archived.");
+                    throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "phase-rollback-disabled-after-archive", "Cannot roll back from Closed phase after the edition has been archived.");
                 }
                 yield PhaseType.POST_SALE;
             }
         };
     }
 
-    private Edition findById(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "edition-not-found",
-                        "Edition not found: " + id));
+    private EditionDto changePhase(Long id, Edition edition, PhaseType newPhase, PhaseType previousPhase) {
+        edition.setPhase(newPhase);
+        Edition saved = repository.save(edition);
+        PhaseChangedEventDto event = new PhaseChangedEventDto(id, newPhase, previousPhase);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sseEmitterRegistry.broadcast("phase-changed", event);
+            }
+        });
+        return mapper.toDto(saved);
     }
 }

@@ -55,16 +55,8 @@ public class UserService {
         if (userRepository.existsByUsername(dto.username())) {
             throw new BusinessException(HttpStatus.CONFLICT, "username-already-taken", "Username already taken");
         }
-        User user = new User();
-        user.setFirstName(dto.firstName());
-        user.setLastName(dto.lastName());
-        user.setUsername(dto.username());
+        User user = userMapper.toEntity(dto);
         user.setPassword(passwordEncoder.encode(dto.password()));
-        user.setRole(Role.VOLUNTEER);
-        user.setPreferredLanguage(Language.EN);
-        user.setLanguageInitialized(false);
-        user.setForcePasswordChange(true);
-        user.setEnabled(true);
         try {
             return userMapper.toDto(userRepository.save(user));
         } catch (DataIntegrityViolationException e) {

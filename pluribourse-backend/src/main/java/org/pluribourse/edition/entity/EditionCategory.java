@@ -3,12 +3,11 @@ package org.pluribourse.edition.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "edition_categories",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"edition_id", "name"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"edition_id", "name"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,10 +28,7 @@ public class EditionCategory {
     private int displayOrder = 0;
 
     @ElementCollection
-    @CollectionTable(
-            name = "category_table_assignments",
-            joinColumns = @JoinColumn(name = "category_id")
-    )
+    @CollectionTable(name = "category_table_assignments", joinColumns = @JoinColumn(name = "category_id"))
     @Column(name = "table_number")
     private Set<Integer> tableNumbers = new HashSet<>();
 }

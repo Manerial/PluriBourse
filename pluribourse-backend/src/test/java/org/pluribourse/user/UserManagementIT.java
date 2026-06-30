@@ -80,7 +80,7 @@ class UserManagementIT extends IntegrationTest {
                         .session(adminSession)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"firstName\":\"Alice\",\"lastName\":\"Smith\",\"username\":\"alice\",\"password\":\"Password1\"}"))
+                        .content("{\"firstName\":\"Alice\",\"lastName\":\"Smith\",\"username\":\"alice\",\"password\":\"Password1\",\"role\":\"VOLUNTEER\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", containsString("/api/admin/users/")))
                 .andExpect(jsonPath("$.username").value("alice"))
@@ -103,7 +103,7 @@ class UserManagementIT extends IntegrationTest {
                         .session(adminSession)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"firstName\":\"Alice\",\"lastName\":\"Smith\",\"username\":\"alice\",\"password\":\"Password1\"}"))
+                        .content("{\"firstName\":\"Alice\",\"lastName\":\"Smith\",\"username\":\"alice\",\"password\":\"Password1\",\"role\":\"VOLUNTEER\"}"))
                 .andExpect(status().isConflict());
     }
 

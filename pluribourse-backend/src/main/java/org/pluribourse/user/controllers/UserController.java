@@ -38,7 +38,7 @@ public class UserController {
     @PutMapping("/{id}/reset-password")
     public ResponseEntity<Void> resetPassword(
             @PathVariable Long id,
-            @Valid @RequestBody ResetPasswordDto dto) {
+            @Valid @RequestBody ChangePasswordDto dto) {
         userService.resetVolunteerPassword(id, dto.newPassword());
         return ResponseEntity.ok().build();
     }
