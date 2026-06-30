@@ -19,15 +19,6 @@ import java.net.*;
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ProblemDetail> handleBusiness(
-            BusinessException ex, HttpServletRequest request) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
-        pd.setType(URI.create("https://pluribourse/errors/" + ex.getErrorCode()));
-        pd.setInstance(URI.create(request.getRequestURI()));
-        return ResponseEntity.status(ex.getStatus()).body(pd);
-    }
-
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
@@ -45,6 +36,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 : "unknown";
         pd.setInstance(URI.create(uri));
         return ResponseEntity.badRequest().body(pd);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ProblemDetail> handleBusiness(
+            BusinessException ex, HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
+        pd.setType(URI.create("https://pluribourse/errors/" + ex.getErrorCode()));
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(ex.getStatus()).body(pd);
     }
 
     @ExceptionHandler(IllegalStateException.class)

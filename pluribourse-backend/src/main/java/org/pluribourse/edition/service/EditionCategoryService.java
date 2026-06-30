@@ -3,10 +3,9 @@ package org.pluribourse.edition.service;
 import lombok.*;
 import org.pluribourse.edition.dto.*;
 import org.pluribourse.edition.entity.*;
+import org.pluribourse.edition.exception.*;
 import org.pluribourse.edition.mapper.*;
 import org.pluribourse.edition.repository.*;
-import org.pluribourse.shared.exception.*;
-import org.springframework.http.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
@@ -42,9 +41,9 @@ public class EditionCategoryService {
     public List<EditionCategoryDto> copyFromEdition(Long targetEditionId, Long sourceEditionId) {
         Edition target = requirePreparationPhase(targetEditionId);
         Edition source = editionRepository.findById(sourceEditionId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "edition-not-found", "Source edition not found: " + sourceEditionId));
+                .orElseThrow(() -> new EditionNotFoundException(sourceEditionId));
         if (source.getPhase() != PhaseType.CLOSED) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "source-edition-not-closed", "Can only copy categories from a CLOSED edition.");
+            throw new SourceEditionNotClosedException();
         }
         List<EditionCategoryDto> sourceDtos = categoryRepository.findAllByEditionIdWithTables(sourceEditionId)
                 .stream()
@@ -68,23 +67,23 @@ public class EditionCategoryService {
     private Edition requirePreparationPhase(Long editionId) {
         Edition edition = requireEditionExists(editionId);
         if (edition.getPhase() != PhaseType.PREPARATION) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "categories-locked", "Categories and table assignments are locked once the Deposit phase has started.");
+            throw new CategoriesLockedException();
         }
         return edition;
     }
 
     private Edition requireEditionExists(Long editionId) {
         return editionRepository.findById(editionId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "edition-not-found", "Edition not found: " + editionId));
+                .orElseThrow(() -> new EditionNotFoundException(editionId));
     }
 
     private void validateCategories(List<EditionCategoryDto> dtos) {
         for (EditionCategoryDto dto : dtos) {
             if (dto.name() == null || dto.name().isBlank()) {
-                throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "category-name-required", "Category name must not be blank.");
+                throw new CategoryNameRequiredException();
             }
             if (dto.tableNumbers() == null || dto.tableNumbers().isEmpty()) {
-                throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, "category-missing-table", "Category '" + dto.name() + "' must have at least one table assigned.");
+                throw new CategoryMissingTableException(dto.name());
             }
         }
     }

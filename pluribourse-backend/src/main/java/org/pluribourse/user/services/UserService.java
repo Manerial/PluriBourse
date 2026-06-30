@@ -2,14 +2,13 @@ package org.pluribourse.user.services;
 
 import lombok.*;
 import org.jspecify.annotations.NonNull;
-import org.pluribourse.shared.exception.*;
 import org.pluribourse.user.dtos.*;
 import org.pluribourse.user.entities.*;
 import org.pluribourse.user.enums.*;
+import org.pluribourse.user.exception.*;
 import org.pluribourse.user.mappers.*;
 import org.pluribourse.user.repositories.*;
 import org.springframework.dao.*;
-import org.springframework.http.*;
 import org.springframework.security.crypto.password.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
@@ -26,13 +25,7 @@ public class UserService {
 
     private @NonNull User getUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "user-not-found", "User not found"));
-    }
-
-    private void checkNotAdmin(User user, String errorCode, String message) {
-        if (user.getRole() == Role.ADMIN) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_CONTENT, errorCode, message);
-        }
+                .orElseThrow(UserNotFoundException::new);
     }
 
     @Transactional
@@ -53,21 +46,23 @@ public class UserService {
     @Transactional
     public UserDto createVolunteer(CreateUserDto dto) {
         if (userRepository.existsByUsername(dto.username())) {
-            throw new BusinessException(HttpStatus.CONFLICT, "username-already-taken", "Username already taken");
+            throw new UsernameTakenException();
         }
         User user = userMapper.toEntity(dto);
         user.setPassword(passwordEncoder.encode(dto.password()));
         try {
             return userMapper.toDto(userRepository.save(user));
         } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(HttpStatus.CONFLICT, "username-already-taken", "Username already taken");
+            throw new UsernameTakenException();
         }
     }
 
     @Transactional
     public void resetVolunteerPassword(Long id, String newPassword) {
         User user = getUser(id);
-        checkNotAdmin(user, "cannot-modify-admin", "Admin account cannot be modified");
+        if (user.getRole() == Role.ADMIN) {
+            throw new CannotModifyAdminException();
+        }
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setForcePasswordChange(true);
         userRepository.save(user);
@@ -76,7 +71,9 @@ public class UserService {
     @Transactional
     public void disableVolunteer(Long id) {
         User user = getUser(id);
-        checkNotAdmin(user, "cannot-disable-admin", "Admin account cannot be disabled");
+        if (user.getRole() == Role.ADMIN) {
+            throw new CannotDisableAdminException();
+        }
         user.setEnabled(false);
         userRepository.save(user);
     }
@@ -84,7 +81,9 @@ public class UserService {
     @Transactional
     public void enableVolunteer(Long id) {
         User user = getUser(id);
-        checkNotAdmin(user, "cannot-enable-admin", "Admin account cannot be modified");
+        if (user.getRole() == Role.ADMIN) {
+            throw new CannotEnableAdminException();
+        }
         user.setEnabled(true);
         userRepository.save(user);
     }
@@ -92,7 +91,9 @@ public class UserService {
     @Transactional
     public void deleteVolunteer(Long id) {
         User user = getUser(id);
-        checkNotAdmin(user, "cannot-delete-admin", "Admin account cannot be deleted");
+        if (user.getRole() == Role.ADMIN) {
+            throw new CannotDeleteAdminException();
+        }
         userRepository.delete(user);
     }
 
