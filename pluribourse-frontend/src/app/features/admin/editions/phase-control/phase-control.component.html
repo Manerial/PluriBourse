@@ -1,7 +1,7 @@
 <div class="card">
   <div class="card__header">
-    <a routerLink="/admin/editions" class="btn-ghost">
-      <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+    <a routerLink="/admin/editions" mat-button>
+      <mat-icon>arrow_back</mat-icon>
       {{ 'phase.control.back' | translate }}
     </a>
   </div>
@@ -20,7 +20,7 @@
 
       <div class="phase-control__current">
         <span class="phase-chip">
-          <span class="phase-chip__dot" aria-hidden="true">●</span>
+          <span class="badge__dot" aria-hidden="true"></span>
           {{ ('edition.phase.' + edition()!.phase) | translate }}
         </span>
       </div>
@@ -29,10 +29,10 @@
         @if (canRollback()) {
           <button
             type="button"
-            class="btn-ghost"
+            mat-button
             [disabled]="isSubmitting()"
             (click)="confirmRollback()">
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <mat-icon>arrow_back</mat-icon>
             {{ 'phase.rollback.button' | translate }} {{ ('edition.phase.' + prevPhase()) | translate }}
           </button>
         }
@@ -40,11 +40,12 @@
         @if (canAdvance()) {
           <button
             type="button"
-            class="btn-primary"
+            mat-flat-button
+            color="primary"
             [disabled]="isSubmitting()"
             (click)="confirmAdvance()">
             {{ 'phase.advance.button' | translate }} {{ ('edition.phase.' + nextPhase()) | translate }}
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            <mat-icon>arrow_forward</mat-icon>
           </button>
         }
       </div>

@@ -2,6 +2,8 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { firstValueFrom } from 'rxjs';
 import { EditionDto, PhaseType } from '../../../../models/edition.model';
 import { EditionService } from '../../../../services/edition.service';
@@ -15,7 +17,7 @@ const PHASE_ORDER: PhaseType[] = ['PREPARATION', 'DEPOSIT', 'SALE', 'POST_SALE',
 @Component({
   selector: 'app-phase-control',
   standalone: true,
-  imports: [TranslatePipe, RouterLink, SkeletonRowComponent, NotificationInlineComponent],
+  imports: [TranslatePipe, RouterLink, MatButtonModule, MatIconModule, SkeletonRowComponent, NotificationInlineComponent],
   templateUrl: './phase-control.component.html',
   styleUrl: './phase-control.component.scss',
 })
@@ -66,10 +68,7 @@ export class PhaseControlComponent implements OnInit {
     if (e.phase === 'PREPARATION') {
       return false;
     }
-    if (e.phase === 'CLOSED' && e.archived) {
-      return false;
-    }
-    return true;
+    return !(e.phase === 'CLOSED' && e.archived);
   }
 
   nextPhase(): PhaseType | null {

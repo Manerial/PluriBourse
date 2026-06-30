@@ -1,0 +1,36 @@
+.phase-control {
+  padding: var(--pb-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-lg);
+}
+
+.phase-control__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--mat-sys-on-surface);
+}
+
+.phase-control__current {
+  display: flex;
+  align-items: center;
+}
+
+.phase-control__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-space-sm);
+}
+
+.phase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--pb-rounded-full);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
