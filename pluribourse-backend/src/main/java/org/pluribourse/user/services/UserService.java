@@ -39,12 +39,13 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<UserDto> listVolunteers() {
-        return userRepository.findByRole(Role.VOLUNTEER)
-                .stream().map(userMapper::toDto).toList();
+        return userRepository.findByRole(Role.VOLUNTEER).stream()
+                .map(userMapper::toDto)
+                .toList();
     }
 
     @Transactional
-    public UserDto createVolunteer(CreateUserDto dto) {
+    public UserDto createUser(CreateUserDto dto) {
         if (userRepository.existsByUsername(dto.username())) {
             throw new UsernameTakenException();
         }
@@ -58,7 +59,7 @@ public class UserService {
     }
 
     @Transactional
-    public void resetVolunteerPassword(Long id, String newPassword) {
+    public void resetUserPassword(Long id, String newPassword) {
         User user = getUser(id);
         if (user.getRole() == Role.ADMIN) {
             throw new CannotModifyAdminException();
@@ -69,7 +70,7 @@ public class UserService {
     }
 
     @Transactional
-    public void disableVolunteer(Long id) {
+    public void disableUser(Long id) {
         User user = getUser(id);
         if (user.getRole() == Role.ADMIN) {
             throw new CannotDisableAdminException();
@@ -79,7 +80,7 @@ public class UserService {
     }
 
     @Transactional
-    public void enableVolunteer(Long id) {
+    public void enableUser(Long id) {
         User user = getUser(id);
         if (user.getRole() == Role.ADMIN) {
             throw new CannotEnableAdminException();
@@ -89,7 +90,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteVolunteer(Long id) {
+    public void deleteUser(Long id) {
         User user = getUser(id);
         if (user.getRole() == Role.ADMIN) {
             throw new CannotDeleteAdminException();

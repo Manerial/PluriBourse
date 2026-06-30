@@ -36,7 +36,7 @@ describe('authInterceptor', () => {
   afterEach(() => httpMock.verify());
 
   it('clears currentUser and navigates to /login on 401', () => {
-    authService.currentUser.set(adminUser);
+    (authService as any)._currentUser.set(adminUser);
     http.get('/test').subscribe({ error: () => {} });
     httpMock.expectOne('/test').flush(null, { status: 401, statusText: 'Unauthorized' });
     expect(authService.currentUser()).toBeNull();
@@ -44,7 +44,7 @@ describe('authInterceptor', () => {
   });
 
   it('navigates to /change-password on 403 password-change-required', () => {
-    authService.currentUser.set(adminUser);
+    (authService as any)._currentUser.set(adminUser);
     http.get('/test').subscribe({ error: () => {} });
     httpMock.expectOne('/test').flush(
       { type: 'https://pluribourse/errors/password-change-required' },
@@ -55,7 +55,7 @@ describe('authInterceptor', () => {
   });
 
   it('clears currentUser and navigates to /login on generic 403', () => {
-    authService.currentUser.set(adminUser);
+    (authService as any)._currentUser.set(adminUser);
     http.get('/test').subscribe({ error: () => {} });
     httpMock.expectOne('/test').flush(
       { type: 'https://pluribourse/errors/access-denied' },

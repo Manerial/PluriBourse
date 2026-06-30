@@ -109,8 +109,8 @@ class PhaseTransitionIT extends IntegrationTest {
     @Test
     @Order(5)
     void commission_rate_update_rejected_in_deposit() throws Exception {
-        String body = "{\"commissionRate\": 10.00}";
-        mockMvc.perform(patch("/api/admin/editions/" + editionId + "/commission-rate")
+        String body = "{\"name\":\"Bourse Test 2026\",\"commissionRate\":10.00}";
+        mockMvc.perform(put("/api/admin/editions/" + editionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -125,8 +125,8 @@ class PhaseTransitionIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("PREPARATION"));
 
-        String body = "{\"commissionRate\": 18.00}";
-        mockMvc.perform(patch("/api/admin/editions/" + editionId + "/commission-rate")
+        String body = "{\"name\":\"Bourse Test 2026\",\"commissionRate\":18.00}";
+        mockMvc.perform(put("/api/admin/editions/" + editionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))

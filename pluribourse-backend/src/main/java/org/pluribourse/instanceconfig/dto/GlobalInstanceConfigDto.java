@@ -1,9 +1,9 @@
-package org.pluribourse.shared.instanceconfig.dto;
+package org.pluribourse.instanceconfig.dto;
 
 import jakarta.validation.constraints.*;
-import org.pluribourse.user.enums.Language;
+import org.pluribourse.user.enums.*;
 
-import java.math.BigDecimal;
+import java.math.*;
 
 public record GlobalInstanceConfigDto(
         @NotBlank @Size(max = 255) String associationName,
@@ -12,4 +12,5 @@ public record GlobalInstanceConfigDto(
         @Digits(integer = 3, fraction = 2)
         BigDecimal defaultCommissionRate,
         @NotNull Language defaultDocumentLanguage
-) {}
+) {
+}

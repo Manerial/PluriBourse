@@ -28,7 +28,13 @@ describe('AccountComponent', () => {
   };
 
   const authServiceMock = {
-    currentUser: currentUserSignal
+    currentUser: currentUserSignal,
+    setPreferredLanguage: vi.fn((lang: Language) => {
+      const current = currentUserSignal();
+      if (current) {
+        currentUserSignal.set({ ...current, preferredLanguage: lang });
+      }
+    })
   };
 
   const toastMock = {

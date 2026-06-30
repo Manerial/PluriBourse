@@ -40,19 +40,6 @@ public class EditionController {
         return ResponseEntity.ok(service.updateEdition(id, dto));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEdition(@PathVariable Long id) {
-        service.deleteEdition(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/{id}/commission-rate")
-    public ResponseEntity<EditionDto> updateCommissionRate(
-            @PathVariable Long id,
-            @Valid @RequestBody CommissionRateUpdateDto dto) {
-        return ResponseEntity.ok(service.updateCommissionRate(id, dto.commissionRate()));
-    }
-
     @PostMapping("/{id}/phase/advance")
     public ResponseEntity<EditionDto> advancePhase(@PathVariable Long id) {
         return ResponseEntity.ok(service.advancePhase(id));
@@ -61,5 +48,11 @@ public class EditionController {
     @PostMapping("/{id}/phase/rollback")
     public ResponseEntity<EditionDto> rollbackPhase(@PathVariable Long id) {
         return ResponseEntity.ok(service.rollbackPhase(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEdition(@PathVariable Long id) {
+        service.deleteEdition(id);
+        return ResponseEntity.noContent().build();
     }
 }

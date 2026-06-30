@@ -1,8 +1,8 @@
-package org.pluribourse.shared.instanceconfig.mapper;
+package org.pluribourse.instanceconfig.mapper;
 
 import org.mapstruct.*;
-import org.pluribourse.shared.instanceconfig.dto.GlobalInstanceConfigDto;
-import org.pluribourse.shared.instanceconfig.entity.GlobalInstanceConfig;
+import org.pluribourse.instanceconfig.dto.*;
+import org.pluribourse.instanceconfig.entity.*;
 
 @Mapper(componentModel = "spring")
 public interface GlobalInstanceConfigMapper {

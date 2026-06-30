@@ -1,4 +1,4 @@
-package org.pluribourse.shared.instanceconfig.entity;
+package org.pluribourse.instanceconfig.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

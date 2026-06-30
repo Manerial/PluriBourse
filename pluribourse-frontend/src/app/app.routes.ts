@@ -2,7 +2,6 @@ import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
-import { AppLayoutComponent } from './layout/app-layout/app-layout.component';
 import { AuthService } from './services/auth.service';
 
 export const routes: Routes = [
@@ -21,7 +20,8 @@ export const routes: Routes = [
   },
   {
     path: '',
-    component: AppLayoutComponent,
+    loadComponent: () =>
+      import('./layout/app-layout/app-layout.component').then(m => m.AppLayoutComponent),
     canActivate: [authGuard],
     children: [
       {
@@ -59,6 +59,7 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: '/login',
+    loadComponent: () =>
+      import('./features/not-found/not-found.component').then(m => m.NotFoundComponent),
   },
 ];

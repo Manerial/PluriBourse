@@ -24,13 +24,7 @@ public class AuthController {
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<UserSessionDto> me(Authentication authentication) {
         PluriBourseUserDetails userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
-        UserSessionDto dto = new UserSessionDto(
-                userDetails.getUsername(),
-                userDetails.getRole(),
-                userDetails.isForcePasswordChange(),
-                userDetails.getPreferredLanguage().name()
-        );
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(UserSessionDto.from(userDetails));
     }
 
     @PostMapping("/change-password")
@@ -42,11 +36,6 @@ public class AuthController {
         PluriBourseUserDetails userDetails = (PluriBourseUserDetails) authentication.getPrincipal();
         PluriBourseUserDetails newDetails = userService.changePassword(userDetails.getUserId(), dto.newPassword());
         securityContextHelper.refreshSessionPrincipal(newDetails, request);
-        UserSessionDto responseDto = new UserSessionDto(
-                newDetails.getUsername(),
-                newDetails.getRole(),
-                newDetails.isForcePasswordChange(),
-                newDetails.getPreferredLanguage().name());
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.ok(UserSessionDto.from(newDetails));
     }
 }

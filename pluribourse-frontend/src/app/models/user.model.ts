@@ -12,4 +12,5 @@ export interface CreateUserRequest {
   lastName: string;
   username: string;
   password: string;
+  role: string;
 }

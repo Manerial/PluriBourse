@@ -10,5 +10,5 @@ import { ToastService } from './toast.service';
   styleUrl: './toast-container.component.scss',
 })
 export class ToastContainerComponent {
-  readonly toastService = inject(ToastService);
+  protected readonly toastService = inject(ToastService);
 }

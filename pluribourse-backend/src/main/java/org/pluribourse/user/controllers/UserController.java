@@ -27,7 +27,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserDto> createVolunteer(@Valid @RequestBody CreateUserDto dto) {
-        UserDto created = userService.createVolunteer(dto);
+        UserDto created = userService.createUser(dto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequestUri()
                 .path("/{id}")
                 .buildAndExpand(created.id())
@@ -39,25 +39,25 @@ public class UserController {
     public ResponseEntity<Void> resetPassword(
             @PathVariable Long id,
             @Valid @RequestBody ChangePasswordDto dto) {
-        userService.resetVolunteerPassword(id, dto.newPassword());
+        userService.resetUserPassword(id, dto.newPassword());
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/disable")
     public ResponseEntity<Void> disable(@PathVariable Long id) {
-        userService.disableVolunteer(id);
+        userService.disableUser(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/enable")
     public ResponseEntity<Void> enable(@PathVariable Long id) {
-        userService.enableVolunteer(id);
+        userService.enableUser(id);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVolunteer(@PathVariable Long id) {
-        userService.deleteVolunteer(id);
+        userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 }

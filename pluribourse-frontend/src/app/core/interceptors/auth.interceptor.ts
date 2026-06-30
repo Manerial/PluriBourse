@@ -11,12 +11,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError(error => {
       if (error.status === 401) {
-        auth.currentUser.set(null);
+        auth.clearSession();
         router.navigate(['/login']);
       } else if (error.status === 403 && error.error?.type?.includes('password-change-required')) {
         router.navigate(['/change-password']);
       } else if (error.status === 403) {
-        auth.currentUser.set(null);
+        auth.clearSession();
         router.navigate(['/login']);
       }
       return throwError(() => error);

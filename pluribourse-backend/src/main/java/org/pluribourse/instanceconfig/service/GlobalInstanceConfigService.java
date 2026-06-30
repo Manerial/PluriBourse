@@ -1,10 +1,10 @@
-package org.pluribourse.shared.instanceconfig.service;
+package org.pluribourse.instanceconfig.service;
 
 import lombok.*;
-import org.pluribourse.shared.instanceconfig.dto.*;
-import org.pluribourse.shared.instanceconfig.entity.*;
-import org.pluribourse.shared.instanceconfig.mapper.*;
-import org.pluribourse.shared.instanceconfig.repository.*;
+import org.pluribourse.instanceconfig.dto.*;
+import org.pluribourse.instanceconfig.entity.*;
+import org.pluribourse.instanceconfig.mapper.*;
+import org.pluribourse.instanceconfig.repository.*;
 import org.pluribourse.user.enums.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
@@ -30,13 +30,11 @@ public class GlobalInstanceConfigService {
         return mapper.toDto(repository.save(config));
     }
 
-    // Used by Story 2.1 (EditionService) to initialize new editions.
     @Transactional(readOnly = true)
     public Language getDefaultDocumentLanguage() {
         return findConfig().getDefaultDocumentLanguage();
     }
 
-    // Used by Story 2.1 (EditionService) to initialize new editions.
     @Transactional(readOnly = true)
     public BigDecimal getDefaultCommissionRate() {
         return findConfig().getDefaultCommissionRate();
@@ -44,7 +42,6 @@ public class GlobalInstanceConfigService {
 
     private GlobalInstanceConfig findConfig() {
         return repository.findById(1L)
-                .orElseThrow(() -> new IllegalStateException(
-                        "global_instance_config row missing — ensure migration 004 ran"));
+                .orElseThrow(() -> new IllegalStateException("global_instance_config row missing — ensure migration 004 ran"));
     }
 }

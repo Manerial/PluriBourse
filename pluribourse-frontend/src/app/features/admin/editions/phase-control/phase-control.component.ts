@@ -52,87 +52,95 @@ export class PhaseControlComponent implements OnInit {
 
   canAdvance(): boolean {
     const e = this.edition();
-    if (!e) { return false; }
+    if (!e) {
+      return false;
+    }
     return e.phase !== 'CLOSED';
   }
 
   canRollback(): boolean {
     const e = this.edition();
-    if (!e) { return false; }
-    if (e.phase === 'PREPARATION') { return false; }
-    if (e.phase === 'CLOSED' && e.archived) { return false; }
+    if (!e) {
+      return false;
+    }
+    if (e.phase === 'PREPARATION') {
+      return false;
+    }
+    if (e.phase === 'CLOSED' && e.archived) {
+      return false;
+    }
     return true;
   }
 
   nextPhase(): PhaseType | null {
     const current = this.edition()?.phase;
-    if (!current) { return null; }
+    if (!current) {
+      return null;
+    }
     const idx = PHASE_ORDER.indexOf(current);
     return idx < PHASE_ORDER.length - 1 ? PHASE_ORDER[idx + 1] : null;
   }
 
   prevPhase(): PhaseType | null {
     const current = this.edition()?.phase;
-    if (!current) { return null; }
+    if (!current) {
+      return null;
+    }
     const idx = PHASE_ORDER.indexOf(current);
     return idx > 0 ? PHASE_ORDER[idx - 1] : null;
   }
 
   confirmAdvance(): void {
     const e = this.edition();
-    if (!e || !this.canAdvance() || this.isSubmitting()) { return; }
+    if (!e || !this.canAdvance() || this.isSubmitting()) {
+      return;
+    }
     const next = this.nextPhase()!;
     const nextLabel = this.translate.instant('edition.phase.' + next);
     this.isSubmitting.set(true);
-    try {
-      this.confirmDialog.open({
-        title: this.translate.instant('phase.advance.dialog.title', { nextPhase: nextLabel }),
-        description: this.translate.instant('phase.advance.dialog.description.' + e.phase),
-      }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
-        if (!confirmed) {
-          this.isSubmitting.set(false);
-          return;
-        }
-        try {
-          this.edition.set(await firstValueFrom(this.editionService.advancePhase(e.id)));
-          this.toast.showSuccess(this.translate.instant('phase.advance.success'));
-        } catch {
-          this.toast.showError(this.translate.instant('phase.advance.error'));
-        } finally {
-          this.isSubmitting.set(false);
-        }
-      });
-    } catch {
-      this.isSubmitting.set(false);
-    }
+    this.confirmDialog.open({
+      title: this.translate.instant('phase.advance.dialog.title', { nextPhase: nextLabel }),
+      description: this.translate.instant('phase.advance.dialog.description.' + e.phase),
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
+      if (!confirmed) {
+        this.isSubmitting.set(false);
+        return;
+      }
+      try {
+        this.edition.set(await firstValueFrom(this.editionService.advancePhase(e.id)));
+        this.toast.showSuccess(this.translate.instant('phase.advance.success'));
+      } catch {
+        this.toast.showError(this.translate.instant('phase.advance.error'));
+      } finally {
+        this.isSubmitting.set(false);
+      }
+    });
   }
 
   confirmRollback(): void {
     const e = this.edition();
-    if (!e || !this.canRollback() || this.isSubmitting()) { return; }
+    if (!e || !this.canRollback() || this.isSubmitting()) {
+      return;
+    }
     const prev = this.prevPhase()!;
     const prevLabel = this.translate.instant('edition.phase.' + prev);
     this.isSubmitting.set(true);
-    try {
-      this.confirmDialog.open({
-        title: this.translate.instant('phase.rollback.dialog.title', { prevPhase: prevLabel }),
-        description: this.translate.instant('phase.rollback.dialog.description.' + e.phase),
-      }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
-        if (!confirmed) {
-          this.isSubmitting.set(false);
-          return;
-        }
-        try {
-          this.edition.set(await firstValueFrom(this.editionService.rollbackPhase(e.id)));
-          this.toast.showSuccess(this.translate.instant('phase.rollback.success'));
-        } catch {
-          this.toast.showError(this.translate.instant('phase.rollback.error'));
-        } finally {
-          this.isSubmitting.set(false);
-        }
-      });
-    } catch {
-      this.isSubmitting.set(false);
-    }
+    this.confirmDialog.open({
+      title: this.translate.instant('phase.rollback.dialog.title', { prevPhase: prevLabel }),
+      description: this.translate.instant('phase.rollback.dialog.description.' + e.phase),
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
+      if (!confirmed) {
+        this.isSubmitting.set(false);
+        return;
+      }
+      try {
+        this.edition.set(await firstValueFrom(this.editionService.rollbackPhase(e.id)));
+        this.toast.showSuccess(this.translate.instant('phase.rollback.success'));
+      } catch {
+        this.toast.showError(this.translate.instant('phase.rollback.error'));
+      } finally {
+        this.isSubmitting.set(false);
+      }
+    });
   }
 }

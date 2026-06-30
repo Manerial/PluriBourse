@@ -155,17 +155,26 @@ class EditionCategoryIT extends IntegrationTest {
     }
 
     @Test @Order(6)
-    void put_category_without_tables_returns_422() throws Exception {
+    void put_category_without_tables_returns_400() throws Exception {
         List<EditionCategoryDto> payload = List.of(new EditionCategoryDto(null, "BD", List.of()));
         mockMvc.perform(put(BASE + editionId + "/categories")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/category-missing-table")));
+                .andExpect(status().isBadRequest());
     }
 
     @Test @Order(7)
+    void put_category_with_blank_name_returns_400() throws Exception {
+        List<EditionCategoryDto> payload = List.of(new EditionCategoryDto(null, "  ", List.of(1)));
+        mockMvc.perform(put(BASE + editionId + "/categories")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test @Order(8)
     void put_categories_locked_in_deposit_phase() throws Exception {
         // Advance to DEPOSIT
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
@@ -182,14 +191,14 @@ class EditionCategoryIT extends IntegrationTest {
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/categories-locked")));
     }
 
-    @Test @Order(8)
+    @Test @Order(9)
     void get_categories_readable_in_deposit_phase() throws Exception {
         mockMvc.perform(get(BASE + editionId + "/categories").session(adminSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
 
-    @Test @Order(9)
+    @Test @Order(10)
     void rollback_to_preparation_unlocks_categories() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/rollback")
                         .session(adminSession).with(csrf()))
@@ -205,7 +214,7 @@ class EditionCategoryIT extends IntegrationTest {
                 .andExpect(jsonPath("$.length()").value(1));
     }
 
-    @Test @Order(10)
+    @Test @Order(11)
     void copy_from_closed_edition_replaces_categories() throws Exception {
         MvcResult result = mockMvc.perform(post(BASE + editionId + "/categories/copy-from/" + sourceEditionId)
                         .session(adminSession).with(csrf()))
@@ -218,7 +227,7 @@ class EditionCategoryIT extends IntegrationTest {
                 .containsExactlyInAnyOrder("Jouets", "Livres");
     }
 
-    @Test @Order(11)
+    @Test @Order(12)
     void volunteer_get_categories_returns_403() throws Exception {
         mockMvc.perform(get(BASE + editionId + "/categories").session(volunteerSession))
                 .andExpect(status().isForbidden());

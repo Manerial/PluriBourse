@@ -2,6 +2,7 @@ package org.pluribourse.shared.security.handlers;
 
 import com.fasterxml.jackson.databind.*;
 import jakarta.servlet.http.*;
+import lombok.*;
 import org.jspecify.annotations.*;
 import org.pluribourse.edition.entity.*;
 import org.pluribourse.edition.repository.*;
@@ -19,27 +20,16 @@ import org.springframework.stereotype.*;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 @NullMarked
+@RequiredArgsConstructor
 @Component
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
-
-    private static final List<PhaseType> ACTIVE_PHASES = List.of(
-            PhaseType.PREPARATION, PhaseType.DEPOSIT, PhaseType.SALE, PhaseType.POST_SALE
-    );
 
     private final ObjectMapper objectMapper;
     private final UserService userService;
     private final SecurityContextHelper securityContextHelper;
     private final EditionRepository editionRepository;
-
-    public LoginSuccessHandler(ObjectMapper objectMapper, UserService userService, SecurityContextHelper securityContextHelper, EditionRepository editionRepository) {
-        this.objectMapper = objectMapper;
-        this.userService = userService;
-        this.securityContextHelper = securityContextHelper;
-        this.editionRepository = editionRepository;
-    }
 
     @Override
     public void onAuthenticationSuccess(
@@ -50,7 +40,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
-        if (Role.VOLUNTEER.name().equals(userDetails.getRole()) && !editionRepository.existsByPhaseIn(ACTIVE_PHASES)) {
+        if (Role.VOLUNTEER.name().equals(userDetails.getRole()) && !editionRepository.existsByPhaseIn(PhaseType.ACTIVE)) {
             SecurityContextHolder.clearContext();
             HttpSession session = request.getSession(false);
             if (session != null) {
@@ -71,23 +61,14 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             userDetails = userService.updateLanguagePreference(userDetails.getUserId(), effectiveLanguage);
             securityContextHelper.refreshSessionPrincipal(userDetails, request);
         }
-        // Force the CSRF cookie to be written before the response body is committed.
-        // CsrfFilter loads a deferred token for all requests (including CSRF-ignored ones like /api/auth/login),
-        // but the cookie is only written when the token is actually accessed. Without this, the browser
-        // has no XSRF-TOKEN cookie after login and the next POST (/api/auth/change-password) fails CSRF.
+        // Spring only writes the XSRF-TOKEN cookie when the deferred CSRF token is accessed — do it now so the browser can POST to /api/auth/change-password.
         CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
         if (csrfToken != null) {
             csrfToken.getToken();
         }
-        UserSessionDto dto = new UserSessionDto(
-                userDetails.getUsername(),
-                userDetails.getRole(),
-                userDetails.isForcePasswordChange(),
-                effectiveLanguage.name()
-        );
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
-        objectMapper.writeValue(response.getWriter(), dto);
+        objectMapper.writeValue(response.getWriter(), UserSessionDto.from(userDetails));
     }
 
     private Language detectLanguage(HttpServletRequest request) {

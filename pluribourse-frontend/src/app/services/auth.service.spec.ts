@@ -15,6 +15,8 @@ describe('AuthService', () => {
 
   const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false, preferredLanguage: Language.FR };
 
+  const setUser = (user: CurrentUser | null) => (service as any)._currentUser.set(user);
+
   beforeEach(() => {
     routerMock = { navigate: vi.fn().mockResolvedValue(true) };
     translateServiceMock = { use: vi.fn().mockReturnValue(of({})) };
@@ -54,7 +56,7 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('clears currentUser and navigates to /login on success', async () => {
-      service.currentUser.set(adminUser);
+      setUser(adminUser);
       const promise = service.logout();
       httpMock.expectOne('/api/auth/logout').flush(null);
       await promise;
@@ -63,7 +65,7 @@ describe('AuthService', () => {
     });
 
     it('still clears currentUser and navigates even when server call fails', async () => {
-      service.currentUser.set(adminUser);
+      setUser(adminUser);
       const promise = service.logout().catch(() => {});
       httpMock.expectOne('/api/auth/logout').flush(null, { status: 500, statusText: 'Server Error' });
       await promise;
@@ -73,18 +75,18 @@ describe('AuthService', () => {
   });
 
   describe('changePassword', () => {
-    it('clears forcePasswordChange flag locally on success', async () => {
-      service.currentUser.set({ ...adminUser, forcePasswordChange: true });
+    it('updates currentUser from server response on success', async () => {
+      setUser({ ...adminUser, forcePasswordChange: true });
       const promise = service.changePassword('NewPass1');
-      httpMock.expectOne('/api/auth/change-password').flush(null);
+      httpMock.expectOne('/api/auth/change-password').flush({ ...adminUser, forcePasswordChange: false });
       await promise;
       expect(service.currentUser()?.forcePasswordChange).toBe(false);
     });
 
-    it('preserves other user fields after password change', async () => {
-      service.currentUser.set({ ...adminUser, forcePasswordChange: true });
+    it('preserves other user fields from server response after password change', async () => {
+      setUser({ ...adminUser, forcePasswordChange: true });
       const promise = service.changePassword('NewPass1');
-      httpMock.expectOne('/api/auth/change-password').flush(null);
+      httpMock.expectOne('/api/auth/change-password').flush({ ...adminUser, forcePasswordChange: false });
       await promise;
       expect(service.currentUser()?.username).toBe('Admin');
       expect(service.currentUser()?.role).toBe('ADMIN');
@@ -100,7 +102,7 @@ describe('AuthService', () => {
     });
 
     it('clears currentUser on 401', async () => {
-      service.currentUser.set(adminUser);
+      setUser(adminUser);
       const promise = service.restoreSession();
       httpMock.expectOne('/api/auth/me').flush(null, { status: 401, statusText: 'Unauthorized' });
       await promise;
@@ -108,7 +110,7 @@ describe('AuthService', () => {
     });
 
     it('keeps currentUser on 403 password-change-required to avoid redirect loop', async () => {
-      service.currentUser.set(adminUser);
+      setUser(adminUser);
       const promise = service.restoreSession();
       httpMock.expectOne('/api/auth/me').flush(
         { type: 'https://pluribourse/errors/password-change-required' },
@@ -119,7 +121,7 @@ describe('AuthService', () => {
     });
 
     it('clears currentUser on generic 403', async () => {
-      service.currentUser.set(adminUser);
+      setUser(adminUser);
       const promise = service.restoreSession();
       httpMock.expectOne('/api/auth/me').flush(
         { type: 'https://pluribourse/errors/other' },
@@ -146,7 +148,7 @@ describe('AuthService', () => {
     });
 
     it('resets to en on logout', async () => {
-      service.currentUser.set(adminUser);
+      setUser(adminUser);
       const promise = service.logout();
       httpMock.expectOne('/api/auth/logout').flush(null);
       await promise;

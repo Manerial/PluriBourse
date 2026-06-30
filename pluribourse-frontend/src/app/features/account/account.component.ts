@@ -39,10 +39,7 @@ export class AccountComponent implements OnInit {
     const lang = this.form.getRawValue().language;
     try {
       await firstValueFrom(this.accountService.updateLanguage(lang));
-      const current = this.auth.currentUser();
-      if (current) {
-        this.auth.currentUser.set({ ...current, preferredLanguage: lang });
-      }
+      this.auth.setPreferredLanguage(lang);
       try {
         await firstValueFrom(this.translateService.use(lang.toLowerCase()));
       } catch {

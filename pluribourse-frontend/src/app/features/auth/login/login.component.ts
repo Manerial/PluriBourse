@@ -50,7 +50,7 @@ export class LoginComponent {
           break;
         default:
           // SELLER and any future roles are blocked server-side; surface a generic error
-          this.auth.currentUser.set(null);
+          this.auth.clearSession();
           this.error.set('unauthorized-role');
       }
     } catch (err: any) {

@@ -1,9 +1,9 @@
-package org.pluribourse.shared.instanceconfig.controller;
+package org.pluribourse.instanceconfig.controller;
 
 import jakarta.validation.*;
 import lombok.*;
-import org.pluribourse.shared.instanceconfig.dto.*;
-import org.pluribourse.shared.instanceconfig.service.*;
+import org.pluribourse.instanceconfig.dto.*;
+import org.pluribourse.instanceconfig.service.*;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.*;
 import org.springframework.web.bind.annotation.*;

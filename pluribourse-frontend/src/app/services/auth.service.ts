@@ -18,8 +18,20 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly translateService = inject(TranslateService);
 
-  readonly currentUser = signal<CurrentUser | null>(null);
+  private readonly _currentUser = signal<CurrentUser | null>(null);
+  readonly currentUser = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
+
+  clearSession(): void {
+    this._currentUser.set(null);
+  }
+
+  setPreferredLanguage(lang: Language): void {
+    const current = this._currentUser();
+    if (current) {
+      this._currentUser.set({ ...current, preferredLanguage: lang });
+    }
+  }
 
   async login(username: string, password: string): Promise<CurrentUser> {
     const body = new URLSearchParams({ username, password });
@@ -28,7 +40,7 @@ export class AuthService {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       })
     );
-    this.currentUser.set(user);
+    this._currentUser.set(user);
     await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
     return user;
   }
@@ -37,21 +49,21 @@ export class AuthService {
     try {
       await firstValueFrom(this.http.post<void>('/api/auth/logout', null));
     } finally {
-      this.currentUser.set(null);
+      this._currentUser.set(null);
       await firstValueFrom(this.translateService.use(Language.EN.toLowerCase()));
       await this.router.navigate(['/login']);
     }
   }
 
   async changePassword(newPassword: string): Promise<void> {
-    await firstValueFrom(this.http.post<void>('/api/auth/change-password', { newPassword }));
-    this.currentUser.update(user => user ? { ...user, forcePasswordChange: false } : null);
+    const updatedUser = await firstValueFrom(this.http.post<CurrentUser>('/api/auth/change-password', { newPassword }));
+    this._currentUser.set(updatedUser);
   }
 
   async restoreSession(): Promise<void> {
     try {
       const user = await firstValueFrom(this.http.get<CurrentUser>('/api/auth/me'));
-      this.currentUser.set(user);
+      this._currentUser.set(user);
       await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
     } catch (error: any) {
       // 403 password-change-required: session is still valid. If currentUser is already
@@ -59,11 +71,11 @@ export class AuthService {
       // currentUser is null, set the sentinel so authGuard can route to /change-password.
       if (error?.status === 403 && error?.error?.type?.includes('password-change-required')) {
         if (!this.currentUser()) {
-          this.currentUser.set({ username: '', role: '', forcePasswordChange: true, preferredLanguage: Language.EN });
+          this._currentUser.set({ username: '', role: '', forcePasswordChange: true, preferredLanguage: Language.EN });
         }
         return;
       }
-      this.currentUser.set(null);
+      this._currentUser.set(null);
     }
   }
 }

@@ -31,7 +31,6 @@ public class EditionCategoryService {
     @Transactional
     public List<EditionCategoryDto> saveCategories(Long editionId, List<EditionCategoryDto> dtos) {
         Edition edition = requirePreparationPhase(editionId);
-        validateCategories(dtos);
         categoryRepository.deleteAllByEditionId(editionId);
         List<EditionCategory> saved = persistCategories(edition, dtos);
         return saved.stream().map(mapper::toDto).toList();
@@ -77,14 +76,5 @@ public class EditionCategoryService {
                 .orElseThrow(() -> new EditionNotFoundException(editionId));
     }
 
-    private void validateCategories(List<EditionCategoryDto> dtos) {
-        for (EditionCategoryDto dto : dtos) {
-            if (dto.name() == null || dto.name().isBlank()) {
-                throw new CategoryNameRequiredException();
-            }
-            if (dto.tableNumbers() == null || dto.tableNumbers().isEmpty()) {
-                throw new CategoryMissingTableException(dto.name());
-            }
-        }
-    }
+
 }

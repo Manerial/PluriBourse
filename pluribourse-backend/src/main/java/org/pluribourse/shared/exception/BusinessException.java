@@ -1,11 +1,13 @@
 package org.pluribourse.shared.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 /**
  * Runtime exception for business rule violations.
  * Carries an HTTP status and a short error code used in the RFC 7807 {@code type} URI.
  */
+@Getter
 public class BusinessException extends RuntimeException {
 
     private final HttpStatus status;
@@ -15,13 +17,5 @@ public class BusinessException extends RuntimeException {
         super(message);
         this.status = status;
         this.errorCode = errorCode;
-    }
-
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
     }
 }

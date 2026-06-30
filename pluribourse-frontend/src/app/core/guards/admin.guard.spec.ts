@@ -31,19 +31,19 @@ describe('adminGuard', () => {
   const runGuard = () => TestBed.runInInjectionContext(() => adminGuard({} as any, {} as any));
 
   it('returns true for ADMIN', () => {
-    authService.currentUser.set(adminUser);
+    (authService as any)._currentUser.set(adminUser);
     expect(runGuard()).toBe(true);
   });
 
   it('redirects authenticated VOLUNTEER to /volunteer, not /login', () => {
-    authService.currentUser.set(volunteerUser);
+    (authService as any)._currentUser.set(volunteerUser);
     const result = runGuard();
     expect(result).toBeInstanceOf(UrlTree);
     expect(router.serializeUrl(result as UrlTree)).toBe('/volunteer');
   });
 
   it('redirects unauthenticated user to /login', () => {
-    authService.currentUser.set(null);
+    (authService as any)._currentUser.set(null);
     const result = runGuard();
     expect(result).toBeInstanceOf(UrlTree);
     expect(router.serializeUrl(result as UrlTree)).toBe('/login');

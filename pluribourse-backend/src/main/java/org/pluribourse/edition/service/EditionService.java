@@ -6,7 +6,7 @@ import org.pluribourse.edition.entity.*;
 import org.pluribourse.edition.exception.*;
 import org.pluribourse.edition.mapper.*;
 import org.pluribourse.edition.repository.*;
-import org.pluribourse.shared.instanceconfig.service.*;
+import org.pluribourse.instanceconfig.service.*;
 import org.pluribourse.shared.sse.*;
 import org.pluribourse.user.enums.*;
 import org.springframework.stereotype.*;
@@ -19,13 +19,6 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class EditionService {
-
-    private static final List<PhaseType> ACTIVE_PHASES = List.of(
-            PhaseType.PREPARATION,
-            PhaseType.DEPOSIT,
-            PhaseType.SALE,
-            PhaseType.POST_SALE
-    );
 
     private final EditionRepository repository;
     private final EditionMapper mapper;
@@ -46,7 +39,7 @@ public class EditionService {
 
     @Transactional
     public EditionDto createEdition(EditionDto dto) {
-        if (repository.existsByPhaseIn(ACTIVE_PHASES)) {
+        if (repository.existsByPhaseIn(PhaseType.ACTIVE)) {
             throw new EditionAlreadyActiveException();
         }
         BigDecimal commissionRate = dto.commissionRate() != null ? dto.commissionRate() : instanceConfigService.getDefaultCommissionRate();
@@ -70,16 +63,6 @@ public class EditionService {
     }
 
     @Transactional
-    public EditionDto updateCommissionRate(Long id, BigDecimal newRate) {
-        Edition edition = findById(id);
-        if (edition.getPhase() != PhaseType.PREPARATION) {
-            throw new CommissionRateFrozenException();
-        }
-        edition.setCommissionRate(newRate);
-        return mapper.toDto(repository.save(edition));
-    }
-
-    @Transactional
     public void deleteEdition(Long id) {
         Edition edition = findById(id);
         if (edition.getPhase() != PhaseType.PREPARATION) {
@@ -93,7 +76,7 @@ public class EditionService {
         Edition edition = findById(id);
         PhaseType previousPhase = edition.getPhase();
         PhaseType newPhase = computeNextPhase(previousPhase);
-        return changePhase(id, edition, newPhase, previousPhase);
+        return savePhaseThenSendEvent(id, edition, newPhase, previousPhase);
     }
 
     @Transactional
@@ -101,7 +84,7 @@ public class EditionService {
         Edition edition = findById(id);
         PhaseType previousPhase = edition.getPhase();
         PhaseType newPhase = computePreviousPhase(previousPhase, edition.isArchived());
-        return changePhase(id, edition, newPhase, previousPhase);
+        return savePhaseThenSendEvent(id, edition, newPhase, previousPhase);
     }
 
     private PhaseType computeNextPhase(PhaseType current) {
@@ -129,7 +112,7 @@ public class EditionService {
         };
     }
 
-    private EditionDto changePhase(Long id, Edition edition, PhaseType newPhase, PhaseType previousPhase) {
+    private EditionDto savePhaseThenSendEvent(Long id, Edition edition, PhaseType newPhase, PhaseType previousPhase) {
         edition.setPhase(newPhase);
         Edition saved = repository.save(edition);
         PhaseChangedEventDto event = new PhaseChangedEventDto(id, newPhase, previousPhase);

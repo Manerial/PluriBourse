@@ -1,5 +1,6 @@
 package org.pluribourse.edition.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.pluribourse.edition.dto.EditionCategoryDto;
 import org.pluribourse.edition.service.EditionCategoryService;
@@ -25,7 +26,7 @@ public class EditionCategoryController {
     @PutMapping
     public ResponseEntity<List<EditionCategoryDto>> saveCategories(
             @PathVariable Long editionId,
-            @RequestBody List<EditionCategoryDto> dtos) {
+            @Valid @RequestBody List<@Valid EditionCategoryDto> dtos) {
         return ResponseEntity.ok(service.saveCategories(editionId, dtos));
     }
 
