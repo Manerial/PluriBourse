@@ -3,7 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { EditionDto } from '../models/edition.model';
 
-type EditionRequest = Pick<EditionDto, 'name' | 'commissionRate' | 'documentLanguage'>;
+type EditionRequest = {
+  name: string;
+  commissionRate: number | null;
+  documentLanguage: 'EN' | 'FR';
+  startDate: string | null;
+  endDate: string | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class EditionService {

@@ -12,7 +12,8 @@ import { EditionDto } from '../../../../models/edition.model';
 
 const MOCK_EDITION: EditionDto = {
   id: 1, name: 'Bourse 2026', phase: 'PREPARATION',
-  commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01', archived: false
+  commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01', archived: false,
+  startDate: null, endDate: null
 };
 
 describe('PhaseControlComponent', () => {

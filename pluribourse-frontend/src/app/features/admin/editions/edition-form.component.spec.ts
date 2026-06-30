@@ -59,6 +59,8 @@ describe('EditionFormComponent', () => {
       name: 'Bourse 2026',
       commissionRate: 20,
       documentLanguage: 'EN',
+      startDate: null,
+      endDate: null,
     });
     expect(toastMock.showSuccess).toHaveBeenCalledOnce();
   });

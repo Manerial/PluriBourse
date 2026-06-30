@@ -94,8 +94,14 @@
         "commissionRate": "Commission (%)",
         "documentLanguage": "Document language",
         "createdAt": "Created on",
+        "startDate": "Start date",
+        "endDate": "End date",
         "actions": "Actions"
       }
+    },
+    "form": {
+      "startDate": "Start date",
+      "endDate": "End date"
     },
     "create": {
       "title": "Create Edition",

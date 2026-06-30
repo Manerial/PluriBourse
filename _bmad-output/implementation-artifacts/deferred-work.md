@@ -155,6 +155,10 @@ Les items suivants ont été résolus dans des stories ultérieures et ne néces
 - **`EditionManagementIT @Order(9)` envoie `null` commissionRate pour contourner le frozen-rate check** — `EditionManagementIT.java:160` — La valeur précédente `new BigDecimal("15.00")` testait l'envoi du même taux en DEPOSIT. La correction à `null` évite le check mais ne couvre plus le cas "même valeur que le taux gelé". À investiguer si `EditionService` doit accepter ou rejeter une mise à jour idempotente du taux en DEPOSIT.
 - **HTTP 422 pour auto-protection admin (disable/change-password/delete self)** — `UserManagementIT.java:158,197,293` — RFC 9110 définit 422 pour des erreurs sémantiques sur le corps de la requête, pas pour des contraintes de règle métier (l'admin ne peut pas se désactiver lui-même). 403 Forbidden ou 409 Conflict seraient plus corrects. Comportement pré-existant en production, non introduit par Story 2.3.
 
+## Deferred from: code review of 2-4-dates-debut-fin-edition (2026-06-30)
+
+- **`updateEdition` écrase startDate/endDate inconditionnellement (null = effacement), asymétrique avec commissionRate/documentLanguage** — `EditionService.java:updateEdition()` — Intentionnel par la spec (Dev Notes: "Setting null explicitly is correct — it clears the field"). Tout appelant futur qui fait un PUT partiel (sans inclure les dates courantes) effacera silencieusement les dates. À documenter sur le contrat API ou à aligner avec le pattern `if (!= null)` des autres champs lors d'un refacto.
+
 ## Deferred from: code review of 2-2-controle-du-cycle-de-phases-boites-de-dialogue-de-confirmation (2026-06-29)
 
 - **Async callback écrit sur les signals après destruction du composant** — `phase-control.component.ts` — `takeUntilDestroyed` annule la souscription Observable mais ne cancelle pas le `firstValueFrom` en vol. Si le composant est détruit pendant une transition, le `finally` block écrit sur les signals d'un composant détruit. Pas de crash en mode Signal Angular ; orphaned write sans conséquence visible. À adresser si des `ExpressionChangedAfterItHasBeenCheckedError` sont observées en dev.

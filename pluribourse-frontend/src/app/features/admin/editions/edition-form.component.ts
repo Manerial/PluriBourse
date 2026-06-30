@@ -54,7 +54,9 @@ export class EditionFormComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
     commissionRate: [0, [Validators.required, Validators.min(0), Validators.max(100), maxDecimalsValidator(2)]],
-    documentLanguage: ['EN' as 'EN' | 'FR', [Validators.required]]
+    documentLanguage: ['EN' as 'EN' | 'FR', [Validators.required]],
+    startDate: [null as string | null],
+    endDate: [null as string | null]
   });
 
   async ngOnInit(): Promise<void> {
@@ -75,7 +77,9 @@ export class EditionFormComponent implements OnInit {
       this.form.patchValue({
         name: edition.name,
         commissionRate: edition.commissionRate,
-        documentLanguage: edition.documentLanguage
+        documentLanguage: edition.documentLanguage,
+        startDate: edition.startDate,
+        endDate: edition.endDate
       });
       if (edition.phase !== 'PREPARATION') {
         this.form.controls.commissionRate.disable();
@@ -109,16 +113,19 @@ export class EditionFormComponent implements OnInit {
     this.isSaving.set(true);
     this.formError.set(null);
     try {
-      const { name, commissionRate, documentLanguage } = this.form.getRawValue();
+      const { name, commissionRate, documentLanguage, startDate, endDate } = this.form.getRawValue();
+      const payload = {
+        name,
+        commissionRate: this.form.controls.commissionRate.disabled ? null : commissionRate,
+        documentLanguage,
+        startDate: startDate || null,
+        endDate: endDate || null
+      };
       if (this.isEditMode() && this.editionId !== null) {
-        await firstValueFrom(
-          this.editionService.update(this.editionId, { name, commissionRate, documentLanguage })
-        );
+        await firstValueFrom(this.editionService.update(this.editionId, payload));
         this.toast.showSuccess(this.translate.instant('edition.edit.success'));
       } else {
-        await firstValueFrom(
-          this.editionService.create({ name, commissionRate, documentLanguage })
-        );
+        await firstValueFrom(this.editionService.create(payload));
         this.toast.showSuccess(this.translate.instant('edition.create.success'));
       }
       this.router.navigateByUrl('/admin/editions');

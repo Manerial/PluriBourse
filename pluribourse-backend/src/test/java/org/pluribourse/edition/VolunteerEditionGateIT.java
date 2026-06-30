@@ -61,7 +61,7 @@ class VolunteerEditionGateIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new EditionDto(null, "Bourse Test Gate", null, null, null, null, false))))
+                                new EditionDto(null, "Bourse Test Gate", null, null, null, null, false, null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();

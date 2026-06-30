@@ -38,6 +38,12 @@ public class Edition {
     @Column(name = "is_archived", nullable = false)
     private boolean archived = false;
 
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @Version
     @Column(nullable = false)
     private Long version = 0L;

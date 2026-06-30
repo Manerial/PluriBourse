@@ -16,5 +16,7 @@ public record EditionDto(
         BigDecimal commissionRate,
         Language documentLanguage,
         LocalDate createdAt,
-        Boolean archived
+        Boolean archived,
+        LocalDate startDate,
+        LocalDate endDate
 ) {}

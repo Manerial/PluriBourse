@@ -29,6 +29,8 @@
             <th>{{ 'edition.list.columns.commissionRate' | translate }}</th>
             <th>{{ 'edition.list.columns.documentLanguage' | translate }}</th>
             <th>{{ 'edition.list.columns.createdAt' | translate }}</th>
+            <th>{{ 'edition.list.columns.startDate' | translate }}</th>
+            <th>{{ 'edition.list.columns.endDate' | translate }}</th>
             <th>{{ 'edition.list.columns.actions' | translate }}</th>
           </tr>
         </thead>
@@ -40,6 +42,8 @@
               <td>{{ edition.commissionRate | number:'1.0-2' }}</td>
               <td>{{ ('admin.settings.language.' + edition.documentLanguage) | translate }}</td>
               <td>{{ edition.createdAt }}</td>
+              <td>{{ edition.startDate ?? '—' }}</td>
+              <td>{{ edition.endDate ?? '—' }}</td>
               <td>
                 <div class="actions-cell">
                   <a

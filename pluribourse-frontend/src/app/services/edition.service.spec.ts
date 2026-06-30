@@ -8,7 +8,7 @@ import { EditionDto, PhaseType } from '../models/edition.model';
 const MOCK_EDITION: EditionDto = {
   id: 1, name: 'Bourse 2026', phase: 'PREPARATION',
   commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01',
-  archived: false
+  archived: false, startDate: null, endDate: null
 };
 
 describe('EditionService', () => {
@@ -29,8 +29,8 @@ describe('EditionService', () => {
     expect(await p).toEqual([MOCK_EDITION]);
   });
 
-  it('create() sends POST /api/admin/editions with name, rate and language', async () => {
-    const dto = { name: 'Bourse 2026', commissionRate: 20, documentLanguage: 'EN' as const };
+  it('create() sends POST /api/admin/editions with name, rate, language and dates', async () => {
+    const dto = { name: 'Bourse 2026', commissionRate: 20, documentLanguage: 'EN' as const, startDate: null, endDate: null };
     const p = firstValueFrom(service.create(dto));
     const req = http.expectOne('/api/admin/editions');
     expect(req.request.method).toBe('POST');
@@ -48,7 +48,7 @@ describe('EditionService', () => {
   });
 
   it('update() sends PUT /api/admin/editions/1', async () => {
-    const dto = { name: 'Bourse 2026 Modifiée', commissionRate: 15, documentLanguage: 'FR' as const };
+    const dto = { name: 'Bourse 2026 Modifiée', commissionRate: 15, documentLanguage: 'FR' as const, startDate: null, endDate: null };
     const p = firstValueFrom(service.update(1, dto));
     const req = http.expectOne('/api/admin/editions/1');
     expect(req.request.method).toBe('PUT');

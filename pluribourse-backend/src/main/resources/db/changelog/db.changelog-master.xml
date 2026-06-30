@@ -13,5 +13,6 @@
     <include file="db/changelog/007-editions.xml"/>
     <include file="db/changelog/008-edition-archived.xml"/>
     <include file="db/changelog/009-edition-version.xml"/>
+    <include file="db/changelog/010-edition-dates.xml"/>
 
 </databaseChangeLog>

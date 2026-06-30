@@ -48,6 +48,8 @@ public class EditionService {
         edition.setPhase(PhaseType.PREPARATION);
         edition.setCommissionRate(dto.commissionRate() != null ? dto.commissionRate() : instanceConfigService.getDefaultCommissionRate());
         edition.setDocumentLanguage(dto.documentLanguage() != null ? dto.documentLanguage() : instanceConfigService.getDefaultDocumentLanguage());
+        edition.setStartDate(dto.startDate());
+        edition.setEndDate(dto.endDate());
         edition.setCreatedAt(LocalDate.now());
         return mapper.toDto(repository.save(edition));
     }
@@ -71,6 +73,8 @@ public class EditionService {
         if (dto.documentLanguage() != null) {
             edition.setDocumentLanguage(dto.documentLanguage());
         }
+        edition.setStartDate(dto.startDate());
+        edition.setEndDate(dto.endDate());
         return mapper.toDto(repository.save(edition));
     }
 

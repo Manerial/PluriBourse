@@ -8,4 +8,6 @@ export interface EditionDto {
   documentLanguage: 'EN' | 'FR';
   createdAt: string; // ISO 8601 date string "YYYY-MM-DD"
   archived: boolean;
+  startDate: string | null;
+  endDate: string | null;
 }
