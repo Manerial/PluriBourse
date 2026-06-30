@@ -38,6 +38,15 @@ class PhaseTransitionIT extends IntegrationTest {
                 .andReturn();
         adminSession = (MockHttpSession) adminLogin.getRequest().getSession(false);
 
+        // Volunteer login requires an active edition (Story 2.3 gate); create one temporarily.
+        MvcResult tempEdition = mockMvc.perform(post("/api/admin/editions")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Setup Edition\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long tempEditionId = objectMapper.readTree(tempEdition.getResponse().getContentAsString()).get("id").asLong();
+
         MvcResult volunteerLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "volunteer1")
@@ -45,6 +54,12 @@ class PhaseTransitionIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
         volunteerSession = (MockHttpSession) volunteerLogin.getRequest().getSession(false);
+
+        // Remove the temporary edition so @Order(1) can create its own without the "already active" conflict.
+        // The volunteer session remains valid (Story 2.3 AC5 — session invalidation is out of scope).
+        mockMvc.perform(delete("/api/admin/editions/" + tempEditionId)
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isNoContent());
     }
 
     @Test

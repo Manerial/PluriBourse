@@ -24,7 +24,8 @@
       "error": {
         "invalid-credentials": "Identifiant ou mot de passe invalide.",
         "unauthorized-role": "Votre compte n'est pas autorisé à accéder à cette application.",
-        "account-disabled": "Ce compte a été désactivé."
+        "account-disabled": "Ce compte a été désactivé.",
+        "no-active-edition": "Aucune édition n'est en cours. Veuillez vous reconnecter lors du prochain événement."
       }
     },
     "changePassword": {

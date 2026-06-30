@@ -53,6 +53,14 @@ class LanguagePreferenceIT extends IntegrationTest {
                 .andReturn();
         adminSession = (MockHttpSession) adminLogin.getRequest().getSession(false);
 
+        // Volunteer login requires an active edition (Story 2.3 gate). Keep it active for the whole
+        // class so that re-logins in @Order(9)/@Order(10)/@Order(12) also succeed.
+        mockMvc.perform(post("/api/admin/editions")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Setup Edition\"}"))
+                .andExpect(status().isCreated());
+
         MvcResult volunteerLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "volunteer1")

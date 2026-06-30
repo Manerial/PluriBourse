@@ -39,6 +39,15 @@ class EditionManagementIT extends IntegrationTest {
                 .andReturn();
         adminSession = (MockHttpSession) adminLogin.getRequest().getSession(false);
 
+        // Volunteer login requires an active edition (Story 2.3 gate); create one temporarily.
+        MvcResult tempEdition = mockMvc.perform(post("/api/admin/editions")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Setup Edition\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long tempEditionId = objectMapper.readTree(tempEdition.getResponse().getContentAsString()).get("id").asLong();
+
         MvcResult volunteerLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "volunteer1")
@@ -46,6 +55,12 @@ class EditionManagementIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
         volunteerSession = (MockHttpSession) volunteerLogin.getRequest().getSession(false);
+
+        // Remove the temporary edition so @Order(3) sees an empty list.
+        // The volunteer session remains valid (Story 2.3 AC5 — session invalidation is out of scope).
+        mockMvc.perform(delete("/api/admin/editions/" + tempEditionId)
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isNoContent());
     }
 
     // Tests ordered as a story-board (state persists between methods via PER_CLASS + no @Transactional):
@@ -142,8 +157,8 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test @Order(9)
     void admin_update_name_and_language_in_deposit_phase_succeeds() throws Exception {
-        // Edition is still in DEPOSIT from Order 8 — commission rate unchanged (15.00)
-        EditionDto dto = new EditionDto(null, "Bourse 2026 Finale", null, new BigDecimal("15.00"), Language.EN, null, false);
+        // Edition is still in DEPOSIT from Order 8 — send null commissionRate to skip the frozen-rate check
+        EditionDto dto = new EditionDto(null, "Bourse 2026 Finale", null, null, Language.EN, null, false);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())

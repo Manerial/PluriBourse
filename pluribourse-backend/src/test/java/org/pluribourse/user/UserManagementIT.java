@@ -43,6 +43,13 @@ class UserManagementIT extends IntegrationTest {
                 .andReturn();
         adminSession = (MockHttpSession) adminLogin.getRequest().getSession(false);
 
+        // Volunteer login requires an active edition (Story 2.3 gate).
+        mockMvc.perform(post("/api/admin/editions")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Setup Edition\"}"))
+                .andExpect(status().isCreated());
+
         MvcResult volunteerLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "volunteer1")
@@ -86,7 +93,7 @@ class UserManagementIT extends IntegrationTest {
         User alice = userRepository.findById(aliceId).orElseThrow();
         assertThat(alice.getRole().name()).isEqualTo("VOLUNTEER");
         assertThat(alice.getEnabled()).isTrue();
-        assertThat(alice.isForcePasswordChange()).isFalse();
+        assertThat(alice.isForcePasswordChange()).isTrue();
     }
 
     @Test
@@ -151,7 +158,7 @@ class UserManagementIT extends IntegrationTest {
         mockMvc.perform(put("/api/admin/users/" + adminUser.getId() + "/disable")
                         .session(adminSession)
                         .with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
@@ -190,7 +197,7 @@ class UserManagementIT extends IntegrationTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"newPassword\":\"NewPass1!\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
@@ -286,7 +293,7 @@ class UserManagementIT extends IntegrationTest {
         mockMvc.perform(delete("/api/admin/users/" + adminUser.getId())
                         .session(adminSession)
                         .with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test

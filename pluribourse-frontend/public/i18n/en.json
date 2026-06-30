@@ -24,7 +24,8 @@
       "error": {
         "invalid-credentials": "Invalid username or password.",
         "unauthorized-role": "Your account is not authorized to access this application.",
-        "account-disabled": "This account has been disabled."
+        "account-disabled": "This account has been disabled.",
+        "no-active-edition": "No edition is currently active. Please try again when an event is scheduled."
       }
     },
     "changePassword": {

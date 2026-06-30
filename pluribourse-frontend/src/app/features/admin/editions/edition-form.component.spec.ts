@@ -64,7 +64,10 @@ describe('EditionFormComponent', () => {
   });
 
   it('sets formError key on 422 response (active edition already exists)', async () => {
-    editionServiceMock.create.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 422 })));
+    editionServiceMock.create.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 422,
+      error: { type: 'https://pluribourse/errors/edition-already-active' }
+    })));
     component.form.controls.name.setValue('Bourse 2027');
     await component.onSubmit();
     expect(component.formError()).toBe('edition.create.error.alreadyActive');
