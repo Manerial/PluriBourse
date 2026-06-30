@@ -1,0 +1,121 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'category.title' | translate: { editionName: edition()?.name ?? '' } }}</h1>
+    <a routerLink="/admin/editions" mat-button>
+      <mat-icon>arrow_back</mat-icon>
+      {{ 'category.back' | translate }}
+    </a>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="3" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error()) {
+    @if (isReadOnly()) {
+      <app-notification-inline [message]="'category.locked.banner' | translate" variant="warning" />
+    }
+
+    @if (!isReadOnly()) {
+      <div class="category-copy-section">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'category.copy.label' | translate }}</mat-label>
+          <mat-select
+            [value]="selectedSourceEditionId()"
+            [disabled]="closedEditions().length === 0"
+            (selectionChange)="onSelectSource($event.value)">
+            @if (closedEditions().length === 0) {
+              <mat-option [value]="null" disabled>{{ 'category.copy.placeholder' | translate }}</mat-option>
+            }
+            @for (ed of closedEditions(); track ed.id) {
+              <mat-option [value]="ed.id">{{ ed.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button
+          type="button"
+          mat-flat-button
+          color="primary"
+          [disabled]="selectedSourceEditionId() === null || isSaving() || closedEditions().length === 0"
+          (click)="onCopy()">
+          {{ 'category.copy.button' | translate }}
+        </button>
+      </div>
+    }
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{{ 'category.table.columns.name' | translate }}</th>
+          <th>{{ 'category.table.columns.tables' | translate }}</th>
+          @if (!isReadOnly()) {
+            <th></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of categories; track $index; let i = $index) {
+          <tr>
+            <td>
+              <mat-form-field appearance="outline" class="table-field">
+                <input
+                  matInput
+                  [(ngModel)]="row.name"
+                  [name]="'name-' + i"
+                  [placeholder]="'category.row.namePlaceholder' | translate"
+                  [disabled]="isReadOnly()"
+                  [errorStateMatcher]="nameErrorMatcher(row)" />
+                <mat-error>{{ 'category.row.error.nameRequired' | translate }}</mat-error>
+              </mat-form-field>
+            </td>
+            <td>
+              <mat-form-field appearance="outline" class="table-field">
+                <input
+                  matInput
+                  [(ngModel)]="row.tableInput"
+                  [name]="'tables-' + i"
+                  [placeholder]="'category.row.tablesPlaceholder' | translate"
+                  [disabled]="isReadOnly()"
+                  [errorStateMatcher]="tableErrorMatcher(row)" />
+                <mat-error>{{ 'category.row.error.tableRequired' | translate }}</mat-error>
+              </mat-form-field>
+            </td>
+            @if (!isReadOnly()) {
+              <td>
+                <button type="button" mat-icon-button color="warn" (click)="removeCategory(i)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            }
+          </tr>
+        }
+        @if (categories.length === 0 && isReadOnly()) {
+          <tr>
+            <td colspan="2" class="empty-cell">{{ 'category.table.empty' | translate }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (!isReadOnly()) {
+      <div class="category-actions">
+        <button type="button" mat-button (click)="addCategory()">
+          <mat-icon>add</mat-icon>
+          {{ 'category.table.addButton' | translate }}
+        </button>
+        <button
+          type="button"
+          mat-flat-button
+          color="primary"
+          [disabled]="isSaving()"
+          (click)="onSave()">
+          {{ 'category.table.save' | translate }}
+        </button>
+      </div>
+    }
+  }
+</div>

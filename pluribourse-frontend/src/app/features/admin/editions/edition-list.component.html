@@ -51,6 +51,11 @@
                     class="btn-ghost">
                     {{ 'edition.actions.managePhase' | translate }}
                   </a>
+                  <a
+                    [routerLink]="['/admin/editions', edition.id, 'categories']"
+                    mat-button>
+                    {{ 'edition.actions.manageCategories' | translate }}
+                  </a>
                   <button
                     type="button"
                     mat-button

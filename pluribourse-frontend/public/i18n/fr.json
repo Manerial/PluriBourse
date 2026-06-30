@@ -149,6 +149,7 @@
     },
     "actions": {
       "managePhase": "Gérer les phases",
+      "manageCategories": "Gérer les catégories",
       "edit": "Modifier",
       "editCommissionRate": "Modifier la commission",
       "editDocumentLanguage": "Modifier la langue",
@@ -221,6 +222,45 @@
           "CLOSED": "L'édition redevient active. Toutes les données sont préservées."
         }
       }
+    }
+  },
+  "category": {
+    "title": "Catégories — {{editionName}}",
+    "back": "Retour aux éditions",
+    "locked": {
+      "banner": "Les catégories sont verrouillées — l'édition est entrée en phase de dépôt."
+    },
+    "copy": {
+      "label": "Copier depuis une édition clôturée",
+      "placeholder": "Sélectionnez une édition clôturée",
+      "button": "Copier depuis cette édition",
+      "success": "Catégories copiées.",
+      "error": "Impossible de copier les catégories."
+    },
+    "table": {
+      "addButton": "Ajouter une catégorie",
+      "save": "Enregistrer les catégories",
+      "empty": "Aucune catégorie configurée.",
+      "columns": {
+        "name": "Nom de la catégorie",
+        "tables": "Tables (séparées par des virgules)"
+      }
+    },
+    "row": {
+      "namePlaceholder": "ex. Jouets",
+      "tablesPlaceholder": "ex. 1, 2, 3",
+      "remove": "Supprimer",
+      "error": {
+        "nameRequired": "Le nom de la catégorie est obligatoire.",
+        "tableRequired": "Assignez au moins une table à cette catégorie."
+      }
+    },
+    "save": {
+      "success": "Catégories enregistrées.",
+      "error": "Impossible d'enregistrer les catégories."
+    },
+    "load": {
+      "error": "Impossible de charger les catégories."
     }
   },
   "notFound": {

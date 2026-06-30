@@ -149,6 +149,7 @@
     },
     "actions": {
       "managePhase": "Manage phase",
+      "manageCategories": "Manage categories",
       "edit": "Edit",
       "editCommissionRate": "Edit commission",
       "editDocumentLanguage": "Edit language",
@@ -221,6 +222,45 @@
           "CLOSED": "The edition becomes active again. All data is preserved."
         }
       }
+    }
+  },
+  "category": {
+    "title": "Categories — {{editionName}}",
+    "back": "Back to editions",
+    "locked": {
+      "banner": "Categories are locked — the edition has entered the Deposit phase."
+    },
+    "copy": {
+      "label": "Copy from a closed edition",
+      "placeholder": "Select a closed edition",
+      "button": "Copy from this edition",
+      "success": "Categories copied.",
+      "error": "Failed to copy categories."
+    },
+    "table": {
+      "addButton": "Add category",
+      "save": "Save categories",
+      "empty": "No categories configured yet.",
+      "columns": {
+        "name": "Category name",
+        "tables": "Tables (comma-separated)"
+      }
+    },
+    "row": {
+      "namePlaceholder": "e.g. Toys",
+      "tablesPlaceholder": "e.g. 1, 2, 3",
+      "remove": "Remove",
+      "error": {
+        "nameRequired": "Category name is required.",
+        "tableRequired": "Assign at least one table to this category."
+      }
+    },
+    "save": {
+      "success": "Categories saved.",
+      "error": "Failed to save categories."
+    },
+    "load": {
+      "error": "Failed to load categories."
     }
   },
   "notFound": {

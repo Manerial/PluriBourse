@@ -41,4 +41,9 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./editions/edition-form.component').then((m) => m.EditionFormComponent),
   },
+  {
+    path: 'editions/:id/categories',
+    loadComponent: () =>
+      import('./editions/edition-categories/edition-categories.component').then((m) => m.EditionCategoriesComponent),
+  },
 ];

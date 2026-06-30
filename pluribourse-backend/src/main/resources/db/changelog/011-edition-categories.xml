@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="011-edition-categories" author="pluribourse">
+        <createTable tableName="edition_categories">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="edition_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_edition_categories_edition"
+                             references="editions(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="display_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="edition_categories"
+                             columnNames="edition_id, name"
+                             constraintName="uq_edition_categories_edition_name"/>
+
+        <createTable tableName="category_table_assignments">
+            <column name="category_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_cat_table_category"
+                             references="edition_categories(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="table_number" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="category_table_assignments"
+                       columnNames="category_id, table_number"
+                       constraintName="pk_category_table_assignments"/>
+    </changeSet>
+
+</databaseChangeLog>
