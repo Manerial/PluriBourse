@@ -17,12 +17,27 @@
         <mat-form-field appearance="outline">
           <mat-label>{{ 'admin.settings.associationName' | translate }}</mat-label>
           <input matInput formControlName="associationName" type="text" maxlength="255" />
+          @if (form.controls.associationName.errors?.['required'] && form.controls.associationName.touched) {
+            <mat-error>{{ 'admin.settings.error.associationNameRequired' | translate }}</mat-error>
+          }
+          @if (form.controls.associationName.errors?.['maxlength'] && form.controls.associationName.touched) {
+            <mat-error>{{ 'admin.settings.error.associationNameMaxLength' | translate }}</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'admin.settings.defaultCommissionRate' | translate }}</mat-label>
           <input matInput formControlName="defaultCommissionRate" type="number" min="0" max="100" step="0.01" />
           <span matTextSuffix>%</span>
+          @if (form.controls.defaultCommissionRate.errors?.['required'] && form.controls.defaultCommissionRate.touched) {
+            <mat-error>{{ 'admin.settings.error.defaultCommissionRateRequired' | translate }}</mat-error>
+          }
+          @if (form.controls.defaultCommissionRate.errors?.['min'] && form.controls.defaultCommissionRate.touched) {
+            <mat-error>{{ 'admin.settings.error.defaultCommissionRateMin' | translate }}</mat-error>
+          }
+          @if (form.controls.defaultCommissionRate.errors?.['max'] && form.controls.defaultCommissionRate.touched) {
+            <mat-error>{{ 'admin.settings.error.defaultCommissionRateMax' | translate }}</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">

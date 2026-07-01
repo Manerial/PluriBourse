@@ -92,6 +92,10 @@ public class EditionService {
         return savePhaseThenSendEvent(id, edition, newPhase, previousPhase);
     }
 
+    /**
+     * Advances the phase state machine by one step.
+     * CLOSED has no successor: closing is terminal and can only be undone via rollback.
+     */
     private PhaseType computeNextPhase(PhaseType current) {
         return switch (current) {
             case PREPARATION -> PhaseType.DEPOSIT;
@@ -102,6 +106,11 @@ public class EditionService {
         };
     }
 
+    /**
+     * Reverses the phase state machine by one step.
+     * PREPARATION has no predecessor. Rollback from CLOSED is refused once the edition
+     * is archived, since archiving is treated as a final, irreversible checkpoint.
+     */
     private PhaseType computePreviousPhase(PhaseType current, boolean archived) {
         return switch (current) {
             case PREPARATION -> throw new PhaseRollbackFromPreparationException();
@@ -117,6 +126,11 @@ public class EditionService {
         };
     }
 
+    /**
+     * Persists the phase change and defers the SSE broadcast to run only after the
+     * transaction commits, so listeners never observe a phase event for a change that
+     * ends up rolled back.
+     */
     private EditionDto savePhaseThenSendEvent(Long id, Edition edition, PhaseType newPhase, PhaseType previousPhase) {
         edition.setPhase(newPhase);
         Edition saved = repository.save(edition);

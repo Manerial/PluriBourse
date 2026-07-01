@@ -9,6 +9,7 @@ import { AuthService } from '../../../services/auth.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { passwordsMatchValidator } from '../../../shared/validators/passwords-match.validator';
+import { passwordStrengthValidators } from '../../../shared/validators/password-strength.validator';
 
 @Component({
   selector: 'app-change-password',
@@ -26,12 +27,7 @@ export class ChangePasswordComponent {
 
   readonly form = this.fb.nonNullable.group(
     {
-      newPassword: ['', [
-        Validators.required,
-        Validators.minLength(8),
-        Validators.pattern(/.*[A-Z].*/),
-        Validators.pattern(/.*[0-9].*/)
-      ]],
+      newPassword: ['', [Validators.required, ...passwordStrengthValidators]],
       confirmPassword: ['', Validators.required]
     },
     { validators: passwordsMatchValidator('newPassword', 'confirmPassword') }

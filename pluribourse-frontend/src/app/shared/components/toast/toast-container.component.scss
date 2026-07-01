@@ -2,7 +2,7 @@
   position: fixed;
   bottom: var(--pb-space-lg);
   right: var(--pb-space-lg);
-  z-index: 200;
+  z-index: var(--pb-z-toast);
   pointer-events: none;
 }
 

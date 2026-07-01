@@ -65,6 +65,9 @@ html {
   --pb-space-2xl: 48px;
   --pb-space-3xl: 64px;
 
+  // Z-index tokens
+  --pb-z-toast: 200;
+
   // Elevation tokens
   --pb-elevation-1: 0 1px 4px rgba(28,10,5,.08);
   --pb-elevation-2: 0 4px 16px rgba(28,10,5,.14), 0 1px 4px rgba(28,10,5,.08);

@@ -12,7 +12,7 @@ import org.springframework.security.core.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/account")
+@RequestMapping("/account")
 @RequiredArgsConstructor
 public class AccountController {
 

@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -27,6 +27,7 @@ export class UserListComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmDialog = inject(ConfirmDialogService);
@@ -90,7 +91,7 @@ export class UserListComponent implements OnInit {
   }
 
   navigateToCreate(): void {
-    this.router.navigateByUrl('/admin/users/create');
+    this.router.navigate(['create'], { relativeTo: this.route });
   }
 
   openResetPasswordDialog(user: UserDto): void {

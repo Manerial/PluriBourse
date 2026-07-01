@@ -13,6 +13,10 @@
     },
     "empty": {
       "clearFilters": "Effacer les filtres"
+    },
+    "password": {
+      "needsUppercase": "Le mot de passe doit contenir au moins une majuscule.",
+      "needsDigit": "Le mot de passe doit contenir au moins un chiffre."
     }
   },
   "auth": {
@@ -295,6 +299,8 @@
         "lastName": "Nom",
         "username": "Identifiant",
         "password": "Mot de passe temporaire",
+        "passwordRequired": "Le mot de passe temporaire est requis.",
+        "passwordMinLength": "Le mot de passe temporaire doit contenir au moins 8 caractères.",
         "submit": "Créer",
         "cancel": "Annuler"
       },
@@ -335,7 +341,12 @@
       "success": "Paramètres enregistrés.",
       "error": {
         "load": "Impossible de charger les paramètres.",
-        "save": "Impossible d'enregistrer les paramètres."
+        "save": "Impossible d'enregistrer les paramètres.",
+        "associationNameRequired": "Le nom de l'association est requis.",
+        "associationNameMaxLength": "Le nom de l'association ne doit pas dépasser 255 caractères.",
+        "defaultCommissionRateRequired": "Le taux de commission par défaut est requis.",
+        "defaultCommissionRateMin": "Le taux de commission par défaut ne peut pas être négatif.",
+        "defaultCommissionRateMax": "Le taux de commission par défaut ne peut pas dépasser 100%."
       }
     }
   }

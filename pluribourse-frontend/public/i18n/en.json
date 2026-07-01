@@ -13,6 +13,10 @@
     },
     "empty": {
       "clearFilters": "Clear filters"
+    },
+    "password": {
+      "needsUppercase": "Password must contain at least one uppercase letter.",
+      "needsDigit": "Password must contain at least one digit."
     }
   },
   "auth": {
@@ -295,6 +299,8 @@
         "lastName": "Last name",
         "username": "Username",
         "password": "Temporary password",
+        "passwordRequired": "Temporary password is required.",
+        "passwordMinLength": "Temporary password must be at least 8 characters.",
         "submit": "Create",
         "cancel": "Cancel"
       },
@@ -335,7 +341,12 @@
       "success": "Settings saved.",
       "error": {
         "load": "Failed to load settings.",
-        "save": "Failed to save settings."
+        "save": "Failed to save settings.",
+        "associationNameRequired": "Association name is required.",
+        "associationNameMaxLength": "Association name must not exceed 255 characters.",
+        "defaultCommissionRateRequired": "Default commission rate is required.",
+        "defaultCommissionRateMin": "Default commission rate cannot be negative.",
+        "defaultCommissionRateMax": "Default commission rate cannot exceed 100%."
       }
     }
   }

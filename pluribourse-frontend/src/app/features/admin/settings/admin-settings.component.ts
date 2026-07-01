@@ -48,7 +48,11 @@ export class AdminSettingsComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid || this.isSaving()) {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    if (this.isSaving()) {
       return;
     }
     this.isSaving.set(true);

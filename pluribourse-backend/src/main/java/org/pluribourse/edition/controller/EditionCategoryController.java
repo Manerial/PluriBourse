@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/editions/{editionId}/categories")
+@RequestMapping("/admin/editions/{editionId}/categories")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class EditionCategoryController {

@@ -42,20 +42,25 @@ public class SecurityConfig {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(uds);
         authProvider.setPasswordEncoder(pe);
 
+        // CookieCsrfTokenRepository defaults the cookie's Path to the servlet context path ("/api"),
+        // but the Angular app itself is served from "/" and can only read cookies scoped to "/".
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokenRepository.setCookiePath("/");
+
         http
                 .authenticationProvider(authProvider)
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers("/api/auth/login")
+                        .ignoringRequestMatchers("/auth/login")
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new ProblemDetailAuthenticationEntryPoint())
                         .accessDeniedHandler(new ProblemDetailAccessDeniedHandler())
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/api/auth/login").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/actuator/health", "/auth/login").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         // Require authenticated non-anonymous user AND block SELLER role
                         .anyRequest().access((authentication, context) -> {
                             Authentication a = authentication.get();
@@ -67,13 +72,13 @@ public class SecurityConfig {
                         })
                 )
                 .formLogin(form -> form
-                        .loginProcessingUrl("/api/auth/login")
+                        .loginProcessingUrl("/auth/login")
                         .successHandler(loginSuccessHandler)
                         .failureHandler(loginFailureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout")
+                        .logoutUrl("/auth/logout")
                         .logoutSuccessHandler(logoutSuccessHandler)
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID", "SESSION")

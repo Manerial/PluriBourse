@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
+import { passwordStrengthValidators } from '../../../../shared/validators/password-strength.validator';
 
 export interface ResetPasswordDialogData {
   userName: string;
@@ -24,12 +25,7 @@ export class ResetPasswordDialogComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly form = this.fb.nonNullable.group({
-    newPassword: ['', [
-      Validators.required,
-      Validators.minLength(8),
-      Validators.pattern(/.*[A-Z].*/),
-      Validators.pattern(/.*[0-9].*/)
-    ]],
+    newPassword: ['', [Validators.required, ...passwordStrengthValidators]],
   });
 
   confirm(): void {

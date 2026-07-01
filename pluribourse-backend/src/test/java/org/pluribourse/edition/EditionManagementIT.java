@@ -335,4 +335,110 @@ class EditionManagementIT extends IntegrationTest {
         assertThat(edition.getStartDate()).isNull();
         assertThat(edition.getEndDate()).isEqualTo(LocalDate.of(2026, 10, 3));
     }
+
+    // AC7/AC8 were only exercised against DEPOSIT (Order 8/10). Story 2.2 has since shipped
+    // phase transitions, so SALE/POST_SALE/CLOSED are covered here the same way.
+
+    @Test
+    @Order(20)
+    void admin_update_commission_rate_frozen_in_sale_phase_returns_422() throws Exception {
+        Edition edition = repository.findById(createdEditionId).orElseThrow();
+        edition.setPhase(PhaseType.SALE);
+        repository.save(edition);
+
+        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, null, null);
+        mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @Order(21)
+    void admin_delete_in_sale_phase_returns_422() throws Exception {
+        mockMvc.perform(delete("/api/admin/editions/" + createdEditionId)
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @Order(22)
+    void admin_update_commission_rate_frozen_in_post_sale_phase_returns_422() throws Exception {
+        Edition edition = repository.findById(createdEditionId).orElseThrow();
+        edition.setPhase(PhaseType.POST_SALE);
+        repository.save(edition);
+
+        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, null, null);
+        mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @Order(23)
+    void admin_delete_in_post_sale_phase_returns_422() throws Exception {
+        mockMvc.perform(delete("/api/admin/editions/" + createdEditionId)
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @Order(24)
+    void admin_update_commission_rate_frozen_in_closed_phase_returns_422() throws Exception {
+        Edition edition = repository.findById(createdEditionId).orElseThrow();
+        edition.setPhase(PhaseType.CLOSED);
+        repository.save(edition);
+
+        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, null, null);
+        mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @Order(25)
+    void admin_delete_in_closed_phase_returns_422() throws Exception {
+        mockMvc.perform(delete("/api/admin/editions/" + createdEditionId)
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    // Story 2.1 tested 403-on-GET for a volunteer session (Order 2), but mutations were untested.
+    // POST/PATCH/DELETE are all protected by the same @PreAuthorize; the temp edition created in
+    // setUpSessions() was PREPARATION/deleted already, so these calls target a fresh, disposable edition.
+
+    @Test
+    @Order(26)
+    void volunteer_post_returns_403() throws Exception {
+        EditionDto dto = new EditionDto(null, "Volunteer Attempt", null, null, null, null, false, null, null);
+        mockMvc.perform(post("/api/admin/editions")
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(27)
+    void volunteer_put_returns_403() throws Exception {
+        EditionDto dto = new EditionDto(null, "Volunteer Attempt", null, null, null, null, false, null, null);
+        mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(28)
+    void volunteer_delete_returns_403() throws Exception {
+        mockMvc.perform(delete("/api/admin/editions/" + createdEditionId)
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
 }

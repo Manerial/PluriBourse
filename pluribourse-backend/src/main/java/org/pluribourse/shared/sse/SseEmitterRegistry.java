@@ -32,6 +32,7 @@ public class SseEmitterRegistry {
                 emitter.send(SseEmitter.event().name(eventName).data(payload));
             } catch (IOException | RuntimeException e) {
                 emitters.remove(emitter);
+                emitter.completeWithError(e);
             }
         }
     }

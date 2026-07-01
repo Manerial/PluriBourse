@@ -21,7 +21,7 @@ interface EditableCategoryRow {
   id: number | null;
   name: string;
   tableInput: string;
-  tableError: string | null;
+  rowError: string | null;
 }
 
 @Component({
@@ -79,7 +79,7 @@ export class EditionCategoriesComponent implements OnInit {
   }
 
   addCategory(): void {
-    this.categories = [...this.categories, { id: null, name: '', tableInput: '', tableError: null }];
+    this.categories = [...this.categories, { id: null, name: '', tableInput: '', rowError: null }];
   }
 
   removeCategory(index: number): void {
@@ -132,11 +132,11 @@ export class EditionCategoriesComponent implements OnInit {
   }
 
   nameErrorMatcher(row: EditableCategoryRow): ErrorStateMatcher {
-    return { isErrorState: () => row.tableError === 'category.row.error.nameRequired' };
+    return { isErrorState: () => row.rowError === 'category.row.error.nameRequired' };
   }
 
   tableErrorMatcher(row: EditableCategoryRow): ErrorStateMatcher {
-    return { isErrorState: () => row.tableError === 'category.row.error.tableRequired' };
+    return { isErrorState: () => row.rowError === 'category.row.error.tableRequired' };
   }
 
   private validateRows(): boolean {
@@ -144,13 +144,13 @@ export class EditionCategoriesComponent implements OnInit {
     this.categories = this.categories.map(row => {
       if (!row.name.trim()) {
         valid = false;
-        return { ...row, tableError: 'category.row.error.nameRequired' };
+        return { ...row, rowError: 'category.row.error.nameRequired' };
       }
       if (this.parseTableInput(row.tableInput).length === 0) {
         valid = false;
-        return { ...row, tableError: 'category.row.error.tableRequired' };
+        return { ...row, rowError: 'category.row.error.tableRequired' };
       }
-      return { ...row, tableError: null };
+      return { ...row, rowError: null };
     });
     return valid;
   }
@@ -167,7 +167,7 @@ export class EditionCategoriesComponent implements OnInit {
       id: dto.id,
       name: dto.name,
       tableInput: dto.tableNumbers.join(', '),
-      tableError: null,
+      rowError: null,
     };
   }
 }

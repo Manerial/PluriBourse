@@ -76,5 +76,4 @@ public class EditionCategoryService {
                 .orElseThrow(() -> new EditionNotFoundException(editionId));
     }
 
-
 }

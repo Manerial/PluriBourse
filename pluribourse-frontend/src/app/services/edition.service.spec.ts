@@ -4,10 +4,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { firstValueFrom } from 'rxjs';
 import { EditionService } from './edition.service';
 import { EditionDto, PhaseType } from '../models/edition.model';
+import { Language } from '../models/language.enum';
 
 const MOCK_EDITION: EditionDto = {
   id: 1, name: 'Bourse 2026', phase: 'PREPARATION',
-  commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01',
+  commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01',
   archived: false, startDate: null, endDate: null
 };
 

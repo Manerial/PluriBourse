@@ -33,7 +33,7 @@ const preparationEdition: EditionDto = {
   name: 'Bourse 2026',
   phase: 'PREPARATION',
   commissionRate: 15,
-  documentLanguage: 'FR',
+  documentLanguage: Language.FR,
   createdAt: '2026-01-01',
   archived: false,
   startDate: null,

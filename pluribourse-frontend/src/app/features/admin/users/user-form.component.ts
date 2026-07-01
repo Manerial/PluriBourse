@@ -9,6 +9,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { UserService } from '../../../services/user.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
+import { passwordStrengthValidators } from '../../../shared/validators/password-strength.validator';
 
 @Component({
   selector: 'app-user-form',
@@ -25,8 +26,8 @@ export class UserFormComponent {
     firstName: ['', [Validators.required, Validators.maxLength(50)]],
     lastName: ['', [Validators.required, Validators.maxLength(50)]],
     username: ['', [Validators.required, Validators.maxLength(50)]],
-    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128), Validators.pattern(/.*[A-Z].*/), Validators.pattern(/.*[0-9].*/)],],
-    role: ['VOLUNTEER'],
+    password: ['', [Validators.required, Validators.maxLength(128), ...passwordStrengthValidators]],
+    role: ['VOLUNTEER' as const],
   });
 
   readonly loading = signal(false);

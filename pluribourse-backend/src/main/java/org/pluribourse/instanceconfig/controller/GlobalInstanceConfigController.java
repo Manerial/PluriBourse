@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/instance-config")
+@RequestMapping("/admin/instance-config")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class GlobalInstanceConfigController {

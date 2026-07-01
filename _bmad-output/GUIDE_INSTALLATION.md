@@ -13,8 +13,9 @@ Ce guide vous accompagne pas à pas dans l'installation et la configuration de P
 5. [Premier lancement](#premier-lancement)
 6. [Configuration initiale](#configuration-initiale)
 7. [Réinitialisation du mot de passe admin](#réinitialisation-du-mot-de-passe-admin)
-8. [Mise à jour](#mise-à-jour)
-9. [Dépannage rapide](#dépannage-rapide)
+8. [Arrêter l'application](#arrêter-lapplication)
+9. [Mise à jour](#mise-à-jour)
+10. [Dépannage rapide](#dépannage-rapide)
 
 ---
 
@@ -265,7 +266,27 @@ Notez le mot de passe temporaire affiché, puis connectez-vous à `http://localh
 
 ---
 
+## Arrêter l'application
+
+Pour arrêter PluriBourse sans supprimer vos données, naviguez dans le dossier `.docker` et exécutez :
+
+```bash
+docker compose stop
+```
+
+Les conteneurs sont arrêtés mais restent en place, prêts à redémarrer avec `docker compose up -d` (voir [Téléchargement et lancement](#téléchargement-et-lancement)).
+
+Pour arrêter l'application **et supprimer les conteneurs** (sans toucher à vos données, conservées dans le volume `pluribourse_db_data`) :
+
+```bash
+docker compose down
+```
+
+---
+
 ## Mise à jour
+
+> **Recommandation :** avant de mettre à jour, faites une sauvegarde de votre volume de données (`pluribourse_db_data`). Vos données sont normalement préservées (voir ci-dessous), mais une sauvegarde vous protège en cas d'incident imprévu pendant la migration.
 
 Pour mettre à jour PluriBourse vers la dernière version, naviguez dans le dossier `.docker` (voir la section [Ouvrir et utiliser le terminal](#ouvrir-et-utiliser-le-terminal)) et exécutez :
 

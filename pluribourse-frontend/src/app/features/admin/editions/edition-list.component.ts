@@ -76,20 +76,14 @@ export class EditionListComponent implements OnInit {
       try {
         await firstValueFrom(this.editionService.delete(edition.id));
         this.toast.showSuccess(this.translate.instant('edition.actions.success.delete'));
-        await this.reloadEditions();
+        // Remove locally instead of re-fetching the list: the delete already succeeded,
+        // so a subsequent GET failure must not hide the (still valid) remaining rows.
+        this.editions.update(list => list.filter(e => e.id !== edition.id));
       } catch {
         this.toast.showError(this.translate.instant('edition.actions.error.delete'));
       } finally {
         this.isConfirmingDelete = false;
       }
     });
-  }
-
-  private async reloadEditions(): Promise<void> {
-    try {
-      this.editions.set(await firstValueFrom(this.editionService.getAll()));
-    } catch {
-      this.error.set('edition.actions.error.load');
-    }
   }
 }

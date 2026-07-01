@@ -31,6 +31,18 @@
       <mat-form-field appearance="outline">
         <mat-label>{{ 'admin.users.create.password' | translate }}</mat-label>
         <input matInput formControlName="password" type="password" autocomplete="new-password" />
+        @if (form.controls.password.hasError('required')) {
+          <mat-error>{{ 'admin.users.create.passwordRequired' | translate }}</mat-error>
+        }
+        @if (form.controls.password.hasError('minlength')) {
+          <mat-error>{{ 'admin.users.create.passwordMinLength' | translate }}</mat-error>
+        }
+        @if (form.controls.password.hasError('needsUppercase')) {
+          <mat-error>{{ 'common.password.needsUppercase' | translate }}</mat-error>
+        }
+        @if (form.controls.password.hasError('needsDigit')) {
+          <mat-error>{{ 'common.password.needsDigit' | translate }}</mat-error>
+        }
       </mat-form-field>
 
       <div class="card__actions">

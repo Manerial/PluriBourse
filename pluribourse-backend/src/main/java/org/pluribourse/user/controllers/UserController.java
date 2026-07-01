@@ -13,7 +13,7 @@ import java.net.*;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/admin/users")
+@RequestMapping("/admin/users")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class UserController {

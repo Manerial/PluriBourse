@@ -20,7 +20,10 @@ import java.util.Set;
 public class ForcePasswordChangeFilter extends OncePerRequestFilter {
 
     private static final Set<String> EXEMPT_PATHS =
-            Set.of("/api/auth/change-password", "/api/auth/me", "/api/auth/logout", "/api/auth/login", "/actuator/health");
+            // getRequestURI() returns the raw client-facing path, including the /api context path — unlike the
+            // Spring Security request matchers above, which are already context-path-relative.
+            Set.of("/api/auth/change-password", "/api/auth/me", "/api/auth/logout", "/api/auth/login", "/api/actuator/health",
+                    "/api/sse/events", "/api/editions/current");
 
     private final ObjectMapper objectMapper;
 

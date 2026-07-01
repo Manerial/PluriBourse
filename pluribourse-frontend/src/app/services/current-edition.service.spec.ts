@@ -4,13 +4,14 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CurrentEditionService } from './current-edition.service';
 import { EditionDto } from '../models/edition.model';
+import { Language } from '../models/language.enum';
 
 const mockEdition: EditionDto = {
   id: 1,
   name: 'Bourse 2026',
   phase: 'PREPARATION',
   commissionRate: 15,
-  documentLanguage: 'FR',
+  documentLanguage: Language.FR,
   createdAt: '2026-01-01',
   archived: false,
   startDate: null,

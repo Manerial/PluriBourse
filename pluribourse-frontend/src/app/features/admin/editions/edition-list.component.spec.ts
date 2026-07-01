@@ -8,9 +8,10 @@ import { EditionService } from '../../../services/edition.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { EditionDto } from '../../../models/edition.model';
+import { Language } from '../../../models/language.enum';
 
 const MOCK_EDITIONS: EditionDto[] = [
-  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: 'EN', createdAt: '2026-01-01', archived: false, startDate: null, endDate: null }
+  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false, startDate: null, endDate: null }
 ];
 
 describe('EditionListComponent', () => {
@@ -68,5 +69,24 @@ describe('EditionListComponent', () => {
     const spy = vi.spyOn(router, 'navigateByUrl');
     component.navigateToEdit(MOCK_EDITIONS[0]);
     expect(spy).toHaveBeenCalledWith('/admin/editions/1/edit');
+  });
+
+  it('confirmDelete removes the edition from the local list without re-fetching', async () => {
+    confirmMock.open.mockReturnValue(of(true));
+    component.confirmDelete(MOCK_EDITIONS[0]);
+    await fixture.whenStable();
+    expect(editionServiceMock.delete).toHaveBeenCalledWith(1);
+    expect(component.editions().length).toBe(0);
+    expect(toastMock.showSuccess).toHaveBeenCalled();
+    expect(editionServiceMock.getAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('confirmDelete keeps the local list untouched and shows an error toast when delete fails', async () => {
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.delete.mockReturnValue(throwError(() => new Error('server')));
+    component.confirmDelete(MOCK_EDITIONS[0]);
+    await fixture.whenStable();
+    expect(component.editions().length).toBe(1);
+    expect(toastMock.showError).toHaveBeenCalled();
   });
 });
