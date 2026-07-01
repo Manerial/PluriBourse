@@ -1,5 +1,11 @@
 export type PhaseType = 'PREPARATION' | 'DEPOSIT' | 'SALE' | 'POST_SALE' | 'CLOSED';
 
+export interface PhaseChangedEvent {
+  editionId: number;
+  newPhase: PhaseType;
+  previousPhase: PhaseType;
+}
+
 export interface EditionDto {
   id: number;
   name: string;

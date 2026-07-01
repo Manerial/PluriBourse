@@ -63,11 +63,16 @@
   border-radius: var(--pb-rounded-full);
   font-size: 14px;
   font-weight: 600;
+  text-decoration: none;
 
   &__dot {
     color: var(--mat-sys-primary);
     font-size: 10px;
     line-height: 1;
+  }
+
+  &--inactive {
+    opacity: 0.5;
   }
 }
 

@@ -7,18 +7,30 @@
     </div>
 
     <div class="topbar__center">
-      <!-- Phase chip — static in Story 1.7, SSE-driven in Story 2.4 -->
-      <span class="phase-chip">
-        <span class="phase-chip__dot" aria-hidden="true">●</span>
-        {{ 'nav.phase.preparation' | translate }}
-      </span>
+      @if (currentEdition(); as edition) {
+        @if (isAdmin()) {
+          <a [routerLink]="['/admin/editions', edition.id, 'phase']" class="phase-chip">
+            <span class="phase-chip__dot" aria-hidden="true">●</span>
+            {{ ('edition.phase.' + edition.phase) | translate }}
+          </a>
+        } @else {
+          <span class="phase-chip">
+            <span class="phase-chip__dot" aria-hidden="true">●</span>
+            {{ ('edition.phase.' + edition.phase) | translate }}
+          </span>
+        }
+      } @else {
+        <span class="phase-chip phase-chip--inactive" [attr.aria-label]="'nav.phase.none' | translate">
+          {{ 'nav.phase.none' | translate }}
+        </span>
+      }
     </div>
 
     <div class="topbar__actions">
       <span
         class="badge"
         [class.badge--admin]="isAdmin()"
-        [class.badge--volunteer]="!isAdmin()">
+        [class.badge--volunteer]="isVolunteer()">
         {{ isAdmin() ? ('nav.role.admin' | translate) : ('nav.role.volunteer' | translate) }}
       </span>
       <button mat-button type="button" (click)="logout()">

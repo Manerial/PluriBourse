@@ -243,4 +243,36 @@ class PhaseTransitionIT extends IntegrationTest {
         mockMvc.perform(get("/api/sse/events"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @Order(17)
+    void multiple_phase_changes_are_all_delivered_over_the_same_sse_connection() throws Exception {
+        MvcResult creation = mockMvc.perform(post("/api/admin/editions")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Bourse SSE Test\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long sseEditionId = objectMapper.readTree(creation.getResponse().getContentAsString()).get("id").asLong();
+
+        MvcResult sseResult = mockMvc.perform(get("/api/sse/events").session(adminSession))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        // Two phase advances fired back-to-back must both reach the SAME long-lived connection —
+        // if the emitter were closed after the first event, the second would be broadcast to no one.
+        mockMvc.perform(post("/api/admin/editions/" + sseEditionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("DEPOSIT"));
+
+        mockMvc.perform(post("/api/admin/editions/" + sseEditionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("SALE"));
+
+        String sseBody = sseResult.getResponse().getContentAsString();
+        assertThat(sseBody).contains("\"newPhase\":\"DEPOSIT\"");
+        assertThat(sseBody).contains("\"newPhase\":\"SALE\"");
+    }
 }

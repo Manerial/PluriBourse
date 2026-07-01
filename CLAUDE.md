@@ -10,33 +10,42 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 - Commentaires et JavaDoc : anglais
 - Documentation projet (artefacts de planification, PRD, architecture, epics, UX) : français
 
+## Interaction utilisateur
+- **TOUJOURS** parler en Français à l'utilisateur.
+- **TOUJOURS** vérifier si un changement dans le code est valide ou challengeable (avec une argumentation détaillée) si un utilisateur fait une telle demande.
+- **TOUJOURS** proposer de rédiger une nouvelle story si un changement de code est trop impactant.
+
 ## Architecture
 
 ### Backend (Spring Boot)
 - Package racine : `org.pluribourse`
 - Architecture en couches : Contrôleur → Service → Repository
-- DTOs pour la couche API ; MapStruct pour le mapping entité↔DTO
+- DTOs pour la couche API
+- MapStruct pour le mapping entité to DTO, DTO to entité, mises à jour de l'entité par le DTO
 - Lombok pour le code répétitif (getters, setters, builders, constructeurs)
 - Migrations de base de données : Liquibase
-- Interdiction du mot-clé `var` — toujours déclarer le type explicite des variables
+— **TOUJOURS** déclarer le type explicite des variables
+- **JAMAIS** de mot-clé `var`
 
 ### Frontend (Angular)
 - Composants standalone (dernière version Angular)
 - Gestion d'état : Signals — pas de NgRx
-- Pas de template inline. Toujours créer un nouveau fichier html
+- **TOUJOURS** créer un nouveau fichier html
+- **JAMAIS** de template inline.
 
 ## JavaDoc
 - Obligatoire sur les méthodes complexes : logique non triviale, paramètres ou valeurs de retour non évidents
 - Non requise sur les getters, setters simples ou les opérations CRUD explicites
 
 ## Style de code (back + front)
-- Toujours utiliser des accolades pour les blocs `if`, `else`, `for`, `while` — même si le corps tient sur une ligne
-- Interdiction du style inline : `if (condition) return;` → toujours développer avec `{ }` sur plusieurs lignes
+- **TOUJOURS** utiliser des accolades pour les blocs `if`, `else`, `for`, `while` — même si le corps tient sur une ligne
+- **JAMAIS** de style inline : `if (condition) return;` → toujours développer avec `{ }` sur plusieurs lignes
 
 ## Commentaires
 - Ajouter des commentaires inline uniquement quand le **pourquoi** n'est pas évident depuis le code
-- Ne jamais décrire ce que fait le code — des identifiants bien nommés s'en chargent
-- Pas de blocs de commentaires multi-lignes
+- **TOUJOURS** utiliser des identifiants bien nommés
+- **JAMAIS** décrire ce que fait le code (les identifiants bien nommés s'en chargent)
+- Eviter les commentaires multi-lignes sauf nécessité pour du code complexe
 
 ## Tests
 
@@ -53,27 +62,10 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 - **Ce qu'on ne teste pas séparément :** migrations Liquibase, config Spring Security, handlers d'erreur, filtres — ils sont couverts implicitement par les scénarios E2E
 - Couverture minimale cible : 80 %
 
-
 ### Frontend (Angular)
 - Frameworks : Vitest (via `ng test` / `npm test` dans `pluribourse-frontend/`)
 - Commande : `npm test` (dans `pluribourse-frontend/`) — ne pas utiliser `npx vitest run` directement
 - Couverture minimale cible : 80 %
-
-## Git
-
-### Messages de commit
-Suivre les Conventional Commits :
-- `feat:` nouvelle fonctionnalité
-- `fix:` correction de bug
-- `docs:` documentation uniquement
-- `refactor:` modification du code sans impact fonctionnel
-- `test:` ajout ou mise à jour de tests
-- `chore:` outillage, dépendances, configuration
-
-### Nommage des branches
-`FEATURE-[FEATURE_ID]-[description-courte]`
-- Les IDs de feature correspondent aux groupes de fonctionnalités du PRD (F1–F10)
-- Exemple : `FEATURE-F3-seller-registration`
 
 ## Contraintes clés
 - Tous les calculs financiers (commission, reversements) : utiliser `BigDecimal` — jamais `float` ou `double`

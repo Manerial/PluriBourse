@@ -59,6 +59,7 @@
     "logout": "Se déconnecter",
     "phase": {
       "current": "Phase actuelle",
+      "none": "Aucune édition en cours",
       "preparation": "Préparation",
       "deposit": "Dépôt",
       "sale": "Vente",

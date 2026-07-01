@@ -1,11 +1,15 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { Component, signal, WritableSignal } from '@angular/core';
 import { vi } from 'vitest';
+import { of, EMPTY } from 'rxjs';
 import { AppLayoutComponent } from './app-layout.component';
 import { AuthService, CurrentUser } from '../../services/auth.service';
 import { Language } from '../../models/language.enum';
+import { EditionDto } from '../../models/edition.model';
+import { CurrentEditionService } from '../../services/current-edition.service';
+import { SseService } from '../../services/sse.service';
 
 @Component({ standalone: true, template: '' })
 class StubComponent {}
@@ -24,14 +28,34 @@ const volunteerUser: CurrentUser = {
   preferredLanguage: Language.EN
 };
 
+const preparationEdition: EditionDto = {
+  id: 42,
+  name: 'Bourse 2026',
+  phase: 'PREPARATION',
+  commissionRate: 15,
+  documentLanguage: 'FR',
+  createdAt: '2026-01-01',
+  archived: false,
+  startDate: null,
+  endDate: null,
+};
+
 describe('AppLayoutComponent', () => {
   let fixture: ComponentFixture<AppLayoutComponent>;
   let component: AppLayoutComponent;
   let mockCurrentUser: WritableSignal<CurrentUser | null>;
+  let mockEdition: WritableSignal<EditionDto | null>;
+  let mockCurrentEditionService: { currentEdition: WritableSignal<EditionDto | null>; loadEdition: ReturnType<typeof vi.fn>; updateFromEvent: ReturnType<typeof vi.fn> };
   const mockLogout = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(async () => {
     mockCurrentUser = signal<CurrentUser | null>(adminUser);
+    mockEdition = signal<EditionDto | null>(null);
+    mockCurrentEditionService = {
+      currentEdition: mockEdition,
+      loadEdition: vi.fn().mockReturnValue(of(undefined)),
+      updateFromEvent: vi.fn(),
+    };
     vi.clearAllMocks();
 
     await TestBed.configureTestingModule({
@@ -41,11 +65,19 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/users', component: StubComponent },
           { path: 'admin/settings', component: StubComponent },
           { path: 'admin/editions', component: StubComponent },
+          { path: 'admin/editions/:id/phase', component: StubComponent },
         ]),
         provideTranslateService({ lang: 'en' }),
         { provide: AuthService, useValue: { currentUser: mockCurrentUser, logout: mockLogout } },
+        { provide: CurrentEditionService, useValue: mockCurrentEditionService },
+        { provide: SseService, useValue: { phaseChanges: () => EMPTY } },
       ],
     }).compileComponents();
+
+    TestBed.inject(TranslateService).setTranslation('en', {
+      edition: { phase: { PREPARATION: 'Preparation' } },
+      nav: { phase: { none: 'No active edition' } },
+    });
 
     fixture = TestBed.createComponent(AppLayoutComponent);
     component = fixture.componentInstance;
@@ -60,6 +92,50 @@ describe('AppLayoutComponent', () => {
 
   it('renders the phase chip', () => {
     expect(fixture.nativeElement.querySelector('.phase-chip')).toBeTruthy();
+  });
+
+  describe('phase chip — no active edition', () => {
+    it('shows nav.phase.none text and is not a link', () => {
+      mockEdition.set(null);
+      fixture.detectChanges();
+      const chip: HTMLElement = fixture.nativeElement.querySelector('.phase-chip');
+      expect(chip.tagName).toBe('SPAN');
+      expect(chip.classList).toContain('phase-chip--inactive');
+      expect(chip.textContent).toContain('No active edition');
+    });
+  });
+
+  describe('phase chip — admin with active edition', () => {
+    beforeEach(() => {
+      mockEdition.set(preparationEdition);
+      fixture.detectChanges();
+    });
+
+    it('renders a link navigating to /admin/editions/:id/phase', () => {
+      const chip: HTMLAnchorElement = fixture.nativeElement.querySelector('a.phase-chip');
+      expect(chip).toBeTruthy();
+      expect(chip.getAttribute('href')).toBe('/admin/editions/42/phase');
+    });
+
+    it('renders the translated phase text', () => {
+      const chip: HTMLAnchorElement = fixture.nativeElement.querySelector('a.phase-chip');
+      expect(chip.textContent).toContain('Preparation');
+    });
+  });
+
+  describe('phase chip — volunteer with active edition', () => {
+    beforeEach(() => {
+      mockCurrentUser.set(volunteerUser);
+      mockEdition.set(preparationEdition);
+      fixture.detectChanges();
+    });
+
+    it('renders a span (not a link) even when edition is active', () => {
+      const link = fixture.nativeElement.querySelector('a.phase-chip');
+      expect(link).toBeFalsy();
+      const span = fixture.nativeElement.querySelector('span.phase-chip:not(.phase-chip--inactive)');
+      expect(span).toBeTruthy();
+    });
   });
 
   describe('when admin is logged in', () => {
@@ -123,6 +199,10 @@ describe('AppLayoutComponent', () => {
     it('shows the role badge', () => {
       expect(fixture.nativeElement.querySelector('.badge')).toBeTruthy();
     });
+  });
+
+  it('calls currentEditionService.loadEdition() on ngOnInit', () => {
+    expect(mockCurrentEditionService.loadEdition).toHaveBeenCalledOnce();
   });
 
   it('calls auth.logout() when logout button is clicked', () => {

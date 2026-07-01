@@ -48,6 +48,11 @@ public class EditionService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<EditionDto> getCurrentEdition() {
+        return repository.findFirstByPhaseIn(PhaseType.ACTIVE).map(mapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
     public EditionDto getEditionById(Long id) {
         return mapper.toDto(findById(id));
     }

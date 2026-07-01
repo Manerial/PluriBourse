@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-06-30"  # Story 2.5 done
+last_updated: "2026-07-01"  # Story 2.6 done
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -63,7 +63,7 @@ development_status:
   2-3-blocage-benevoles-sans-edition-active: done
   2-4-dates-debut-fin-edition: done
   2-5-categories-de-ledition-correspondance-des-tables: done
-  2-6-notification-de-phase-en-temps-reel-via-sse: ready-for-dev
+  2-6-notification-de-phase-en-temps-reel-via-sse: done
   2-7-cloture-de-ledition-archivage-de-ledition: backlog
   2-8-annulation-du-panier-lors-dune-transition-de-phase-cote-serveur: backlog
   epic-2-retrospective: optional

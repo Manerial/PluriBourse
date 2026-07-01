@@ -59,6 +59,7 @@
     "logout": "Sign out",
     "phase": {
       "current": "Current phase",
+      "none": "No active edition",
       "preparation": "Preparation",
       "deposit": "Deposit",
       "sale": "Sale",

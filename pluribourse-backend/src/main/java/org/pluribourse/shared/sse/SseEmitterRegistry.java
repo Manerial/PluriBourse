@@ -4,8 +4,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
@@ -23,22 +21,17 @@ public class SseEmitterRegistry {
     }
 
     /**
-     * Broadcasts an SSE event to all registered emitters, then closes each one.
-     * Clients (Angular EventSource) reconnect automatically per RFC 8895.
-     * Snapshot and clear are synchronized to prevent double-delivery under concurrent calls.
+     * Broadcasts an SSE event to all registered emitters, keeping each connection open so it
+     * can receive subsequent events. Completing the emitter after every send would force the
+     * client to reconnect, and any event broadcast during that reconnect window would be lost —
+     * emitters are only removed when the client actually disconnects (onCompletion/onTimeout/onError).
      */
     public void broadcast(String eventName, Object payload) {
-        List<SseEmitter> snapshot;
-        synchronized (this) {
-            snapshot = new ArrayList<>(emitters);
-            emitters.clear();
-        }
-        for (SseEmitter emitter : snapshot) {
+        for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event().name(eventName).data(payload));
-                emitter.complete();
             } catch (IOException | RuntimeException e) {
-                // emitter was already dead or completed — ignore
+                emitters.remove(emitter);
             }
         }
     }
