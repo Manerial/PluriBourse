@@ -1,0 +1,58 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.sellers.title' | translate }}</h1>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="5" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error()) {
+    @if (sellers().length === 0) {
+      <app-empty-state
+        icon="group"
+        [message]="'admin.sellers.empty' | translate"
+      />
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.sellers.columns.name' | translate }}</th>
+            <th>{{ 'admin.sellers.columns.phone' | translate }}</th>
+            <th>{{ 'admin.sellers.columns.email' | translate }}</th>
+            <th>{{ 'admin.sellers.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (seller of sellers(); track seller.id) {
+            <tr>
+              <td>{{ seller.firstName }} {{ seller.lastName }}</td>
+              <td>{{ seller.phone }}</td>
+              <td>{{ seller.email }}</td>
+              <td>
+                <div class="actions-cell">
+                  <button type="button" mat-button color="warn" (click)="confirmDelete(seller)" [disabled]="submitting()">
+                    <mat-icon>delete</mat-icon>
+                    {{ 'admin.sellers.actions.delete' | translate }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <mat-paginator
+        [length]="totalElements()"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex()"
+        [hidePageSize]="true"
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    }
+  }
+</div>

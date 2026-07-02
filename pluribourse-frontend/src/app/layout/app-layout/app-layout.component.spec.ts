@@ -66,6 +66,9 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/settings', component: StubComponent },
           { path: 'admin/editions', component: StubComponent },
           { path: 'admin/editions/:id/phase', component: StubComponent },
+          { path: 'volunteer/deposit', component: StubComponent },
+          { path: 'account', component: StubComponent },
+          { path: '404', component: StubComponent },
         ]),
         provideTranslateService({ lang: 'en' }),
         { provide: AuthService, useValue: { currentUser: mockCurrentUser, logout: mockLogout } },
@@ -203,6 +206,55 @@ describe('AppLayoutComponent', () => {
 
   it('calls currentEditionService.loadEdition() on ngOnInit', () => {
     expect(mockCurrentEditionService.loadEdition).toHaveBeenCalledOnce();
+  });
+
+  describe('reactive redirect for volunteers when the phase changes underneath them', () => {
+    beforeEach(() => {
+      mockCurrentUser.set(volunteerUser);
+      fixture.detectChanges();
+    });
+
+    it('redirects away from /volunteer/deposit once the phase leaves Dépôt', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/volunteer/deposit');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'PREPARATION' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/404');
+    });
+
+    it('redirects from /404 to /volunteer/deposit once the phase reaches Dépôt', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'PREPARATION' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/404');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/volunteer/deposit');
+    });
+
+    it('does not redirect away from unrelated pages such as /account', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/account');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'PREPARATION' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/account');
+    });
   });
 
   it('calls auth.logout() when logout button is clicked', () => {

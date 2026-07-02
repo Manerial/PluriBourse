@@ -1,10 +1,11 @@
-<div class="card card--list">
+<div class="card card--list card--narrow">
   <div class="card__header">
-    <h1 class="card__title">{{ 'category.title' | translate: { editionName: edition()?.name ?? '' } }}</h1>
-    <a routerLink="/admin/editions" mat-button>
-      <mat-icon>arrow_back</mat-icon>
-      {{ 'category.back' | translate }}
-    </a>
+    <div class="card__header-title">
+      <a routerLink="/admin/editions" mat-icon-button [attr.aria-label]="'category.back' | translate">
+        <mat-icon>arrow_back</mat-icon>
+      </a>
+      <h1 class="card__title">{{ 'category.title' | translate: { editionName: edition()?.name ?? '' } }}</h1>
+    </div>
   </div>
 
   @if (isLoading()) {
@@ -22,7 +23,7 @@
 
     @if (!isReadOnly()) {
       <div class="category-copy-section">
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'category.copy.label' | translate }}</mat-label>
           <mat-select
             [value]="selectedSourceEditionId()"
@@ -61,7 +62,7 @@
         @for (row of categories; track $index; let i = $index) {
           <tr>
             <td>
-              <mat-form-field appearance="outline" class="table-field">
+              <mat-form-field appearance="outline" class="table-field" subscriptSizing="dynamic">
                 <input
                   matInput
                   [(ngModel)]="row.name"
@@ -73,7 +74,7 @@
               </mat-form-field>
             </td>
             <td>
-              <mat-form-field appearance="outline" class="table-field">
+              <mat-form-field appearance="outline" class="table-field" subscriptSizing="dynamic">
                 <input
                   matInput
                   [(ngModel)]="row.tableInput"
@@ -86,7 +87,7 @@
             </td>
             @if (!isReadOnly()) {
               <td>
-                <button type="button" mat-icon-button color="warn" (click)="removeCategory(i)">
+                <button type="button" mat-icon-button color="warn" [attr.aria-label]="'category.row.remove' | translate" (click)="removeCategory(i)">
                   <mat-icon>delete</mat-icon>
                 </button>
               </td>

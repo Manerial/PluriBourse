@@ -1,0 +1,32 @@
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pb-space-md);
+  // 60vh rather than 100vh: this page now also renders nested inside AppLayoutComponent's
+  // content area (below the 56px topbar), where a full-viewport height would overflow it.
+  min-height: 60vh;
+  padding: var(--pb-space-md);
+  text-align: center;
+
+  &__icon {
+    font-size: 64px;
+    color: var(--mat-sys-on-surface-variant);
+    opacity: 0.6;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--mat-sys-primary);
+  }
+
+  &__message {
+    margin: 0;
+    font-size: 14px;
+    color: var(--mat-sys-on-surface-variant);
+    max-width: 360px;
+  }
+}

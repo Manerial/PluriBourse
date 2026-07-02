@@ -1,9 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { Language } from '../models/language.enum';
+import { extractErrorType } from '../shared/http-error.util';
 
 export interface CurrentUser {
   username: string;
@@ -65,11 +66,11 @@ export class AuthService {
       const user = await firstValueFrom(this.http.get<CurrentUser>('/api/auth/me'));
       this._currentUser.set(user);
       await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
-    } catch (error: any) {
+    } catch (error) {
       // 403 password-change-required: session is still valid. If currentUser is already
       // populated (e.g., after changePassword), keep it unchanged. On a cold load where
       // currentUser is null, set the sentinel so authGuard can route to /change-password.
-      if (error?.status === 403 && error?.error?.type?.includes('password-change-required')) {
+      if (error instanceof HttpErrorResponse && error.status === 403 && extractErrorType(error)?.includes('password-change-required')) {
         if (!this.currentUser()) {
           this._currentUser.set({ username: '', role: '', forcePasswordChange: true, preferredLanguage: Language.EN });
         }

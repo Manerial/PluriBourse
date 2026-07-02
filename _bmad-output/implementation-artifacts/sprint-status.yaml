@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-01"  # Story 2.6 done
+last_updated: "2026-07-02"  # Story 3.1 done (code review)
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -69,8 +69,8 @@ development_status:
   epic-2-retrospective: optional
 
   # ─── Epic 3 : Enregistrement des vendeurs & Dépôt ──────────────────────────
-  epic-3: backlog
-  3-1-gestion-des-profils-vendeurs: backlog
+  epic-3: in-progress
+  3-1-gestion-des-profils-vendeurs: done
   3-2-enregistrement-darticles-assignation-automatique-de-table: backlog
   3-3-creation-et-gestion-des-lots: backlog
   3-4-infrastructure-dimpression-registre-dimprimantes-et-files-dynamiques: backlog

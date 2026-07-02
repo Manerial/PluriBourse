@@ -55,6 +55,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/volunteer/volunteer.routes').then(m => m.volunteerRoutes),
       },
+      {
+        // Nested (not the top-level wildcard below) so AppLayoutComponent — and with it the SSE
+        // subscription that reactively redirects a volunteer once the phase changes — stays alive.
+        path: '404',
+        loadComponent: () =>
+          import('./features/not-found/not-found.component').then(m => m.NotFoundComponent),
+      },
     ],
   },
   {

@@ -77,13 +77,13 @@ html {
 // ── Card layouts ──────────────────────────────────────────────────────────────
 .card {
   background: var(--mat-sys-surface);
-  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--pb-rounded-lg);
-  box-shadow: var(--pb-elevation-1);
+  box-shadow: var(--pb-elevation-2);
 
   &__header {
     display: flex;
     align-items: center;
+    min-height: 77px;
     padding: var(--pb-space-md) var(--pb-space-lg);
     border-bottom: 1px solid var(--mat-sys-outline-variant);
   }
@@ -98,6 +98,7 @@ html {
 
 .form-card {
   max-width: 640px;
+  margin-inline: auto;
 
   .card__header {
     gap: var(--pb-space-sm);
@@ -187,8 +188,8 @@ html {
   }
 
   &--volunteer {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
+    background: var(--mat-sys-surface-variant);
+    color: var(--mat-sys-on-surface-variant);
   }
 }
 
@@ -274,6 +275,54 @@ textarea:focus-visible,
   }
 }
 
+// ── Narrow card variant ────────────────────────────────────────────────────────
+.card--narrow {
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+.card__header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-space-sm);
+}
+
+// ── Edition categories ──────────────────────────────────────────────────────
+.category-copy-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pb-space-md);
+  padding: var(--pb-space-lg);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  mat-form-field {
+    width: 320px;
+    --mat-form-field-container-height: 44px;
+    --mat-form-field-container-vertical-padding: 10px;
+  }
+}
+
+.category-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--pb-space-sm);
+  padding: var(--pb-space-lg);
+}
+
+.card--narrow .data-table {
+  th:first-child,
+  td:first-child {
+    padding-left: var(--pb-space-lg);
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: var(--pb-space-lg);
+  }
+}
+
 // ── Data table ────────────────────────────────────────────────────────────────
 .data-table {
   width: 100%;
@@ -282,10 +331,10 @@ textarea:focus-visible,
   thead th {
     padding: var(--pb-space-sm) var(--pb-space-md);
     text-align: left;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     color: var(--mat-sys-on-surface-variant);
     background: var(--mat-sys-surface-variant);
     border-bottom: 1px solid var(--mat-sys-outline-variant);

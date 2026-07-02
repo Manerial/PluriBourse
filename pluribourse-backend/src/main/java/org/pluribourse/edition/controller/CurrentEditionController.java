@@ -1,12 +1,10 @@
 package org.pluribourse.edition.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.pluribourse.edition.dto.EditionDto;
-import org.pluribourse.edition.service.EditionService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.*;
+import org.pluribourse.edition.dto.*;
+import org.pluribourse.edition.service.*;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/editions")
@@ -17,8 +15,6 @@ public class CurrentEditionController {
 
     @GetMapping("/current")
     public ResponseEntity<EditionDto> getCurrentEdition() {
-        return editionService.getCurrentEdition()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+        return ResponseEntity.ok(editionService.getActiveEditionDto());
     }
 }

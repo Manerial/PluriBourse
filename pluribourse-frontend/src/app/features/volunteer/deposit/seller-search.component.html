@@ -1,0 +1,66 @@
+<div class="deposit-page">
+  <div class="card seller-card">
+    <div class="card__header">
+      <h1 class="card__title">{{ 'volunteer.deposit.title' | translate }}</h1>
+    </div>
+
+    <div class="card__body">
+      @if (selectedSeller(); as seller) {
+        <div class="seller-chip">
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          <span class="seller-chip__label">{{ seller.firstName }} {{ seller.lastName }} · {{ seller.email }}</span>
+          <button
+            type="button"
+            mat-icon-button
+            (click)="changeSeller()"
+            [attr.aria-label]="'volunteer.deposit.change' | translate">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      } @else {
+        @if (error()) {
+          <app-notification-inline [message]="error()! | translate" variant="error" />
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'volunteer.deposit.searchLabel' | translate }}</mat-label>
+          <input
+            #searchInput
+            matInput
+            type="text"
+            [formControl]="searchControl"
+            autocomplete="off" />
+        </mat-form-field>
+
+        @if (results().length > 0 && !showCreateForm()) {
+          <ul class="seller-results">
+            @for (seller of results(); track seller.id) {
+              <li>
+                <button type="button" class="seller-result" (click)="selectSeller(seller)">
+                  <span class="seller-result__name">{{ seller.firstName }} {{ seller.lastName }}</span>
+                  <span class="seller-result__email">{{ seller.email }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (searched() && !showCreateForm()) {
+          <div class="seller-create-action">
+            @if (results().length === 0) {
+              <p>{{ 'volunteer.deposit.noResults' | translate }}</p>
+            }
+            <button type="button" mat-flat-button color="primary" (click)="openCreateForm()">
+              <mat-icon>person_add</mat-icon>
+              {{ 'volunteer.deposit.createButton' | translate }}
+            </button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  @if (showCreateForm()) {
+    <app-seller-form (created)="onSellerCreated($event)" (cancelled)="cancelCreateForm()" />
+  }
+</div>

@@ -58,9 +58,10 @@ class CurrentEditionIT extends IntegrationTest {
 
     @Test
     @Order(1)
-    void current_edition_returns_204_when_no_edition_exists() throws Exception {
+    void current_edition_returns_404_when_no_edition_exists() throws Exception {
         mockMvc.perform(get("/api/editions/current").session(adminSession))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 
     @Test
@@ -91,7 +92,7 @@ class CurrentEditionIT extends IntegrationTest {
 
     @Test
     @Order(4)
-    void current_edition_returns_204_after_edition_closed() throws Exception {
+    void current_edition_returns_404_after_edition_closed() throws Exception {
         // Advance PREPARATION → DEPOSIT → SALE → POST_SALE → CLOSED
         for (int i = 0; i < 4; i++) {
             mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
@@ -100,6 +101,7 @@ class CurrentEditionIT extends IntegrationTest {
         }
 
         mockMvc.perform(get("/api/editions/current").session(adminSession))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 }

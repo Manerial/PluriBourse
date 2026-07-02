@@ -1,9 +1,11 @@
-<div class="card">
+<div class="card card--narrow">
   <div class="card__header">
-    <a routerLink="/admin/editions" mat-button>
-      <mat-icon>arrow_back</mat-icon>
-      {{ 'phase.control.back' | translate }}
-    </a>
+    <div class="card__header-title">
+      <a routerLink="/admin/editions" mat-icon-button [attr.aria-label]="'phase.control.back' | translate">
+        <mat-icon>arrow_back</mat-icon>
+      </a>
+      <h1 class="card__title">{{ 'phase.control.title' | translate: { editionName: edition()?.name ?? '' } }}</h1>
+    </div>
   </div>
 
   @if (isLoading()) {
@@ -16,8 +18,6 @@
 
   @if (!isLoading() && !error() && edition()) {
     <div class="phase-control">
-      <h1 class="phase-control__title">{{ edition()!.name }}</h1>
-
       <div class="phase-control__current">
         <span class="phase-chip">
           <span class="badge__dot" aria-hidden="true"></span>

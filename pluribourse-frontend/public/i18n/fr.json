@@ -3,16 +3,12 @@
     "title": "PluriBourse"
   },
   "common": {
-    "loading": "Chargement...",
     "dialog": {
       "cancel": "Annuler",
       "confirm": "Confirmer"
     },
     "toast": {
       "close": "Fermer"
-    },
-    "empty": {
-      "clearFilters": "Effacer les filtres"
     },
     "password": {
       "needsUppercase": "Le mot de passe doit contenir au moins une majuscule.",
@@ -62,13 +58,7 @@
   "nav": {
     "logout": "Se déconnecter",
     "phase": {
-      "current": "Phase actuelle",
-      "none": "Aucune édition en cours",
-      "preparation": "Préparation",
-      "deposit": "Dépôt",
-      "sale": "Vente",
-      "post-sale": "Post-vente",
-      "closed": "Clôturée"
+      "none": "Aucune édition en cours"
     },
     "role": {
       "admin": "Admin",
@@ -84,7 +74,8 @@
     "admin": {
       "users": "Bénévoles",
       "settings": "Paramètres",
-      "editions": "Éditions"
+      "editions": "Éditions",
+      "sellers": "Vendeurs"
     }
   },
   "edition": {
@@ -156,37 +147,14 @@
       "managePhase": "Gérer les phases",
       "manageCategories": "Gérer les catégories",
       "edit": "Modifier",
-      "editCommissionRate": "Modifier la commission",
-      "editDocumentLanguage": "Modifier la langue",
       "delete": "Supprimer",
       "error": {
         "delete": "Impossible de supprimer l'édition.",
-        "load": "Impossible de charger les éditions.",
-        "updateCommissionRate": "Impossible de modifier le taux de commission.",
-        "commissionRateFrozen": "Le taux de commission ne peut plus être modifié une fois la phase de dépôt commencée.",
-        "updateDocumentLanguage": "Impossible de modifier la langue des documents."
+        "load": "Impossible de charger les éditions."
       },
       "success": {
-        "delete": "Édition supprimée.",
-        "updateCommissionRate": "Taux de commission mis à jour.",
-        "updateDocumentLanguage": "Langue des documents mise à jour."
+        "delete": "Édition supprimée."
       }
-    },
-    "updateCommissionRateDialog": {
-      "title": "Modifier le taux de commission",
-      "label": "Taux de commission (%)",
-      "confirm": "Enregistrer",
-      "error": {
-        "required": "Le taux de commission est obligatoire.",
-        "min": "Le taux de commission ne peut pas être négatif.",
-        "max": "Le taux de commission ne peut pas dépasser 100 %.",
-        "maxDecimals": "Le taux de commission ne peut pas avoir plus de 2 décimales."
-      }
-    },
-    "updateDocumentLanguageDialog": {
-      "title": "Modifier la langue des documents",
-      "label": "Langue des documents",
-      "confirm": "Enregistrer"
     },
     "deleteDialog": {
       "title": "Supprimer l'édition ?",
@@ -195,6 +163,7 @@
   },
   "phase": {
     "control": {
+      "title": "Phases — {{editionName}}",
       "back": "Retour aux éditions",
       "error": {
         "load": "Impossible de charger l'édition."
@@ -254,7 +223,7 @@
     "row": {
       "namePlaceholder": "ex. Jouets",
       "tablesPlaceholder": "ex. 1, 2, 3",
-      "remove": "Supprimer",
+      "remove": "Supprimer la catégorie",
       "error": {
         "nameRequired": "Le nom de la catégorie est obligatoire.",
         "tableRequired": "Assignez au moins une table à cette catégorie."
@@ -271,6 +240,31 @@
   "notFound": {
     "message": "La page que vous recherchez n'existe pas ou n'est pas encore disponible.",
     "back": "Retour à l'accueil"
+  },
+  "volunteer": {
+    "deposit": {
+      "title": "Vendeur",
+      "searchLabel": "Rechercher un vendeur",
+      "noResults": "Aucun vendeur trouvé.",
+      "createButton": "Créer un nouveau profil",
+      "change": "Changer de vendeur",
+      "error": {
+        "search": "Impossible de rechercher les vendeurs."
+      },
+      "form": {
+        "title": "Créer un profil vendeur",
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "email": "E-mail",
+        "phone": "Téléphone",
+        "submit": "Créer",
+        "cancel": "Annuler",
+        "error": {
+          "create": "Impossible de créer le profil vendeur.",
+          "emailInvalid": "L'adresse e-mail n'est pas valide."
+        }
+      }
+    }
   },
   "admin": {
     "users": {
@@ -326,6 +320,30 @@
         "enable": "Impossible d'activer le compte.",
         "resetPassword": "Impossible de réinitialiser le mot de passe.",
         "delete": "Impossible de supprimer le bénévole."
+      }
+    },
+    "sellers": {
+      "title": "Vendeurs",
+      "columns": {
+        "name": "Vendeur",
+        "phone": "Téléphone",
+        "email": "E-mail",
+        "actions": "Actions"
+      },
+      "actions": {
+        "delete": "Supprimer"
+      },
+      "deleteDialog": {
+        "title": "Supprimer le vendeur ?",
+        "description": "Ce profil vendeur et tous ses articles pour cette édition seront définitivement supprimés. Cette action est irréversible."
+      },
+      "success": {
+        "delete": "Vendeur supprimé."
+      },
+      "empty": "Aucun vendeur enregistré pour le moment.",
+      "error": {
+        "load": "Impossible de charger les vendeurs.",
+        "delete": "Impossible de supprimer le vendeur."
       }
     },
     "settings": {

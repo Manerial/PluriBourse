@@ -1,0 +1,46 @@
+<div class="card form-card">
+  <div class="card__header">
+    <h2 class="card__title">{{ 'volunteer.deposit.form.title' | translate }}</h2>
+  </div>
+
+  <div class="card__body">
+    @if (error()) {
+      <app-notification-inline [message]="error()! | translate" variant="error" />
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'volunteer.deposit.form.firstName' | translate }}</mat-label>
+          <input matInput formControlName="firstName" type="text" autocomplete="given-name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'volunteer.deposit.form.lastName' | translate }}</mat-label>
+          <input matInput formControlName="lastName" type="text" autocomplete="family-name" />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'volunteer.deposit.form.email' | translate }}</mat-label>
+        <input matInput formControlName="email" type="email" autocomplete="email" />
+        @if (form.controls.email.hasError('email')) {
+          <mat-error>{{ 'volunteer.deposit.form.error.emailInvalid' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'volunteer.deposit.form.phone' | translate }}</mat-label>
+        <input matInput formControlName="phone" type="tel" autocomplete="tel" />
+      </mat-form-field>
+
+      <div class="card__actions">
+        <button type="button" mat-button (click)="cancel()">
+          {{ 'volunteer.deposit.form.cancel' | translate }}
+        </button>
+        <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
+          {{ 'volunteer.deposit.form.submit' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

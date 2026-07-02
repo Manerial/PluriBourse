@@ -46,15 +46,15 @@ describe('CurrentEditionService', () => {
       expect(service.currentEdition()).toEqual(mockEdition);
     });
 
-    it('sets currentEdition to null when server returns 204', () => {
+    it('sets currentEdition to null when server returns 404 (no active edition)', () => {
       service.currentEdition.set(mockEdition);
       service.loadEdition().subscribe();
       const req = httpMock.expectOne('/api/editions/current');
-      req.flush(null, { status: 204, statusText: 'No Content' });
+      req.flush({ type: 'https://pluribourse/errors/no-active-edition' }, { status: 404, statusText: 'Not Found' });
       expect(service.currentEdition()).toBeNull();
     });
 
-    it('completes gracefully on HTTP error without throwing', () => {
+    it('completes gracefully on a non-404 HTTP error without throwing, and does not clear stale data', () => {
       service.currentEdition.set(mockEdition);
       let errored = false;
       service.loadEdition().subscribe({ error: () => { errored = true; } });

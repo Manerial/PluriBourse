@@ -37,6 +37,22 @@ public class EditionService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public EditionDto getEditionById(Long id) {
+        return mapper.toDto(findById(id));
+    }
+
+    @Transactional(readOnly = true)
+    public Edition getActiveEdition() {
+        return repository.findFirstByPhaseIn(PhaseType.ACTIVE)
+                .orElseThrow(NoActiveEditionException::new);
+    }
+
+    @Transactional(readOnly = true)
+    public EditionDto getActiveEditionDto() {
+        return mapper.toDto(getActiveEdition());
+    }
+
     @Transactional
     public EditionDto createEdition(EditionDto dto) {
         if (repository.existsByPhaseIn(PhaseType.ACTIVE)) {
@@ -45,16 +61,6 @@ public class EditionService {
         BigDecimal commissionRate = dto.commissionRate() != null ? dto.commissionRate() : instanceConfigService.getDefaultCommissionRate();
         Language documentLanguage = dto.documentLanguage() != null ? dto.documentLanguage() : instanceConfigService.getDefaultDocumentLanguage();
         return mapper.toDto(repository.save(mapper.toEntity(dto, commissionRate, documentLanguage)));
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<EditionDto> getCurrentEdition() {
-        return repository.findFirstByPhaseIn(PhaseType.ACTIVE).map(mapper::toDto);
-    }
-
-    @Transactional(readOnly = true)
-    public EditionDto getEditionById(Long id) {
-        return mapper.toDto(findById(id));
     }
 
     @Transactional

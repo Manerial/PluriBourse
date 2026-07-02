@@ -1,5 +1,5 @@
-import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { ToastContainerComponent } from '../../shared/components/toast/toast-container.component';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { SseService } from '../../services/sse.service';
+import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 
 // NOTE: MatIcon is NOT used — it requires MatIconRegistry configuration to work with Material Symbols.
 // Use <span class="material-symbols-outlined"> directly instead (simpler, font loaded in index.html).
@@ -22,10 +23,36 @@ export class AppLayoutComponent implements OnInit {
   private readonly currentEditionService = inject(CurrentEditionService);
   private readonly sseService = inject(SseService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
   readonly isVolunteer = computed(() => this.auth.currentUser()?.role === 'VOLUNTEER');
   readonly currentEdition = this.currentEditionService.currentEdition;
+
+  constructor() {
+    // Skips the effect's own initial run (fired at construction, before ngOnInit's loadEdition()
+    // resolves) so it never redirects on a stale/null phase — only on real changes afterwards,
+    // whether that's the first load settling or a later SSE phase-changed event.
+    let isFirstRun = true;
+    effect(() => {
+      const phase = this.currentEdition()?.phase;
+      if (isFirstRun) {
+        isFirstRun = false;
+        return;
+      }
+      if (!this.isVolunteer()) {
+        return;
+      }
+      const currentUrl = this.router.url;
+      if (currentUrl !== '/404' && !currentUrl.startsWith('/volunteer')) {
+        return;
+      }
+      const target = resolveVolunteerLandingPath(phase);
+      if (currentUrl !== target) {
+        this.router.navigateByUrl(target);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.currentEditionService.loadEdition().pipe(

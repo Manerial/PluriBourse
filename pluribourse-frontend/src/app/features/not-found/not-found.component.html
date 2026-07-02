@@ -1,5 +1,6 @@
 <div class="not-found">
-  <h1>404</h1>
-  <p>{{ 'notFound.message' | translate }}</p>
-  <a routerLink="/">{{ 'notFound.back' | translate }}</a>
+  <span class="material-symbols-outlined not-found__icon" aria-hidden="true">search_off</span>
+  <h1 class="not-found__title">404</h1>
+  <p class="not-found__message">{{ 'notFound.message' | translate }}</p>
+  <a mat-flat-button color="primary" routerLink="/">{{ 'notFound.back' | translate }}</a>
 </div>

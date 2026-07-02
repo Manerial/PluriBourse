@@ -3,16 +3,12 @@
     "title": "PluriBourse"
   },
   "common": {
-    "loading": "Loading...",
     "dialog": {
       "cancel": "Cancel",
       "confirm": "Confirm"
     },
     "toast": {
       "close": "Close"
-    },
-    "empty": {
-      "clearFilters": "Clear filters"
     },
     "password": {
       "needsUppercase": "Password must contain at least one uppercase letter.",
@@ -62,13 +58,7 @@
   "nav": {
     "logout": "Sign out",
     "phase": {
-      "current": "Current phase",
-      "none": "No active edition",
-      "preparation": "Preparation",
-      "deposit": "Deposit",
-      "sale": "Sale",
-      "post-sale": "Post-sale",
-      "closed": "Closed"
+      "none": "No active edition"
     },
     "role": {
       "admin": "Admin",
@@ -84,7 +74,8 @@
     "admin": {
       "users": "Volunteers",
       "settings": "Settings",
-      "editions": "Editions"
+      "editions": "Editions",
+      "sellers": "Sellers"
     }
   },
   "edition": {
@@ -156,37 +147,14 @@
       "managePhase": "Manage phase",
       "manageCategories": "Manage categories",
       "edit": "Edit",
-      "editCommissionRate": "Edit commission",
-      "editDocumentLanguage": "Edit language",
       "delete": "Delete",
       "error": {
         "delete": "Failed to delete edition.",
-        "load": "Failed to load editions.",
-        "updateCommissionRate": "Failed to update commission rate.",
-        "commissionRateFrozen": "Commission rate cannot be changed once the deposit phase has started.",
-        "updateDocumentLanguage": "Failed to update document language."
+        "load": "Failed to load editions."
       },
       "success": {
-        "delete": "Edition deleted.",
-        "updateCommissionRate": "Commission rate updated.",
-        "updateDocumentLanguage": "Document language updated."
+        "delete": "Edition deleted."
       }
-    },
-    "updateCommissionRateDialog": {
-      "title": "Update commission rate",
-      "label": "Commission rate (%)",
-      "confirm": "Save",
-      "error": {
-        "required": "Commission rate is required.",
-        "min": "Commission rate cannot be negative.",
-        "max": "Commission rate cannot exceed 100%.",
-        "maxDecimals": "Commission rate cannot have more than 2 decimal places."
-      }
-    },
-    "updateDocumentLanguageDialog": {
-      "title": "Update document language",
-      "label": "Document language",
-      "confirm": "Save"
     },
     "deleteDialog": {
       "title": "Delete edition?",
@@ -195,6 +163,7 @@
   },
   "phase": {
     "control": {
+      "title": "Phases — {{editionName}}",
       "back": "Back to editions",
       "error": {
         "load": "Failed to load edition."
@@ -254,7 +223,7 @@
     "row": {
       "namePlaceholder": "e.g. Toys",
       "tablesPlaceholder": "e.g. 1, 2, 3",
-      "remove": "Remove",
+      "remove": "Remove category",
       "error": {
         "nameRequired": "Category name is required.",
         "tableRequired": "Assign at least one table to this category."
@@ -271,6 +240,31 @@
   "notFound": {
     "message": "The page you are looking for does not exist or is not yet available.",
     "back": "Back to home"
+  },
+  "volunteer": {
+    "deposit": {
+      "title": "Seller",
+      "searchLabel": "Search for a seller",
+      "noResults": "No seller found.",
+      "createButton": "Create a new profile",
+      "change": "Change seller",
+      "error": {
+        "search": "Failed to search sellers."
+      },
+      "form": {
+        "title": "Create seller profile",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "phone": "Phone",
+        "submit": "Create",
+        "cancel": "Cancel",
+        "error": {
+          "create": "Failed to create seller profile.",
+          "emailInvalid": "Email address is not valid."
+        }
+      }
+    }
   },
   "admin": {
     "users": {
@@ -326,6 +320,30 @@
         "enable": "Failed to enable account.",
         "resetPassword": "Failed to reset password.",
         "delete": "Failed to delete volunteer."
+      }
+    },
+    "sellers": {
+      "title": "Sellers",
+      "columns": {
+        "name": "Seller",
+        "phone": "Phone",
+        "email": "Email",
+        "actions": "Actions"
+      },
+      "actions": {
+        "delete": "Delete"
+      },
+      "deleteDialog": {
+        "title": "Delete seller?",
+        "description": "This seller profile and all their items for this edition will be permanently deleted. This action cannot be undone."
+      },
+      "success": {
+        "delete": "Seller deleted."
+      },
+      "empty": "No sellers registered yet.",
+      "error": {
+        "load": "Failed to load sellers.",
+        "delete": "Failed to delete seller."
       }
     },
     "settings": {

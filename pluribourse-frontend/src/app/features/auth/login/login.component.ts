@@ -1,12 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
+import { extractErrorType } from '../../../shared/http-error.util';
 
 @Component({
   selector: 'app-login',
@@ -53,10 +55,11 @@ export class LoginComponent {
           this.auth.clearSession();
           this.error.set('unauthorized-role');
       }
-    } catch (err: any) {
-      if (err?.error?.type === 'https://pluribourse/errors/no-active-edition') {
+    } catch (err) {
+      const errorType = err instanceof HttpErrorResponse ? extractErrorType(err) : undefined;
+      if (errorType === 'https://pluribourse/errors/no-active-edition') {
         this.error.set('no-active-edition');
-      } else if (err?.error?.type === 'https://pluribourse/errors/account-disabled') {
+      } else if (errorType === 'https://pluribourse/errors/account-disabled') {
         this.error.set('account-disabled');
       } else {
         this.error.set('invalid-credentials');

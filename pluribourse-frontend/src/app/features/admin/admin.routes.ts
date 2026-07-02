@@ -46,4 +46,9 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./editions/edition-categories/edition-categories.component').then((m) => m.EditionCategoriesComponent),
   },
+  {
+    path: 'sellers',
+    loadComponent: () =>
+      import('./sellers/seller-list.component').then((m) => m.SellerListComponent),
+  },
 ];
