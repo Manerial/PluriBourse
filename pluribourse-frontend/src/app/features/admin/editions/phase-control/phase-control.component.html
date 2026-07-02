@@ -1,13 +1,4 @@
-<div class="card card--narrow">
-  <div class="card__header">
-    <div class="card__header-title">
-      <a routerLink="/admin/editions" mat-icon-button [attr.aria-label]="'phase.control.back' | translate">
-        <mat-icon>arrow_back</mat-icon>
-      </a>
-      <h1 class="card__title">{{ 'phase.control.title' | translate: { editionName: edition()?.name ?? '' } }}</h1>
-    </div>
-  </div>
-
+<app-dialog-shell [title]="'phase.control.title' | translate: { editionName: edition()?.name ?? '' }" (close)="dialogRef.close()">
   @if (isLoading()) {
     <app-skeleton-row [rows]="3" />
   }
@@ -27,23 +18,14 @@
 
       <div class="phase-control__actions">
         @if (canRollback()) {
-          <button
-            type="button"
-            mat-button
-            [disabled]="isSubmitting()"
-            (click)="confirmRollback()">
+          <button type="button" mat-button [disabled]="isSubmitting()" (click)="confirmRollback()">
             <mat-icon>arrow_back</mat-icon>
             {{ 'phase.rollback.button' | translate }} {{ ('edition.phase.' + prevPhase()) | translate }}
           </button>
         }
 
         @if (canAdvance()) {
-          <button
-            type="button"
-            mat-flat-button
-            color="primary"
-            [disabled]="isSubmitting()"
-            (click)="confirmAdvance()">
+          <button type="button" mat-flat-button color="primary" [disabled]="isSubmitting()" (click)="confirmAdvance()">
             {{ 'phase.advance.button' | translate }} {{ ('edition.phase.' + nextPhase()) | translate }}
             <mat-icon>arrow_forward</mat-icon>
           </button>
@@ -51,4 +33,4 @@
       </div>
     </div>
   }
-</div>
+</app-dialog-shell>

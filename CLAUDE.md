@@ -15,6 +15,16 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 - **TOUJOURS** vérifier si un changement dans le code est valide ou challengeable (avec une argumentation détaillée) si un utilisateur fait une telle demande.
 - **TOUJOURS** proposer de rédiger une nouvelle story si un changement de code est trop impactant.
 
+## Budget IA
+- **TOUJOURS** vérifier que le crédit restant est suffisant avant de développer quoi que ce soit ou d'utiliser un skill.
+- **TOUJOURS** informer l'utilisateur s'il reste moins de 10% de crédit et lui demander s'il veut continuer.
+
+## Environnement de développement local
+- **TOUJOURS** partir du principe que les comptes présents dans la base de dev locale (MariaDB) sont des comptes réels de l'utilisateur, pas des fixtures de test.
+- **JAMAIS** créer, réinitialiser ou modifier un mot de passe (admin ou autre) dans l'environnement de développement local, même via un outil CLI prévu à cet effet (`reset-admin-password`, `create-admin`, etc.).
+- **JAMAIS** modifier les données de la base de développement locale sans confirmation explicite préalable.
+- **TOUJOURS** demander à l'utilisateur de vérifier lui-même pour une vérification visuelle.
+
 ## Architecture
 
 ### Backend (Spring Boot)

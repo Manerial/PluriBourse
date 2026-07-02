@@ -28,8 +28,15 @@ describe('ResetPasswordDialogComponent', () => {
     const fixture = TestBed.createComponent(ResetPasswordDialogComponent);
     fixture.detectChanges();
     const el = fixture.nativeElement;
-    expect(el.querySelector('.dialog__title')).not.toBeNull();
+    expect(el.querySelector('.dialog-shell__title')).not.toBeNull();
     expect(el.querySelector('.dialog__desc')).not.toBeNull();
+  });
+
+  it('close button calls cancel()', () => {
+    const fixture = TestBed.createComponent(ResetPasswordDialogComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.dialog-shell__close').click();
+    expect(mockClose).toHaveBeenCalledWith(undefined);
   });
 
   it('confirm() with valid form closes dialog with the password', () => {

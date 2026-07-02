@@ -275,18 +275,6 @@ textarea:focus-visible,
   }
 }
 
-// ── Narrow card variant ────────────────────────────────────────────────────────
-.card--narrow {
-  max-width: 640px;
-  margin-inline: auto;
-}
-
-.card__header-title {
-  display: flex;
-  align-items: center;
-  gap: var(--pb-space-sm);
-}
-
 // ── Edition categories ──────────────────────────────────────────────────────
 .category-copy-section {
   display: flex;
@@ -311,15 +299,35 @@ textarea:focus-visible,
   padding: var(--pb-space-lg);
 }
 
-.card--narrow .data-table {
-  th:first-child,
-  td:first-child {
-    padding-left: var(--pb-space-lg);
-  }
+// ── Dialog content utilities (paired with DialogShellComponent) ────────────
+.dialog__description,
+.dialog__desc {
+  margin: 0 0 var(--pb-space-lg);
+  font-size: 14px;
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.5;
+}
 
-  th:last-child,
-  td:last-child {
-    padding-right: var(--pb-space-lg);
+.dialog__field {
+  width: 100%;
+  margin-bottom: var(--pb-space-md);
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--pb-space-sm);
+  margin-top: var(--pb-space-md);
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-md);
+
+  mat-form-field {
+    width: 100%;
   }
 }
 

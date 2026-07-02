@@ -1,0 +1,39 @@
+// dialog-shell.component.scss — the single source of truth for dialog chrome
+.dialog-shell {
+  display: flex;
+  flex-direction: column;
+  background: var(--mat-sys-surface);
+  border-radius: var(--pb-rounded-xl);
+  box-shadow: var(--pb-elevation-3);
+  min-width: 360px;
+  max-width: 640px; // matches DESIGN.md components.dialog.max-width
+  width: 100%;
+  max-height: calc(100vh - var(--pb-space-2xl));
+  outline: none;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--pb-space-md);
+    padding: var(--pb-space-lg) var(--pb-space-lg) 0;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__close {
+    flex-shrink: 0;
+    margin: -8px -8px 0 0; // optically align the 44px hit-target with the header edge
+  }
+
+  &__body {
+    padding: var(--pb-space-lg);
+    overflow-y: auto;
+  }
+}

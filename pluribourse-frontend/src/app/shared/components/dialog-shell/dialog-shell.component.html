@@ -1,0 +1,16 @@
+<div class="dialog-shell">
+  <div class="dialog-shell__header">
+    <h2 class="dialog-shell__title">{{ title() }}</h2>
+    <button
+      type="button"
+      mat-icon-button
+      class="dialog-shell__close"
+      [attr.aria-label]="'common.dialog.close' | translate"
+      (click)="close.emit()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div class="dialog-shell__body">
+    <ng-content />
+  </div>
+</div>

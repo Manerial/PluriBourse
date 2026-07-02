@@ -40,5 +40,6 @@ describe('ConfirmDialogService', () => {
     const callArgs = mockDialog.open.mock.calls[0][1];
     expect(callArgs.hasBackdrop).toBe(true);
     expect(callArgs.backdropClass).toBe('dialog-backdrop');
+    expect(callArgs.ariaLabel).toBe('T');
   });
 });

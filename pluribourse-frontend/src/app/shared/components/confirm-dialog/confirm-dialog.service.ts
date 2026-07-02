@@ -16,7 +16,7 @@ export class ConfirmDialogService {
         backdropClass: 'dialog-backdrop',
         panelClass: 'dialog-panel',
         disableClose: false,
-        ariaLabelledBy: 'dialog-title',
+        ariaLabel: data.title,
         ariaDescribedBy: 'dialog-desc',
       }
     );

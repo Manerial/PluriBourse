@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -11,6 +10,7 @@ import { UserDto } from '../../../models/user.model';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { ResetPasswordDialogComponent } from './reset-password-dialog/reset-password-dialog.component';
+import { UserFormComponent } from './user-form.component';
 
 const MOCK_VOLUNTEERS: UserDto[] = [
   { id: 1, firstName: 'Alice', lastName: 'Smith', username: 'alice', role: 'VOLUNTEER', enabled: true },
@@ -51,7 +51,6 @@ describe('UserListComponent', () => {
     await TestBed.configureTestingModule({
       imports: [UserListComponent],
       providers: [
-        provideRouter([]),
         provideTranslateService({ lang: 'en' }),
         { provide: UserService, useValue: userServiceMock },
         { provide: ToastService, useValue: toastMock },
@@ -105,6 +104,19 @@ describe('UserListComponent', () => {
     await component.toggleEnabled(MOCK_VOLUNTEERS[0]);
     expect(toastMock.showError).toHaveBeenCalledOnce();
     expect(toastMock.showSuccess).not.toHaveBeenCalled();
+  });
+
+  it('openCreateDialog opens UserFormComponent', () => {
+    component.openCreateDialog();
+    expect(dialogMock.open).toHaveBeenCalledWith(UserFormComponent, expect.anything());
+  });
+
+  it('reloads the user list after the create dialog closes', async () => {
+    dialogMock.open.mockReturnValueOnce({ closed: of(undefined) });
+    userServiceMock.getVolunteers.mockClear();
+    component.openCreateDialog();
+    await fixture.whenStable();
+    expect(userServiceMock.getVolunteers).toHaveBeenCalledTimes(1);
   });
 
   it('opens reset dialog with correct user name', async () => {

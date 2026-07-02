@@ -1,12 +1,7 @@
-<div class="dialog">
-  <h2 id="dialog-title" class="dialog__title">{{ data.title }}</h2>
+<app-dialog-shell [title]="data.title" (close)="cancel()">
   <p id="dialog-desc" class="dialog__description">{{ data.description }}</p>
   <div class="dialog__actions">
-    <button
-      type="button"
-      mat-button
-      cdkFocusInitial
-      (click)="cancel()">
+    <button type="button" mat-button cdkFocusInitial (click)="cancel()">
       {{ data.cancelLabel ?? ('common.dialog.cancel' | translate) }}
     </button>
     <button
@@ -17,4 +12,4 @@
       {{ data.confirmLabel ?? ('common.dialog.confirm' | translate) }}
     </button>
   </div>
-</div>
+</app-dialog-shell>

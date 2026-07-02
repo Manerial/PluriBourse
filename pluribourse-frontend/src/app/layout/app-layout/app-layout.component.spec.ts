@@ -65,7 +65,6 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/users', component: StubComponent },
           { path: 'admin/settings', component: StubComponent },
           { path: 'admin/editions', component: StubComponent },
-          { path: 'admin/editions/:id/phase', component: StubComponent },
           { path: 'volunteer/deposit', component: StubComponent },
           { path: 'account', component: StubComponent },
           { path: '404', component: StubComponent },
@@ -97,6 +96,14 @@ describe('AppLayoutComponent', () => {
     expect(fixture.nativeElement.querySelector('.phase-chip')).toBeTruthy();
   });
 
+  it('renders a link to /account in the user menu', () => {
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('.user-menu-trigger');
+    trigger.click();
+    fixture.detectChanges();
+    const link: HTMLAnchorElement | null = document.querySelector('a[href="/account"]');
+    expect(link).toBeTruthy();
+  });
+
   describe('phase chip — no active edition', () => {
     it('shows nav.phase.none text and is not a link', () => {
       mockEdition.set(null);
@@ -114,10 +121,10 @@ describe('AppLayoutComponent', () => {
       fixture.detectChanges();
     });
 
-    it('renders a link navigating to /admin/editions/:id/phase', () => {
+    it('renders a link navigating to /admin/editions', () => {
       const chip: HTMLAnchorElement = fixture.nativeElement.querySelector('a.phase-chip');
       expect(chip).toBeTruthy();
-      expect(chip.getAttribute('href')).toBe('/admin/editions/42/phase');
+      expect(chip.getAttribute('href')).toBe('/admin/editions');
     });
 
     it('renders the translated phase text', () => {
@@ -138,6 +145,14 @@ describe('AppLayoutComponent', () => {
       expect(link).toBeFalsy();
       const span = fixture.nativeElement.querySelector('span.phase-chip:not(.phase-chip--inactive)');
       expect(span).toBeTruthy();
+    });
+
+    it('still renders the /account link in the user menu for volunteers', () => {
+      const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('.user-menu-trigger');
+      trigger.click();
+      fixture.detectChanges();
+      const link: HTMLAnchorElement | null = document.querySelector('a[href="/account"]');
+      expect(link).toBeTruthy();
     });
   });
 
@@ -257,9 +272,13 @@ describe('AppLayoutComponent', () => {
     });
   });
 
-  it('calls auth.logout() when logout button is clicked', () => {
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-button]');
-    btn.click();
+  it('calls auth.logout() when logout menu item is clicked', () => {
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('.user-menu-trigger');
+    trigger.click();
+    fixture.detectChanges();
+    const logoutItem: HTMLButtonElement | null = document.querySelector('button[mat-menu-item]');
+    expect(logoutItem).toBeTruthy();
+    logoutItem!.click();
     expect(mockLogout).toHaveBeenCalledOnce();
   });
 });

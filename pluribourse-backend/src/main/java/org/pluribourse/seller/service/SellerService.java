@@ -1,25 +1,20 @@
 package org.pluribourse.seller.service;
 
-import com.jPageFlow.utils.FilterDto;
-import com.jPageFlow.utils.FilterService;
-import lombok.RequiredArgsConstructor;
-import org.pluribourse.edition.entity.Edition;
-import org.pluribourse.edition.entity.PhaseType;
-import org.pluribourse.edition.service.EditionService;
-import org.pluribourse.seller.dto.SellerDto;
-import org.pluribourse.seller.entity.SellerProfile;
-import org.pluribourse.seller.exception.SellerDeletionNotAllowedException;
-import org.pluribourse.seller.exception.SellerEmailAlreadyExistsException;
-import org.pluribourse.seller.exception.SellerManagementNotAllowedException;
-import org.pluribourse.seller.exception.SellerNotFoundException;
-import org.pluribourse.seller.mapper.SellerMapper;
-import org.pluribourse.seller.repository.SellerRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
+import com.jPageFlow.utils.*;
+import lombok.*;
+import org.pluribourse.edition.entity.*;
+import org.pluribourse.edition.service.*;
+import org.pluribourse.seller.dto.*;
+import org.pluribourse.seller.entity.*;
+import org.pluribourse.seller.exception.*;
+import org.pluribourse.seller.mapper.*;
+import org.pluribourse.seller.repository.*;
+import org.springframework.data.domain.*;
+import org.springframework.stereotype.*;
+import org.springframework.transaction.annotation.*;
+import org.springframework.util.*;
 
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +62,7 @@ public class SellerService {
     public void delete(Long id) {
         SellerProfile seller = repository.findById(id)
                 .orElseThrow(() -> new SellerNotFoundException(id));
-        if (seller.getEdition().getPhase() != PhaseType.DEPOSIT) {
+        if (!seller.canBeDeleted()) {
             throw new SellerDeletionNotAllowedException();
         }
         repository.delete(seller);

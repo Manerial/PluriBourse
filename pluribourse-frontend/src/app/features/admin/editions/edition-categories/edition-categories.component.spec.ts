@@ -1,8 +1,7 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
-import { provideRouter } from '@angular/router';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { EditionCategoriesComponent } from './edition-categories.component';
@@ -45,6 +44,7 @@ describe('EditionCategoriesComponent', () => {
     copyFromEdition: vi.fn().mockReturnValue(of([MOCK_CATEGORY])),
   };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
+  const dialogRefMock = { close: vi.fn() };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -55,15 +55,19 @@ describe('EditionCategoriesComponent', () => {
     await TestBed.configureTestingModule({
       imports: [EditionCategoriesComponent],
       providers: [
-        provideRouter([]),
         provideAnimations(),
         provideTranslateService({ lang: 'en' }),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '1' } } } },
+        { provide: DIALOG_DATA, useValue: { editionId: 1 } },
+        { provide: DialogRef, useValue: dialogRefMock },
         { provide: EditionService, useValue: editionServiceMock },
         { provide: CategoryService, useValue: categoryServiceMock },
         { provide: ToastService, useValue: toastMock },
       ],
     }).compileComponents();
+
+    TestBed.inject(TranslateService).setTranslation('en', {
+      edition: { phase: { DEPOSIT: 'Deposit', SALE: 'Sale' } },
+    });
 
     fixture = TestBed.createComponent(EditionCategoriesComponent);
     component = fixture.componentInstance;
@@ -91,6 +95,18 @@ describe('EditionCategoriesComponent', () => {
     editionServiceMock.getById.mockReturnValue(of(MOCK_EDITION_DEPOSIT));
     await component.ngOnInit();
     expect(component.isReadOnly()).toBe(true);
+  });
+
+  it('lockedPhaseLabel reflects the current edition phase', async () => {
+    editionServiceMock.getById.mockReturnValue(of(MOCK_EDITION_DEPOSIT));
+    await component.ngOnInit();
+    expect(component.lockedPhaseLabel()).toBe('Deposit');
+  });
+
+  it('lockedPhaseLabel reflects a different phase (not hardcoded to Deposit)', async () => {
+    editionServiceMock.getById.mockReturnValue(of({ ...MOCK_EDITION_DEPOSIT, phase: 'SALE' }));
+    await component.ngOnInit();
+    expect(component.lockedPhaseLabel()).toBe('Sale');
   });
 
   it('addCategory pushes a new empty row', () => {
@@ -148,6 +164,26 @@ describe('EditionCategoriesComponent', () => {
     component.categories = [{ id: null, name: 'Jouets', tableInput: '1', rowError: null }];
     await component.onSave();
     expect(toastMock.showError).toHaveBeenCalled();
+  });
+
+  it('onSave closes the dialog after a successful save', async () => {
+    categoryServiceMock.saveCategories.mockReturnValue(of([MOCK_CATEGORY]));
+    component.categories = [{ id: null, name: 'Jouets', tableInput: '1, 2', rowError: null }];
+    await component.onSave();
+    expect(dialogRefMock.close).toHaveBeenCalledOnce();
+  });
+
+  it('onSave does not close the dialog when the service fails', async () => {
+    categoryServiceMock.saveCategories.mockReturnValue(throwError(() => new Error('server')));
+    component.categories = [{ id: null, name: 'Jouets', tableInput: '1', rowError: null }];
+    await component.onSave();
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
+  });
+
+  it('onSave does not close the dialog when validation fails', async () => {
+    component.categories = [{ id: null, name: '', tableInput: '1, 2', rowError: null }];
+    await component.onSave();
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
   });
 
   it('onCopy calls copyFromEdition and replaces categories with success toast', async () => {

@@ -9,7 +9,7 @@
     <div class="topbar__center">
       @if (currentEdition(); as edition) {
         @if (isAdmin()) {
-          <a [routerLink]="['/admin/editions', edition.id, 'phase']" class="phase-chip">
+          <a routerLink="/admin/editions" class="phase-chip">
             <span class="phase-chip__dot" aria-hidden="true">●</span>
             {{ ('edition.phase.' + edition.phase) | translate }}
           </a>
@@ -33,9 +33,24 @@
         [class.badge--volunteer]="isVolunteer()">
         {{ isAdmin() ? ('nav.role.admin' | translate) : ('nav.role.volunteer' | translate) }}
       </span>
-      <button mat-button type="button" (click)="logout()">
-        {{ 'nav.logout' | translate }}
+      <button
+        mat-button
+        type="button"
+        class="user-menu-trigger"
+        [matMenuTriggerFor]="userMenu">
+        <mat-icon aria-hidden="true">account_circle</mat-icon>
+        {{ 'nav.userMenu' | translate }}
       </button>
+      <mat-menu #userMenu="matMenu">
+        <a mat-menu-item routerLink="/account">
+          <mat-icon aria-hidden="true">person</mat-icon>
+          <span>{{ 'nav.account' | translate }}</span>
+        </a>
+        <button mat-menu-item type="button" (click)="logout()">
+          <mat-icon aria-hidden="true">logout</mat-icon>
+          <span>{{ 'nav.logout' | translate }}</span>
+        </button>
+      </mat-menu>
     </div>
   </header>
 

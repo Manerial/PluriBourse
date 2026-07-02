@@ -1,7 +1,7 @@
 ---
 name: PluriBourse
 status: final
-updated: 2026-06-15
+updated: 2026-07-02
 colors:
   # Thème clair — corail primaire
   primary: '#C44626'
@@ -191,6 +191,8 @@ components:
     radius: '{rounded.xl}'
     shadow: '{elevation.level-3}'
     padding: '{spacing.lg}'
+    max-width: '640px'
+    close-button: 'icon-button, top-right, 44x44px target, icône close'
   topbar:
     background: '{colors.surface}'
     height: '56px'
@@ -328,8 +330,11 @@ Pill `{rounded.full}`. Admin : fond `{colors.primary-container}`, texte `{colors
 **Status chips** — listes de vendeurs, articles, reversements
 Trois variants : success (vert), warning (corail doux), error (rouge). Toujours avec une icône Material Symbols avant le label (taille 14px).
 
+**Dialog** — conteneur mutualisé (`DialogShellComponent`) pour tous les dialogs de l'appli, confirmations comme formulaires courts
+Radius `{rounded.xl}`. Largeur `{components.dialog.max-width}` (640px), corps scrollable au-delà. Croix de fermeture (`{components.dialog.close-button}`) systématique en haut à droite, à côté du titre. Overlay sombre `rgba(0,0,0,0.5)`.
+
 **Dialog de confirmation** — transitions de phase, actions destructives
-Radius `{rounded.xl}`. Toujours : titre explicite + description des conséquences + deux boutons (action confirmée = `primary` ou `error`, annulation = `ghost`). Jamais de dialog sans description des conséquences. Overlay sombre `rgba(0,0,0,0.5)`. Exception : dans les dialogs de retour arrière de phase (non destructif), le bouton de confirmation peut utiliser le style `secondary` pour signaler visuellement une action moins engagée qu'une avancée de phase.
+Toujours : titre explicite + description des conséquences + deux boutons (action confirmée = `primary` ou `error`, annulation = `ghost`), en plus de la croix de fermeture du shell. Jamais de dialog sans description des conséquences. Exception : dans les dialogs de retour arrière de phase (non destructif), le bouton de confirmation peut utiliser le style `secondary` pour signaler visuellement une action moins engagée qu'une avancée de phase.
 
 **Sidebar item** — Admin uniquement
 Fond transparent par défaut, texte `{colors.on-surface-muted}`. Actif : fond `{colors.primary}`, texte blanc. Icône Material Symbols 18px avant le label. Hover : fond `rgba(255,255,255,0.08)`.

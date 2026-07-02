@@ -5,7 +5,8 @@
   "common": {
     "dialog": {
       "cancel": "Annuler",
-      "confirm": "Confirmer"
+      "confirm": "Confirmer",
+      "close": "Fermer"
     },
     "toast": {
       "close": "Fermer"
@@ -57,6 +58,8 @@
   },
   "nav": {
     "logout": "Se déconnecter",
+    "account": "Mon compte",
+    "userMenu": "Menu utilisateur",
     "phase": {
       "none": "Aucune édition en cours"
     },
@@ -118,7 +121,6 @@
       },
       "submit": "Créer",
       "cancel": "Annuler",
-      "backToList": "Retour à la liste des éditions",
       "error": {
         "alreadyActive": "Une édition est déjà active. Clôturez-la avant d'en créer une nouvelle.",
         "save": "Impossible de créer l'édition."
@@ -146,6 +148,8 @@
     "actions": {
       "managePhase": "Gérer les phases",
       "manageCategories": "Gérer les catégories",
+      "phases": "Phases",
+      "categories": "Catégories",
       "edit": "Modifier",
       "delete": "Supprimer",
       "error": {
@@ -164,7 +168,6 @@
   "phase": {
     "control": {
       "title": "Phases — {{editionName}}",
-      "back": "Retour aux éditions",
       "error": {
         "load": "Impossible de charger l'édition."
       }
@@ -200,9 +203,8 @@
   },
   "category": {
     "title": "Catégories — {{editionName}}",
-    "back": "Retour aux éditions",
     "locked": {
-      "banner": "Les catégories sont verrouillées — l'édition est entrée en phase de dépôt."
+      "banner": "Les catégories sont verrouillées — l'édition est en phase {{phase}}."
     },
     "copy": {
       "label": "Copier depuis une édition clôturée",

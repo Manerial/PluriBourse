@@ -683,6 +683,51 @@ afin d'éviter les erreurs de saisie et d'avoir une interface cohérente avec le
 **Quand** la fermeture est déclenchée (bouton Annuler ou Échap)
 **Alors** aucune action API n'est effectuée
 
+### Story 1.11 : Dialogs mutualisés pour la gestion des éditions et des bénévoles
+
+En tant qu'administrateur,
+je veux créer/modifier une édition, gérer ses phases, gérer ses catégories et ajouter un bénévole depuis des boîtes de dialogue plutôt que des pages dédiées,
+afin de rester dans le contexte de la liste en cours et de bénéficier d'une fermeture cohérente (croix, Annuler, Echap) sur toutes ces actions courtes.
+
+**Dépendances :** Story 1.8 (CDK Dialog, `ConfirmDialogComponent`), Story 1.10 (`ResetPasswordDialogComponent`), Story 2.1 (CRUD édition), Story 2.2 (contrôle de phase), Story 2.5 (catégories & tables)
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin est sur `/admin/editions`
+**Quand** il clique sur « Créer une édition »
+**Alors** un dialog s'ouvre (via `DialogShellComponent`) avec le formulaire de création, sans changement d'URL
+
+**Étant donné** que l'admin clique sur « Modifier » sur une ligne d'édition
+**Quand** le dialog s'ouvre
+**Alors** le formulaire est pré-rempli avec les données de l'édition et le titre du dialog affiche son nom
+
+**Étant donné** que l'admin clique sur « Gérer les phases » sur une ligne d'édition
+**Quand** le dialog s'ouvre
+**Alors** le contrôle de phase (phase actuelle, boutons d'avancement/retour) s'affiche dans le dialog
+**Et** les dialogs de confirmation existants (avancer/reculer de phase) continuent de fonctionner par-dessus ce dialog
+
+**Étant donné** que l'admin clique sur « Gérer les catégories » sur une ligne d'édition
+**Quand** le dialog s'ouvre
+**Alors** le tableau de catégories (ajout/suppression de lignes) s'affiche dans le dialog
+**Et** le corps du dialog défile verticalement si le contenu dépasse la hauteur du viewport, tandis que le titre et la croix de fermeture restent fixes
+
+**Étant donné** que l'admin est sur `/admin/users`
+**Quand** il clique sur « Créer un utilisateur »
+**Alors** un dialog s'ouvre avec le formulaire d'ajout de bénévole, sans changement d'URL
+
+**Étant donné** que n'importe lequel de ces 4 dialogs (ou les 2 dialogs existants — confirmation, réinitialisation de mot de passe) est ouvert
+**Quand** l'admin clique sur la croix de fermeture en haut à droite, sur Annuler, ou appuie sur Échap
+**Alors** le dialog se ferme sans effectuer l'action
+**Et** le focus revient sur l'élément qui a déclenché son ouverture
+
+**Étant donné** que les routes `editions/create`, `editions/:id/edit`, `editions/:id/phase`, `editions/:id/categories` et `users/create` existaient précédemment dans `admin.routes.ts`
+**Quand** cette story est complète
+**Alors** ces routes n'existent plus — les fonctionnalités correspondantes ne sont accessibles que par dialog depuis la liste parente
+
+**Étant donné** que `ConfirmDialogComponent` et `ResetPasswordDialogComponent` existent déjà (Stories 1.8, 1.10)
+**Quand** cette story est complète
+**Alors** les deux utilisent `DialogShellComponent` comme conteneur commun, avec une croix de fermeture fonctionnellement équivalente à Annuler/Échap
+
 ---
 
 ## Epic 2 : Gestion du cycle de vie des éditions
@@ -1047,6 +1092,18 @@ afin que les articles soient correctement catalogués et localisés physiquement
 **Quand** un bénévole modifie l'indicateur complet/incomplet ou le commentaire
 **Alors** la modification est sauvegardée immédiatement (FR-025)
 **Et** tous les prix sont stockés sous forme de BigDecimal (NFR-003)
+
+**Étant donné** que l'entité `Item` (article) est introduite par cette story
+**Quand** cette story est implémentée
+**Alors** `SellerProfile.canBeDeleted()` est mise à jour pour remplacer le `hasNoSelledArticles = false` codé en dur (`// TODO avec Story 3.2`) par une vérification réelle : le vendeur peut être supprimé s'il est en phase Préparation ou Dépôt **et** qu'aucun article n'est enregistré pour lui dans cette édition — pas seulement l'absence d'article vendu (FR-021)
+
+**Note technique :** `SellerProfile.canBeDeleted()` (`pluribourse-backend/src/main/java/org/pluribourse/seller/entity/SellerProfile.java`) combine déjà la condition de phase (`isOnDeletablePhase`) avec une condition `hasNoSelledArticles` volontairement figée à `false` depuis la Story 3.1, en attendant que cette story introduise l'entité `Item`. La contrainte réelle porte sur l'absence de tout article enregistré pour ce vendeur (et non sur son seul statut vendu) — le nom de la variable devrait être renommé en conséquence (ex. `hasNoRegisteredArticles`) lors de l'implémentation.
+
+**Étant donné** qu'une édition est en phase Préparation (donc a priori supprimable selon FR-014) mais possède des articles enregistrés — cas possible après un retour arrière Dépôt → Préparation (FR-082) qui préserve les données déjà saisies
+**Quand** l'admin tente de supprimer cette édition
+**Alors** la suppression est refusée tant qu'il reste au moins un article enregistré pour cette édition, même si la phase autoriserait la suppression
+
+**Note technique :** `EditionService.deleteEdition()` (`pluribourse-backend/src/main/java/org/pluribourse/edition/service/EditionService.java`) ne vérifie aujourd'hui que la phase (`EditionCannotBeDeletedException` si différente de Préparation, Story 2.1/FR-014). Cette story doit y ajouter la même vérification d'absence d'articles enregistrés que celle introduite sur `SellerProfile.canBeDeleted()` ci-dessus, appliquée à l'ensemble des vendeurs de l'édition.
 
 ### Story 3.3 : Création et gestion des lots
 

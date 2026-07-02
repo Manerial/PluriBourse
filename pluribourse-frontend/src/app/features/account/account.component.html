@@ -1,15 +1,23 @@
-<h1>{{ 'account.title' | translate }}</h1>
-
-<form [formGroup]="form" (ngSubmit)="onSubmit()">
-  <div>
-    <label for="language">{{ 'account.language.label' | translate }}</label>
-    <select id="language" formControlName="language">
-      <option value="EN">{{ 'account.language.EN' | translate }}</option>
-      <option value="FR">{{ 'account.language.FR' | translate }}</option>
-    </select>
+<div class="card form-card">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'account.title' | translate }}</h1>
   </div>
 
-  <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || isSaving()">
-    {{ 'account.save' | translate }}
-  </button>
-</form>
+  <div class="card__body">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'account.language.label' | translate }}</mat-label>
+        <mat-select formControlName="language">
+          <mat-option value="EN">{{ 'account.language.EN' | translate }}</mat-option>
+          <mat-option value="FR">{{ 'account.language.FR' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="card__actions">
+        <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || isSaving()">
+          {{ 'account.save' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

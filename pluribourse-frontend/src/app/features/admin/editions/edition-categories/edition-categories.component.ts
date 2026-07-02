@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,6 +17,7 @@ import { CategoryService } from '../../../../services/category.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { NotificationInlineComponent } from '../../../../shared/components/notification-inline/notification-inline.component';
 import { SkeletonRowComponent } from '../../../../shared/components/skeleton-row/skeleton-row.component';
+import { DialogShellComponent } from '../../../../shared/components/dialog-shell/dialog-shell.component';
 
 interface EditableCategoryRow {
   id: number | null;
@@ -24,13 +26,17 @@ interface EditableCategoryRow {
   rowError: string | null;
 }
 
+export interface EditionCategoriesDialogData {
+  editionId: number;
+}
+
 @Component({
   selector: 'app-edition-categories',
   standalone: true,
   imports: [
-    FormsModule, RouterLink,
+    FormsModule,
     MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    TranslatePipe, NotificationInlineComponent, SkeletonRowComponent
+    TranslatePipe, NotificationInlineComponent, SkeletonRowComponent, DialogShellComponent
   ],
   templateUrl: './edition-categories.component.html',
 })
@@ -39,7 +45,9 @@ export class EditionCategoriesComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
-  private readonly route = inject(ActivatedRoute);
+
+  readonly dialogRef = inject<DialogRef<void>>(DialogRef);
+  readonly data = inject<EditionCategoriesDialogData>(DIALOG_DATA);
 
   readonly edition = signal<EditionDto | null>(null);
   readonly closedEditions = signal<EditionDto[]>([]);
@@ -49,14 +57,21 @@ export class EditionCategoriesComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly selectedSourceEditionId = signal<number | null>(null);
 
+  private readonly langChange = toSignal(this.translate.onLangChange, { initialValue: null });
+
+  readonly lockedPhaseLabel = computed(() => {
+    this.langChange();
+    const phase = this.edition()?.phase;
+    return phase ? this.translate.instant('edition.phase.' + phase) : '';
+  });
+
   categories: EditableCategoryRow[] = [];
 
   private editionId = 0;
 
   async ngOnInit(): Promise<void> {
-    const rawId = this.route.snapshot.paramMap.get('id');
-    this.editionId = Number(rawId);
-    if (!rawId || isNaN(this.editionId) || this.editionId <= 0) {
+    this.editionId = this.data.editionId;
+    if (!this.editionId || this.editionId <= 0) {
       this.error.set('category.load.error');
       return;
     }
@@ -103,6 +118,7 @@ export class EditionCategoriesComponent implements OnInit {
       const saved = await firstValueFrom(this.categoryService.saveCategories(this.editionId, dtos));
       this.categories = saved.map(c => this.toRow(c));
       this.toast.showSuccess(this.translate.instant('category.save.success'));
+      this.dialogRef.close();
     } catch {
       this.toast.showError(this.translate.instant('category.save.error'));
     } finally {

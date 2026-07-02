@@ -29,8 +29,15 @@ describe('ConfirmDialogComponent', () => {
     const fixture = TestBed.createComponent(ConfirmDialogComponent);
     fixture.detectChanges();
     const el = fixture.nativeElement;
-    expect(el.querySelector('.dialog__title').textContent).toContain('Confirm action');
+    expect(el.querySelector('.dialog-shell__title').textContent).toContain('Confirm action');
     expect(el.querySelector('.dialog__description').textContent).toContain('This cannot be undone.');
+  });
+
+  it('close button calls cancel()', () => {
+    const fixture = TestBed.createComponent(ConfirmDialogComponent);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.dialog-shell__close').click();
+    expect(mockClose).toHaveBeenCalledWith(false);
   });
 
   it('confirm() calls dialogRef.close(true)', () => {

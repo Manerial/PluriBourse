@@ -1,13 +1,4 @@
-<div class="card card--list card--narrow">
-  <div class="card__header">
-    <div class="card__header-title">
-      <a routerLink="/admin/editions" mat-icon-button [attr.aria-label]="'category.back' | translate">
-        <mat-icon>arrow_back</mat-icon>
-      </a>
-      <h1 class="card__title">{{ 'category.title' | translate: { editionName: edition()?.name ?? '' } }}</h1>
-    </div>
-  </div>
-
+<app-dialog-shell [title]="'category.title' | translate: { editionName: edition()?.name ?? '' }" (close)="dialogRef.close()">
   @if (isLoading()) {
     <app-skeleton-row [rows]="3" />
   }
@@ -18,7 +9,9 @@
 
   @if (!isLoading() && !error()) {
     @if (isReadOnly()) {
-      <app-notification-inline [message]="'category.locked.banner' | translate" variant="warning" />
+      <app-notification-inline
+        [message]="'category.locked.banner' | translate: { phase: lockedPhaseLabel() }"
+        variant="warning" />
     }
 
     @if (!isReadOnly()) {
@@ -119,4 +112,4 @@
       </div>
     }
   }
-</div>
+</app-dialog-shell>

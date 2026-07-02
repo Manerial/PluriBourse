@@ -1,7 +1,9 @@
 <div class="card card--list">
   <div class="card__header">
     <h1 class="card__title">{{ 'edition.list.title' | translate }}</h1>
-    <a routerLink="create" mat-flat-button color="primary">{{ 'edition.list.createButton' | translate }}</a>
+    <button type="button" mat-flat-button color="primary" (click)="openCreateDialog()">
+      {{ 'edition.list.createButton' | translate }}
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -18,7 +20,7 @@
         icon="event"
         [message]="'edition.list.empty' | translate"
         [actionLabel]="'edition.list.emptyAction' | translate"
-        (action)="navigateToCreate()"
+        (action)="openCreateDialog()"
       />
     } @else {
       <table class="data-table">
@@ -46,20 +48,28 @@
               <td>{{ edition.endDate ?? '—' }}</td>
               <td>
                 <div class="actions-cell">
-                  <a
-                    [routerLink]="['/admin/editions', edition.id, 'phase']"
-                    mat-button>
-                    {{ 'edition.actions.managePhase' | translate }}
-                  </a>
-                  <a
-                    [routerLink]="['/admin/editions', edition.id, 'categories']"
-                    mat-button>
-                    {{ 'edition.actions.manageCategories' | translate }}
-                  </a>
                   <button
                     type="button"
                     mat-button
-                    (click)="navigateToEdit(edition)">
+                    [matTooltip]="'edition.actions.managePhase' | translate"
+                    [attr.aria-label]="'edition.actions.managePhase' | translate"
+                    (click)="openPhaseDialog(edition)">
+                    <mat-icon>timeline</mat-icon>
+                    {{ 'edition.actions.phases' | translate }}
+                  </button>
+                  <button
+                    type="button"
+                    mat-button
+                    [matTooltip]="'edition.actions.manageCategories' | translate"
+                    [attr.aria-label]="'edition.actions.manageCategories' | translate"
+                    (click)="openCategoriesDialog(edition)">
+                    <mat-icon>category</mat-icon>
+                    {{ 'edition.actions.categories' | translate }}
+                  </button>
+                  <button
+                    type="button"
+                    mat-button
+                    (click)="openEditDialog(edition)">
                     <mat-icon>edit</mat-icon>
                     {{ 'edition.actions.edit' | translate }}
                   </button>

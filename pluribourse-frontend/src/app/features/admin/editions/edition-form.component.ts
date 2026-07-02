@@ -1,10 +1,10 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -13,37 +13,47 @@ import { EditionService } from '../../../services/edition.service';
 import { GlobalInstanceConfigService } from '../../../services/global-instance-config.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
+import { DialogShellComponent } from '../../../shared/components/dialog-shell/dialog-shell.component';
 import { maxDecimalsValidator } from '../../../shared/validators/financial.validators';
+
+export interface EditionFormDialogData {
+  editionId: number | null; // null = create mode
+}
 
 @Component({
   selector: 'app-edition-form',
   standalone: true,
   imports: [
-    ReactiveFormsModule, RouterLink,
-    MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    TranslatePipe, NotificationInlineComponent
+    ReactiveFormsModule,
+    MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+    TranslatePipe, NotificationInlineComponent, DialogShellComponent
   ],
   templateUrl: './edition-form.component.html',
 })
 export class EditionFormComponent implements OnInit {
   private readonly editionService = inject(EditionService);
   private readonly instanceConfigService = inject(GlobalInstanceConfigService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly fb = inject(FormBuilder);
 
-  readonly isEditMode = signal(false);
+  readonly dialogRef = inject<DialogRef<void>>(DialogRef);
+  readonly data = inject<EditionFormDialogData>(DIALOG_DATA);
+
+  readonly isEditMode = computed(() => this.data.editionId !== null);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly formError = signal<string | null>(null);
+  readonly loadedEditionName = signal<string | null>(null);
 
-  private editionId: number | null = null;
+  private readonly langChange = toSignal(this.translate.onLangChange, { initialValue: null });
 
-  readonly titleKey = computed(() =>
-    this.isEditMode() ? 'edition.edit.title' : 'edition.create.title'
-  );
+  readonly dialogTitle = computed(() => {
+    this.langChange();
+    return this.isEditMode()
+      ? (this.loadedEditionName() ?? this.translate.instant('edition.edit.title'))
+      : this.translate.instant('edition.create.title');
+  });
   readonly submitKey = computed(() =>
     this.isEditMode() ? 'edition.edit.submit' : 'edition.create.submit'
   );
@@ -60,11 +70,8 @@ export class EditionFormComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    if (idParam !== null) {
-      this.isEditMode.set(true);
-      this.editionId = +idParam;
-      await this.loadEdition(this.editionId);
+    if (this.data.editionId !== null) {
+      await this.loadEdition(this.data.editionId);
     } else {
       await this.loadDefaults();
     }
@@ -74,6 +81,7 @@ export class EditionFormComponent implements OnInit {
     this.isLoading.set(true);
     try {
       const edition = await firstValueFrom(this.editionService.getById(id));
+      this.loadedEditionName.set(edition.name);
       this.form.patchValue({
         name: edition.name,
         commissionRate: edition.commissionRate,
@@ -121,14 +129,14 @@ export class EditionFormComponent implements OnInit {
         startDate: startDate || null,
         endDate: endDate || null
       };
-      if (this.isEditMode() && this.editionId !== null) {
-        await firstValueFrom(this.editionService.update(this.editionId, payload));
+      if (this.isEditMode() && this.data.editionId !== null) {
+        await firstValueFrom(this.editionService.update(this.data.editionId, payload));
         this.toast.showSuccess(this.translate.instant('edition.edit.success'));
       } else {
         await firstValueFrom(this.editionService.create(payload));
         this.toast.showSuccess(this.translate.instant('edition.create.success'));
       }
-      this.router.navigateByUrl('/admin/editions');
+      this.dialogRef.close();
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422) {
         const errorType: string = (err.error as { type?: string })?.type ?? '';
@@ -147,5 +155,9 @@ export class EditionFormComponent implements OnInit {
     } finally {
       this.isSaving.set(false);
     }
+  }
+
+  cancel(): void {
+    this.dialogRef.close();
   }
 }

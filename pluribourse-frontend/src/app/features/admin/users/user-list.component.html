@@ -1,7 +1,9 @@
 <div class="card card--list">
   <div class="card__header">
     <h1 class="card__title">{{ 'admin.users.title' | translate }}</h1>
-    <a routerLink="create" mat-flat-button color="primary">{{ 'admin.users.actions.create' | translate }}</a>
+    <button type="button" mat-flat-button color="primary" (click)="openCreateDialog()">
+      {{ 'admin.users.actions.create' | translate }}
+    </button>
   </div>
 
   @if (isLoading()) {
@@ -18,7 +20,7 @@
         icon="group"
         [message]="'admin.users.empty' | translate"
         [actionLabel]="'admin.users.actions.create' | translate"
-        (action)="navigateToCreate()"
+        (action)="openCreateDialog()"
       />
     } @else {
       <table class="data-table">

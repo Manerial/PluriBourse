@@ -1,6 +1,8 @@
 import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { TranslatePipe } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
@@ -9,12 +11,10 @@ import { CurrentEditionService } from '../../services/current-edition.service';
 import { SseService } from '../../services/sse.service';
 import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 
-// NOTE: MatIcon is NOT used — it requires MatIconRegistry configuration to work with Material Symbols.
-// Use <span class="material-symbols-outlined"> directly instead (simpler, font loaded in index.html).
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, TranslatePipe, ToastContainerComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, TranslatePipe, ToastContainerComponent],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.scss'
 })

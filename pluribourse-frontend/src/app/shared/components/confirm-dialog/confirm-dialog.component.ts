@@ -3,6 +3,7 @@ import { A11yModule } from '@angular/cdk/a11y';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslatePipe } from '@ngx-translate/core';
+import { DialogShellComponent } from '../dialog-shell/dialog-shell.component';
 
 export interface ConfirmDialogData {
   title: string;
@@ -15,9 +16,8 @@ export interface ConfirmDialogData {
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [A11yModule, MatButtonModule, TranslatePipe],
+  imports: [A11yModule, MatButtonModule, TranslatePipe, DialogShellComponent],
   templateUrl: './confirm-dialog.component.html',
-  styleUrl: './confirm-dialog.component.scss',
 })
 export class ConfirmDialogComponent {
   readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);

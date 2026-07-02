@@ -5,7 +5,8 @@
   "common": {
     "dialog": {
       "cancel": "Cancel",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "close": "Close"
     },
     "toast": {
       "close": "Close"
@@ -57,6 +58,8 @@
   },
   "nav": {
     "logout": "Sign out",
+    "account": "My account",
+    "userMenu": "User menu",
     "phase": {
       "none": "No active edition"
     },
@@ -118,7 +121,6 @@
       },
       "submit": "Create",
       "cancel": "Cancel",
-      "backToList": "Back to editions list",
       "error": {
         "alreadyActive": "An edition is already active. Close it before creating a new one.",
         "save": "Failed to create edition."
@@ -146,6 +148,8 @@
     "actions": {
       "managePhase": "Manage phase",
       "manageCategories": "Manage categories",
+      "phases": "Phases",
+      "categories": "Categories",
       "edit": "Edit",
       "delete": "Delete",
       "error": {
@@ -164,7 +168,6 @@
   "phase": {
     "control": {
       "title": "Phases — {{editionName}}",
-      "back": "Back to editions",
       "error": {
         "load": "Failed to load edition."
       }
@@ -200,9 +203,8 @@
   },
   "category": {
     "title": "Categories — {{editionName}}",
-    "back": "Back to editions",
     "locked": {
-      "banner": "Categories are locked — the edition has entered the Deposit phase."
+      "banner": "Categories are locked — the edition is in the {{phase}} phase."
     },
     "copy": {
       "label": "Copy from a closed edition",

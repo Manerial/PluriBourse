@@ -1,6 +1,5 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -13,12 +12,13 @@ import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/sk
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ResetPasswordDialogComponent, ResetPasswordDialogData } from './reset-password-dialog/reset-password-dialog.component';
+import { UserFormComponent } from './user-form.component';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [RouterLink, MatButtonModule, MatIconModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
+  imports: [MatButtonModule, MatIconModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.scss'
 })
@@ -26,8 +26,6 @@ export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmDialog = inject(ConfirmDialogService);
@@ -38,6 +36,10 @@ export class UserListComponent implements OnInit {
   readonly submitting = signal(false);
 
   async ngOnInit(): Promise<void> {
+    await this.loadUsers();
+  }
+
+  private async loadUsers(): Promise<void> {
     this.isLoading.set(true);
     this.error.set(null);
     try {
@@ -90,8 +92,18 @@ export class UserListComponent implements OnInit {
     }
   }
 
-  navigateToCreate(): void {
-    this.router.navigate(['create'], { relativeTo: this.route });
+  openCreateDialog(): void {
+    const ref = this.dialog.open<void, void, UserFormComponent>(
+      UserFormComponent,
+      {
+        hasBackdrop: true,
+        backdropClass: 'dialog-backdrop',
+        panelClass: 'dialog-panel',
+        disableClose: false,
+        ariaLabel: this.translate.instant('admin.users.create.title'),
+      }
+    );
+    ref.closed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.loadUsers());
   }
 
   openResetPasswordDialog(user: UserDto): void {
@@ -103,7 +115,7 @@ export class UserListComponent implements OnInit {
         backdropClass: 'dialog-backdrop',
         panelClass: 'dialog-panel',
         disableClose: false,
-        ariaLabelledBy: 'reset-dialog-title',
+        ariaLabel: this.translate.instant('admin.users.resetDialog.title'),
         ariaDescribedBy: 'reset-dialog-desc',
       }
     );

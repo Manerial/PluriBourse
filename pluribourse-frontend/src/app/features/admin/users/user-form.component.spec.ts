@@ -1,5 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { DialogRef } from '@angular/cdk/dialog';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -12,11 +12,11 @@ const MOCK_USER: UserDto = { id: 1, firstName: 'Alice', lastName: 'Smith', usern
 describe('UserFormComponent', () => {
   let fixture: ComponentFixture<UserFormComponent>;
   let component: UserFormComponent;
-  let router: Router;
 
   const userServiceMock = {
     createVolunteer: vi.fn().mockReturnValue(of(MOCK_USER)),
   };
+  const dialogRefMock = { close: vi.fn() };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -25,15 +25,14 @@ describe('UserFormComponent', () => {
     await TestBed.configureTestingModule({
       imports: [UserFormComponent],
       providers: [
-        provideRouter([{ path: 'admin/users', component: UserFormComponent }]),
         provideTranslateService({ lang: 'en' }),
         { provide: UserService, useValue: userServiceMock },
+        { provide: DialogRef, useValue: dialogRefMock },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(UserFormComponent);
     component = fixture.componentInstance;
-    router = TestBed.inject(Router);
     fixture.detectChanges();
     await fixture.whenStable();
   });
@@ -67,12 +66,11 @@ describe('UserFormComponent', () => {
     expect(userServiceMock.createVolunteer).not.toHaveBeenCalled();
   });
 
-  it('calls createVolunteer with form values on valid submit and navigates to the list', async () => {
+  it('calls createVolunteer with form values on valid submit and closes the dialog', async () => {
     component.form.controls.firstName.setValue('Alice');
     component.form.controls.lastName.setValue('Smith');
     component.form.controls.username.setValue('alice');
     component.form.controls.password.setValue('Password1');
-    const navigateSpy = vi.spyOn(router, 'navigate');
 
     await component.onSubmit();
 
@@ -83,7 +81,7 @@ describe('UserFormComponent', () => {
       password: 'Password1',
       role: 'VOLUNTEER',
     });
-    expect(navigateSpy).toHaveBeenCalledWith(['/admin/users']);
+    expect(dialogRefMock.close).toHaveBeenCalledOnce();
     expect(component.loading()).toBe(false);
   });
 
@@ -100,9 +98,8 @@ describe('UserFormComponent', () => {
     expect(component.loading()).toBe(false);
   });
 
-  it('cancel() navigates back to the user list', async () => {
-    const navigateSpy = vi.spyOn(router, 'navigate');
-    await component.cancel();
-    expect(navigateSpy).toHaveBeenCalledWith(['/admin/users']);
+  it('cancel() closes the dialog', () => {
+    component.cancel();
+    expect(dialogRefMock.close).toHaveBeenCalledOnce();
   });
 });

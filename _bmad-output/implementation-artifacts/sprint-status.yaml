@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-02"  # Story 3.1 done (code review)
+last_updated: "2026-07-03"  # Story 1.11 code review complete, done
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -54,6 +54,7 @@ development_status:
   1-8-composants-ui-partages-boites-de-dialogue-notifications-accessibilite: done
   1-9-guide-dinstallation: done
   1-10-ameliorations-ux-mots-de-passe: done
+  1-11-dialogs-mutualises-editions-benevoles: done
   epic-1-retrospective: optional
 
   # ─── Epic 2 : Gestion du cycle de vie des éditions ─────────────────────────

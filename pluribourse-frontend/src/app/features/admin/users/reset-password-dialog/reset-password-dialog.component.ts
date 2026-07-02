@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
 import { passwordStrengthValidators } from '../../../../shared/validators/password-strength.validator';
+import { DialogShellComponent } from '../../../../shared/components/dialog-shell/dialog-shell.component';
 
 export interface ResetPasswordDialogData {
   userName: string;
@@ -15,9 +16,16 @@ export interface ResetPasswordDialogData {
 @Component({
   selector: 'app-reset-password-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, A11yModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe],
+  imports: [
+    ReactiveFormsModule,
+    A11yModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    TranslatePipe,
+    DialogShellComponent,
+  ],
   templateUrl: './reset-password-dialog.component.html',
-  styleUrl: './reset-password-dialog.component.scss',
 })
 export class ResetPasswordDialogComponent {
   readonly dialogRef = inject<DialogRef<string>>(DialogRef);

@@ -1,58 +1,49 @@
-<div class="card form-card">
-  <div class="card__header">
-    <button type="button" mat-icon-button (click)="cancel()" [attr.aria-label]="'admin.users.create.cancel' | translate">
-      <mat-icon>arrow_back</mat-icon>
-    </button>
-    <h1 class="card__title">{{ 'admin.users.create.title' | translate }}</h1>
-  </div>
+<app-dialog-shell [title]="'admin.users.create.title' | translate" (close)="cancel()">
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
 
-  <div class="card__body">
-    @if (error()) {
-      <app-notification-inline [message]="error()! | translate" variant="error" />
-    }
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <div class="form-row">
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'admin.users.create.firstName' | translate }}</mat-label>
-          <input matInput formControlName="firstName" type="text" autocomplete="given-name" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'admin.users.create.lastName' | translate }}</mat-label>
-          <input matInput formControlName="lastName" type="text" autocomplete="family-name" />
-        </mat-form-field>
-      </div>
-
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dialog-form">
+    <div class="form-row">
       <mat-form-field appearance="outline">
-        <mat-label>{{ 'admin.users.create.username' | translate }}</mat-label>
-        <input matInput formControlName="username" type="text" autocomplete="username" />
+        <mat-label>{{ 'admin.users.create.firstName' | translate }}</mat-label>
+        <input matInput formControlName="firstName" type="text" autocomplete="given-name" />
       </mat-form-field>
-
       <mat-form-field appearance="outline">
-        <mat-label>{{ 'admin.users.create.password' | translate }}</mat-label>
-        <input matInput formControlName="password" type="password" autocomplete="new-password" />
-        @if (form.controls.password.hasError('required')) {
-          <mat-error>{{ 'admin.users.create.passwordRequired' | translate }}</mat-error>
-        }
-        @if (form.controls.password.hasError('minlength')) {
-          <mat-error>{{ 'admin.users.create.passwordMinLength' | translate }}</mat-error>
-        }
-        @if (form.controls.password.hasError('needsUppercase')) {
-          <mat-error>{{ 'common.password.needsUppercase' | translate }}</mat-error>
-        }
-        @if (form.controls.password.hasError('needsDigit')) {
-          <mat-error>{{ 'common.password.needsDigit' | translate }}</mat-error>
-        }
+        <mat-label>{{ 'admin.users.create.lastName' | translate }}</mat-label>
+        <input matInput formControlName="lastName" type="text" autocomplete="family-name" />
       </mat-form-field>
+    </div>
 
-      <div class="card__actions">
-        <button type="button" mat-button (click)="cancel()">
-          {{ 'admin.users.create.cancel' | translate }}
-        </button>
-        <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
-          {{ 'admin.users.create.submit' | translate }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'admin.users.create.username' | translate }}</mat-label>
+      <input matInput formControlName="username" type="text" autocomplete="username" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'admin.users.create.password' | translate }}</mat-label>
+      <input matInput formControlName="password" type="password" autocomplete="new-password" />
+      @if (form.controls.password.hasError('required')) {
+        <mat-error>{{ 'admin.users.create.passwordRequired' | translate }}</mat-error>
+      }
+      @if (form.controls.password.hasError('minlength')) {
+        <mat-error>{{ 'admin.users.create.passwordMinLength' | translate }}</mat-error>
+      }
+      @if (form.controls.password.hasError('needsUppercase')) {
+        <mat-error>{{ 'common.password.needsUppercase' | translate }}</mat-error>
+      }
+      @if (form.controls.password.hasError('needsDigit')) {
+        <mat-error>{{ 'common.password.needsDigit' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="dialog__actions">
+      <button type="button" mat-button (click)="cancel()">
+        {{ 'admin.users.create.cancel' | translate }}
+      </button>
+      <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
+        {{ 'admin.users.create.submit' | translate }}
+      </button>
+    </div>
+  </form>
+</app-dialog-shell>

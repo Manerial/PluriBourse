@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,13 +11,18 @@ import { ConfirmDialogService } from '../../../../shared/components/confirm-dial
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../../../shared/components/skeleton-row/skeleton-row.component';
 import { NotificationInlineComponent } from '../../../../shared/components/notification-inline/notification-inline.component';
+import { DialogShellComponent } from '../../../../shared/components/dialog-shell/dialog-shell.component';
 
 const PHASE_ORDER: PhaseType[] = ['PREPARATION', 'DEPOSIT', 'SALE', 'POST_SALE', 'CLOSED'];
+
+export interface PhaseControlDialogData {
+  editionId: number;
+}
 
 @Component({
   selector: 'app-phase-control',
   standalone: true,
-  imports: [TranslatePipe, RouterLink, MatButtonModule, MatIconModule, SkeletonRowComponent, NotificationInlineComponent],
+  imports: [TranslatePipe, MatButtonModule, MatIconModule, SkeletonRowComponent, NotificationInlineComponent, DialogShellComponent],
   templateUrl: './phase-control.component.html',
   styleUrl: './phase-control.component.scss',
 })
@@ -26,8 +31,10 @@ export class PhaseControlComponent implements OnInit {
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
-  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly dialogRef = inject<DialogRef<void>>(DialogRef);
+  readonly data = inject<PhaseControlDialogData>(DIALOG_DATA);
 
   readonly edition = signal<EditionDto | null>(null);
   readonly isLoading = signal(false);
@@ -35,16 +42,14 @@ export class PhaseControlComponent implements OnInit {
   readonly error = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
-    const rawId = this.route.snapshot.paramMap.get('id');
-    const id = Number(rawId);
-    if (!rawId || isNaN(id) || id <= 0) {
+    if (!this.data.editionId || this.data.editionId <= 0) {
       this.error.set('phase.control.error.load');
       return;
     }
     this.isLoading.set(true);
     this.error.set(null);
     try {
-      this.edition.set(await firstValueFrom(this.editionService.getById(id)));
+      this.edition.set(await firstValueFrom(this.editionService.getById(this.data.editionId)));
     } catch {
       this.error.set('phase.control.error.load');
     } finally {
@@ -108,6 +113,7 @@ export class PhaseControlComponent implements OnInit {
       try {
         this.edition.set(await firstValueFrom(this.editionService.advancePhase(e.id)));
         this.toast.showSuccess(this.translate.instant('phase.advance.success'));
+        this.dialogRef.close();
       } catch {
         this.toast.showError(this.translate.instant('phase.advance.error'));
       } finally {
@@ -135,6 +141,7 @@ export class PhaseControlComponent implements OnInit {
       try {
         this.edition.set(await firstValueFrom(this.editionService.rollbackPhase(e.id)));
         this.toast.showSuccess(this.translate.instant('phase.rollback.success'));
+        this.dialogRef.close();
       } catch {
         this.toast.showError(this.translate.instant('phase.rollback.error'));
       } finally {

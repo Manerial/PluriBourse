@@ -1,6 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -28,6 +27,7 @@ describe('PhaseControlComponent', () => {
   };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
   const confirmMock = { open: vi.fn().mockReturnValue(of(false)) };
+  const dialogRefMock = { close: vi.fn() };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -36,9 +36,9 @@ describe('PhaseControlComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PhaseControlComponent],
       providers: [
-        provideRouter([]),
         provideTranslateService({ lang: 'en' }),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '1' } } } },
+        { provide: DIALOG_DATA, useValue: { editionId: 1 } },
+        { provide: DialogRef, useValue: dialogRefMock },
         { provide: EditionService, useValue: editionServiceMock },
         { provide: ToastService, useValue: toastMock },
         { provide: ConfirmDialogService, useValue: confirmMock },
@@ -110,6 +110,22 @@ describe('PhaseControlComponent', () => {
     expect(toastMock.showError).toHaveBeenCalledOnce();
   });
 
+  it('confirmAdvance — confirmed: closes the dialog after a successful advance', async () => {
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.advancePhase.mockReturnValue(of({ ...MOCK_EDITION, phase: 'DEPOSIT' }));
+    component.confirmAdvance();
+    await fixture.whenStable();
+    expect(dialogRefMock.close).toHaveBeenCalledOnce();
+  });
+
+  it('confirmAdvance — confirmed: does not close the dialog when advancePhase fails', async () => {
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.advancePhase.mockReturnValue(throwError(() => new Error('server error')));
+    component.confirmAdvance();
+    await fixture.whenStable();
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
+  });
+
   it('canAdvance returns false when edition is null', () => {
     component['edition'].set(null);
     expect(component.canAdvance()).toBe(false);
@@ -137,5 +153,23 @@ describe('PhaseControlComponent', () => {
     component.confirmRollback();
     await fixture.whenStable();
     expect(toastMock.showError).toHaveBeenCalledOnce();
+  });
+
+  it('confirmRollback — confirmed: closes the dialog after a successful rollback', async () => {
+    component['edition'].set({ ...MOCK_EDITION, phase: 'DEPOSIT' });
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.rollbackPhase.mockReturnValue(of(MOCK_EDITION));
+    component.confirmRollback();
+    await fixture.whenStable();
+    expect(dialogRefMock.close).toHaveBeenCalledOnce();
+  });
+
+  it('confirmRollback — confirmed: does not close the dialog when rollbackPhase fails', async () => {
+    component['edition'].set({ ...MOCK_EDITION, phase: 'DEPOSIT' });
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.rollbackPhase.mockReturnValue(throwError(() => new Error('server error')));
+    component.confirmRollback();
+    await fixture.whenStable();
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
   });
 });

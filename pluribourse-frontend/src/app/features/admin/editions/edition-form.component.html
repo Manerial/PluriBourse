@@ -1,71 +1,62 @@
-<div class="card form-card">
-  <div class="card__header">
-    <a routerLink="/admin/editions" mat-icon-button [attr.aria-label]="'edition.create.backToList' | translate">
-      <mat-icon>arrow_back</mat-icon>
-    </a>
-    <h1 class="card__title">{{ titleKey() | translate }}</h1>
-  </div>
+<app-dialog-shell [title]="dialogTitle()" (close)="cancel()">
+  @if (formError()) {
+    <app-notification-inline [message]="formError()! | translate" variant="error" />
+  }
 
-  <div class="card__body">
-    @if (formError()) {
-      <app-notification-inline [message]="formError()! | translate" variant="error" />
-    }
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dialog-form">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'edition.create.name.label' | translate }}</mat-label>
+      <input matInput formControlName="name" type="text" />
+      @if (form.controls.name.errors?.['required'] && form.controls.name.touched) {
+        <mat-error>{{ 'edition.create.name.required' | translate }}</mat-error>
+      }
+      @if (form.controls.name.errors?.['maxlength'] && form.controls.name.touched) {
+        <mat-error>{{ 'edition.create.name.maxLength' | translate }}</mat-error>
+      }
+    </mat-form-field>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'edition.create.name.label' | translate }}</mat-label>
-        <input matInput formControlName="name" type="text" />
-        @if (form.controls.name.errors?.['required'] && form.controls.name.touched) {
-          <mat-error>{{ 'edition.create.name.required' | translate }}</mat-error>
-        }
-        @if (form.controls.name.errors?.['maxlength'] && form.controls.name.touched) {
-          <mat-error>{{ 'edition.create.name.maxLength' | translate }}</mat-error>
-        }
-      </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'edition.create.commissionRate.label' | translate }}</mat-label>
+      <input matInput formControlName="commissionRate" type="number" step="0.01" [min]="0" [max]="100" />
+      @if (form.controls.commissionRate.errors?.['required'] && form.controls.commissionRate.touched) {
+        <mat-error>{{ 'edition.create.commissionRate.required' | translate }}</mat-error>
+      }
+      @if (form.controls.commissionRate.errors?.['min'] && form.controls.commissionRate.touched) {
+        <mat-error>{{ 'edition.create.commissionRate.min' | translate }}</mat-error>
+      }
+      @if (form.controls.commissionRate.errors?.['max'] && form.controls.commissionRate.touched) {
+        <mat-error>{{ 'edition.create.commissionRate.max' | translate }}</mat-error>
+      }
+      @if (form.controls.commissionRate.errors?.['maxDecimals'] && form.controls.commissionRate.touched) {
+        <mat-error>{{ 'edition.create.commissionRate.maxDecimals' | translate }}</mat-error>
+      }
+    </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'edition.create.commissionRate.label' | translate }}</mat-label>
-        <input matInput formControlName="commissionRate" type="number" step="0.01" [min]="0" [max]="100" />
-        @if (form.controls.commissionRate.errors?.['required'] && form.controls.commissionRate.touched) {
-          <mat-error>{{ 'edition.create.commissionRate.required' | translate }}</mat-error>
-        }
-        @if (form.controls.commissionRate.errors?.['min'] && form.controls.commissionRate.touched) {
-          <mat-error>{{ 'edition.create.commissionRate.min' | translate }}</mat-error>
-        }
-        @if (form.controls.commissionRate.errors?.['max'] && form.controls.commissionRate.touched) {
-          <mat-error>{{ 'edition.create.commissionRate.max' | translate }}</mat-error>
-        }
-        @if (form.controls.commissionRate.errors?.['maxDecimals'] && form.controls.commissionRate.touched) {
-          <mat-error>{{ 'edition.create.commissionRate.maxDecimals' | translate }}</mat-error>
-        }
-      </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'edition.create.documentLanguage.label' | translate }}</mat-label>
+      <mat-select formControlName="documentLanguage">
+        <mat-option value="EN">{{ 'admin.settings.language.EN' | translate }}</mat-option>
+        <mat-option value="FR">{{ 'admin.settings.language.FR' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'edition.create.documentLanguage.label' | translate }}</mat-label>
-        <mat-select formControlName="documentLanguage">
-          <mat-option value="EN">{{ 'admin.settings.language.EN' | translate }}</mat-option>
-          <mat-option value="FR">{{ 'admin.settings.language.FR' | translate }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'edition.form.startDate' | translate }}</mat-label>
+      <input matInput formControlName="startDate" type="date" />
+    </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'edition.form.startDate' | translate }}</mat-label>
-        <input matInput formControlName="startDate" type="date" />
-      </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'edition.form.endDate' | translate }}</mat-label>
+      <input matInput formControlName="endDate" type="date" />
+    </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'edition.form.endDate' | translate }}</mat-label>
-        <input matInput formControlName="endDate" type="date" />
-      </mat-form-field>
-
-      <div class="card__actions">
-        <a routerLink="/admin/editions" mat-button>
-          {{ cancelKey() | translate }}
-        </a>
-        <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || isSaving()">
-          {{ submitKey() | translate }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+    <div class="dialog__actions">
+      <button type="button" mat-button (click)="cancel()">
+        {{ cancelKey() | translate }}
+      </button>
+      <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || isSaving()">
+        {{ submitKey() | translate }}
+      </button>
+    </div>
+  </form>
+</app-dialog-shell>
