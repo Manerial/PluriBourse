@@ -1,14 +1,14 @@
 package org.pluribourse.edition.controller;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.pluribourse.edition.dto.EditionCategoryDto;
-import org.pluribourse.edition.service.EditionCategoryService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.*;
+import lombok.*;
+import org.pluribourse.edition.dto.*;
+import org.pluribourse.edition.service.*;
+import org.springframework.http.*;
+import org.springframework.security.access.prepost.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/admin/editions/{editionId}/categories")
@@ -20,20 +20,24 @@ public class EditionCategoryController {
 
     @GetMapping
     public ResponseEntity<List<EditionCategoryDto>> getCategories(@PathVariable Long editionId) {
-        return ResponseEntity.ok(service.getCategories(editionId));
+        List<EditionCategoryDto> categories = service.getCategories(editionId);
+        return ResponseEntity.ok(categories);
     }
 
     @PutMapping
     public ResponseEntity<List<EditionCategoryDto>> saveCategories(
             @PathVariable Long editionId,
-            @Valid @RequestBody List<@Valid EditionCategoryDto> dtos) {
-        return ResponseEntity.ok(service.saveCategories(editionId, dtos));
+            @Valid @RequestBody List<@Valid EditionCategoryDto> dtos
+    ) {
+        List<EditionCategoryDto> categories = service.saveCategories(editionId, dtos);
+        return ResponseEntity.ok(categories);
     }
 
     @PostMapping("/copy-from/{sourceEditionId}")
     public ResponseEntity<List<EditionCategoryDto>> copyFromEdition(
             @PathVariable Long editionId,
             @PathVariable Long sourceEditionId) {
-        return ResponseEntity.ok(service.copyFromEdition(editionId, sourceEditionId));
+        List<EditionCategoryDto> copiedFromEdition = service.copyFromEdition(editionId, sourceEditionId);
+        return ResponseEntity.ok(copiedFromEdition);
     }
 }

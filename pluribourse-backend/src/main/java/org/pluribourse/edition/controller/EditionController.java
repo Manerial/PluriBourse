@@ -20,34 +20,41 @@ public class EditionController {
 
     @GetMapping
     public ResponseEntity<List<EditionDto>> getAllEditions() {
-        return ResponseEntity.ok(service.getAllEditions());
+        List<EditionDto> allEditions = service.getAllEditions();
+        return ResponseEntity.ok(allEditions);
     }
 
     @PostMapping
     public ResponseEntity<EditionDto> createEdition(@Valid @RequestBody EditionDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createEdition(dto));
+        EditionDto edition = service.createEdition(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(edition);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<EditionDto> getEditionById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getEditionById(id));
+        EditionDto edition = service.getEditionById(id);
+        return ResponseEntity.ok(edition);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EditionDto> updateEdition(
             @PathVariable Long id,
-            @Valid @RequestBody EditionDto dto) {
-        return ResponseEntity.ok(service.updateEdition(id, dto));
+            @Valid @RequestBody EditionDto dto
+    ) {
+        EditionDto updatedEdition = service.updateEdition(id, dto);
+        return ResponseEntity.ok(updatedEdition);
     }
 
     @PostMapping("/{id}/phase/advance")
     public ResponseEntity<EditionDto> advancePhase(@PathVariable Long id) {
-        return ResponseEntity.ok(service.advancePhase(id));
+        EditionDto editionAdvanced = service.advancePhase(id);
+        return ResponseEntity.ok(editionAdvanced);
     }
 
     @PostMapping("/{id}/phase/rollback")
     public ResponseEntity<EditionDto> rollbackPhase(@PathVariable Long id) {
-        return ResponseEntity.ok(service.rollbackPhase(id));
+        EditionDto editionRolledback = service.rollbackPhase(id);
+        return ResponseEntity.ok(editionRolledback);
     }
 
     @DeleteMapping("/{id}")

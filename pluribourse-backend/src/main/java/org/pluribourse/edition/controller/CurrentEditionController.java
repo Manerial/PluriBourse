@@ -15,6 +15,7 @@ public class CurrentEditionController {
 
     @GetMapping("/current")
     public ResponseEntity<EditionDto> getCurrentEdition() {
-        return ResponseEntity.ok(editionService.getActiveEditionDto());
+        EditionDto activeEditionDto = editionService.getActiveEditionDto();
+        return ResponseEntity.ok(activeEditionDto);
     }
 }
