@@ -400,6 +400,7 @@
       "empty": "No sellers registered yet.",
       "error": {
         "load": "Failed to load sellers.",
+        "noActiveEdition": "No edition is currently active. Sellers can only be viewed once an edition is active.",
         "delete": "Failed to delete seller."
       }
     },

@@ -1,4 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -67,6 +68,14 @@ describe('SellerListComponent', () => {
     sellerServiceMock.getSellers.mockReturnValue(throwError(() => new Error('network')));
     await component.ngOnInit();
     expect(component.error()).toBe('admin.sellers.error.load');
+  });
+
+  it('shows a dedicated error key when load fails because no edition is active', async () => {
+    sellerServiceMock.getSellers.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ error: { type: 'https://pluribourse/errors/no-active-edition' }, status: 404 }))
+    );
+    await component.ngOnInit();
+    expect(component.error()).toBe('admin.sellers.error.noActiveEdition');
   });
 
   it('onPageChange() loads the requested page', async () => {

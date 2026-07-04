@@ -400,6 +400,7 @@
       "empty": "Aucun vendeur enregistré pour le moment.",
       "error": {
         "load": "Impossible de charger les vendeurs.",
+        "noActiveEdition": "Aucune édition n'est actuellement active. Les vendeurs ne peuvent être consultés qu'une fois une édition active.",
         "delete": "Impossible de supprimer le vendeur."
       }
     },
