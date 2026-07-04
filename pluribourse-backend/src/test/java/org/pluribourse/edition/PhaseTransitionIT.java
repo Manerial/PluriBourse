@@ -11,6 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
 import org.springframework.test.web.servlet.*;
 
+import java.time.*;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -42,7 +45,7 @@ class PhaseTransitionIT extends IntegrationTest {
         MvcResult tempEdition = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Setup Edition\"}"))
+                        .content("{\"name\":\"Setup Edition\",\"startDate\":\"2026-01-01\",\"endDate\":\"2026-01-03\"}"))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long tempEditionId = objectMapper.readTree(tempEdition.getResponse().getContentAsString()).get("id").asLong();
@@ -68,7 +71,7 @@ class PhaseTransitionIT extends IntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Test 2026", null, null, null, null, false, null, null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Test 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3)))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.phase").value("PREPARATION"))
                 .andExpect(jsonPath("$.archived").value(false))
@@ -96,7 +99,25 @@ class PhaseTransitionIT extends IntegrationTest {
 
     @Test
     @Order(4)
+    void advance_to_deposit_without_categories_returns_422() throws Exception {
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-categories-configured")));
+
+        Edition edition = repository.findById(editionId).orElseThrow();
+        assertThat(edition.getPhase()).isEqualTo(PhaseType.PREPARATION);
+    }
+
+    @Test
+    @Order(5)
     void advance_to_deposit_locks_commission_rate() throws Exception {
+        mockMvc.perform(put("/api/admin/editions/" + editionId + "/categories")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(new EditionCategoryDto(null, "Jouets", List.of(1, 2))))))
+                .andExpect(status().isOk());
+
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
@@ -107,9 +128,9 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void commission_rate_update_rejected_in_deposit() throws Exception {
-        String body = "{\"name\":\"Bourse Test 2026\",\"commissionRate\":10.00}";
+        String body = "{\"name\":\"Bourse Test 2026\",\"commissionRate\":10.00,\"startDate\":\"2026-01-01\",\"endDate\":\"2026-01-03\"}";
         mockMvc.perform(put("/api/admin/editions/" + editionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -118,14 +139,14 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     void rollback_deposit_to_preparation_unlocks_commission() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/rollback")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("PREPARATION"));
 
-        String body = "{\"name\":\"Bourse Test 2026\",\"commissionRate\":18.00}";
+        String body = "{\"name\":\"Bourse Test 2026\",\"commissionRate\":18.00,\"startDate\":\"2026-01-01\",\"endDate\":\"2026-01-03\"}";
         mockMvc.perform(put("/api/admin/editions/" + editionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -135,7 +156,7 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(7)
+    @Order(8)
     void advance_through_all_phases_to_closed() throws Exception {
         // PREPARATION → DEPOSIT
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
@@ -163,7 +184,7 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     void advance_from_closed_returns_422() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
@@ -171,7 +192,7 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void rollback_from_closed_to_post_sale_succeeds_when_not_archived() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/rollback")
                         .session(adminSession).with(csrf()))
@@ -180,7 +201,7 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void rollback_from_closed_blocked_when_archived() throws Exception {
         // Advance back to CLOSED
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
@@ -200,7 +221,7 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(11)
+    @Order(12)
     void volunteer_cannot_trigger_phase_transitions() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(volunteerSession).with(csrf()))
@@ -208,7 +229,7 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(12)
+    @Order(13)
     void unauthenticated_request_returns_401() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .with(csrf()))
@@ -216,14 +237,14 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     void get_by_id_returns_404_for_nonexistent_edition() throws Exception {
         mockMvc.perform(get("/api/admin/editions/99999").session(adminSession))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @Order(14)
+    @Order(15)
     void sse_endpoint_accessible_by_authenticated_admin() throws Exception {
         mockMvc.perform(get("/api/sse/events").session(adminSession))
                 .andExpect(status().isOk())
@@ -231,29 +252,35 @@ class PhaseTransitionIT extends IntegrationTest {
     }
 
     @Test
-    @Order(15)
+    @Order(16)
     void sse_endpoint_accessible_by_volunteer() throws Exception {
         mockMvc.perform(get("/api/sse/events").session(volunteerSession))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @Order(16)
+    @Order(17)
     void sse_endpoint_returns_401_for_unauthenticated() throws Exception {
         mockMvc.perform(get("/api/sse/events"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @Order(17)
+    @Order(18)
     void multiple_phase_changes_are_all_delivered_over_the_same_sse_connection() throws Exception {
         MvcResult creation = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Bourse SSE Test\"}"))
+                        .content("{\"name\":\"Bourse SSE Test\",\"startDate\":\"2026-01-01\",\"endDate\":\"2026-01-03\"}"))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long sseEditionId = objectMapper.readTree(creation.getResponse().getContentAsString()).get("id").asLong();
+
+        mockMvc.perform(put("/api/admin/editions/" + sseEditionId + "/categories")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(new EditionCategoryDto(null, "Jouets", List.of(1, 2))))))
+                .andExpect(status().isOk());
 
         MvcResult sseResult = mockMvc.perform(get("/api/sse/events").session(adminSession))
                 .andExpect(request().asyncStarted())

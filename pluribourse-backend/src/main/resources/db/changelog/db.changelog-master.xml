@@ -16,5 +16,7 @@
     <include file="db/changelog/010-edition-dates.xml"/>
     <include file="db/changelog/011-edition-categories.xml"/>
     <include file="db/changelog/012-seller-profiles.xml"/>
+    <include file="db/changelog/013-items.xml"/>
+    <include file="db/changelog/014-edition-dates-not-null.xml"/>
 
 </databaseChangeLog>

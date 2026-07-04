@@ -36,8 +36,8 @@ const preparationEdition: EditionDto = {
   documentLanguage: Language.FR,
   createdAt: '2026-01-01',
   archived: false,
-  startDate: null,
-  endDate: null,
+  startDate: '2026-06-01',
+  endDate: '2026-06-03',
 };
 
 describe('AppLayoutComponent', () => {
@@ -49,6 +49,7 @@ describe('AppLayoutComponent', () => {
   const mockLogout = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(async () => {
+    localStorage.clear();
     mockCurrentUser = signal<CurrentUser | null>(adminUser);
     mockEdition = signal<EditionDto | null>(null);
     mockCurrentEditionService = {
@@ -196,6 +197,45 @@ describe('AppLayoutComponent', () => {
       expect(usersLink.classList).toContain('sidebar__item--active');
       const settingsLink: HTMLAnchorElement = fixture.nativeElement.querySelector('a[href="/admin/settings"]');
       expect(settingsLink.classList).not.toContain('sidebar__item--active');
+    });
+  });
+
+  describe('sidebar collapse toggle', () => {
+    it('is expanded by default', () => {
+      expect(component.sidebarCollapsed()).toBe(false);
+      expect(fixture.nativeElement.querySelector('.sidebar').classList).not.toContain('sidebar--collapsed');
+    });
+
+    it('collapses the sidebar and persists the state to localStorage', () => {
+      const toggle: HTMLButtonElement = fixture.nativeElement.querySelector('.sidebar__toggle');
+      toggle.click();
+      fixture.detectChanges();
+
+      expect(component.sidebarCollapsed()).toBe(true);
+      expect(fixture.nativeElement.querySelector('.sidebar').classList).toContain('sidebar--collapsed');
+      expect(fixture.nativeElement.querySelector('.app-shell').classList).toContain('sidebar-collapsed');
+      expect(localStorage.getItem('pluribourse.sidebarCollapsed.Admin')).toBe('true');
+    });
+
+    it('expands again on a second click', () => {
+      const toggle: HTMLButtonElement = fixture.nativeElement.querySelector('.sidebar__toggle');
+      toggle.click();
+      fixture.detectChanges();
+      toggle.click();
+      fixture.detectChanges();
+
+      expect(component.sidebarCollapsed()).toBe(false);
+      expect(localStorage.getItem('pluribourse.sidebarCollapsed.Admin')).toBe('false');
+    });
+
+    it('restores a collapsed state from localStorage on init', () => {
+      localStorage.setItem('pluribourse.sidebarCollapsed.Admin', 'true');
+      fixture = TestBed.createComponent(AppLayoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.sidebarCollapsed()).toBe(true);
+      expect(fixture.nativeElement.querySelector('.sidebar').classList).toContain('sidebar--collapsed');
     });
   });
 

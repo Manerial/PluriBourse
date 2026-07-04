@@ -1095,7 +1095,7 @@ afin que les articles soient correctement catalogués et localisés physiquement
 
 **Étant donné** que l'entité `Item` (article) est introduite par cette story
 **Quand** cette story est implémentée
-**Alors** `SellerProfile.canBeDeleted()` est mise à jour pour remplacer le `hasNoSelledArticles = false` codé en dur (`// TODO avec Story 3.2`) par une vérification réelle : le vendeur peut être supprimé s'il est en phase Préparation ou Dépôt **et** qu'aucun article n'est enregistré pour lui dans cette édition — pas seulement l'absence d'article vendu (FR-021)
+**Alors** `SellerProfile.canBeDeleted()` est mise à jour pour remplacer le `hasNoSelledArticles = false` codé en dur (`// TODO avec Story 3.2`) par une vérification réelle : le vendeur peut être supprimé s'il est en phase Dépôt **et** qu'aucun article n'est enregistré pour lui dans cette édition — pas seulement l'absence d'article vendu (FR-021)
 
 **Note technique :** `SellerProfile.canBeDeleted()` (`pluribourse-backend/src/main/java/org/pluribourse/seller/entity/SellerProfile.java`) combine déjà la condition de phase (`isOnDeletablePhase`) avec une condition `hasNoSelledArticles` volontairement figée à `false` depuis la Story 3.1, en attendant que cette story introduise l'entité `Item`. La contrainte réelle porte sur l'absence de tout article enregistré pour ce vendeur (et non sur son seul statut vendu) — le nom de la variable devrait être renommé en conséquence (ex. `hasNoRegisteredArticles`) lors de l'implémentation.
 

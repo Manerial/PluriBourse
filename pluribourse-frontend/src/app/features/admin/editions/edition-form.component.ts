@@ -5,6 +5,7 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -15,9 +16,22 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { DialogShellComponent } from '../../../shared/components/dialog-shell/dialog-shell.component';
 import { maxDecimalsValidator } from '../../../shared/validators/financial.validators';
+import { dateRangeValidator } from '../../../shared/validators/date-range.validator';
 
 export interface EditionFormDialogData {
   editionId: number | null; // null = create mode
+}
+
+function toIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function fromIsoDate(isoDate: string): Date {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 @Component({
@@ -25,7 +39,7 @@ export interface EditionFormDialogData {
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     TranslatePipe, NotificationInlineComponent, DialogShellComponent
   ],
   templateUrl: './edition-form.component.html',
@@ -65,9 +79,9 @@ export class EditionFormComponent implements OnInit {
     name: ['', [Validators.required, Validators.maxLength(255)]],
     commissionRate: [0, [Validators.required, Validators.min(0), Validators.max(100), maxDecimalsValidator(2)]],
     documentLanguage: ['EN' as 'EN' | 'FR', [Validators.required]],
-    startDate: [null as string | null],
-    endDate: [null as string | null]
-  });
+    startDate: [null as Date | null, [Validators.required]],
+    endDate: [null as Date | null, [Validators.required]]
+  }, { validators: [dateRangeValidator('startDate', 'endDate')] });
 
   async ngOnInit(): Promise<void> {
     if (this.data.editionId !== null) {
@@ -86,8 +100,8 @@ export class EditionFormComponent implements OnInit {
         name: edition.name,
         commissionRate: edition.commissionRate,
         documentLanguage: edition.documentLanguage,
-        startDate: edition.startDate,
-        endDate: edition.endDate
+        startDate: fromIsoDate(edition.startDate),
+        endDate: fromIsoDate(edition.endDate)
       });
       if (edition.phase !== 'PREPARATION') {
         this.form.controls.commissionRate.disable();
@@ -126,8 +140,8 @@ export class EditionFormComponent implements OnInit {
         name,
         commissionRate: this.form.controls.commissionRate.disabled ? null : commissionRate,
         documentLanguage,
-        startDate: startDate || null,
-        endDate: endDate || null
+        startDate: toIsoDate(startDate!),
+        endDate: toIsoDate(endDate!)
       };
       if (this.isEditMode() && this.data.editionId !== null) {
         await firstValueFrom(this.editionService.update(this.data.editionId, payload));

@@ -31,10 +31,9 @@ public class SellerProfile {
     @Column(nullable = false, length = 30)
     private String phone;
 
-    public boolean canBeDeleted() {
+    public boolean canBeDeleted(boolean hasNoRegisteredArticles) {
         PhaseType phase = edition.getPhase();
-        boolean isOnDeletablePhase = phase == PhaseType.PREPARATION;
-        boolean hasNoSelledArticles = false; // TODO avec Story 3.2
-        return isOnDeletablePhase && hasNoSelledArticles;
+        boolean isOnDeletablePhase = phase == PhaseType.DEPOSIT;
+        return isOnDeletablePhase && hasNoRegisteredArticles;
     }
 }

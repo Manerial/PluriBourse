@@ -4,6 +4,7 @@ import com.jPageFlow.utils.*;
 import lombok.*;
 import org.pluribourse.edition.entity.*;
 import org.pluribourse.edition.service.*;
+import org.pluribourse.item.repository.*;
 import org.pluribourse.seller.dto.*;
 import org.pluribourse.seller.entity.*;
 import org.pluribourse.seller.exception.*;
@@ -25,6 +26,7 @@ public class SellerService {
     private final SellerRepository repository;
     private final EditionService editionService;
     private final SellerMapper mapper;
+    private final ItemRepository itemRepository;
 
     @Transactional(readOnly = true)
     public List<SellerDto> search(String query) {
@@ -62,7 +64,8 @@ public class SellerService {
     public void delete(Long id) {
         SellerProfile seller = repository.findById(id)
                 .orElseThrow(() -> new SellerNotFoundException(id));
-        if (!seller.canBeDeleted()) {
+        boolean hasNoRegisteredArticles = !itemRepository.existsBySellerProfileId(id);
+        if (!seller.canBeDeleted(hasNoRegisteredArticles)) {
             throw new SellerDeletionNotAllowedException();
         }
         repository.delete(seller);

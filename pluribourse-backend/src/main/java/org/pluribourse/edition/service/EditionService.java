@@ -7,6 +7,7 @@ import org.pluribourse.edition.exception.*;
 import org.pluribourse.edition.mapper.*;
 import org.pluribourse.edition.repository.*;
 import org.pluribourse.instanceconfig.service.*;
+import org.pluribourse.item.repository.*;
 import org.pluribourse.shared.sse.*;
 import org.pluribourse.user.enums.*;
 import org.springframework.stereotype.*;
@@ -24,6 +25,8 @@ public class EditionService {
     private final EditionMapper mapper;
     private final GlobalInstanceConfigService instanceConfigService;
     private final SseEmitterRegistry sseEmitterRegistry;
+    private final ItemRepository itemRepository;
+    private final EditionCategoryRepository editionCategoryRepository;
 
     private Edition findById(Long id) {
         return repository.findById(id)
@@ -79,6 +82,9 @@ public class EditionService {
         if (edition.getPhase() != PhaseType.PREPARATION) {
             throw new EditionCannotBeDeletedException();
         }
+        if (itemRepository.existsByEditionId(id)) {
+            throw new EditionCannotBeDeletedException();
+        }
         repository.delete(edition);
     }
 
@@ -87,6 +93,9 @@ public class EditionService {
         Edition edition = findById(id);
         PhaseType previousPhase = edition.getPhase();
         PhaseType newPhase = computeNextPhase(previousPhase);
+        if (newPhase == PhaseType.DEPOSIT && !editionCategoryRepository.existsByEditionId(id)) {
+            throw new NoCategoriesConfiguredException();
+        }
         return savePhaseThenSendEvent(id, edition, newPhase, previousPhase);
     }
 

@@ -72,7 +72,9 @@
       "management": "Management"
     },
     "sidebar": {
-      "label": "Main navigation"
+      "label": "Main navigation",
+      "collapse": "Collapse navigation",
+      "expand": "Expand navigation"
     },
     "admin": {
       "users": "Volunteers",
@@ -92,15 +94,21 @@
         "phase": "Phase",
         "commissionRate": "Commission (%)",
         "documentLanguage": "Document language",
-        "createdAt": "Created on",
         "startDate": "Start date",
         "endDate": "End date",
         "actions": "Actions"
       }
     },
     "form": {
-      "startDate": "Start date",
-      "endDate": "End date"
+      "startDate": {
+        "label": "Start date",
+        "required": "Start date is required."
+      },
+      "endDate": {
+        "label": "End date",
+        "required": "End date is required.",
+        "beforeStart": "End date must not be before the start date."
+      }
     },
     "create": {
       "title": "Create Edition",
@@ -175,7 +183,10 @@
     "advance": {
       "button": "Advance to",
       "success": "Phase advanced.",
-      "error": "Failed to advance phase.",
+      "error": {
+        "generic": "Failed to advance phase.",
+        "noCategoriesConfigured": "At least one category must be configured before entering the Deposit phase."
+      },
       "dialog": {
         "title": "Advance to {{nextPhase}}?",
         "description": {
@@ -264,6 +275,50 @@
         "error": {
           "create": "Failed to create seller profile.",
           "emailInvalid": "Email address is not valid."
+        }
+      },
+      "item": {
+        "form": {
+          "createTitle": "Add item",
+          "editTitle": "Edit item",
+          "name": "Name",
+          "price": "Price",
+          "category": "Category",
+          "incomplete": "Incomplete",
+          "comment": "Comment",
+          "submit": "Add",
+          "save": "Save",
+          "cancel": "Cancel",
+          "tableAssigned": "Table {{ table }} assigned.",
+          "error": {
+            "save": "Failed to save the item.",
+            "phaseLocked": "This item cannot be modified outside the Deposit phase."
+          }
+        },
+        "list": {
+          "title": "Deposited items ({{ count }})",
+          "empty": "No items deposited for this seller yet.",
+          "priceFormat": "{{ price }} €",
+          "table": "Table {{ table }}",
+          "complete": "Complete",
+          "incomplete": "Incomplete",
+          "edit": "Edit item",
+          "delete": "Delete item",
+          "editComment": "Edit comment"
+        },
+        "error": {
+          "load": "Failed to load items.",
+          "loadCategories": "Failed to load categories.",
+          "update": "Failed to update the item.",
+          "delete": "Failed to delete the item.",
+          "phaseLocked": "This item cannot be modified outside the Deposit phase."
+        },
+        "success": {
+          "delete": "Item deleted."
+        },
+        "deleteDialog": {
+          "title": "Delete item?",
+          "description": "Are you sure you want to delete the item \"{{ name }}\"? This action cannot be undone."
         }
       }
     }

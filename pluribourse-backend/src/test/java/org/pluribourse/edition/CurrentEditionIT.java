@@ -9,6 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
 import org.springframework.test.web.servlet.*;
 
+import java.time.*;
+import java.util.*;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,7 +40,7 @@ class CurrentEditionIT extends IntegrationTest {
         MvcResult tempEdition = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Setup Edition\"}"))
+                        .content("{\"name\":\"Setup Edition\",\"startDate\":\"2026-01-01\",\"endDate\":\"2026-01-03\"}"))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long tempEditionId = objectMapper.readTree(tempEdition.getResponse().getContentAsString()).get("id").asLong();
@@ -70,7 +73,7 @@ class CurrentEditionIT extends IntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse 2026", null, null, null, null, false, null, null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3)))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();
@@ -93,6 +96,13 @@ class CurrentEditionIT extends IntegrationTest {
     @Test
     @Order(4)
     void current_edition_returns_404_after_edition_closed() throws Exception {
+        mockMvc.perform(put("/api/admin/editions/" + editionId + "/categories")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(
+                                Map.of("name", "Jouets", "tableNumbers", List.of(1))))))
+                .andExpect(status().isOk());
+
         // Advance PREPARATION → DEPOSIT → SALE → POST_SALE → CLOSED
         for (int i = 0; i < 4; i++) {
             mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")

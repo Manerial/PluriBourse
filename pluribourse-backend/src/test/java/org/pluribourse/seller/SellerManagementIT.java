@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ class SellerManagementIT extends IntegrationTest {
         MvcResult editionResult = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Vendeurs 2026", null, null, null, null, false, null, null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Vendeurs 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3)))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -85,6 +86,13 @@ class SellerManagementIT extends IntegrationTest {
 
     @Test @Order(3)
     void advance_edition_to_deposit_phase() throws Exception {
+        mockMvc.perform(put("/api/admin/editions/" + editionId + "/categories")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(
+                                Map.of("name", "Jouets", "tableNumbers", List.of(1))))))
+                .andExpect(status().isOk());
+
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())

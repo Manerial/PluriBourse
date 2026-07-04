@@ -44,7 +44,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
         mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Setup Edition\"}"))
+                        .content("{\"name\":\"Setup Edition\",\"startDate\":\"2026-01-01\",\"endDate\":\"2026-01-03\"}"))
                 .andExpect(status().isCreated());
 
         MvcResult volunteerLogin = mockMvc.perform(post("/api/auth/login")

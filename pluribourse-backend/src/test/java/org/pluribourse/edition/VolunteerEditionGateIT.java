@@ -9,6 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
 import org.springframework.test.web.servlet.*;
 
+import java.time.*;
+import java.util.*;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -61,7 +64,7 @@ class VolunteerEditionGateIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new EditionDto(null, "Bourse Test Gate", null, null, null, null, false, null, null))))
+                                new EditionDto(null, "Bourse Test Gate", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3)))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();
@@ -76,6 +79,13 @@ class VolunteerEditionGateIT extends IntegrationTest {
     @Test
     @Order(4)
     void volunteer_login_fails_again_when_edition_closed() throws Exception {
+        mockMvc.perform(put("/api/admin/editions/" + editionId + "/categories")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(
+                                Map.of("name", "Jouets", "tableNumbers", List.of(1))))))
+                .andExpect(status().isOk());
+
         // PREPARATION → DEPOSIT → SALE → POST_SALE → CLOSED (4 advances)
         for (int i = 0; i < 4; i++) {
             mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")

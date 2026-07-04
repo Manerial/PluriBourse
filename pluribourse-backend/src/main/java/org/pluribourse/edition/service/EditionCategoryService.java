@@ -6,6 +6,7 @@ import org.pluribourse.edition.entity.*;
 import org.pluribourse.edition.exception.*;
 import org.pluribourse.edition.mapper.*;
 import org.pluribourse.edition.repository.*;
+import org.pluribourse.item.repository.ItemRepository;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
@@ -18,6 +19,7 @@ public class EditionCategoryService {
     private final EditionCategoryRepository categoryRepository;
     private final EditionRepository editionRepository;
     private final EditionCategoryMapper mapper;
+    private final ItemRepository itemRepository;
 
     @Transactional(readOnly = true)
     public List<EditionCategoryDto> getCategories(Long editionId) {
@@ -63,10 +65,18 @@ public class EditionCategoryService {
         return categories;
     }
 
+    /**
+     * A Deposit→Preparation rollback preserves items (AC 10 of Story 3.2), so an edition can be
+     * back in PREPARATION while items still reference its categories — deleteAllByEditionId()
+     * would then hit the FK constraint on items.category_id (no cascade by design).
+     */
     private Edition requirePreparationPhase(Long editionId) {
         Edition edition = requireEditionExists(editionId);
         if (edition.getPhase() != PhaseType.PREPARATION) {
             throw new CategoriesLockedException();
+        }
+        if (itemRepository.existsByEditionId(editionId)) {
+            throw new CategoriesInUseException();
         }
         return edition;
     }

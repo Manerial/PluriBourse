@@ -42,9 +42,9 @@ public class Edition {
     @Column(name = "is_archived", nullable = false)
     private boolean archived = false;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 }

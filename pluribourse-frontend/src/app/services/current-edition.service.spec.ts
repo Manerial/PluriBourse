@@ -14,8 +14,8 @@ const mockEdition: EditionDto = {
   documentLanguage: Language.FR,
   createdAt: '2026-01-01',
   archived: false,
-  startDate: null,
-  endDate: null,
+  startDate: '2026-06-01',
+  endDate: '2026-06-03',
 };
 
 describe('CurrentEditionService', () => {

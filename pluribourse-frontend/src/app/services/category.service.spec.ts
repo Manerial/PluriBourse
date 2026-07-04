@@ -44,4 +44,12 @@ describe('CategoryService', () => {
     req.flush([MOCK_CATEGORY]);
     expect(await p).toEqual([MOCK_CATEGORY]);
   });
+
+  it('getCategoriesForActiveEdition() sends GET /api/categories', async () => {
+    const p = firstValueFrom(service.getCategoriesForActiveEdition());
+    const req = http.expectOne('/api/categories');
+    expect(req.request.method).toBe('GET');
+    req.flush([MOCK_CATEGORY]);
+    expect(await p).toEqual([MOCK_CATEGORY]);
+  });
 });

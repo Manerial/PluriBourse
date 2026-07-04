@@ -25,4 +25,8 @@ export class CategoryService {
       {}
     );
   }
+
+  getCategoriesForActiveEdition(): Observable<EditionCategoryDto[]> {
+    return this.http.get<EditionCategoryDto[]>('/api/categories');
+  }
 }

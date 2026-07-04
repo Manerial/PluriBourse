@@ -72,7 +72,9 @@
       "management": "Gestion"
     },
     "sidebar": {
-      "label": "Navigation principale"
+      "label": "Navigation principale",
+      "collapse": "Réduire la navigation",
+      "expand": "Déplier la navigation"
     },
     "admin": {
       "users": "Bénévoles",
@@ -92,15 +94,21 @@
         "phase": "Phase",
         "commissionRate": "Commission (%)",
         "documentLanguage": "Langue des documents",
-        "createdAt": "Créée le",
         "startDate": "Date de début",
         "endDate": "Date de fin",
         "actions": "Actions"
       }
     },
     "form": {
-      "startDate": "Date de début",
-      "endDate": "Date de fin"
+      "startDate": {
+        "label": "Date de début",
+        "required": "La date de début est obligatoire."
+      },
+      "endDate": {
+        "label": "Date de fin",
+        "required": "La date de fin est obligatoire.",
+        "beforeStart": "La date de fin ne peut pas être antérieure à la date de début."
+      }
     },
     "create": {
       "title": "Créer une édition",
@@ -175,7 +183,10 @@
     "advance": {
       "button": "Avancer vers",
       "success": "Phase avancée.",
-      "error": "Impossible de faire avancer la phase.",
+      "error": {
+        "generic": "Impossible de faire avancer la phase.",
+        "noCategoriesConfigured": "Au moins une catégorie doit être configurée avant de passer en phase de dépôt."
+      },
       "dialog": {
         "title": "Avancer vers {{nextPhase}} ?",
         "description": {
@@ -264,6 +275,50 @@
         "error": {
           "create": "Impossible de créer le profil vendeur.",
           "emailInvalid": "L'adresse e-mail n'est pas valide."
+        }
+      },
+      "item": {
+        "form": {
+          "createTitle": "Ajouter un article",
+          "editTitle": "Modifier l'article",
+          "name": "Nom",
+          "price": "Prix",
+          "category": "Catégorie",
+          "incomplete": "Incomplet",
+          "comment": "Commentaire",
+          "submit": "Ajouter",
+          "save": "Enregistrer",
+          "cancel": "Annuler",
+          "tableAssigned": "Table {{ table }} assignée.",
+          "error": {
+            "save": "Impossible d'enregistrer l'article.",
+            "phaseLocked": "Cet article ne peut pas être modifié en dehors de la phase Dépôt."
+          }
+        },
+        "list": {
+          "title": "Articles déposés ({{ count }})",
+          "empty": "Aucun article déposé pour ce vendeur.",
+          "priceFormat": "{{ price }} €",
+          "table": "Table {{ table }}",
+          "complete": "Complet",
+          "incomplete": "Incomplet",
+          "edit": "Modifier l'article",
+          "delete": "Supprimer l'article",
+          "editComment": "Modifier le commentaire"
+        },
+        "error": {
+          "load": "Impossible de charger les articles.",
+          "loadCategories": "Impossible de charger les catégories.",
+          "update": "Impossible de mettre à jour l'article.",
+          "delete": "Impossible de supprimer l'article.",
+          "phaseLocked": "Cet article ne peut pas être modifié en dehors de la phase Dépôt."
+        },
+        "success": {
+          "delete": "Article supprimé."
+        },
+        "deleteDialog": {
+          "title": "Supprimer l'article ?",
+          "description": "Voulez-vous vraiment supprimer l'article « {{ name }} » ? Cette action est irréversible."
         }
       }
     }

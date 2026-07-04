@@ -7,8 +7,8 @@ type EditionRequest = {
   name: string;
   commissionRate: number | null;
   documentLanguage: 'EN' | 'FR';
-  startDate: string | null;
-  endDate: string | null;
+  startDate: string;
+  endDate: string;
 };
 
 @Injectable({ providedIn: 'root' })

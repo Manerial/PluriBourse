@@ -41,13 +41,26 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>{{ 'edition.form.startDate' | translate }}</mat-label>
-      <input matInput formControlName="startDate" type="date" />
+      <mat-label>{{ 'edition.form.startDate.label' | translate }}</mat-label>
+      <input matInput formControlName="startDate" [matDatepicker]="startDatePicker" />
+      <mat-datepicker-toggle matIconSuffix [for]="startDatePicker" />
+      <mat-datepicker #startDatePicker />
+      @if (form.controls.startDate.errors?.['required'] && form.controls.startDate.touched) {
+        <mat-error>{{ 'edition.form.startDate.required' | translate }}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>{{ 'edition.form.endDate' | translate }}</mat-label>
-      <input matInput formControlName="endDate" type="date" />
+      <mat-label>{{ 'edition.form.endDate.label' | translate }}</mat-label>
+      <input matInput formControlName="endDate" [matDatepicker]="endDatePicker" />
+      <mat-datepicker-toggle matIconSuffix [for]="endDatePicker" />
+      <mat-datepicker #endDatePicker />
+      @if (form.controls.endDate.errors?.['required'] && form.controls.endDate.touched) {
+        <mat-error>{{ 'edition.form.endDate.required' | translate }}</mat-error>
+      }
+      @if (form.errors?.['dateRange'] && form.controls.endDate.touched) {
+        <mat-error>{{ 'edition.form.endDate.beforeStart' | translate }}</mat-error>
+      }
     </mat-form-field>
 
     <div class="dialog__actions">

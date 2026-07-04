@@ -1,5 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -16,8 +17,8 @@ const MOCK_EDITION = {
   name: 'Bourse Printemps',
   commissionRate: 15,
   documentLanguage: 'FR' as const,
-  startDate: null,
-  endDate: null,
+  startDate: '2026-10-01',
+  endDate: '2026-10-03',
   phase: 'PREPARATION' as const,
 };
 
@@ -43,6 +44,7 @@ describe('EditionFormComponent', () => {
         imports: [EditionFormComponent],
         providers: [
           provideTranslateService({ lang: 'en' }),
+          provideNativeDateAdapter(),
           { provide: EditionService, useValue: editionServiceMock },
           { provide: GlobalInstanceConfigService, useValue: instanceConfigMock },
           { provide: ToastService, useValue: toastMock },
@@ -65,15 +67,26 @@ describe('EditionFormComponent', () => {
       expect(component.form.controls.documentLanguage.value).toBe('EN');
     });
 
+    function fillRequiredDates(): void {
+      component.form.controls.startDate.setValue(new Date(2026, 9, 1));
+      component.form.controls.endDate.setValue(new Date(2026, 9, 3));
+    }
+
+    it('form is invalid when dates are empty', () => {
+      component.form.controls.name.setValue('Bourse 2026');
+      expect(component.form.invalid).toBe(true);
+    });
+
     it('calls editionService.create with form values on valid submit', async () => {
       component.form.controls.name.setValue('Bourse 2026');
+      fillRequiredDates();
       await component.onSubmit();
       expect(editionServiceMock.create).toHaveBeenCalledWith({
         name: 'Bourse 2026',
         commissionRate: 20,
         documentLanguage: 'EN',
-        startDate: null,
-        endDate: null,
+        startDate: '2026-10-01',
+        endDate: '2026-10-03',
       });
       expect(toastMock.showSuccess).toHaveBeenCalledOnce();
     });
@@ -84,6 +97,7 @@ describe('EditionFormComponent', () => {
         error: { type: 'https://pluribourse/errors/edition-already-active' }
       })));
       component.form.controls.name.setValue('Bourse 2027');
+      fillRequiredDates();
       await component.onSubmit();
       expect(component.formError()).toBe('edition.create.error.alreadyActive');
       expect(toastMock.showError).not.toHaveBeenCalled();
@@ -92,6 +106,7 @@ describe('EditionFormComponent', () => {
     it('shows error toast on non-422 API error', async () => {
       editionServiceMock.create.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
       component.form.controls.name.setValue('Bourse 2027');
+      fillRequiredDates();
       await component.onSubmit();
       expect(toastMock.showError).toHaveBeenCalledOnce();
       expect(component.formError()).toBeNull();
@@ -99,6 +114,7 @@ describe('EditionFormComponent', () => {
 
     it('isSaving is false after submit completes', async () => {
       component.form.controls.name.setValue('Bourse 2026');
+      fillRequiredDates();
       await component.onSubmit();
       expect(component.isSaving()).toBe(false);
     });
@@ -110,6 +126,7 @@ describe('EditionFormComponent', () => {
 
     it('closes the dialog after a successful create', async () => {
       component.form.controls.name.setValue('Bourse 2026');
+      fillRequiredDates();
       await component.onSubmit();
       expect(dialogRefMock.close).toHaveBeenCalledOnce();
     });
@@ -124,6 +141,7 @@ describe('EditionFormComponent', () => {
         imports: [EditionFormComponent],
         providers: [
           provideTranslateService({ lang: 'en' }),
+          provideNativeDateAdapter(),
           { provide: EditionService, useValue: editionServiceMock },
           { provide: GlobalInstanceConfigService, useValue: instanceConfigMock },
           { provide: ToastService, useValue: toastMock },
@@ -141,6 +159,8 @@ describe('EditionFormComponent', () => {
       expect(component.form.controls.name.value).toBe('Bourse Printemps');
       expect(component.form.controls.commissionRate.value).toBe(15);
       expect(component.form.controls.documentLanguage.value).toBe('FR');
+      expect(component.form.controls.startDate.value).toEqual(new Date(2026, 9, 1));
+      expect(component.form.controls.endDate.value).toEqual(new Date(2026, 9, 3));
     });
 
     it('sets the dialog title to the loaded edition name', () => {
@@ -153,8 +173,8 @@ describe('EditionFormComponent', () => {
         name: 'Bourse Printemps',
         commissionRate: 15,
         documentLanguage: 'FR',
-        startDate: null,
-        endDate: null,
+        startDate: '2026-10-01',
+        endDate: '2026-10-03',
       });
       expect(dialogRefMock.close).toHaveBeenCalledOnce();
     });

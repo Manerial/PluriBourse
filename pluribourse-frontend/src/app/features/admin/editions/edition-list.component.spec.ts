@@ -15,7 +15,7 @@ import { EditionDto } from '../../../models/edition.model';
 import { Language } from '../../../models/language.enum';
 
 const MOCK_EDITIONS: EditionDto[] = [
-  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false, startDate: null, endDate: null }
+  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false, startDate: '2026-06-01', endDate: '2026-06-03' }
 ];
 
 describe('EditionListComponent', () => {

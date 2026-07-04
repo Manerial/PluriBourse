@@ -1,5 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -13,7 +14,7 @@ import { Language } from '../../../../models/language.enum';
 const MOCK_EDITION: EditionDto = {
   id: 1, name: 'Bourse 2026', phase: 'PREPARATION',
   commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false,
-  startDate: null, endDate: null
+  startDate: '2026-06-01', endDate: '2026-06-03'
 };
 
 describe('PhaseControlComponent', () => {
@@ -108,6 +109,17 @@ describe('PhaseControlComponent', () => {
     component.confirmAdvance();
     await fixture.whenStable();
     expect(toastMock.showError).toHaveBeenCalledOnce();
+  });
+
+  it('confirmAdvance — confirmed: shows specific error toast when no categories are configured', async () => {
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.advancePhase.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 422,
+      error: { type: 'https://pluribourse/errors/no-categories-configured' },
+    })));
+    component.confirmAdvance();
+    await fixture.whenStable();
+    expect(toastMock.showError).toHaveBeenCalledWith('phase.advance.error.noCategoriesConfigured');
   });
 
   it('confirmAdvance — confirmed: closes the dialog after a successful advance', async () => {

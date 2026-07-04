@@ -1,8 +1,9 @@
-import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../services/auth.service';
@@ -11,10 +12,29 @@ import { CurrentEditionService } from '../../services/current-edition.service';
 import { SseService } from '../../services/sse.service';
 import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 
+const SIDEBAR_COLLAPSED_KEY_PREFIX = 'pluribourse.sidebarCollapsed.';
+
+// localStorage throws in private-browsing/storage-disabled contexts — must not break the layout.
+function readSidebarCollapsed(username: string): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY_PREFIX + username) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writeSidebarCollapsed(username: string, collapsed: boolean): void {
+  try {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY_PREFIX + username, String(collapsed));
+  } catch {
+    // Non-critical: the preference just won't persist across reloads.
+  }
+}
+
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, TranslatePipe, ToastContainerComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, ToastContainerComponent],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.scss'
 })
@@ -28,6 +48,7 @@ export class AppLayoutComponent implements OnInit {
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
   readonly isVolunteer = computed(() => this.auth.currentUser()?.role === 'VOLUNTEER');
   readonly currentEdition = this.currentEditionService.currentEdition;
+  readonly sidebarCollapsed = signal(readSidebarCollapsed(this.auth.currentUser()?.username ?? ''));
 
   constructor() {
     // Skips the effect's own initial run (fired at construction, before ngOnInit's loadEdition()
@@ -66,5 +87,11 @@ export class AppLayoutComponent implements OnInit {
 
   async logout(): Promise<void> {
     await this.auth.logout();
+  }
+
+  toggleSidebar(): void {
+    const collapsed = !this.sidebarCollapsed();
+    this.sidebarCollapsed.set(collapsed);
+    writeSidebarCollapsed(this.auth.currentUser()?.username ?? '', collapsed);
   }
 }

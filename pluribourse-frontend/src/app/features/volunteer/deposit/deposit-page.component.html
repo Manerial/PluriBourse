@@ -1,0 +1,99 @@
+<div class="deposit-orchestrator">
+  <app-seller-search />
+
+  @if (selectedSeller(); as seller) {
+    <app-item-form
+      [sellerId]="seller.id"
+      [categories]="categories()"
+      [editingItem]="editingItem()"
+      (saved)="onItemSaved()"
+      (cancelled)="cancelEdit()" />
+
+    <div class="card items-card">
+      <div class="card__header">
+        <h2 class="card__title">
+          {{ 'volunteer.deposit.item.list.title' | translate: { count: items().length } }}
+        </h2>
+      </div>
+
+      <div class="card__body">
+        @if (itemsLoading()) {
+          <app-skeleton-row [rows]="3" />
+        }
+
+        @if (itemsError()) {
+          <app-notification-inline [message]="itemsError()! | translate" variant="error" />
+        }
+
+        @if (!itemsLoading() && !itemsError()) {
+          @if (items().length === 0) {
+            <app-empty-state icon="inventory_2" [message]="'volunteer.deposit.item.list.empty' | translate" />
+          } @else {
+            <ul class="article-list">
+              @for (item of items(); track item.id) {
+                <li class="article-row">
+                  <div class="article-row__main">
+                    <span class="article-row__name">{{ item.name }}</span>
+                    <span class="article-row__meta">
+                      {{ item.categoryName }} · {{ 'volunteer.deposit.item.list.priceFormat' | translate: { price: item.price } }} ·
+                      {{ 'volunteer.deposit.item.list.table' | translate: { table: item.tableNumber } }}
+                    </span>
+                    @if (item.comment) {
+                      <span class="article-row__comment">{{ item.comment }}</span>
+                    }
+                  </div>
+
+                  <mat-checkbox [checked]="!item.incomplete" (change)="toggleIncomplete(item)">
+                    {{ (item.incomplete ? 'volunteer.deposit.item.list.incomplete' : 'volunteer.deposit.item.list.complete') | translate }}
+                  </mat-checkbox>
+
+                  <div class="article-row__actions">
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="openCommentEditor(item)"
+                      [attr.aria-label]="'volunteer.deposit.item.list.editComment' | translate">
+                      <mat-icon>comment</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="startEdit(item)"
+                      [attr.aria-label]="'volunteer.deposit.item.list.edit' | translate">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      (click)="confirmDelete(item)"
+                      [attr.aria-label]="'volunteer.deposit.item.list.delete' | translate">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+
+                  @if (commentEditId() === item.id) {
+                    <div class="article-row__comment-editor">
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'volunteer.deposit.item.form.comment' | translate }}</mat-label>
+                        <textarea matInput rows="2" [ngModel]="commentDraft()" (ngModelChange)="commentDraft.set($event)"></textarea>
+                      </mat-form-field>
+                      <div class="article-row__comment-editor-actions">
+                        <button type="button" mat-button (click)="cancelCommentEdit()">
+                          {{ 'volunteer.deposit.item.form.cancel' | translate }}
+                        </button>
+                        <button type="button" mat-flat-button color="primary" (click)="saveComment(item)">
+                          {{ 'volunteer.deposit.item.form.save' | translate }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

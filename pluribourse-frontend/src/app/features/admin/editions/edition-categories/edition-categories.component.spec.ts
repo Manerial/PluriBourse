@@ -15,7 +15,7 @@ import { Language } from '../../../../models/language.enum';
 const MOCK_EDITION_PREP: EditionDto = {
   id: 1, name: 'Bourse 2026', phase: 'PREPARATION',
   commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01',
-  archived: false, startDate: null, endDate: null
+  archived: false, startDate: '2026-06-01', endDate: '2026-06-03'
 };
 
 const MOCK_EDITION_DEPOSIT: EditionDto = {
@@ -25,7 +25,7 @@ const MOCK_EDITION_DEPOSIT: EditionDto = {
 const MOCK_CLOSED: EditionDto = {
   id: 2, name: 'Bourse 2025', phase: 'CLOSED',
   commissionRate: 20, documentLanguage: Language.EN, createdAt: '2025-01-01',
-  archived: false, startDate: null, endDate: null
+  archived: false, startDate: '2026-06-01', endDate: '2026-06-03'
 };
 
 const MOCK_CATEGORY: EditionCategoryDto = { id: 1, name: 'Jouets', tableNumbers: [1, 2] };

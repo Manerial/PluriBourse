@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { map } from 'rxjs';
 import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 import { CurrentEditionService } from '../../services/current-edition.service';
+import { depositPhaseGuard } from '../../core/guards/deposit-phase.guard';
 
 export const volunteerRoutes: Routes = [
   {
@@ -17,7 +18,8 @@ export const volunteerRoutes: Routes = [
   },
   {
     path: 'deposit',
+    canActivate: [depositPhaseGuard],
     loadComponent: () =>
-      import('./deposit/seller-search.component').then((m) => m.SellerSearchComponent),
+      import('./deposit/deposit-page.component').then((m) => m.DepositPageComponent),
   },
 ];

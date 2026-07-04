@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { firstValueFrom } from 'rxjs';
@@ -12,6 +13,7 @@ import { ToastService } from '../../../../shared/components/toast/toast.service'
 import { SkeletonRowComponent } from '../../../../shared/components/skeleton-row/skeleton-row.component';
 import { NotificationInlineComponent } from '../../../../shared/components/notification-inline/notification-inline.component';
 import { DialogShellComponent } from '../../../../shared/components/dialog-shell/dialog-shell.component';
+import { extractErrorType } from '../../../../shared/http-error.util';
 
 const PHASE_ORDER: PhaseType[] = ['PREPARATION', 'DEPOSIT', 'SALE', 'POST_SALE', 'CLOSED'];
 
@@ -114,8 +116,12 @@ export class PhaseControlComponent implements OnInit {
         this.edition.set(await firstValueFrom(this.editionService.advancePhase(e.id)));
         this.toast.showSuccess(this.translate.instant('phase.advance.success'));
         this.dialogRef.close();
-      } catch {
-        this.toast.showError(this.translate.instant('phase.advance.error'));
+      } catch (err: unknown) {
+        if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/no-categories-configured')) {
+          this.toast.showError(this.translate.instant('phase.advance.error.noCategoriesConfigured'));
+        } else {
+          this.toast.showError(this.translate.instant('phase.advance.error.generic'));
+        }
       } finally {
         this.isSubmitting.set(false);
       }
