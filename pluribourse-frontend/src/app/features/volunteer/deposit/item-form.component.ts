@@ -104,6 +104,8 @@ export class ItemFormComponent {
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/item-modification-locked')) {
         this.error.set('volunteer.deposit.item.form.error.phaseLocked');
+      } else if (err instanceof HttpErrorResponse && err.status === 404 && extractErrorType(err)?.endsWith('/no-active-edition')) {
+        this.error.set('volunteer.deposit.item.form.error.noActiveEdition');
       } else {
         this.error.set('volunteer.deposit.item.form.error.save');
       }

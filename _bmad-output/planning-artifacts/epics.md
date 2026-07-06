@@ -45,7 +45,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-082 : L'administrateur peut revenir en arrière d'une phase à la fois. Les ventes et les soldes sont préservés. Les articles des vendeurs déjà soldés ne peuvent plus être vendus. Le retour arrière depuis l'état Clôturé est désactivé après l'Archivage de l'édition.
 - FR-088 : Après clôture, l'administrateur peut déclencher l'« Archivage de l'édition » — copie chaque article (nom, catégorie, statut vendu/invendu) dans une table d'archivage, puis supprime définitivement les enregistrements d'articles et les profils vendeurs de l'édition. Les articles de lot sont archivés individuellement sans conserver la notion de lot. Nécessite une confirmation explicite. Désactive le retour arrière vers Post-vente.
 - FR-096 : À la clôture de l'édition, tous les vendeurs non soldés sont automatiquement marqués « Non réclamé » et leurs montants enregistrés en recettes de l'association (même logique que FR-052), de manière atomique avec la transition de phase. Si au moins un vendeur est non soldé, la boîte de dialogue de confirmation affiche le nombre de vendeurs concernés et le montant total à transférer. Le bouton « Clôturer l'édition » n'est plus désactivé en présence de vendeurs non soldés.
-- FR-099 : Si aucune édition n'est en phase active (Préparation, Dépôt, Vente, Post-vente), les bénévoles ne peuvent pas se connecter. L'authentification est rejetée avec une erreur distinguable `no-active-edition`. Les administrateurs ne sont pas affectés. Les sessions bénévoles déjà ouvertes restent valides jusqu'à déconnexion.
+- FR-099 : *(Retiré — 2026-07-06)* Les bénévoles peuvent se connecter à tout moment ; l'accès aux données d'édition reste protégé par FR-015 (isolation stricte par édition), vérifiée côté serveur à chaque requête.
 - FR-100 : Une édition possède deux dates optionnelles — date de début et date de fin — à titre purement informatif et administratif. Ces dates n'ont aucune incidence sur la logique métier. Elles sont saisies dans le formulaire de création/édition, affichées dans la liste des éditions et conservées en base de données.
 
 **F3 — Gestion des vendeurs et des articles (Phase Dépôt)**
@@ -112,6 +112,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 **F7 — Comptes utilisateurs et contrôle d'accès**
 
 - FR-060 : L'administrateur crée, modifie et désactive les comptes bénévoles. L'administrateur peut réinitialiser le mot de passe d'un bénévole.
+- FR-101 : Lorsque l'administrateur désactive ou supprime un compte bénévole, toute session déjà ouverte pour ce compte est invalidée côté serveur immédiatement — le bénévole perd l'accès à sa prochaine requête, sans attendre l'expiration naturelle de la session (jusqu'à 1h).
 - FR-061 : Il existe un seul compte administrateur par instance.
 - FR-062 : Au premier lancement, le compte administrateur est initialisé avec les identifiants Admin/Admin. L'administrateur est forcé de changer son mot de passe à la première connexion.
 - FR-063 : Si l'administrateur perd son mot de passe, une commande exécutée sur le serveur génère un mot de passe temporaire. L'administrateur est forcé de le changer à la connexion suivante.
@@ -223,7 +224,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-016 : Epic 2 — Taux de commission figé dès le démarrage de la phase Dépôt
 - FR-017 : Epic 2 — L'admin configure les catégories d'articles par édition (Story 2.5)
 - FR-018 : Epic 2 — L'admin configure la correspondance catégorie-table (Story 2.5)
-- FR-099 : Epic 2 — Blocage de connexion bénévole sans édition active (Story 2.3)
+- FR-099 : Epic 2 — Retiré (voir Story 2.3, amendée le 2026-07-06)
 - FR-100 : Epic 2 — Dates de début et de fin d'édition optionnelles (Story 2.4)
 - FR-019 : Epic 3 — Les profils vendeurs sont propres à chaque édition
 - FR-020 : Epic 3 — Le bénévole recherche/crée des profils vendeurs
@@ -268,6 +269,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-058 : Epic 5 — Rapports accessibles à l'admin uniquement
 - FR-059 : Epic 5 — Éditions clôturées : métriques agrégées + profils vendeurs + détail articles en lecture seule jusqu'à l'Archivage ; après archivage, seules les métriques agrégées en base
 - FR-060 : Epic 1 — L'admin crée/modifie/désactive les comptes bénévoles, réinitialise les mots de passe
+- FR-101 : Epic 1 — Invalidation de session immédiate à la désactivation/suppression d'un compte bénévole (Story 1.12)
 - FR-061 : Epic 1 — Un seul compte admin par instance
 - FR-062 : Epic 1 — Premier lancement : identifiants Admin/Admin, changement de mot de passe forcé
 - FR-063 : Epic 1 — Réinitialisation du mot de passe admin via commande CLI serveur
@@ -728,6 +730,33 @@ afin de rester dans le contexte de la liste en cours et de bénéficier d'une fe
 **Quand** cette story est complète
 **Alors** les deux utilisent `DialogShellComponent` comme conteneur commun, avec une croix de fermeture fonctionnellement équivalente à Annuler/Échap
 
+### Story 1.12 : Déconnexion automatique des bénévoles désactivés ou supprimés
+
+En tant qu'administrateur,
+je veux qu'un bénévole désactivé ou supprimé perde immédiatement l'accès à l'application s'il est déjà connecté,
+afin qu'un compte révoqué ne conserve pas un accès fonctionnel pendant la durée résiduelle de sa session (jusqu'à 1h).
+
+**Contexte :** analyse menée le 2026-07-06 (voir `sprint-change-proposal-2026-07-06.md`) — contrairement à la suppression/fermeture d'une édition (où toute action métier échoue déjà côté serveur quelle que soit la session), rien ne revérifie aujourd'hui qu'un utilisateur est toujours actif une fois sa session ouverte : `PluriBourseUserDetails` est mis en cache dans la session à la connexion et n'est jamais rafraîchi depuis la base tant que la session vit.
+
+**Critères d'acceptation :**
+
+**Étant donné** qu'un bénévole a une session ouverte
+**Quand** l'administrateur désactive son compte (`PUT /admin/users/{id}/disable`)
+**Alors** la session de ce bénévole est invalidée côté serveur immédiatement
+**Et** sa prochaine requête authentifiée échoue avec 401, sans attendre l'expiration naturelle de la session
+
+**Étant donné** qu'un bénévole a une session ouverte
+**Quand** l'administrateur supprime son compte (`DELETE /admin/users/{id}`)
+**Alors** la session de ce bénévole est invalidée côté serveur immédiatement, selon le même mécanisme
+
+**Étant donné** qu'un bénévole désactivé est ensuite réactivé par l'administrateur
+**Quand** il tente de se reconnecter
+**Alors** il doit ressaisir ses identifiants — sa session précédente n'est pas restaurée (FR-101)
+
+**Étant donné** qu'un administrateur a une session ouverte
+**Quand** cette story est complète
+**Alors** rien ne change pour les comptes administrateurs — seule la désactivation/suppression d'un compte bénévole déclenche l'invalidation (un seul compte admin existe par instance, FR-061)
+
 ---
 
 ## Epic 2 : Gestion du cycle de vie des éditions
@@ -825,33 +854,15 @@ afin que les transitions de phase soient intentionnelles et que leurs conséquen
 **Quand** le serveur la traite
 **Alors** un événement SSE `phase-changed` est diffusé avec `{editionId, newPhase, previousPhase}`
 
-### Story 2.3 : Blocage de connexion bénévole sans édition active
+### Story 2.3 : Blocage de connexion bénévole sans édition active — RETIRÉE
 
-En tant qu'administrateur,
-je veux que la connexion des bénévoles soit bloquée lorsqu'aucune édition n'est en cours,
-afin que les bénévoles n'accèdent pas au système entre deux événements.
+**Statut : amendée le 2026-07-06** (voir `sprint-change-proposal-2026-07-06.md`).
 
-**Critères d'acceptation :**
-
-**Étant donné** qu'aucune édition n'existe en phase Préparation, Dépôt, Vente ou Post-vente
-**Quand** un bénévole tente de se connecter
-**Alors** l'authentification est rejetée avec un 401 et un type de problème `no-active-edition` (FR-099)
-
-**Étant donné** que la page de connexion reçoit un 401 avec type `no-active-edition`
-**Quand** l'erreur est affichée
-**Alors** une notification inline distincte s'affiche — différente du message « identifiants invalides »
-
-**Étant donné** qu'une édition existe en phase `CLOSED` uniquement
-**Quand** un bénévole tente de se connecter
-**Alors** la connexion est refusée — `CLOSED` n'est pas une phase active (FR-099)
-
-**Étant donné** qu'un admin tente de se connecter alors qu'aucune édition n'est active
-**Quand** les identifiants sont corrects
-**Alors** la connexion est acceptée — la vérification ne s'applique qu'aux bénévoles (FR-099)
-
-**Étant donné** qu'un bénévole est déjà connecté et que l'édition active passe en `CLOSED`
-**Quand** il navigue dans l'application
-**Alors** sa session reste valide jusqu'à déconnexion — l'invalidation de session en cours relève d'une story ultérieure (FR-099)
+Le blocage de connexion des bénévoles hors édition active a été retiré : l'analyse a montré
+qu'il n'apportait pas de protection propre, celle-ci étant déjà assurée par la vérification
+systématique de l'édition active et de sa phase à chaque requête métier (FR-015). Les bénévoles
+peuvent désormais se connecter à tout moment. Voir l'historique complet dans
+`2-3-blocage-benevoles-sans-edition-active.md`.
 
 ### Story 2.4 : Dates de début et de fin d'édition
 

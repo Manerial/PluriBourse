@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +11,7 @@ import { catchError, of, switchMap } from 'rxjs';
 import { SellerDto } from '../../../models/seller.model';
 import { SellerService } from '../../../services/seller.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
+import { extractErrorType } from '../../../shared/http-error.util';
 import { SellerFormComponent } from './seller-form.component';
 
 @Component({
@@ -52,8 +54,12 @@ export class SellerSearchComponent implements AfterViewInit {
         }
         this.error.set(null);
         return this.sellerService.search(trimmed).pipe(
-          catchError(() => {
-            this.error.set('volunteer.deposit.error.search');
+          catchError((err: unknown) => {
+            if (err instanceof HttpErrorResponse && err.status === 404 && extractErrorType(err)?.endsWith('/no-active-edition')) {
+              this.error.set('volunteer.deposit.error.noActiveEdition');
+            } else {
+              this.error.set('volunteer.deposit.error.search');
+            }
             return of<SellerDto[]>([]);
           })
         );

@@ -28,7 +28,7 @@ export class LoginComponent {
   });
 
   readonly loading = signal(false);
-  readonly error = signal<'invalid-credentials' | 'unauthorized-role' | 'account-disabled' | 'no-active-edition' | null>(null);
+  readonly error = signal<'invalid-credentials' | 'unauthorized-role' | 'account-disabled' | null>(null);
 
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
@@ -57,9 +57,7 @@ export class LoginComponent {
       }
     } catch (err) {
       const errorType = err instanceof HttpErrorResponse ? extractErrorType(err) : undefined;
-      if (errorType === 'https://pluribourse/errors/no-active-edition') {
-        this.error.set('no-active-edition');
-      } else if (errorType === 'https://pluribourse/errors/account-disabled') {
+      if (errorType === 'https://pluribourse/errors/account-disabled') {
         this.error.set('account-disabled');
       } else {
         this.error.set('invalid-credentials');

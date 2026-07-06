@@ -52,13 +52,13 @@
 
     <mat-form-field appearance="outline">
       <mat-label>{{ 'edition.form.endDate.label' | translate }}</mat-label>
-      <input matInput formControlName="endDate" [matDatepicker]="endDatePicker" />
+      <input matInput formControlName="endDate" [matDatepicker]="endDatePicker" [min]="form.controls.startDate.value" />
       <mat-datepicker-toggle matIconSuffix [for]="endDatePicker" />
       <mat-datepicker #endDatePicker />
       @if (form.controls.endDate.errors?.['required'] && form.controls.endDate.touched) {
         <mat-error>{{ 'edition.form.endDate.required' | translate }}</mat-error>
       }
-      @if (form.errors?.['dateRange'] && form.controls.endDate.touched) {
+      @if (form.errors?.['dateRange']) {
         <mat-error>{{ 'edition.form.endDate.beforeStart' | translate }}</mat-error>
       }
     </mat-form-field>

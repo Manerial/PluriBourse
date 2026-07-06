@@ -25,8 +25,7 @@
       "error": {
         "invalid-credentials": "Invalid username or password.",
         "unauthorized-role": "Your account is not authorized to access this application.",
-        "account-disabled": "This account has been disabled.",
-        "no-active-edition": "No edition is currently active. Please try again when an event is scheduled."
+        "account-disabled": "This account has been disabled."
       }
     },
     "changePassword": {
@@ -262,7 +261,8 @@
       "createButton": "Create a new profile",
       "change": "Change seller",
       "error": {
-        "search": "Failed to search sellers."
+        "search": "Failed to search sellers.",
+        "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
       },
       "form": {
         "title": "Create seller profile",
@@ -274,7 +274,8 @@
         "cancel": "Cancel",
         "error": {
           "create": "Failed to create seller profile.",
-          "emailInvalid": "Email address is not valid."
+          "emailInvalid": "Email address is not valid.",
+          "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
         }
       },
       "item": {
@@ -292,7 +293,8 @@
           "tableAssigned": "Table {{ table }} assigned.",
           "error": {
             "save": "Failed to save the item.",
-            "phaseLocked": "This item cannot be modified outside the Deposit phase."
+            "phaseLocked": "This item cannot be modified outside the Deposit phase.",
+            "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
           }
         },
         "list": {

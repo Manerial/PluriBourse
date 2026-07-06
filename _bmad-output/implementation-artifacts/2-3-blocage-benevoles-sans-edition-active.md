@@ -4,7 +4,7 @@ baseline_commit: f9c9238ac1a0814d2913274d444a2fc597fc4002
 
 # Story 2.3: Volunteer Login Blocked Without Active Edition
 
-Status: done
+Status: amended (2026-07-06 — see sprint-change-proposal-2026-07-06.md)
 
 ## Story
 
@@ -216,3 +216,10 @@ claude-sonnet-4-6
 
 - 2026-06-29: Story 2.3 implemented — volunteer login gate, integration tests, frontend error handling and i18n
 - 2026-06-30: Code review passed — 0 patches, 3 deferred (pre-existing), story marked done
+- 2026-07-06: Story amendée — le blocage de connexion bénévole (FR-099) est retiré. L'analyse a
+  montré que la protection était déjà assurée nativement par la vérification systématique de
+  l'édition active/phase à chaque requête métier (ItemService/SellerService), rendant le blocage
+  de connexion redondant et générateur de friction UX inutile entre deux événements. Voir
+  sprint-change-proposal-2026-07-06.md pour l'analyse complète. Code retiré :
+  LoginSuccessHandler.java (gate ACTIVE_PHASES), VolunteerEditionGateIT.java,
+  login.component.ts (branche d'erreur no-active-edition), clés i18n associées.

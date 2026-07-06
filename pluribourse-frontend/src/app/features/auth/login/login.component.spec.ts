@@ -1,6 +1,5 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { HttpErrorResponse } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
@@ -55,18 +54,5 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
     const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-flat-button][color="primary"]');
     expect(btn).not.toBeNull();
-  });
-
-  it('sets error to no-active-edition when backend returns that error type', async () => {
-    mockAuth.login.mockRejectedValueOnce(
-      new HttpErrorResponse({ error: { type: 'https://pluribourse/errors/no-active-edition' } })
-    );
-    const fixture = TestBed.createComponent(LoginComponent);
-    fixture.detectChanges();
-    fixture.componentInstance.form.setValue({ username: 'volunteer1', password: 'Admin' });
-    await fixture.componentInstance.onSubmit();
-    fixture.detectChanges();
-    expect(fixture.componentInstance.error()).toBe('no-active-edition');
-    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
   });
 });

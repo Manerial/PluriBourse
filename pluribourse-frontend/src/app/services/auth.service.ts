@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { Language } from '../models/language.enum';
 import { extractErrorType } from '../shared/http-error.util';
+import { detectBrowserLanguage } from '../shared/browser-language.util';
 
 export interface CurrentUser {
   username: string;
@@ -51,7 +52,7 @@ export class AuthService {
       await firstValueFrom(this.http.post<void>('/api/auth/logout', null));
     } finally {
       this._currentUser.set(null);
-      await firstValueFrom(this.translateService.use(Language.EN.toLowerCase()));
+      await firstValueFrom(this.translateService.use(detectBrowserLanguage().toLowerCase()));
       await this.router.navigate(['/login']);
     }
   }
