@@ -40,6 +40,17 @@
       "submit": "Change password",
       "success": "Password changed successfully.",
       "error": "Unable to change password. Please try again."
+    },
+    "printerSelection": {
+      "title": "Choose your printers",
+      "description": "Select the thermal printer and the A4 printer closest to your workstation.",
+      "thermalLabel": "Thermal printer",
+      "a4Label": "A4 printer",
+      "noneOption": "None",
+      "warningNoThermal": "No thermal printer available. Contact an administrator.",
+      "warningNoA4": "No A4 printer available. Contact an administrator.",
+      "submit": "Access the application",
+      "error": "Something went wrong. Please try again."
     }
   },
   "account": {

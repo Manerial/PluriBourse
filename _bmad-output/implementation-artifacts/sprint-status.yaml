@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-07"  # Story 3.4 code review complete, status done (2.7/2.8 still skipped, blocked on Epic 4/5 dependencies not yet built)
+last_updated: "2026-07-07"  # Story 3.9 code review complete, done (reordered before 3.5/3.6/3.7/3.8 — 3.5 needs its session-based printer routing); 2.7/2.8 still skipped, blocked on Epic 4/5 dependencies not yet built
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -80,7 +80,7 @@ development_status:
   3-6-generation-impression-automatique-du-bordereau-de-depot-pdf: backlog
   3-7-vue-admin-de-diagnostic-des-imprimantes: backlog
   3-8-registre-des-imprimantes-admin: backlog
-  3-9-selection-dimprimante-par-le-benevole-a-la-connexion: backlog
+  3-9-selection-dimprimante-par-le-benevole-a-la-connexion: done
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────

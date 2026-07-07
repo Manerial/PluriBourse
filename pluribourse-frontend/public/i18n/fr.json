@@ -40,6 +40,17 @@
       "submit": "Changer le mot de passe",
       "success": "Mot de passe modifié avec succès.",
       "error": "Impossible de changer le mot de passe. Veuillez réessayer."
+    },
+    "printerSelection": {
+      "title": "Choisissez vos imprimantes",
+      "description": "Sélectionnez l'imprimante thermique et l'imprimante A4 les plus proches de votre poste.",
+      "thermalLabel": "Imprimante thermique",
+      "a4Label": "Imprimante A4",
+      "noneOption": "Aucune",
+      "warningNoThermal": "Aucune imprimante thermique disponible. Contactez un administrateur.",
+      "warningNoA4": "Aucune imprimante A4 disponible. Contactez un administrateur.",
+      "submit": "Accéder à l'application",
+      "error": "Une erreur est survenue. Veuillez réessayer."
     }
   },
   "account": {

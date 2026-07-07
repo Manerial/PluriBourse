@@ -707,11 +707,12 @@ pluribourse-frontend/
     │   │   │   └── user-form.component.ts
     │   │   ├── admin/                ← F8
     │   │   │   └── admin-settings.component.ts
+    │   │   ├── setup/                 ← écrans plein-cadre post-connexion, hors AppLayoutComponent
+    │   │   │   └── printer-selection.component.ts  ← FR-098 (sélection imprimante post-connexion, distinct de auth/ : pas un flux d'identifiants)
     │   │   └── shared/
     │   │       ├── nav.component.ts
     │   │       ├── phase-banner.component.ts
-    │   │       ├── confirm-dialog.component.ts
-    │   │       └── printer-selection.component.ts  ← FR-098 (sélection imprimante post-connexion)
+    │   │       └── confirm-dialog.component.ts
     │   ├── services/
     │   │   ├── auth.service.ts
     │   │   ├── edition.service.ts

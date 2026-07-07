@@ -19,6 +19,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'printer-selection',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/setup/printer-selection/printer-selection.component').then(
+        m => m.PrinterSelectionComponent,
+      ),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/app-layout/app-layout.component').then(m => m.AppLayoutComponent),

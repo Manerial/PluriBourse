@@ -52,4 +52,27 @@ describe('authGuard', () => {
     (authService as any)._currentUser.set({ username: 'vol1', role: 'VOLUNTEER', forcePasswordChange: false, preferredLanguage: Language.EN });
     expect(runGuard()).toBe(true);
   });
+
+  it('redirects VOLUNTEER to /printer-selection when the selection is not done', () => {
+    (authService as any)._currentUser.set({ username: 'vol1', role: 'VOLUNTEER', forcePasswordChange: false, preferredLanguage: Language.EN });
+    authService.printerSelectionDone.set(false);
+    const result = runGuard();
+    expect(result).toBeInstanceOf(UrlTree);
+    expect(router.serializeUrl(result as UrlTree)).toBe('/printer-selection');
+  });
+
+  it('does not redirect when already on /printer-selection', () => {
+    (authService as any)._currentUser.set({ username: 'vol1', role: 'VOLUNTEER', forcePasswordChange: false, preferredLanguage: Language.EN });
+    authService.printerSelectionDone.set(false);
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({ routeConfig: { path: 'printer-selection' } } as any, {} as any)
+    );
+    expect(result).toBe(true);
+  });
+
+  it('does not redirect an ADMIN even when printerSelectionDone is false', () => {
+    (authService as any)._currentUser.set(adminUser);
+    authService.printerSelectionDone.set(false);
+    expect(runGuard()).toBe(true);
+  });
 });

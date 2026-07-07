@@ -1,0 +1,37 @@
+<form class="auth-card" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <h1 class="auth-card__title">{{ 'auth.printerSelection.title' | translate }}</h1>
+  <p class="auth-card__description">{{ 'auth.printerSelection.description' | translate }}</p>
+
+  @if (error()) {
+    <app-notification-inline [message]="'auth.printerSelection.error' | translate" variant="error" />
+  }
+  @if (thermalPrinters().length === 0) {
+    <app-notification-inline [message]="'auth.printerSelection.warningNoThermal' | translate" variant="warning" />
+  }
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'auth.printerSelection.thermalLabel' | translate }}</mat-label>
+    <mat-select formControlName="thermalPrinterId">
+      <mat-option [value]="null">{{ 'auth.printerSelection.noneOption' | translate }}</mat-option>
+      @for (printer of thermalPrinters(); track printer.id) {
+        <mat-option [value]="printer.id">{{ printer.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (a4Printers().length === 0) {
+    <app-notification-inline [message]="'auth.printerSelection.warningNoA4' | translate" variant="warning" />
+  }
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'auth.printerSelection.a4Label' | translate }}</mat-label>
+    <mat-select formControlName="a4PrinterId">
+      <mat-option [value]="null">{{ 'auth.printerSelection.noneOption' | translate }}</mat-option>
+      @for (printer of a4Printers(); track printer.id) {
+        <mat-option [value]="printer.id">{{ printer.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <button type="submit" mat-flat-button color="primary" [disabled]="loading()">
+    {{ 'auth.printerSelection.submit' | translate }}
+  </button>
+</form>
