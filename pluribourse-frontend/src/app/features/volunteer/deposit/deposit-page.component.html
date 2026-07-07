@@ -2,12 +2,37 @@
   <app-seller-search />
 
   @if (selectedSeller(); as seller) {
-    <app-item-form
-      [sellerId]="seller.id"
-      [categories]="categories()"
-      [editingItem]="editingItem()"
-      (saved)="onItemSaved()"
-      (cancelled)="cancelEdit()" />
+    <div class="type-selector">
+      <button
+        type="button"
+        class="type-btn"
+        [class.type-btn--active]="depositMode() === 'individual'"
+        (click)="setDepositMode('individual')">
+        {{ 'volunteer.deposit.typeSelector.individual' | translate }}
+      </button>
+      <button
+        type="button"
+        class="type-btn"
+        [class.type-btn--active]="depositMode() === 'lot'"
+        (click)="setDepositMode('lot')">
+        {{ 'volunteer.deposit.typeSelector.lot' | translate }}
+      </button>
+    </div>
+
+    @if (depositMode() === 'individual') {
+      <app-item-form
+        [sellerId]="seller.id"
+        [categories]="categories()"
+        [editingItem]="editingItem()"
+        (saved)="onItemSaved()"
+        (cancelled)="cancelEdit()" />
+    } @else {
+      <app-lot-form
+        [sellerId]="seller.id"
+        [categories]="categories()"
+        (saved)="onLotSaved()"
+        (cancelled)="setDepositMode('individual')" />
+    }
 
     <div class="card items-card">
       <div class="card__header">
@@ -33,10 +58,20 @@
               @for (item of items(); track item.id) {
                 <li class="article-row">
                   <div class="article-row__main">
-                    <span class="article-row__name">{{ item.name }}</span>
+                    <span class="article-row__name">
+                      {{ item.name }}
+                      @if (item.lotId) {
+                        <span class="lot-badge">{{ 'volunteer.deposit.item.list.lotBadge' | translate }} · {{ item.lotName }}</span>
+                      }
+                    </span>
                     <span class="article-row__meta">
-                      {{ item.categoryName }} · {{ 'volunteer.deposit.item.list.priceFormat' | translate: { price: item.price } }} ·
-                      {{ 'volunteer.deposit.item.list.table' | translate: { table: item.tableNumber } }}
+                      {{ item.categoryName }} ·
+                      @if (item.lotId) {
+                        {{ 'volunteer.deposit.item.list.lotPriceFormat' | translate: { price: item.lotPrice } }}
+                      } @else {
+                        {{ 'volunteer.deposit.item.list.priceFormat' | translate: { price: item.price } }}
+                      }
+                      · {{ 'volunteer.deposit.item.list.table' | translate: { table: item.tableNumber } }}
                     </span>
                     @if (item.comment) {
                       <span class="article-row__comment">{{ item.comment }}</span>
@@ -48,28 +83,30 @@
                   </mat-checkbox>
 
                   <div class="article-row__actions">
-                    <button
-                      type="button"
-                      mat-icon-button
-                      (click)="openCommentEditor(item)"
-                      [attr.aria-label]="'volunteer.deposit.item.list.editComment' | translate">
-                      <mat-icon>comment</mat-icon>
-                    </button>
-                    <button
-                      type="button"
-                      mat-icon-button
-                      (click)="startEdit(item)"
-                      [attr.aria-label]="'volunteer.deposit.item.list.edit' | translate">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button
-                      type="button"
-                      mat-icon-button
-                      color="warn"
-                      (click)="confirmDelete(item)"
-                      [attr.aria-label]="'volunteer.deposit.item.list.delete' | translate">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    @if (!item.lotId) {
+                      <button
+                        type="button"
+                        mat-icon-button
+                        (click)="openCommentEditor(item)"
+                        [attr.aria-label]="'volunteer.deposit.item.list.editComment' | translate">
+                        <mat-icon>comment</mat-icon>
+                      </button>
+                      <button
+                        type="button"
+                        mat-icon-button
+                        (click)="startEdit(item)"
+                        [attr.aria-label]="'volunteer.deposit.item.list.edit' | translate">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button
+                        type="button"
+                        mat-icon-button
+                        color="warn"
+                        (click)="confirmDelete(item)"
+                        [attr.aria-label]="'volunteer.deposit.item.list.delete' | translate">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    }
                   </div>
 
                   @if (commentEditId() === item.id) {

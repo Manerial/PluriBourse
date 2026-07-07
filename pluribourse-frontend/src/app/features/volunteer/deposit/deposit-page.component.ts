@@ -19,7 +19,10 @@ import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/sk
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { extractErrorType } from '../../../shared/http-error.util';
 import { ItemFormComponent } from './item-form.component';
+import { LotFormComponent } from './lot-form.component';
 import { SellerSearchComponent } from './seller-search.component';
+
+type DepositMode = 'individual' | 'lot';
 
 @Component({
   selector: 'app-deposit-page',
@@ -36,6 +39,7 @@ import { SellerSearchComponent } from './seller-search.component';
     NotificationInlineComponent,
     SkeletonRowComponent,
     ItemFormComponent,
+    LotFormComponent,
     SellerSearchComponent,
   ],
   templateUrl: './deposit-page.component.html',
@@ -58,6 +62,7 @@ export class DepositPageComponent {
   readonly editingItem = signal<ItemDto | null>(null);
   readonly commentEditId = signal<number | null>(null);
   readonly commentDraft = signal('');
+  readonly depositMode = signal<DepositMode>('individual');
 
   constructor() {
     this.loadCategories();
@@ -66,12 +71,18 @@ export class DepositPageComponent {
       const seller = this.selectedSeller();
       this.editingItem.set(null);
       this.commentEditId.set(null);
+      this.depositMode.set('individual');
       if (seller) {
         this.loadItems(seller.id);
       } else {
         this.items.set([]);
       }
     });
+  }
+
+  setDepositMode(mode: DepositMode): void {
+    this.editingItem.set(null);
+    this.depositMode.set(mode);
   }
 
   startEdit(item: ItemDto): void {
@@ -84,6 +95,14 @@ export class DepositPageComponent {
 
   onItemSaved(): void {
     this.editingItem.set(null);
+    const seller = this.selectedSeller();
+    if (seller) {
+      this.loadItems(seller.id);
+    }
+  }
+
+  onLotSaved(): void {
+    this.depositMode.set('individual');
     const seller = this.selectedSeller();
     if (seller) {
       this.loadItems(seller.id);

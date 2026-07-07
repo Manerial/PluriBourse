@@ -278,6 +278,10 @@
           "noActiveEdition": "Cette édition n'est plus active. Rechargez la page ou reconnectez-vous."
         }
       },
+      "typeSelector": {
+        "individual": "Article individuel",
+        "lot": "Lot"
+      },
       "item": {
         "form": {
           "createTitle": "Ajouter un article",
@@ -297,6 +301,25 @@
             "noActiveEdition": "Cette édition n'est plus active. Rechargez la page ou reconnectez-vous."
           }
         },
+        "lotForm": {
+          "createTitle": "Créer un lot",
+          "lotName": "Nom du lot",
+          "lotPrice": "Prix global du lot (€)",
+          "itemsLabel": "Articles du lot — 2 minimum",
+          "itemName": "Nom de l'article",
+          "itemCategory": "Catégorie",
+          "itemIncomplete": "Incomplet",
+          "itemComment": "Commentaire",
+          "addItem": "Ajouter un article au lot",
+          "removeItem": "Retirer l'article",
+          "submit": "Valider le lot ({{ count }} articles)",
+          "cancel": "Annuler",
+          "error": {
+            "save": "Impossible d'enregistrer le lot.",
+            "phaseLocked": "Ce lot ne peut pas être créé en dehors de la phase Dépôt.",
+            "noActiveEdition": "Cette édition n'est plus active. Rechargez la page ou reconnectez-vous."
+          }
+        },
         "list": {
           "title": "Articles déposés ({{ count }})",
           "empty": "Aucun article déposé pour ce vendeur.",
@@ -306,7 +329,9 @@
           "incomplete": "Incomplet",
           "edit": "Modifier l'article",
           "delete": "Supprimer l'article",
-          "editComment": "Modifier le commentaire"
+          "editComment": "Modifier le commentaire",
+          "lotBadge": "Lot",
+          "lotPriceFormat": "{{ price }} € (lot)"
         },
         "error": {
           "load": "Impossible de charger les articles.",

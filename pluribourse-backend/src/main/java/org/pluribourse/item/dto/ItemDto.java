@@ -11,6 +11,9 @@ public record ItemDto(
         BigDecimal price,
         boolean incomplete,
         String comment,
-        Integer tableNumber
+        Integer tableNumber,
+        Long lotId,
+        String lotName,
+        BigDecimal lotPrice
 ) {
 }

@@ -7,11 +7,13 @@ import { DepositPageComponent } from './deposit-page.component';
 import { SellerSearchComponent } from './seller-search.component';
 import { CategoryService } from '../../../services/category.service';
 import { ItemService } from '../../../services/item.service';
+import { LotService } from '../../../services/lot.service';
 import { SellerService } from '../../../services/seller.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { ItemDto } from '../../../models/item.model';
+import { LotDto } from '../../../models/lot.model';
 import { SellerDto } from '../../../models/seller.model';
 
 const MOCK_CATEGORIES: EditionCategoryDto[] = [{ id: 1, name: 'Jouets', tableNumbers: [1, 2] }];
@@ -28,7 +30,27 @@ const MOCK_ITEM: ItemDto = {
   incomplete: false,
   comment: null,
   tableNumber: 1,
+  lotId: null,
+  lotName: null,
+  lotPrice: null,
 };
+
+const MOCK_LOT_ITEM: ItemDto = {
+  id: 11,
+  sellerProfileId: 5,
+  categoryId: 1,
+  categoryName: 'Jouets',
+  name: 'Piece de lot',
+  price: null,
+  incomplete: false,
+  comment: null,
+  tableNumber: 1,
+  lotId: 20,
+  lotName: 'Lot Jouets',
+  lotPrice: 15,
+};
+
+const MOCK_LOT: LotDto = { id: 20, name: 'Lot Jouets', globalPrice: 15, items: [MOCK_LOT_ITEM] };
 
 describe('DepositPageComponent', () => {
   let fixture: ComponentFixture<DepositPageComponent>;
@@ -41,6 +63,7 @@ describe('DepositPageComponent', () => {
     delete: vi.fn().mockReturnValue(of(undefined)),
   };
   const sellerServiceMock = { search: vi.fn().mockReturnValue(of([])) };
+  const lotServiceMock = { create: vi.fn().mockReturnValue(of(MOCK_LOT)) };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
   const confirmDialogMock = { open: vi.fn().mockReturnValue(of(true)) };
 
@@ -51,6 +74,7 @@ describe('DepositPageComponent', () => {
     itemServiceMock.updateCompleteness.mockReturnValue(of(MOCK_ITEM));
     itemServiceMock.delete.mockReturnValue(of(undefined));
     sellerServiceMock.search.mockReturnValue(of([]));
+    lotServiceMock.create.mockReturnValue(of(MOCK_LOT));
     confirmDialogMock.open.mockReturnValue(of(true));
 
     await TestBed.configureTestingModule({
@@ -60,6 +84,7 @@ describe('DepositPageComponent', () => {
         { provide: CategoryService, useValue: categoryServiceMock },
         { provide: ItemService, useValue: itemServiceMock },
         { provide: SellerService, useValue: sellerServiceMock },
+        { provide: LotService, useValue: lotServiceMock },
         { provide: ToastService, useValue: toastMock },
         { provide: ConfirmDialogService, useValue: confirmDialogMock },
       ],
@@ -201,5 +226,56 @@ describe('DepositPageComponent', () => {
     await fixture.whenStable();
 
     expect(component.items()).toEqual([]);
+  });
+
+  it('defaults to individual mode and switches to lot mode via setDepositMode()', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.depositMode()).toBe('individual');
+    component.setDepositMode('lot');
+    expect(component.depositMode()).toBe('lot');
+  });
+
+  it('selecting a new seller resets deposit mode back to individual', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    component.setDepositMode('lot');
+
+    const otherSeller = { id: 6, firstName: 'Bruno', lastName: 'Durand', email: 'durand@email.com', phone: '0698765432' };
+    getSellerSearch().changeSeller();
+    getSellerSearch().selectSeller(otherSeller);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.depositMode()).toBe('individual');
+  });
+
+  it('onLotSaved() switches back to individual mode and reloads the list', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    component.setDepositMode('lot');
+
+    component.onLotSaved();
+    await fixture.whenStable();
+
+    expect(component.depositMode()).toBe('individual');
+    expect(itemServiceMock.getBySeller).toHaveBeenCalledWith(5);
+  });
+
+  it('renders the lot badge and lot price for items belonging to a lot, without any row actions', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const rowText = fixture.nativeElement.textContent as string;
+    expect(rowText).toContain('Lot Jouets');
+    const actionButtons = fixture.debugElement.queryAll(By.css('.article-row__actions button'));
+    expect(actionButtons).toHaveLength(0);
   });
 });

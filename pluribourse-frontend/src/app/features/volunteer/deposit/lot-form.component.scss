@@ -1,0 +1,52 @@
+.lot-items-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-sm);
+
+  &__label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__add-btn {
+    align-self: flex-start;
+  }
+}
+
+.lot-item-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pb-space-sm);
+  background: var(--mat-sys-surface-variant);
+  border-radius: var(--pb-rounded-md);
+  padding: var(--pb-space-sm) var(--pb-space-md);
+
+  mat-form-field {
+    width: auto;
+  }
+
+  &__num {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant);
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    flex: 1 1 160px;
+  }
+
+  &__category {
+    flex: 0 1 160px;
+  }
+
+  &__comment {
+    flex: 1 1 160px;
+  }
+}

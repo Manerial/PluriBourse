@@ -18,5 +18,6 @@
     <include file="db/changelog/012-seller-profiles.xml"/>
     <include file="db/changelog/013-items.xml"/>
     <include file="db/changelog/014-edition-dates-not-null.xml"/>
+    <include file="db/changelog/015-lots.xml"/>
 
 </databaseChangeLog>

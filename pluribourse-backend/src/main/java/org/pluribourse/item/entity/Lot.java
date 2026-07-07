@@ -8,11 +8,11 @@ import org.pluribourse.seller.entity.*;
 import java.math.*;
 
 @Entity
-@Table(name = "items")
+@Table(name = "lots")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Item {
+public class Lot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,28 +26,11 @@ public class Item {
     @JoinColumn(name = "seller_profile_id", nullable = false)
     private SellerProfile sellerProfile;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "category_id", nullable = false)
-    private EditionCategory category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lot_id")
-    private Lot lot;
-
     @Column(nullable = false, length = 200)
     private String name;
 
-    @Column(nullable = true, precision = 10, scale = 2)
-    private BigDecimal price;
-
-    @Column(nullable = false)
-    private boolean incomplete;
-
-    @Column(length = 500)
-    private String comment;
-
-    @Column(name = "table_number", nullable = false)
-    private Integer tableNumber;
+    @Column(name = "global_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal globalPrice;
 
     @Version
     private Long version;

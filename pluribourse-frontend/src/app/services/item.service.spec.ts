@@ -15,6 +15,9 @@ const MOCK_ITEM: ItemDto = {
   incomplete: false,
   comment: null,
   tableNumber: 1,
+  lotId: null,
+  lotName: null,
+  lotPrice: null,
 };
 
 describe('ItemService', () => {

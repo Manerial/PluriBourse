@@ -15,6 +15,49 @@
   }
 }
 
+.type-selector {
+  display: flex;
+  background: var(--mat-sys-surface-variant);
+  border-radius: var(--pb-rounded-md);
+  padding: 3px;
+  gap: 2px;
+}
+
+.type-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: var(--pb-rounded-sm);
+  padding: 9px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+
+  &--active {
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+    font-weight: 600;
+  }
+}
+
+.lot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-radius: var(--pb-rounded-full);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
 .article-list {
   list-style: none;
   margin: 0;

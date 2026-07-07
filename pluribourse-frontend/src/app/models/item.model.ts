@@ -4,10 +4,13 @@ export interface ItemDto {
   categoryId: number;
   categoryName: string;
   name: string;
-  price: number;
+  price: number | null;
   incomplete: boolean;
   comment: string | null;
   tableNumber: number;
+  lotId: number | null;
+  lotName: string | null;
+  lotPrice: number | null;
 }
 
 export interface CreateItemRequest {

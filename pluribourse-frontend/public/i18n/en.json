@@ -278,6 +278,10 @@
           "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
         }
       },
+      "typeSelector": {
+        "individual": "Individual item",
+        "lot": "Lot"
+      },
       "item": {
         "form": {
           "createTitle": "Add item",
@@ -297,6 +301,25 @@
             "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
           }
         },
+        "lotForm": {
+          "createTitle": "Create a lot",
+          "lotName": "Lot name",
+          "lotPrice": "Lot global price (€)",
+          "itemsLabel": "Lot items — 2 minimum",
+          "itemName": "Item name",
+          "itemCategory": "Category",
+          "itemIncomplete": "Incomplete",
+          "itemComment": "Comment",
+          "addItem": "Add item to lot",
+          "removeItem": "Remove item",
+          "submit": "Confirm lot ({{ count }} items)",
+          "cancel": "Cancel",
+          "error": {
+            "save": "Failed to save the lot.",
+            "phaseLocked": "This lot cannot be created outside the Deposit phase.",
+            "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
+          }
+        },
         "list": {
           "title": "Deposited items ({{ count }})",
           "empty": "No items deposited for this seller yet.",
@@ -306,7 +329,9 @@
           "incomplete": "Incomplete",
           "edit": "Edit item",
           "delete": "Delete item",
-          "editComment": "Edit comment"
+          "editComment": "Edit comment",
+          "lotBadge": "Lot",
+          "lotPriceFormat": "{{ price }} € (lot)"
         },
         "error": {
           "load": "Failed to load items.",

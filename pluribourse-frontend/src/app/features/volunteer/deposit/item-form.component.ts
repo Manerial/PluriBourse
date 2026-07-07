@@ -64,7 +64,7 @@ export class ItemFormComponent {
       if (item) {
         this.form.setValue({
           name: item.name,
-          price: item.price,
+          price: item.price ?? 0,
           categoryId: item.categoryId,
           incomplete: item.incomplete,
           comment: item.comment ?? '',
