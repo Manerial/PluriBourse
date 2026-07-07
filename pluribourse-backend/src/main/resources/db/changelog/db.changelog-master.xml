@@ -19,5 +19,6 @@
     <include file="db/changelog/013-items.xml"/>
     <include file="db/changelog/014-edition-dates-not-null.xml"/>
     <include file="db/changelog/015-lots.xml"/>
+    <include file="db/changelog/016-printers.xml"/>
 
 </databaseChangeLog>
