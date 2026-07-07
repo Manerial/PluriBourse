@@ -8,6 +8,7 @@ import org.pluribourse.user.enums.*;
 import org.pluribourse.user.exception.*;
 import org.pluribourse.user.mappers.*;
 import org.pluribourse.user.repositories.*;
+import org.pluribourse.shared.security.SessionInvalidationService;
 import org.springframework.dao.*;
 import org.springframework.security.crypto.password.*;
 import org.springframework.stereotype.*;
@@ -22,6 +23,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final SessionInvalidationService sessionInvalidationService;
 
     private @NonNull User getUser(Long userId) {
         return userRepository.findById(userId)
@@ -77,6 +79,7 @@ public class UserService {
         }
         user.setEnabled(false);
         userRepository.save(user);
+        sessionInvalidationService.invalidateSessionsFor(user.getUsername());
     }
 
     @Transactional
@@ -95,7 +98,9 @@ public class UserService {
         if (user.getRole() == Role.ADMIN) {
             throw new CannotDeleteAdminException();
         }
+        String username = user.getUsername();
         userRepository.delete(user);
+        sessionInvalidationService.invalidateSessionsFor(username);
     }
 
     @Transactional

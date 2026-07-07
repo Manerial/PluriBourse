@@ -55,6 +55,7 @@ development_status:
   1-9-guide-dinstallation: done
   1-10-ameliorations-ux-mots-de-passe: done
   1-11-dialogs-mutualises-editions-benevoles: done
+  1-12-deconnexion-automatique-des-benevoles-desactives-ou-supprimes: done
   epic-1-retrospective: optional
 
   # ─── Epic 2 : Gestion du cycle de vie des éditions ─────────────────────────
