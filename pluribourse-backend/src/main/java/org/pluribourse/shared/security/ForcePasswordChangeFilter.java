@@ -5,7 +5,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.*;
 import org.jspecify.annotations.*;
-import org.pluribourse.user.entities.*;
+import org.pluribourse.domain.user.entities.*;
 import org.springframework.http.*;
 import org.springframework.security.core.*;
 import org.springframework.security.core.context.*;

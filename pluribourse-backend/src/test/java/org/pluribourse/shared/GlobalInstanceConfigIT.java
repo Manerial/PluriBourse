@@ -2,10 +2,10 @@ package org.pluribourse.shared;
 
 import com.fasterxml.jackson.databind.*;
 import org.junit.jupiter.api.*;
-import org.pluribourse.instanceconfig.dto.*;
-import org.pluribourse.instanceconfig.entity.*;
-import org.pluribourse.instanceconfig.repository.*;
-import org.pluribourse.user.enums.*;
+import org.pluribourse.domain.instanceconfig.dto.*;
+import org.pluribourse.domain.instanceconfig.entity.*;
+import org.pluribourse.domain.instanceconfig.repository.*;
+import org.pluribourse.domain.user.enums.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;

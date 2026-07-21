@@ -1,0 +1,37 @@
+package org.pluribourse.domain.print.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "printers")
+@Getter
+@Setter
+@NoArgsConstructor
+public class Printer {
+
+    @Version
+    private Long version;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PrinterType type;
+
+    @Column(name = "serial_port", length = 100)
+    private String serialPort;
+
+    @Column(name = "width_mm")
+    private Integer widthMm;
+
+    @Column(length = 255)
+    private String host;
+
+    private Integer port;
+}

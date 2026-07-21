@@ -2,7 +2,7 @@ package org.pluribourse.shared.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.pluribourse.user.entities.PluriBourseUserDetails;
+import org.pluribourse.domain.user.entities.PluriBourseUserDetails;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;

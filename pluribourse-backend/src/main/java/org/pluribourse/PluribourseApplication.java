@@ -1,6 +1,6 @@
 package org.pluribourse;
 
-import org.pluribourse.user.cli.*;
+import org.pluribourse.domain.user.cli.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 

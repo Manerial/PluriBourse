@@ -1,8 +1,8 @@
 package org.pluribourse.shared.security;
 
 import com.fasterxml.jackson.databind.*;
+import org.pluribourse.domain.user.services.*;
 import org.pluribourse.shared.security.handlers.*;
-import org.pluribourse.user.services.*;
 import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.*;
