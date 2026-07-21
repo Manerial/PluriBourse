@@ -360,18 +360,26 @@
         }
       },
       "button": {
-        "validate": "Validate deposit and print labels"
+        "validate": "Validate deposit and print labels",
+        "reprintSlip": "Reprint the deposit slip"
       },
       "success": {
-        "validate": "Labels sent to the printer."
+        "validate": "Labels and deposit slip sent to the printer.",
+        "reprintSlip": "Deposit slip sent to the printer."
       },
       "error": {
         "validate": "Unable to validate the deposit.",
-        "printerUnavailable": "No thermal printer available to print the labels."
+        "printersUnavailable": "Make sure an available thermal printer and A4 printer are both selected.",
+        "reprintSlip": "Unable to reprint the deposit slip.",
+        "a4PrinterUnavailable": "No A4 printer available to print the deposit slip."
       },
       "validateDialog": {
         "title": "Validate the deposit?",
-        "description": "Every label currently registered for this seller will be (re)printed. Continue?"
+        "description": "Every label and the deposit slip currently due for this seller will be (re)printed. Continue?"
+      },
+      "reprintDialog": {
+        "title": "Reprint the deposit slip?",
+        "description": "The deposit slip will be regenerated and resent to the A4 printer. Continue?"
       }
     }
   },

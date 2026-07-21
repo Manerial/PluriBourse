@@ -18,4 +18,14 @@ public final class PhaseGuard {
             throw new ItemModificationNotAllowedException();
         }
     }
+
+    /**
+     * The seller file view (`/volunteer/deposit`) stays reachable through Post-vente so a
+     * volunteer can reprint a deposit slip after the Deposit phase ends (story 3.6, FR-031).
+     */
+    public static void requireDepositOrPostSalePhase(Edition edition) {
+        if (edition.getPhase() != PhaseType.DEPOSIT && edition.getPhase() != PhaseType.POST_SALE) {
+            throw new DepositReprintNotAllowedException();
+        }
+    }
 }

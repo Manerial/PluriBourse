@@ -360,18 +360,26 @@
         }
       },
       "button": {
-        "validate": "Valider le dépôt et imprimer les étiquettes"
+        "validate": "Valider le dépôt et imprimer les étiquettes",
+        "reprintSlip": "Réimprimer le bordereau"
       },
       "success": {
-        "validate": "Étiquettes envoyées à l'impression."
+        "validate": "Étiquettes et bordereau envoyés à l'impression.",
+        "reprintSlip": "Bordereau envoyé à l'impression."
       },
       "error": {
         "validate": "Impossible de valider le dépôt.",
-        "printerUnavailable": "Aucune imprimante thermique disponible pour l'impression des étiquettes."
+        "printersUnavailable": "Assurez-vous qu'une imprimante thermique et une imprimante A4 disponibles sont sélectionnées.",
+        "reprintSlip": "Impossible de réimprimer le bordereau.",
+        "a4PrinterUnavailable": "Aucune imprimante A4 disponible pour l'impression du bordereau."
       },
       "validateDialog": {
         "title": "Valider le dépôt ?",
-        "description": "Toutes les étiquettes actuellement enregistrées pour ce vendeur seront (ré)imprimées. Continuer ?"
+        "description": "Toutes les étiquettes et le bordereau actuellement dus pour ce vendeur seront (ré)imprimés. Continuer ?"
+      },
+      "reprintDialog": {
+        "title": "Réimprimer le bordereau ?",
+        "description": "Le bordereau de dépôt sera régénéré et renvoyé à l'imprimante A4. Continuer ?"
       }
     }
   },

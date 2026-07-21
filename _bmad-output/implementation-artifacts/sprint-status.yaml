@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-21"  # Story 3.5 re-review complete, 6 more patches applied (item/seller numbering bound check + TooManyItems/TooManySellers exceptions, thermal print serial write timeout, migration 017 rollback block, empty-deposit test coverage, item price via MessageSource, confirm dialog before deposit reprint); 241/241 backend + 370/370 frontend tests pass; 2.7/2.8 still skipped, blocked on Epic 4/5 dependencies not yet built
+last_updated: "2026-07-21"  # Story 3-6 (bordereau de dépôt PDF) implemented, code-reviewed, done — 2.7/2.8 skipped, blocked on Epic 4/5 dependencies not yet built
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -77,7 +77,7 @@ development_status:
   3-3-creation-et-gestion-des-lots: done
   3-4-infrastructure-dimpression-registre-dimprimantes-et-files-dynamiques: done
   3-5-generation-impression-des-etiquettes-thermiques: done
-  3-6-generation-impression-automatique-du-bordereau-de-depot-pdf: backlog
+  3-6-generation-impression-automatique-du-bordereau-de-depot-pdf: done
   3-7-vue-admin-de-diagnostic-des-imprimantes: backlog
   3-8-registre-des-imprimantes-admin: backlog
   3-9-selection-dimprimante-par-le-benevole-a-la-connexion: done

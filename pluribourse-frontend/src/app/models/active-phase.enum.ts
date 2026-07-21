@@ -11,10 +11,13 @@ export enum ActivePhase {
 // Mirrors PhaseType on the backend — ActivePhase plus the terminal CLOSED phase.
 export const ALL_PHASES: readonly PhaseType[] = [...Object.values(ActivePhase), 'CLOSED'];
 
-// Where a volunteer should land for the given phase. No volunteer page exists yet for
-// Préparation/Vente/Post-vente/Clôturée — those fall through to the app's wildcard 404 route.
+// Where a volunteer should land for the given phase. The seller file page also stays reachable
+// in Post-vente (story 3.6, deposit slip reprint) — no volunteer page exists yet for
+// Préparation/Vente/Clôturée, those fall through to the app's wildcard 404 route.
 // Used both by the initial /volunteer redirect and by the reactive redirect that fires when
-// the edition's phase changes while a volunteer is already on a page (see AppLayoutComponent).
+// the edition's phase changes while a volunteer is already on a page (see AppLayoutComponent) —
+// without POST_SALE here, that reactive redirect would bounce a volunteer off
+// /volunteer/deposit to /404 the instant the phase advances past Dépôt, defeating AC 7.
 export function resolveVolunteerLandingPath(phase: PhaseType | undefined): string {
-  return phase === ActivePhase.DEPOSIT ? '/volunteer/deposit' : '/404';
+  return phase === ActivePhase.DEPOSIT || phase === ActivePhase.POST_SALE ? '/volunteer/deposit' : '/404';
 }

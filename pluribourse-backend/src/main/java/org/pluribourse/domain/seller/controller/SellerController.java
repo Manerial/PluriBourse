@@ -35,4 +35,10 @@ public class SellerController {
         depositValidationService.validateDeposit(id, session);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/deposit/slip/reprint")
+    public ResponseEntity<Void> reprintDepositSlip(@PathVariable Long id, HttpSession session) {
+        depositValidationService.reprintDepositSlip(id, session);
+        return ResponseEntity.noContent().build();
+    }
 }

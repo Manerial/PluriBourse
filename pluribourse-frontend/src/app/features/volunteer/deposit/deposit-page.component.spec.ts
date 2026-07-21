@@ -1,12 +1,14 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideTranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { DepositPageComponent } from './deposit-page.component';
 import { SellerSearchComponent } from './seller-search.component';
 import { CategoryService } from '../../../services/category.service';
+import { CurrentEditionService } from '../../../services/current-edition.service';
 import { DepositService } from '../../../services/deposit.service';
 import { ItemService } from '../../../services/item.service';
 import { LotService } from '../../../services/lot.service';
@@ -14,9 +16,23 @@ import { SellerService } from '../../../services/seller.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { EditionCategoryDto } from '../../../models/category.model';
+import { EditionDto } from '../../../models/edition.model';
 import { ItemDto } from '../../../models/item.model';
+import { Language } from '../../../models/language.enum';
 import { LotDto } from '../../../models/lot.model';
 import { SellerDto } from '../../../models/seller.model';
+
+const MOCK_EDITION: EditionDto = {
+  id: 1,
+  name: 'Bourse 2026',
+  phase: 'DEPOSIT',
+  commissionRate: 10,
+  documentLanguage: Language.FR,
+  createdAt: '2026-01-01',
+  archived: false,
+  startDate: '2026-01-01',
+  endDate: '2026-01-03',
+};
 
 const MOCK_CATEGORIES: EditionCategoryDto[] = [{ id: 1, name: 'Jouets', tableNumbers: [1, 2] }];
 
@@ -66,9 +82,11 @@ describe('DepositPageComponent', () => {
   };
   const sellerServiceMock = { search: vi.fn().mockReturnValue(of([])) };
   const lotServiceMock = { create: vi.fn().mockReturnValue(of(MOCK_LOT)) };
-  const depositServiceMock = { validateDeposit: vi.fn().mockReturnValue(of(undefined)) };
+  const depositServiceMock = { validateDeposit: vi.fn().mockReturnValue(of(undefined)), reprintDepositSlip: vi.fn().mockReturnValue(of(undefined)) };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
   const confirmDialogMock = { open: vi.fn().mockReturnValue(of(true)) };
+  const mockEdition = signal<EditionDto | null>(MOCK_EDITION);
+  const currentEditionServiceMock = { currentEdition: mockEdition };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -79,7 +97,9 @@ describe('DepositPageComponent', () => {
     sellerServiceMock.search.mockReturnValue(of([]));
     lotServiceMock.create.mockReturnValue(of(MOCK_LOT));
     depositServiceMock.validateDeposit.mockReturnValue(of(undefined));
+    depositServiceMock.reprintDepositSlip.mockReturnValue(of(undefined));
     confirmDialogMock.open.mockReturnValue(of(true));
+    mockEdition.set(MOCK_EDITION);
 
     await TestBed.configureTestingModule({
       imports: [DepositPageComponent],
@@ -90,6 +110,7 @@ describe('DepositPageComponent', () => {
         { provide: SellerService, useValue: sellerServiceMock },
         { provide: LotService, useValue: lotServiceMock },
         { provide: DepositService, useValue: depositServiceMock },
+        { provide: CurrentEditionService, useValue: currentEditionServiceMock },
         { provide: ToastService, useValue: toastMock },
         { provide: ConfirmDialogService, useValue: confirmDialogMock },
       ],
@@ -340,7 +361,7 @@ describe('DepositPageComponent', () => {
 
     await component.validateDeposit();
 
-    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.error.printerUnavailable');
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.error.printersUnavailable');
   });
 
   it('validateDeposit() shows a generic error toast on other failures', async () => {
@@ -352,5 +373,124 @@ describe('DepositPageComponent', () => {
     await component.validateDeposit();
 
     expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.error.validate');
+  });
+
+  function getReprintButton(): HTMLButtonElement {
+    return fixture.debugElement.query(By.css('.reprint-slip-btn')).nativeElement as HTMLButtonElement;
+  }
+
+  it('shows the validate button in the Deposit phase and hides it in Post-vente', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('.validate-deposit-btn'))).toBeTruthy();
+
+    mockEdition.set({ ...MOCK_EDITION, phase: 'POST_SALE' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('.validate-deposit-btn'))).toBeFalsy();
+  });
+
+  it('shows the reprint button in both the Deposit and Post-vente phases once items exist', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(getReprintButton()).toBeTruthy();
+
+    mockEdition.set({ ...MOCK_EDITION, phase: 'POST_SALE' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(getReprintButton()).toBeTruthy();
+  });
+
+  it('reprintDepositSlip() does nothing when the user cancels the confirmation dialog', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    confirmDialogMock.open.mockReturnValueOnce(of(false));
+
+    await component.reprintDepositSlip();
+
+    expect(depositServiceMock.reprintDepositSlip).not.toHaveBeenCalled();
+  });
+
+  it('reprintDepositSlip() calls the service with the selected seller id and shows a success toast', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    await component.reprintDepositSlip();
+
+    expect(depositServiceMock.reprintDepositSlip).toHaveBeenCalledWith(5);
+    expect(toastMock.showSuccess).toHaveBeenCalledWith('volunteer.deposit.success.reprintSlip');
+    expect(component.reprintingSlip()).toBe(false);
+  });
+
+  it('reprintDepositSlip() shows a dedicated toast when no A4 printer is available', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    depositServiceMock.reprintDepositSlip.mockReturnValueOnce(
+      throwError(() => new HttpErrorResponse({ status: 422, error: { type: 'https://pluribourse/errors/invalid-printer-selection' } }))
+    );
+
+    await component.reprintDepositSlip();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.error.a4PrinterUnavailable');
+  });
+
+  it('reprintDepositSlip() shows a generic error toast on other failures', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    depositServiceMock.reprintDepositSlip.mockReturnValueOnce(throwError(() => new Error('server')));
+
+    await component.reprintDepositSlip();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.error.reprintSlip');
+  });
+
+  it('reprintDepositSlip() is a no-op while validateDeposit() is still in flight', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const pending = new Subject<void>();
+    depositServiceMock.validateDeposit.mockReturnValueOnce(pending);
+
+    const validatePromise = component.validateDeposit();
+    await Promise.resolve();
+    expect(component.validatingDeposit()).toBe(true);
+
+    await component.reprintDepositSlip();
+    expect(depositServiceMock.reprintDepositSlip).not.toHaveBeenCalled();
+    expect(confirmDialogMock.open).toHaveBeenCalledTimes(1);
+
+    pending.next();
+    pending.complete();
+    await validatePromise;
+  });
+
+  it('validateDeposit() is a no-op while reprintDepositSlip() is still in flight', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const pending = new Subject<void>();
+    depositServiceMock.reprintDepositSlip.mockReturnValueOnce(pending);
+
+    const reprintPromise = component.reprintDepositSlip();
+    await Promise.resolve();
+    expect(component.reprintingSlip()).toBe(true);
+
+    await component.validateDeposit();
+    expect(depositServiceMock.validateDeposit).not.toHaveBeenCalled();
+    expect(confirmDialogMock.open).toHaveBeenCalledTimes(1);
+
+    pending.next();
+    pending.complete();
+    await reprintPromise;
   });
 });

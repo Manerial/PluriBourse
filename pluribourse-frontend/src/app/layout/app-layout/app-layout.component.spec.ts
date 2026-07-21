@@ -297,6 +297,20 @@ describe('AppLayoutComponent', () => {
       expect(router.url).toBe('/volunteer/deposit');
     });
 
+    it('does not redirect away from /volunteer/deposit when the phase moves from Dépôt to Post-vente', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/volunteer/deposit');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'POST_SALE' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/volunteer/deposit');
+    });
+
     it('does not redirect away from unrelated pages such as /account', async () => {
       const router = TestBed.inject(Router);
       mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });

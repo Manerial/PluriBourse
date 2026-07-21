@@ -9,4 +9,8 @@ export class DepositService {
   validateDeposit(sellerProfileId: number): Observable<void> {
     return this.http.post<void>(`/api/sellers/${sellerProfileId}/deposit/validate`, null);
   }
+
+  reprintDepositSlip(sellerProfileId: number): Observable<void> {
+    return this.http.post<void>(`/api/sellers/${sellerProfileId}/deposit/slip/reprint`, null);
+  }
 }

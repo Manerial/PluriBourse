@@ -47,6 +47,11 @@ describe('depositPhaseGuard', () => {
     expect(await runGuard()).toBe(true);
   });
 
+  it('allows activation when the active edition is in the Post-vente phase', async () => {
+    mockEdition.set(edition('POST_SALE'));
+    expect(await runGuard()).toBe(true);
+  });
+
   it('redirects to /404 when the active edition is in another phase', async () => {
     mockEdition.set(edition('SALE'));
     const result = await runGuard();
