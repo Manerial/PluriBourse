@@ -1,0 +1,80 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.printQueue.title' | translate }}</h1>
+    <button type="button" mat-button (click)="refresh()" [disabled]="isLoading()">
+      <mat-icon>refresh</mat-icon>
+      {{ 'admin.printQueue.refresh' | translate }}
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="3" />
+  } @else {
+    @if (error()) {
+      <app-notification-inline [message]="error()! | translate" variant="error" />
+    }
+
+    @if (statuses().length === 0 && !error()) {
+      <app-empty-state
+        icon="print"
+        [message]="'admin.printQueue.empty' | translate"
+      />
+    } @else if (statuses().length > 0) {
+      <div class="printer-grid">
+        @for (printer of statuses(); track printer.id) {
+          <div class="printer-card">
+            <div class="printer-card__header">
+              <span class="printer-card__name">{{ printer.name }}</span>
+              <span class="printer-card__type">{{ ('admin.printQueue.type.' + printer.type) | translate }}</span>
+            </div>
+
+            <span
+              class="connection-chip"
+              [class.connection-chip--job-error]="connectionState(printer) === 'jobError'"
+              [class.connection-chip--offline]="connectionState(printer) === 'disconnected'">
+              <span class="connection-chip__dot" aria-hidden="true"></span>
+              {{ ('admin.printQueue.status.' + connectionState(printer)) | translate }}
+            </span>
+
+            <dl class="printer-card__details">
+              <div class="printer-card__detail">
+                <dt>{{ 'admin.printQueue.columns.queueDepth' | translate }}</dt>
+                <dd>{{ printer.queueDepth }}</dd>
+              </div>
+              <div class="printer-card__detail">
+                <dt>{{ 'admin.printQueue.columns.jobInProgress' | translate }}</dt>
+                <dd>{{ (printer.jobInProgress ? 'admin.printQueue.columns.yes' : 'admin.printQueue.columns.no') | translate }}</dd>
+              </div>
+            </dl>
+
+            @if (printer.lastError) {
+              <app-notification-inline [message]="printer.lastError" variant="error" />
+            }
+
+            @if (printer.canRetry) {
+              <div class="printer-card__actions">
+                <button
+                  type="button"
+                  mat-button
+                  (click)="resume(printer)"
+                  [disabled]="isActionInProgress(printer.id)">
+                  <mat-icon>play_arrow</mat-icon>
+                  {{ 'admin.printQueue.actions.resume' | translate }}
+                </button>
+                <button
+                  type="button"
+                  mat-button
+                  color="warn"
+                  (click)="discard(printer)"
+                  [disabled]="isActionInProgress(printer.id)">
+                  <mat-icon>block</mat-icon>
+                  {{ 'admin.printQueue.actions.discard' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

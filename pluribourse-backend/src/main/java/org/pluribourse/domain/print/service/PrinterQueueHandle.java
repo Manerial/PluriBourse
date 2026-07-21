@@ -27,6 +27,9 @@ public class PrinterQueueHandle {
     @Getter
     private volatile PrintJob lastFailedJob;
 
+    @Getter
+    private volatile boolean jobInProgress = false;
+
     public PrinterQueueHandle(Printer printer) {
         this.printer = printer;
         this.consumerThread = new Thread(this::consume, "print-queue-" + printer.getId());
@@ -58,6 +61,65 @@ public class PrinterQueueHandle {
         }
     }
 
+    public int getQueueDepth() {
+        return deque.size();
+    }
+
+    /**
+     * Resumes a suspended queue by putting the failed job back at the head, so it is retried
+     * before any job queued behind it (story 3.7, AC3). {@code synchronized} so the
+     * suspended-check and the state mutation are atomic — otherwise two concurrent resume/discard
+     * calls could both observe {@code suspended} and both act on the same failed job. Returns
+     * {@code false} without side effects if the queue was not suspended.
+     */
+    public synchronized boolean requeueFailedJobAtHead() {
+        if (!suspended) {
+            return false;
+        }
+        PrintJob job = lastFailedJob;
+        if (job != null) {
+            try {
+                deque.putFirst(job);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while requeuing a failed print job", e);
+            }
+        }
+        lastFailedJob = null;
+        lastError = null;
+        suspended = false;
+        return true;
+    }
+
+    /**
+     * Resumes a suspended queue by dropping the failed job — it is never retried, and consumption
+     * continues with whatever is queued behind it (story 3.7, AC4). {@code synchronized} for the
+     * same atomicity reason as {@link #requeueFailedJobAtHead()}. Returns {@code false} without
+     * side effects if the queue was not suspended.
+     */
+    public synchronized boolean discardFailedJob() {
+        if (!suspended) {
+            return false;
+        }
+        lastFailedJob = null;
+        lastError = null;
+        suspended = false;
+        return true;
+    }
+
+    /**
+     * Atomic snapshot of the fields that always change together ({@code lastError}/
+     * {@code suspended}), so a diagnostic read can never observe a torn combination (e.g.
+     * {@code lastError == null} together with {@code suspended == true}) if it races with a job
+     * failing in {@link #consume()} or an admin resume/discard call.
+     */
+    public synchronized ErrorSnapshot errorSnapshot() {
+        return new ErrorSnapshot(lastError, suspended);
+    }
+
+    public record ErrorSnapshot(String lastError, boolean suspended) {
+    }
+
     private void consume() {
         while (true) {
             try {
@@ -69,15 +131,22 @@ public class PrinterQueueHandle {
                 }
                 PrintJob job = deque.takeFirst();
                 try {
+                    jobInProgress = true;
                     job.execute(printer);
                 } catch (Throwable e) {
                     // Caught broadly (not just RuntimeException): this daemon consumer thread must
                     // never die, otherwise the printer's queue is unrecoverable even by a future
-                    // resume (story 3.7) — a dead thread cannot be un-suspended.
-                    lastError = describeError(e);
-                    lastFailedJob = job;
-                    suspended = true;
+                    // resume (story 3.7) — a dead thread cannot be un-suspended. Synchronized on
+                    // the same monitor as requeueFailedJobAtHead()/discardFailedJob() so a
+                    // concurrent admin resume/discard can't interleave with a job failing here.
+                    synchronized (this) {
+                        lastError = describeError(e);
+                        lastFailedJob = job;
+                        suspended = true;
+                    }
                     log.error("Print job failed for printer {} — queue suspended", printer.getId(), e);
+                } finally {
+                    jobInProgress = false;
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

@@ -1331,6 +1331,36 @@ afin que mes travaux d'impression soient routés vers l'imprimante la plus proch
 **Alors** un message d'avertissement indique qu'aucune imprimante n'est disponible
 **Et** le bénévole peut tout de même accéder à l'interface (l'impression sera en erreur jusqu'à la résolution par l'admin)
 
+### Story 3.10 : Modification d'un lot après saisie
+
+> **Story ajoutée après coup (2026-07-21)** — la Story 3.3 avait explicitement exclu ce périmètre ("aucune AC de l'épic ne le demande, à traiter dans une story dédiée si le besoin est confirmé"). Le besoin est confirmé par l'utilisateur.
+
+En tant que bénévole,
+je veux modifier un lot déjà enregistré (nom, prix global, articles membres),
+afin de pouvoir corriger une erreur de saisie sans devoir supprimer et recréer tout le lot.
+
+**Critères d'acceptation :**
+
+**Étant donné** qu'un lot est enregistré en phase Dépôt
+**Quand** le bénévole modifie son nom ou son prix global
+**Alors** la modification est sauvegardée et reflétée sur chaque article membre du lot (nom de lot / prix de lot affichés, cohérent avec l'AC équivalente sur les articles individuels, Story 3.2)
+
+**Étant donné** qu'un lot est enregistré en phase Dépôt avec ses articles membres
+**Quand** le bénévole ajoute un article au lot, ou modifie le nom/la catégorie/l'indicateur incomplet/le commentaire d'un article membre existant
+**Alors** la modification est sauvegardée ; si la catégorie d'un article change, sa table est réassignée selon l'algorithme FR-023 (même règle que pour un article individuel)
+
+**Étant donné** qu'un lot compte exactement 2 articles membres
+**Quand** le bénévole tente de retirer un article du lot
+**Alors** le retrait est refusé (un lot doit toujours compter au moins 2 articles, FR-043) — le bénévole doit soit ajouter un article avant de retirer l'ancien, soit supprimer le lot entier
+
+**Étant donné** qu'un lot est enregistré en phase Dépôt
+**Quand** le bénévole supprime le lot entier
+**Alors** le lot et tous ses articles membres sont retirés de la liste du vendeur (cohérent avec la suppression d'un article individuel, FR-024)
+
+**Étant donné** que l'édition a dépassé la phase Dépôt
+**Quand** un bénévole tente de modifier, ajouter/retirer un article, ou supprimer un lot
+**Alors** l'action est bloquée avec un message explicite (même règle que pour les articles individuels)
+
 ---
 
 ## Epic 4 : Point de vente

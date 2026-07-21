@@ -90,7 +90,8 @@
       "users": "Volunteers",
       "settings": "Settings",
       "editions": "Editions",
-      "sellers": "Sellers"
+      "sellers": "Sellers",
+      "printQueue": "Print queue"
     }
   },
   "edition": {
@@ -483,6 +484,39 @@
         "defaultCommissionRateRequired": "Default commission rate is required.",
         "defaultCommissionRateMin": "Default commission rate cannot be negative.",
         "defaultCommissionRateMax": "Default commission rate cannot exceed 100%."
+      }
+    },
+    "printQueue": {
+      "title": "Print queue",
+      "refresh": "Refresh",
+      "columns": {
+        "queueDepth": "Jobs waiting",
+        "jobInProgress": "Job in progress",
+        "yes": "Yes",
+        "no": "No"
+      },
+      "status": {
+        "connected": "Connected",
+        "jobError": "Job error",
+        "disconnected": "Offline"
+      },
+      "type": {
+        "THERMAL": "Thermal",
+        "A4": "A4"
+      },
+      "actions": {
+        "resume": "Resume",
+        "discard": "Discard"
+      },
+      "empty": "No printer registered yet.",
+      "success": {
+        "resume": "Queue resumed.",
+        "discard": "Job discarded, the queue resumed."
+      },
+      "error": {
+        "load": "Failed to load printer statuses.",
+        "resume": "Failed to resume the queue.",
+        "discard": "Failed to discard the failed job."
       }
     }
   }

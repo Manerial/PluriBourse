@@ -1,0 +1,93 @@
+.printer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--pb-space-md);
+  padding: var(--pb-space-lg);
+}
+
+.printer-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-sm);
+  padding: var(--pb-space-md);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--pb-rounded-lg);
+
+  &__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--pb-space-sm);
+  }
+
+  &__name {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  &__type {
+    font-size: 12px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+  }
+
+  &__detail {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+
+    dt {
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    dd {
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--pb-space-xs);
+  }
+}
+
+// ── Connection chip ───────────────────────────────────────────────────────────
+// Local variant of the topbar's phase-chip pattern (see app-layout.component.scss)
+// — no shared chip component exists yet in the project.
+.connection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: var(--pb-rounded-full);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--pb-success-container);
+  color: var(--pb-on-success-container);
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  &--job-error {
+    background: var(--pb-warning-container);
+    color: var(--pb-on-warning-container);
+  }
+
+  &--offline {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+}

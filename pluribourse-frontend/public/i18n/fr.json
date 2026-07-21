@@ -90,7 +90,8 @@
       "users": "Bénévoles",
       "settings": "Paramètres",
       "editions": "Éditions",
-      "sellers": "Vendeurs"
+      "sellers": "Vendeurs",
+      "printQueue": "File d'impression"
     }
   },
   "edition": {
@@ -483,6 +484,39 @@
         "defaultCommissionRateRequired": "Le taux de commission par défaut est requis.",
         "defaultCommissionRateMin": "Le taux de commission par défaut ne peut pas être négatif.",
         "defaultCommissionRateMax": "Le taux de commission par défaut ne peut pas dépasser 100%."
+      }
+    },
+    "printQueue": {
+      "title": "File d'impression",
+      "refresh": "Actualiser",
+      "columns": {
+        "queueDepth": "Jobs en attente",
+        "jobInProgress": "Job en cours",
+        "yes": "Oui",
+        "no": "Non"
+      },
+      "status": {
+        "connected": "Connectée",
+        "jobError": "En erreur",
+        "disconnected": "Hors ligne"
+      },
+      "type": {
+        "THERMAL": "Thermique",
+        "A4": "A4"
+      },
+      "actions": {
+        "resume": "Relancer",
+        "discard": "Ignorer"
+      },
+      "empty": "Aucune imprimante enregistrée pour le moment.",
+      "success": {
+        "resume": "File relancée.",
+        "discard": "Job ignoré, la file reprend."
+      },
+      "error": {
+        "load": "Impossible de charger l'état des imprimantes.",
+        "resume": "Impossible de relancer la file.",
+        "discard": "Impossible d'ignorer le job en erreur."
       }
     }
   }

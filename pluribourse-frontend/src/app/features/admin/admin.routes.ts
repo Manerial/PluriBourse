@@ -26,4 +26,9 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./sellers/seller-list.component').then((m) => m.SellerListComponent),
   },
+  {
+    path: 'print-queue',
+    loadComponent: () =>
+      import('./print-queue/print-queue-list.component').then((m) => m.PrintQueueListComponent),
+  },
 ];

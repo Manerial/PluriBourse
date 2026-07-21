@@ -112,6 +112,18 @@
           <span class="sidebar__item-label">{{ 'nav.admin.settings' | translate }}</span>
         </a>
 
+        <a
+          routerLink="/admin/print-queue"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item"
+          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.printQueue' | translate) : null"
+          [matTooltip]="sidebarCollapsed() ? ('nav.admin.printQueue' | translate) : ''"
+          matTooltipPosition="right">
+          <span class="material-symbols-outlined" aria-hidden="true">print</span>
+          <span class="sidebar__item-label">{{ 'nav.admin.printQueue' | translate }}</span>
+        </a>
+
       </div>
 
       <div class="sidebar__toggle-wrap">
