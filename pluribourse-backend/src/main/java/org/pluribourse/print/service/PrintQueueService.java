@@ -76,6 +76,17 @@ public class PrintQueueService {
         return handles.get(printerId);
     }
 
+    /**
+     * True when a printer can accept a job right now — registered, not suspended, no recorded
+     * error. Shared by {@link PrinterSelectionService} (selection-time check, story 3.9) and the
+     * deposit-validation flow (submission-time check, story 3.5) so the definition of "available"
+     * lives in one place.
+     */
+    public boolean isAvailable(Long printerId) {
+        PrinterQueueHandle handle = handles.get(printerId);
+        return handle != null && !handle.isSuspended() && handle.getLastError() == null;
+    }
+
     private PrinterQueueHandle createHandle(Printer printer) {
         PrinterQueueHandle handle = new PrinterQueueHandle(printer);
         PrinterConnectivityChecker checker = connectivityCheckersByType.get(printer.getType());

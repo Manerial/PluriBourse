@@ -5,9 +5,12 @@ import org.pluribourse.edition.entity.*;
 import org.pluribourse.edition.service.*;
 import org.pluribourse.item.dto.*;
 import org.pluribourse.item.entity.*;
+import org.pluribourse.item.exception.*;
 import org.pluribourse.item.mapper.*;
 import org.pluribourse.item.repository.*;
 import org.pluribourse.seller.entity.*;
+import org.pluribourse.seller.exception.*;
+import org.pluribourse.seller.repository.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
@@ -23,6 +26,7 @@ public class LotService {
     private final EditionScopedLookup editionScopedLookup;
     private final EditionService editionService;
     private final TableAssignmentService tableAssignmentService;
+    private final SellerRepository sellerRepository;
     private final ItemMapper itemMapper;
 
     @Transactional
@@ -45,6 +49,13 @@ public class LotService {
         lot.setGlobalPrice(dto.globalPrice());
         lot = repository.save(lot);
 
+        // Lock the seller once for the whole lot (FR-026), not per item — a 5-item lot must not
+        // acquire/release this lock 5 times. Same rationale as ItemService's single-item lock;
+        // see SellerProfile.nextItemNumber for why a persisted counter is used instead of MAX+1.
+        SellerProfile lockedSeller = sellerRepository.lockById(sellerProfile.getId())
+                .orElseThrow(() -> new SellerNotFoundException(sellerProfile.getId()));
+        int nextItemNumber = lockedSeller.getNextItemNumber();
+
         // Assign tables (and their underlying per-category pessimistic locks) in a globally
         // consistent order across requests — ascending category id — rather than the order items
         // happen to arrive in the payload. Otherwise two concurrent lots referencing the same pair
@@ -58,6 +69,10 @@ public class LotService {
             CreateLotItemDto itemDto = dto.items().get(i);
             EditionCategory category = categories.get(i);
 
+            if (nextItemNumber > Item.MAX_BARCODE_SEGMENT) {
+                throw new TooManyItemsException(sellerProfile.getId());
+            }
+
             Item item = new Item();
             item.setEdition(edition);
             item.setSellerProfile(sellerProfile);
@@ -67,8 +82,10 @@ public class LotService {
             item.setIncomplete(itemDto.incomplete());
             item.setComment(itemDto.comment());
             item.setTableNumber(tableAssignmentService.assignTable(sellerProfile, category, edition));
+            item.setItemNumber(nextItemNumber++);
             createdItems[i] = itemRepository.save(item);
         }
+        lockedSeller.setNextItemNumber(nextItemNumber);
 
         return new LotDto(lot.getId(), lot.getName(), lot.getGlobalPrice(), itemMapper.toDtos(Arrays.asList(createdItems)));
     }

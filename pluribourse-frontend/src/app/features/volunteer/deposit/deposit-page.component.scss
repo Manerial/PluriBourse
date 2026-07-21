@@ -6,6 +6,15 @@
   gap: var(--pb-space-lg);
 }
 
+.validate-deposit-btn {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pb-space-xs);
+}
+
 .items-card {
   .card__body {
     padding: var(--pb-space-lg);

@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { ItemDto } from '../../../models/item.model';
 import { CategoryService } from '../../../services/category.service';
+import { DepositService } from '../../../services/deposit.service';
 import { ItemService } from '../../../services/item.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -48,6 +49,7 @@ type DepositMode = 'individual' | 'lot';
 export class DepositPageComponent {
   private readonly categoryService = inject(CategoryService);
   private readonly itemService = inject(ItemService);
+  private readonly depositService = inject(DepositService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly confirmDialog = inject(ConfirmDialogService);
@@ -63,6 +65,7 @@ export class DepositPageComponent {
   readonly commentEditId = signal<number | null>(null);
   readonly commentDraft = signal('');
   readonly depositMode = signal<DepositMode>('individual');
+  readonly validatingDeposit = signal(false);
 
   constructor() {
     this.loadCategories();
@@ -106,6 +109,35 @@ export class DepositPageComponent {
     const seller = this.selectedSeller();
     if (seller) {
       this.loadItems(seller.id);
+    }
+  }
+
+  async validateDeposit(): Promise<void> {
+    const seller = this.selectedSeller();
+    if (!seller) {
+      return;
+    }
+    const confirmed = await firstValueFrom(
+      this.confirmDialog.open({
+        title: this.translate.instant('volunteer.deposit.validateDialog.title'),
+        description: this.translate.instant('volunteer.deposit.validateDialog.description'),
+      })
+    );
+    if (!confirmed) {
+      return;
+    }
+    this.validatingDeposit.set(true);
+    try {
+      await firstValueFrom(this.depositService.validateDeposit(seller.id));
+      this.toast.showSuccess(this.translate.instant('volunteer.deposit.success.validate'));
+    } catch (err: unknown) {
+      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+        this.toast.showError(this.translate.instant('volunteer.deposit.error.printerUnavailable'));
+      } else {
+        this.toast.showError(this.translate.instant('volunteer.deposit.error.validate'));
+      }
+    } finally {
+      this.validatingDeposit.set(false);
     }
   }
 

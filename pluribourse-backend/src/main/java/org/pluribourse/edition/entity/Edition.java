@@ -47,4 +47,11 @@ public class Edition {
 
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
+
+    /**
+     * Next seller number to assign within this edition (FR-026) — a persisted counter, not
+     * MAX(sellerNumber)+1: a deleted seller (FR-021) must never free its number for reuse.
+     */
+    @Column(name = "next_seller_number", nullable = false)
+    private Integer nextSellerNumber = 1;
 }

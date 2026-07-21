@@ -77,7 +77,6 @@ public class PrinterSelectionService {
     }
 
     private boolean isAvailable(Printer printer) {
-        PrinterQueueHandle handle = printQueueService.getHandle(printer.getId());
-        return handle != null && !handle.isSuspended() && handle.getLastError() == null;
+        return printQueueService.isAvailable(printer.getId());
     }
 }

@@ -132,5 +132,16 @@
         }
       </div>
     </div>
+
+    <button
+      type="button"
+      mat-flat-button
+      color="primary"
+      class="validate-deposit-btn"
+      [disabled]="items().length === 0 || validatingDeposit()"
+      (click)="validateDeposit()">
+      <mat-icon>print</mat-icon>
+      {{ 'volunteer.deposit.button.validate' | translate }}
+    </button>
   }
 </div>

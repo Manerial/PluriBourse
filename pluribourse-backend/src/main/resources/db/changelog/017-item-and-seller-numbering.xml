@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="017-seller-item-numbering" author="pluribourse">
+        <addColumn tableName="seller_profiles">
+            <column name="seller_number" type="INT"/>
+        </addColumn>
+        <addColumn tableName="items">
+            <column name="item_number" type="INT"/>
+        </addColumn>
+        <!-- Persisted "next value" counters (editions.next_seller_number, seller_profiles.next_item_number)
+             rather than MAX(existing)+1 at assignment time: a deleted seller/item (FR-021/FR-024)
+             would otherwise free up its number for reuse by the next one created, which must never
+             happen (FR-026 barcodes must stay unique for the lifetime of the edition). -->
+        <addColumn tableName="editions">
+            <column name="next_seller_number" type="INT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="seller_profiles">
+            <column name="next_item_number" type="INT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql>
+            UPDATE seller_profiles sp
+            SET sp.seller_number = (
+                SELECT ranked.rn FROM (
+                    SELECT id, ROW_NUMBER() OVER (PARTITION BY edition_id ORDER BY id) AS rn
+                    FROM seller_profiles
+                ) ranked
+                WHERE ranked.id = sp.id
+            );
+        </sql>
+        <sql>
+            UPDATE items i
+            SET i.item_number = (
+                SELECT ranked.rn FROM (
+                    SELECT id, ROW_NUMBER() OVER (PARTITION BY seller_profile_id ORDER BY id) AS rn
+                    FROM items
+                ) ranked
+                WHERE ranked.id = i.id
+            );
+        </sql>
+        <sql>
+            UPDATE editions e
+            SET e.next_seller_number = 1 + COALESCE(
+                (SELECT MAX(sp.seller_number) FROM seller_profiles sp WHERE sp.edition_id = e.id), 0
+            );
+        </sql>
+        <sql>
+            UPDATE seller_profiles sp
+            SET sp.next_item_number = 1 + COALESCE(
+                (SELECT MAX(i.item_number) FROM items i WHERE i.seller_profile_id = sp.id), 0
+            );
+        </sql>
+        <addNotNullConstraint tableName="seller_profiles" columnName="seller_number" columnDataType="INT"/>
+        <addNotNullConstraint tableName="items" columnName="item_number" columnDataType="INT"/>
+
+        <!-- Explicit rollback required: Liquibase cannot auto-generate one for a changeSet mixing
+             addColumn/addNotNullConstraint with raw <sql> — without this block, rolling back this
+             changeSet fails outright instead of just dropping the four added columns. -->
+        <rollback>
+            <dropColumn tableName="seller_profiles" columnName="seller_number"/>
+            <dropColumn tableName="seller_profiles" columnName="next_item_number"/>
+            <dropColumn tableName="items" columnName="item_number"/>
+            <dropColumn tableName="editions" columnName="next_seller_number"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,4 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -6,6 +7,7 @@ import { vi } from 'vitest';
 import { DepositPageComponent } from './deposit-page.component';
 import { SellerSearchComponent } from './seller-search.component';
 import { CategoryService } from '../../../services/category.service';
+import { DepositService } from '../../../services/deposit.service';
 import { ItemService } from '../../../services/item.service';
 import { LotService } from '../../../services/lot.service';
 import { SellerService } from '../../../services/seller.service';
@@ -64,6 +66,7 @@ describe('DepositPageComponent', () => {
   };
   const sellerServiceMock = { search: vi.fn().mockReturnValue(of([])) };
   const lotServiceMock = { create: vi.fn().mockReturnValue(of(MOCK_LOT)) };
+  const depositServiceMock = { validateDeposit: vi.fn().mockReturnValue(of(undefined)) };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
   const confirmDialogMock = { open: vi.fn().mockReturnValue(of(true)) };
 
@@ -75,6 +78,7 @@ describe('DepositPageComponent', () => {
     itemServiceMock.delete.mockReturnValue(of(undefined));
     sellerServiceMock.search.mockReturnValue(of([]));
     lotServiceMock.create.mockReturnValue(of(MOCK_LOT));
+    depositServiceMock.validateDeposit.mockReturnValue(of(undefined));
     confirmDialogMock.open.mockReturnValue(of(true));
 
     await TestBed.configureTestingModule({
@@ -85,6 +89,7 @@ describe('DepositPageComponent', () => {
         { provide: ItemService, useValue: itemServiceMock },
         { provide: SellerService, useValue: sellerServiceMock },
         { provide: LotService, useValue: lotServiceMock },
+        { provide: DepositService, useValue: depositServiceMock },
         { provide: ToastService, useValue: toastMock },
         { provide: ConfirmDialogService, useValue: confirmDialogMock },
       ],
@@ -277,5 +282,75 @@ describe('DepositPageComponent', () => {
     expect(rowText).toContain('Lot Jouets');
     const actionButtons = fixture.debugElement.queryAll(By.css('.article-row__actions button'));
     expect(actionButtons).toHaveLength(0);
+  });
+
+  function getValidateButton(): HTMLButtonElement {
+    return fixture.debugElement.query(By.css('.validate-deposit-btn')).nativeElement as HTMLButtonElement;
+  }
+
+  it('validate deposit button is disabled when the item list is empty', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(getValidateButton().disabled).toBe(true);
+  });
+
+  it('validate deposit button is enabled once items exist', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(getValidateButton().disabled).toBe(false);
+  });
+
+  it('validateDeposit() does nothing when the user cancels the confirmation dialog', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    confirmDialogMock.open.mockReturnValueOnce(of(false));
+
+    await component.validateDeposit();
+
+    expect(depositServiceMock.validateDeposit).not.toHaveBeenCalled();
+  });
+
+  it('validateDeposit() calls the service with the selected seller id and shows a success toast', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    await component.validateDeposit();
+
+    expect(depositServiceMock.validateDeposit).toHaveBeenCalledWith(5);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(component.validatingDeposit()).toBe(false);
+  });
+
+  it('validateDeposit() shows a dedicated toast when no thermal printer is available', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    depositServiceMock.validateDeposit.mockReturnValueOnce(
+      throwError(() => new HttpErrorResponse({ status: 422, error: { type: 'https://pluribourse/errors/invalid-printer-selection' } }))
+    );
+
+    await component.validateDeposit();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.error.printerUnavailable');
+  });
+
+  it('validateDeposit() shows a generic error toast on other failures', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    depositServiceMock.validateDeposit.mockReturnValueOnce(throwError(() => new Error('server')));
+
+    await component.validateDeposit();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.error.validate');
   });
 });

@@ -93,6 +93,17 @@
             <artifactId>jSerialComm</artifactId>
             <version>2.11.4</version>
         </dependency>
+        <!-- Code 128 barcode generation for thermal labels (FR-026) -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.4</version>
+        </dependency>
         <!-- Springdoc OpenAPI — enabled in dev profile only (AC4/AC5) -->
         <!-- Version 2.8.6 resolved for Spring Boot 4.0.6; verify compatibility on first build -->
         <dependency>

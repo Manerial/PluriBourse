@@ -18,6 +18,19 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findAllBySellerProfileIdOrderByNameAsc(Long sellerProfileId);
 
     /**
+     * Print order for the deposit roll (FR-030) — entry order, not the alphabetical UI listing
+     * above. Eagerly fetches {@code edition}/{@code lot} because the returned items are captured
+     * into a {@link org.pluribourse.print.service.PrintJob} closure and rendered later on the print
+     * queue's consumer thread (story 3.4), long after this method's transaction/session has closed —
+     * an uninitialized lazy proxy would throw LazyInitializationException at that point.
+     */
+    @Query("SELECT i FROM Item i JOIN FETCH i.edition JOIN FETCH i.sellerProfile LEFT JOIN FETCH i.lot WHERE i.sellerProfile.id = :sellerProfileId ORDER BY i.itemNumber ASC")
+    List<Item> findAllBySellerProfileIdOrderByItemNumberAsc(@Param("sellerProfileId") Long sellerProfileId);
+
+    /** Lot siblings in creation order, used to compute a lot item's "X/N" position (FR-045). */
+    List<Item> findAllByLotIdOrderById(Long lotId);
+
+    /**
      * excludeItemId lets a category reassignment (AC 5) query the table state as if the item
      * being reassigned did not exist yet — otherwise its own (stale) row, still visible via
      * Hibernate's pre-query auto-flush, would bias the result it is meant to help compute.

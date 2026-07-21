@@ -31,6 +31,16 @@ public class SellerProfile {
     @Column(nullable = false, length = 30)
     private String phone;
 
+    @Column(name = "seller_number", nullable = false)
+    private Integer sellerNumber;
+
+    /**
+     * Next item number to assign for this seller (FR-026) — a persisted counter, not
+     * MAX(itemNumber)+1: a deleted item (FR-024) must never free its number for reuse.
+     */
+    @Column(name = "next_item_number", nullable = false)
+    private Integer nextItemNumber = 1;
+
     public boolean canBeDeleted(boolean hasNoRegisteredArticles) {
         PhaseType phase = edition.getPhase();
         boolean isOnDeletablePhase = phase == PhaseType.DEPOSIT;

@@ -9,6 +9,8 @@ import org.pluribourse.item.exception.*;
 import org.pluribourse.item.mapper.*;
 import org.pluribourse.item.repository.*;
 import org.pluribourse.seller.entity.*;
+import org.pluribourse.seller.exception.*;
+import org.pluribourse.seller.repository.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
@@ -22,6 +24,7 @@ public class ItemService {
     private final EditionScopedLookup editionScopedLookup;
     private final EditionService editionService;
     private final TableAssignmentService tableAssignmentService;
+    private final SellerRepository sellerRepository;
     private final ItemMapper mapper;
 
     @Transactional(readOnly = true)
@@ -42,7 +45,22 @@ public class ItemService {
         item.setEdition(edition);
         item.setSellerProfile(sellerProfile);
         item.setCategory(category);
+        // Lock the seller first (FR-026): serializes concurrent item creations for this seller so
+        // the second caller reads nextItemNumber after the first has already incremented it. A
+        // persisted counter (not MAX(itemNumber)+1) is required because a deleted item (FR-024)
+        // must never free its number for reuse by the next one created. Locking before
+        // assignTable (which takes a per-category lock) keeps acquisition order consistent with
+        // LotService.create() — both lock the seller before any category — avoiding an ABBA
+        // deadlock between concurrent single-item and lot creations.
+        SellerProfile lockedSeller = sellerRepository.lockById(sellerProfile.getId())
+                .orElseThrow(() -> new SellerNotFoundException(sellerProfile.getId()));
+        int itemNumber = lockedSeller.getNextItemNumber();
+        if (itemNumber > Item.MAX_BARCODE_SEGMENT) {
+            throw new TooManyItemsException(sellerProfile.getId());
+        }
         item.setTableNumber(tableAssignmentService.assignTable(sellerProfile, category, edition));
+        item.setItemNumber(itemNumber);
+        lockedSeller.setNextItemNumber(itemNumber + 1);
         return mapper.toDto(repository.save(item));
     }
 

@@ -358,6 +358,20 @@
           "title": "Supprimer l'article ?",
           "description": "Voulez-vous vraiment supprimer l'article « {{ name }} » ? Cette action est irréversible."
         }
+      },
+      "button": {
+        "validate": "Valider le dépôt et imprimer les étiquettes"
+      },
+      "success": {
+        "validate": "Étiquettes envoyées à l'impression."
+      },
+      "error": {
+        "validate": "Impossible de valider le dépôt.",
+        "printerUnavailable": "Aucune imprimante thermique disponible pour l'impression des étiquettes."
+      },
+      "validateDialog": {
+        "title": "Valider le dépôt ?",
+        "description": "Toutes les étiquettes actuellement enregistrées pour ce vendeur seront (ré)imprimées. Continuer ?"
       }
     }
   },

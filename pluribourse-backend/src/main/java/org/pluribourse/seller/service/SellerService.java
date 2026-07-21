@@ -3,7 +3,10 @@ package org.pluribourse.seller.service;
 import com.jPageFlow.utils.*;
 import lombok.*;
 import org.pluribourse.edition.entity.*;
+import org.pluribourse.edition.exception.*;
+import org.pluribourse.edition.repository.*;
 import org.pluribourse.edition.service.*;
+import org.pluribourse.item.entity.*;
 import org.pluribourse.item.repository.*;
 import org.pluribourse.seller.dto.*;
 import org.pluribourse.seller.entity.*;
@@ -25,6 +28,7 @@ public class SellerService {
 
     private final SellerRepository repository;
     private final EditionService editionService;
+    private final EditionRepository editionRepository;
     private final SellerMapper mapper;
     private final ItemRepository itemRepository;
 
@@ -50,6 +54,18 @@ public class SellerService {
         SellerDto normalized = new SellerDto(dto.id(), dto.firstName().trim(), dto.lastName().trim(), email, dto.phone().trim());
         SellerProfile seller = mapper.toEntity(normalized);
         seller.setEdition(edition);
+        // Lock the edition first (FR-026): serializes concurrent seller creations so the second
+        // caller reads the counter after the first has already incremented it, instead of both
+        // reading the same value. A persisted counter (not MAX(sellerNumber)+1) is required because
+        // a deleted seller (FR-021) must never free its number for reuse by the next one created.
+        Edition lockedEdition = editionRepository.lockById(edition.getId())
+                .orElseThrow(() -> new EditionNotFoundException(edition.getId()));
+        int sellerNumber = lockedEdition.getNextSellerNumber();
+        if (sellerNumber > Item.MAX_BARCODE_SEGMENT) {
+            throw new TooManySellersException(edition.getId());
+        }
+        seller.setSellerNumber(sellerNumber);
+        lockedEdition.setNextSellerNumber(sellerNumber + 1);
         return mapper.toDto(repository.save(seller));
     }
 

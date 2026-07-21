@@ -49,6 +49,32 @@ public class Item {
     @Column(name = "table_number", nullable = false)
     private Integer tableNumber;
 
+    @Column(name = "item_number", nullable = false)
+    private Integer itemNumber;
+
     @Version
     private Long version;
+
+    /** Max value a seller/item number can hold in the fixed 4-digit barcode format (FR-026). */
+    public static final int MAX_BARCODE_SEGMENT = 9999;
+
+    /**
+     * Code 128 payload (FR-026): 4-digit seller number within the edition + 4-digit item number
+     * within the seller's inventory. Never persisted — always derivable from the two numbers.
+     */
+    public String getBarcode() {
+        return String.format("%04d%04d", requireFourDigits(sellerProfile.getSellerNumber()), requireFourDigits(itemNumber));
+    }
+
+    public String getFormattedBarcode() {
+        return String.format("%04d-%04d", requireFourDigits(sellerProfile.getSellerNumber()), requireFourDigits(itemNumber));
+    }
+
+    /** Guards the fixed 8-digit barcode contract (FR-026, AC1): %04d does not truncate past 4 digits. */
+    private static int requireFourDigits(int number) {
+        if (number < 0 || number > MAX_BARCODE_SEGMENT) {
+            throw new IllegalStateException("Barcode segment " + number + " no longer fits the fixed 4-digit format (FR-026)");
+        }
+        return number;
+    }
 }

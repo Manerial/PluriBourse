@@ -358,6 +358,20 @@
           "title": "Delete item?",
           "description": "Are you sure you want to delete the item \"{{ name }}\"? This action cannot be undone."
         }
+      },
+      "button": {
+        "validate": "Validate deposit and print labels"
+      },
+      "success": {
+        "validate": "Labels sent to the printer."
+      },
+      "error": {
+        "validate": "Unable to validate the deposit.",
+        "printerUnavailable": "No thermal printer available to print the labels."
+      },
+      "validateDialog": {
+        "title": "Validate the deposit?",
+        "description": "Every label currently registered for this seller will be (re)printed. Continue?"
       }
     }
   },
