@@ -77,6 +77,17 @@ public class PrintQueueService {
     }
 
     /**
+     * Removes the handle from the registry and stops its consumer thread (story 3.8, AC4/AC5) —
+     * idempotent, a no-op when the id is already absent.
+     */
+    public void unregisterPrinter(Long id) {
+        PrinterQueueHandle handle = handles.remove(id);
+        if (handle != null) {
+            handle.stop();
+        }
+    }
+
+    /**
      * True when a printer can accept a job right now — registered, not suspended, no recorded
      * error. Shared by {@link PrinterSelectionService} (selection-time check, story 3.9) and the
      * deposit-validation flow (submission-time check, story 3.5) so the definition of "available"

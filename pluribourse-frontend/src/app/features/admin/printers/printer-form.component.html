@@ -1,0 +1,62 @@
+<app-dialog-shell [title]="'admin.printers.create.title' | translate" (close)="cancel()">
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dialog-form">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'admin.printers.create.name' | translate }}</mat-label>
+      <input matInput formControlName="name" type="text" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'admin.printers.create.type' | translate }}</mat-label>
+      <mat-select formControlName="type">
+        <mat-option value="THERMAL">{{ 'admin.printers.type.THERMAL' | translate }}</mat-option>
+        <mat-option value="A4">{{ 'admin.printers.type.A4' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (form.controls.type.value === 'THERMAL') {
+      @if (serialPorts().length === 0) {
+        <app-notification-inline [message]="'admin.printers.create.noSerialPort' | translate" variant="warning" />
+      }
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'admin.printers.create.serialPort' | translate }}</mat-label>
+        <mat-select formControlName="serialPort">
+          @for (port of serialPorts(); track port.systemPortName) {
+            <mat-option [value]="port.systemPortName">{{ port.descriptiveName }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'admin.printers.create.widthMm' | translate }}</mat-label>
+        <mat-select formControlName="widthMm">
+          @for (width of widthOptions; track width) {
+            <mat-option [value]="width">{{ 'admin.printers.create.widthValue' | translate: { width } }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'admin.printers.create.host' | translate }}</mat-label>
+        <input matInput formControlName="host" type="text" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'admin.printers.create.port' | translate }}</mat-label>
+        <input matInput formControlName="port" type="number" />
+      </mat-form-field>
+    }
+
+    <div class="dialog__actions">
+      <button type="button" mat-button (click)="cancel()">
+        {{ 'admin.printers.create.cancel' | translate }}
+      </button>
+      <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
+        {{ 'admin.printers.create.submit' | translate }}
+      </button>
+    </div>
+  </form>
+</app-dialog-shell>

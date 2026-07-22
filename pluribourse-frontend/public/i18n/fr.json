@@ -91,7 +91,8 @@
       "settings": "Paramètres",
       "editions": "Éditions",
       "sellers": "Vendeurs",
-      "printQueue": "File d'impression"
+      "printQueue": "File d'impression",
+      "printers": "Imprimantes"
     }
   },
   "edition": {
@@ -517,6 +518,53 @@
         "load": "Impossible de charger l'état des imprimantes.",
         "resume": "Impossible de relancer la file.",
         "discard": "Impossible d'ignorer le job en erreur."
+      }
+    },
+    "printers": {
+      "title": "Registre des imprimantes",
+      "columns": {
+        "name": "Nom",
+        "type": "Type",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "status": {
+        "connected": "Connectée",
+        "disconnected": "Hors ligne"
+      },
+      "type": {
+        "THERMAL": "Thermique",
+        "A4": "A4"
+      },
+      "actions": {
+        "create": "Ajouter une imprimante",
+        "delete": "Supprimer"
+      },
+      "create": {
+        "title": "Ajouter une imprimante",
+        "name": "Nom",
+        "type": "Type",
+        "serialPort": "Port série",
+        "widthMm": "Largeur",
+        "widthValue": "{{ width }} mm",
+        "host": "Adresse IP / hôte",
+        "port": "Port TCP",
+        "noSerialPort": "Aucun port série détecté. Vérifiez que l'imprimante est appairée et branchée.",
+        "submit": "Ajouter",
+        "cancel": "Annuler"
+      },
+      "deleteDialog": {
+        "title": "Supprimer l'imprimante ?",
+        "description": "Cette imprimante et sa file d'impression seront définitivement supprimées. Cette action est irréversible."
+      },
+      "empty": "Aucune imprimante enregistrée pour le moment.",
+      "success": {
+        "delete": "Imprimante supprimée."
+      },
+      "error": {
+        "load": "Impossible de charger le registre des imprimantes.",
+        "create": "Impossible d'ajouter l'imprimante.",
+        "delete": "Impossible de supprimer l'imprimante."
       }
     }
   }

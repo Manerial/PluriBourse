@@ -52,6 +52,15 @@ public class PrinterQueueHandle {
         consumerThread.start();
     }
 
+    /**
+     * Interrupts the consumer thread so it exits {@code consume()} cleanly — a job currently
+     * mid-execution (blocking synchronous I/O) is not force-killed and finishes before the thread
+     * observes the interruption (story 3.8 Dev Notes § Teardown de file à la suppression).
+     */
+    public void stop() {
+        consumerThread.interrupt();
+    }
+
     public void submit(PrintJob job) {
         try {
             deque.putLast(job);

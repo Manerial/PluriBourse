@@ -31,4 +31,9 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./print-queue/print-queue-list.component').then((m) => m.PrintQueueListComponent),
   },
+  {
+    path: 'printers',
+    loadComponent: () =>
+      import('./printers/printer-list.component').then((m) => m.PrinterListComponent),
+  },
 ];

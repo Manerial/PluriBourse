@@ -91,7 +91,8 @@
       "settings": "Settings",
       "editions": "Editions",
       "sellers": "Sellers",
-      "printQueue": "Print queue"
+      "printQueue": "Print queue",
+      "printers": "Printers"
     }
   },
   "edition": {
@@ -517,6 +518,53 @@
         "load": "Failed to load printer statuses.",
         "resume": "Failed to resume the queue.",
         "discard": "Failed to discard the failed job."
+      }
+    },
+    "printers": {
+      "title": "Printer registry",
+      "columns": {
+        "name": "Name",
+        "type": "Type",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "connected": "Connected",
+        "disconnected": "Offline"
+      },
+      "type": {
+        "THERMAL": "Thermal",
+        "A4": "A4"
+      },
+      "actions": {
+        "create": "Add a printer",
+        "delete": "Delete"
+      },
+      "create": {
+        "title": "Add a printer",
+        "name": "Name",
+        "type": "Type",
+        "serialPort": "Serial port",
+        "widthMm": "Width",
+        "widthValue": "{{ width }} mm",
+        "host": "IP address / host",
+        "port": "TCP port",
+        "noSerialPort": "No serial port detected. Check that the printer is paired and plugged in.",
+        "submit": "Add",
+        "cancel": "Cancel"
+      },
+      "deleteDialog": {
+        "title": "Delete this printer?",
+        "description": "This printer and its print queue will be permanently deleted. This action is irreversible."
+      },
+      "empty": "No printer registered yet.",
+      "success": {
+        "delete": "Printer deleted."
+      },
+      "error": {
+        "load": "Failed to load the printer registry.",
+        "create": "Failed to add the printer.",
+        "delete": "Failed to delete the printer."
       }
     }
   }

@@ -1,0 +1,60 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.printers.title' | translate }}</h1>
+    <button type="button" mat-flat-button color="primary" (click)="openCreateDialog()">
+      {{ 'admin.printers.actions.create' | translate }}
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="5" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error()) {
+    @if (printers().length === 0) {
+      <app-empty-state
+        icon="print_connect"
+        [message]="'admin.printers.empty' | translate"
+        [actionLabel]="'admin.printers.actions.create' | translate"
+        (action)="openCreateDialog()"
+      />
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.printers.columns.name' | translate }}</th>
+            <th>{{ 'admin.printers.columns.type' | translate }}</th>
+            <th>{{ 'admin.printers.columns.status' | translate }}</th>
+            <th>{{ 'admin.printers.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (printer of printers(); track printer.id) {
+            <tr>
+              <td>{{ printer.name }}</td>
+              <td>{{ ('admin.printers.type.' + printer.type) | translate }}</td>
+              <td>
+                <span class="badge" [class]="printer.connected ? 'badge--active' : 'badge--inactive'">
+                  <span class="badge__dot" aria-hidden="true"></span>
+                  {{ (printer.connected ? 'admin.printers.status.connected' : 'admin.printers.status.disconnected') | translate }}
+                </span>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button type="button" mat-button color="warn" (click)="confirmDelete(printer)" [disabled]="submitting()">
+                    <mat-icon>delete</mat-icon>
+                    {{ 'admin.printers.actions.delete' | translate }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</div>
