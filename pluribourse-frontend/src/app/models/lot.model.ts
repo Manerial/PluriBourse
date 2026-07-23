@@ -14,6 +14,20 @@ export interface CreateLotRequest {
   items: CreateLotItemRequest[];
 }
 
+export interface UpdateLotItemRequest {
+  id: number | null;
+  categoryId: number;
+  name: string;
+  incomplete: boolean;
+  comment: string | null;
+}
+
+export interface UpdateLotRequest {
+  name: string;
+  globalPrice: number;
+  items: UpdateLotItemRequest[];
+}
+
 export interface LotDto {
   id: number;
   name: string;

@@ -11,10 +11,12 @@ import { firstValueFrom } from 'rxjs';
 import { ActivePhase } from '../../../models/active-phase.enum';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { ItemDto } from '../../../models/item.model';
+import { LotDto } from '../../../models/lot.model';
 import { CategoryService } from '../../../services/category.service';
 import { CurrentEditionService } from '../../../services/current-edition.service';
 import { DepositService } from '../../../services/deposit.service';
 import { ItemService } from '../../../services/item.service';
+import { LotService } from '../../../services/lot.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
@@ -51,6 +53,7 @@ type DepositMode = 'individual' | 'lot';
 export class DepositPageComponent {
   private readonly categoryService = inject(CategoryService);
   private readonly itemService = inject(ItemService);
+  private readonly lotService = inject(LotService);
   private readonly depositService = inject(DepositService);
   private readonly currentEditionService = inject(CurrentEditionService);
   private readonly toast = inject(ToastService);
@@ -65,6 +68,7 @@ export class DepositPageComponent {
   readonly itemsLoading = signal(false);
   readonly itemsError = signal<string | null>(null);
   readonly editingItem = signal<ItemDto | null>(null);
+  readonly editingLot = signal<LotDto | null>(null);
   readonly commentEditId = signal<number | null>(null);
   readonly commentDraft = signal('');
   readonly depositMode = signal<DepositMode>('individual');
@@ -72,12 +76,29 @@ export class DepositPageComponent {
   readonly reprintingSlip = signal(false);
   readonly isDepositPhase = computed(() => this.currentEditionService.currentEdition()?.phase === ActivePhase.DEPOSIT);
 
+  /**
+   * A lot's edit/delete actions must appear once per lot, not once per member row — this is the
+   * id of the first member row encountered (in list order) for each lotId.
+   */
+  readonly firstLotItemIds = computed(() => {
+    const seenLotIds = new Set<number>();
+    const firstItemIds = new Set<number>();
+    for (const item of this.items()) {
+      if (item.lotId !== null && !seenLotIds.has(item.lotId)) {
+        seenLotIds.add(item.lotId);
+        firstItemIds.add(item.id);
+      }
+    }
+    return firstItemIds;
+  });
+
   constructor() {
     this.loadCategories();
 
     effect(() => {
       const seller = this.selectedSeller();
       this.editingItem.set(null);
+      this.editingLot.set(null);
       this.commentEditId.set(null);
       this.depositMode.set('individual');
       if (seller) {
@@ -90,15 +111,67 @@ export class DepositPageComponent {
 
   setDepositMode(mode: DepositMode): void {
     this.editingItem.set(null);
+    this.editingLot.set(null);
     this.depositMode.set(mode);
   }
 
   startEdit(item: ItemDto): void {
+    this.editingLot.set(null);
     this.editingItem.set(item);
   }
 
   cancelEdit(): void {
     this.editingItem.set(null);
+  }
+
+  isFirstLotRow(item: ItemDto): boolean {
+    return this.firstLotItemIds().has(item.id);
+  }
+
+  startEditLot(lotId: number): void {
+    const lotItems = this.items().filter(i => i.lotId === lotId);
+    if (lotItems.length === 0) {
+      return;
+    }
+    const [first] = lotItems;
+    this.editingItem.set(null);
+    this.depositMode.set('lot');
+    this.editingLot.set({
+      id: lotId,
+      name: first.lotName!,
+      globalPrice: first.lotPrice!,
+      items: lotItems,
+    });
+  }
+
+  async confirmDeleteLot(lotId: number, lotName: string): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this.confirmDialog.open({
+        title: this.translate.instant('volunteer.deposit.item.deleteLotDialog.title'),
+        description: this.translate.instant('volunteer.deposit.item.deleteLotDialog.description', { name: lotName }),
+        confirmVariant: 'error',
+      })
+    );
+    if (!confirmed) {
+      return;
+    }
+    const seller = this.selectedSeller();
+    try {
+      await firstValueFrom(this.lotService.delete(lotId));
+      this.toast.showSuccess(this.translate.instant('volunteer.deposit.item.success.deleteLot'));
+      if (this.editingLot()?.id === lotId) {
+        this.editingLot.set(null);
+      }
+      if (seller) {
+        await this.loadItems(seller.id);
+      }
+    } catch (err: unknown) {
+      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/item-modification-locked')) {
+        this.toast.showError(this.translate.instant('volunteer.deposit.item.error.deleteLotPhaseLocked'));
+      } else {
+        this.toast.showError(this.translate.instant('volunteer.deposit.item.error.deleteLot'));
+      }
+    }
   }
 
   onItemSaved(): void {
@@ -111,6 +184,7 @@ export class DepositPageComponent {
 
   onLotSaved(): void {
     this.depositMode.set('individual');
+    this.editingLot.set(null);
     const seller = this.selectedSeller();
     if (seller) {
       this.loadItems(seller.id);

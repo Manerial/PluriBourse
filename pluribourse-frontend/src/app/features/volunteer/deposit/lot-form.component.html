@@ -1,6 +1,8 @@
 <div class="card form-card">
   <div class="card__header">
-    <h2 class="card__title">{{ 'volunteer.deposit.item.lotForm.createTitle' | translate }}</h2>
+    <h2 class="card__title">
+      {{ (isEditing() ? 'volunteer.deposit.item.lotForm.editTitle' : 'volunteer.deposit.item.lotForm.createTitle') | translate }}
+    </h2>
   </div>
 
   <div class="card__body">
@@ -78,7 +80,10 @@
           mat-flat-button
           color="primary"
           [disabled]="form.invalid || itemsFormArray.length < 2 || loading()">
-          {{ 'volunteer.deposit.item.lotForm.submit' | translate: { count: itemsFormArray.length } }}
+          {{
+            (isEditing() ? 'volunteer.deposit.item.lotForm.save' : 'volunteer.deposit.item.lotForm.submit')
+              | translate: { count: itemsFormArray.length }
+          }}
         </button>
       </div>
     </form>

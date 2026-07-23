@@ -30,6 +30,7 @@
       <app-lot-form
         [sellerId]="seller.id"
         [categories]="categories()"
+        [editingLot]="editingLot()"
         (saved)="onLotSaved()"
         (cancelled)="setDepositMode('individual')" />
     }
@@ -104,6 +105,22 @@
                         color="warn"
                         (click)="confirmDelete(item)"
                         [attr.aria-label]="'volunteer.deposit.item.list.delete' | translate">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    } @else if (isFirstLotRow(item)) {
+                      <button
+                        type="button"
+                        mat-icon-button
+                        (click)="startEditLot(item.lotId)"
+                        [attr.aria-label]="'volunteer.deposit.item.list.editLot' | translate">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button
+                        type="button"
+                        mat-icon-button
+                        color="warn"
+                        (click)="confirmDeleteLot(item.lotId, item.lotName!)"
+                        [attr.aria-label]="'volunteer.deposit.item.list.deleteLot' | translate">
                         <mat-icon>delete</mat-icon>
                       </button>
                     }

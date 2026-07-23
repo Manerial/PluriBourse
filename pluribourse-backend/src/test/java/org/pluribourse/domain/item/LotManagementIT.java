@@ -40,6 +40,12 @@ class LotManagementIT extends IntegrationTest {
     private Long foreignCategoryId;
     private Long sellerAId;
     private Long createdLotId;
+    private Long itemKaplaId;
+    private Long itemTintinId;
+    private Long itemPlaymobilId;
+    private Long itemBarbieId;
+    private Long secondLotId;
+    private Long secondLotItemAId;
 
     @BeforeAll
     void setUpSessions() throws Exception {
@@ -200,6 +206,8 @@ class LotManagementIT extends IntegrationTest {
                 .andReturn();
         LotDto created = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
         createdLotId = created.id();
+        itemKaplaId = created.items().get(0).id();
+        itemTintinId = created.items().get(1).id();
         assertThat(created.name()).isEqualTo("Lot Jouets et Livres");
         assertThat(created.globalPrice()).isEqualByComparingTo("25.00");
         assertThat(created.items()).hasSize(2);
@@ -258,6 +266,263 @@ class LotManagementIT extends IntegrationTest {
 
     @Test
     @Order(10)
+    void update_lot_name_and_price_reflected_on_all_member_items() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee")
+        ));
+        MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andReturn();
+        LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
+        assertThat(updated.name()).isEqualTo("Lot Jouets et Livres Modifie");
+        assertThat(updated.globalPrice()).isEqualByComparingTo("30.00");
+        assertThat(updated.items()).hasSize(2);
+
+        MvcResult itemsResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        List<ItemDto> items = objectMapper.readValue(itemsResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
+        assertThat(items).filteredOn(item -> item.lotId().equals(createdLotId))
+                .allSatisfy(item -> {
+                    assertThat(item.lotName()).isEqualTo("Lot Jouets et Livres Modifie");
+                    assertThat(item.lotPrice()).isEqualByComparingTo("30.00");
+                });
+    }
+
+    @Test
+    @Order(11)
+    void create_second_lot_for_cross_lot_and_deletion_tests() throws Exception {
+        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot a Supprimer", new BigDecimal("5.00"), List.of(
+                new CreateLotItemDto(jouetsCategoryId, "Piece Jetable A", false, null),
+                new CreateLotItemDto(jouetsCategoryId, "Piece Jetable B", false, null)
+        ));
+        MvcResult result = mockMvc.perform(post("/api/lots")
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        LotDto created = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
+        secondLotId = created.id();
+        secondLotItemAId = created.items().get(0).id();
+    }
+
+    @Test
+    @Order(12)
+    void update_lot_add_item_assigns_seller_existing_table_for_that_category() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee"),
+                new UpdateLotItemDto(null, jouetsCategoryId, "Playmobil", false, null)
+        ));
+        MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andReturn();
+        LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
+        assertThat(updated.items()).hasSize(3);
+        ItemDto playmobil = updated.items().stream().filter(i -> i.name().equals("Playmobil")).findFirst().orElseThrow();
+        itemPlaymobilId = playmobil.id();
+        // Seller already has a Jouets table (Kapla, table 1) — FR-023 keeps a single table per
+        // category per seller, so the new item must land on that same table, not a freshly
+        // computed least-loaded one.
+        assertThat(playmobil.tableNumber()).isEqualTo(1);
+        assertThat(playmobil.price()).isNull();
+    }
+
+    @Test
+    @Order(13)
+    void update_lot_change_item_category_reassigns_table() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, jouetsCategoryId, "BD Tintin", true, "Couverture abimee"),
+                new UpdateLotItemDto(itemPlaymobilId, jouetsCategoryId, "Playmobil", false, null)
+        ));
+        MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andReturn();
+        LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
+        assertThat(updated.items()).hasSize(3);
+        // Playmobil's id must be preserved (same row updated, not deleted+recreated) now that the
+        // payload correctly carries its captured id instead of null.
+        assertThat(updated.items()).extracting(ItemDto::id).contains(itemPlaymobilId);
+        ItemDto tintin = updated.items().stream().filter(i -> i.id().equals(itemTintinId)).findFirst().orElseThrow();
+        assertThat(tintin.categoryId()).isEqualTo(jouetsCategoryId);
+        // Reassigned to the seller's existing Jouets table, same rationale as the previous test.
+        assertThat(tintin.tableNumber()).isEqualTo(1);
+    }
+
+    @Test
+    @Order(14)
+    void update_lot_reassigns_category_and_adds_item_in_the_same_request() throws Exception {
+        // Exercises the combined lockOrder path the Dev Notes call out explicitly: an existing
+        // member's category reassignment (Tintin: Jouets -> Livres) and a brand-new item (Barbie)
+        // processed together, sorted by ascending category id in the same PUT.
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee"),
+                new UpdateLotItemDto(itemPlaymobilId, jouetsCategoryId, "Playmobil", false, null),
+                new UpdateLotItemDto(null, jouetsCategoryId, "Barbie", false, null)
+        ));
+        MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andReturn();
+        LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
+        assertThat(updated.items()).hasSize(4);
+        ItemDto tintin = updated.items().stream().filter(i -> i.id().equals(itemTintinId)).findFirst().orElseThrow();
+        assertThat(tintin.categoryId()).isEqualTo(livresCategoryId);
+        // No seller item remains in Livres at this point (Tintin just left it), so this lands back
+        // on the freshly computed least-loaded Livres table rather than a pre-existing one.
+        assertThat(tintin.tableNumber()).isEqualTo(2);
+        ItemDto barbie = updated.items().stream().filter(i -> i.name().equals("Barbie")).findFirst().orElseThrow();
+        itemBarbieId = barbie.id();
+        // Seller already has a Jouets table (Kapla/Playmobil, table 1) — same shortcut as the
+        // earlier "add item" test.
+        assertThat(barbie.tableNumber()).isEqualTo(1);
+        assertThat(barbie.price()).isNull();
+    }
+
+    @Test
+    @Order(15)
+    void update_lot_with_item_id_not_belonging_to_lot_returns_404() throws Exception {
+        UpdateLotDto unknownIdPayload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(999999999L, jouetsCategoryId, "Fantome", false, null)
+        ));
+        mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(unknownIdPayload)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-not-found")));
+
+        // A real, existing item id is just as invalid here if it belongs to a *different* lot —
+        // membership is scoped per-lot, not merely "does this id exist anywhere".
+        UpdateLotDto otherLotItemPayload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(secondLotItemAId, jouetsCategoryId, "Piece Jetable A", false, null)
+        ));
+        mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(otherLotItemPayload)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-not-found")));
+    }
+
+    @Test
+    @Order(16)
+    void update_lot_remove_item_succeeds() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee"),
+                new UpdateLotItemDto(itemBarbieId, jouetsCategoryId, "Barbie", false, null)
+        ));
+        mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(3));
+
+        MvcResult afterResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        List<ItemDto> after = objectMapper.readValue(afterResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
+        assertThat(after).extracting(ItemDto::id).doesNotContain(itemPlaymobilId);
+    }
+
+    @Test
+    @Order(17)
+    void update_lot_to_single_item_is_rejected() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null)
+        ));
+        mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Order(18)
+    void update_unknown_lot_returns_404() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Fantome", new BigDecimal("10.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, jouetsCategoryId, "BD Tintin", false, null)
+        ));
+        mockMvc.perform(put("/api/lots/999999999")
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/lot-not-found")));
+    }
+
+    @Test
+    @Order(19)
+    void update_lot_with_duplicate_item_id_is_rejected() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla en double", false, null)
+        ));
+        mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/duplicate-lot-item-id")));
+    }
+
+    @Test
+    @Order(20)
+    void delete_unknown_lot_returns_404() throws Exception {
+        mockMvc.perform(delete("/api/lots/999999999")
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/lot-not-found")));
+    }
+
+    @Test
+    @Order(21)
+    void delete_lot_removes_lot_and_all_member_items() throws Exception {
+        MvcResult beforeResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        List<ItemDto> before = objectMapper.readValue(beforeResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
+        List<Long> deletedIds = before.stream().filter(i -> secondLotId.equals(i.lotId())).map(ItemDto::id).toList();
+        assertThat(deletedIds).hasSize(2);
+
+        mockMvc.perform(delete("/api/lots/" + secondLotId)
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        MvcResult afterResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        List<ItemDto> after = objectMapper.readValue(afterResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
+        assertThat(after).extracting(ItemDto::id).doesNotContainAnyElementsOf(deletedIds);
+    }
+
+    @Test
+    @Order(22)
     void advance_edition_to_sale_phase() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
@@ -266,7 +531,31 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(11)
+    @Order(23)
+    void update_lot_outside_deposit_phase_is_blocked() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, jouetsCategoryId, "BD Tintin", false, null)
+        ));
+        mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-modification-locked")));
+    }
+
+    @Test
+    @Order(24)
+    void delete_lot_outside_deposit_phase_is_blocked() throws Exception {
+        mockMvc.perform(delete("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-modification-locked")));
+    }
+
+    @Test
+    @Order(25)
     void create_lot_outside_deposit_phase_is_blocked_again() throws Exception {
         CreateLotDto payload = new CreateLotDto(sellerAId, "Lot Tardif", new BigDecimal("9.00"), List.of(
                 new CreateLotItemDto(jouetsCategoryId, "Piece A", false, null),

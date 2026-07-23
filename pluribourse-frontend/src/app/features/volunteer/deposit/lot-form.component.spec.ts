@@ -55,11 +55,13 @@ describe('LotFormComponent', () => {
 
   const lotServiceMock = {
     create: vi.fn().mockReturnValue(of(MOCK_LOT)),
+    update: vi.fn().mockReturnValue(of(MOCK_LOT)),
   };
 
   beforeEach(async () => {
     vi.clearAllMocks();
     lotServiceMock.create.mockReturnValue(of(MOCK_LOT));
+    lotServiceMock.update.mockReturnValue(of(MOCK_LOT));
 
     await TestBed.configureTestingModule({
       imports: [LotFormComponent],
@@ -159,10 +161,68 @@ describe('LotFormComponent', () => {
     expect(cancelledSpy).toHaveBeenCalled();
   });
 
+  describe('editing an existing lot', () => {
+    beforeEach(async () => {
+      fixture.componentRef.setInput('editingLot', MOCK_LOT);
+      fixture.detectChanges();
+      await fixture.whenStable();
+    });
+
+    it('prefills the form and marks isEditing as true', () => {
+      expect(component.isEditing()).toBe(true);
+      expect(component.form.controls.name.value).toBe('Lot Jouets');
+      expect(component.form.controls.globalPrice.value).toBe(15);
+      expect(component.itemsFormArray.length).toBe(2);
+      expect(component.itemsFormArray.at(0).value).toEqual({
+        id: 100,
+        name: 'Piece A',
+        categoryId: 1,
+        incomplete: false,
+        comment: '',
+      });
+    });
+
+    it('calls update with existing ids preserved and null id for a newly added row', async () => {
+      component.addItemRow();
+      component.itemsFormArray.at(2).setValue({ id: null, name: 'Piece C', categoryId: 2, incomplete: true, comment: 'Neuve' });
+
+      await component.onSubmit();
+
+      expect(lotServiceMock.update).toHaveBeenCalledWith(20, {
+        name: 'Lot Jouets',
+        globalPrice: 15,
+        items: [
+          { id: 100, categoryId: 1, name: 'Piece A', incomplete: false, comment: null },
+          { id: 101, categoryId: 1, name: 'Piece B', incomplete: false, comment: null },
+          { id: null, categoryId: 2, name: 'Piece C', incomplete: true, comment: 'Neuve' },
+        ],
+      });
+      expect(lotServiceMock.create).not.toHaveBeenCalled();
+    });
+
+    it('does not reset the form after a successful update', async () => {
+      await component.onSubmit();
+
+      expect(component.form.controls.name.value).toBe('Lot Jouets');
+      expect(component.itemsFormArray.length).toBe(2);
+    });
+
+    it('switching back to creation mode resets the form to two empty rows', async () => {
+      fixture.componentRef.setInput('editingLot', null);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.isEditing()).toBe(false);
+      expect(component.form.controls.name.value).toBe('');
+      expect(component.itemsFormArray.length).toBe(2);
+      expect(component.itemsFormArray.at(0).value.id).toBeNull();
+    });
+  });
+
   function fillValidForm(cmp: LotFormComponent): void {
     cmp.form.controls.name.setValue('Lot Jouets');
     cmp.form.controls.globalPrice.setValue(15);
-    cmp.itemsFormArray.at(0).setValue({ name: 'Piece A', categoryId: 1, incomplete: false, comment: '' });
-    cmp.itemsFormArray.at(1).setValue({ name: 'Piece B', categoryId: 1, incomplete: false, comment: '' });
+    cmp.itemsFormArray.at(0).setValue({ id: null, name: 'Piece A', categoryId: 1, incomplete: false, comment: '' });
+    cmp.itemsFormArray.at(1).setValue({ id: null, name: 'Piece B', categoryId: 1, incomplete: false, comment: '' });
   }
 });

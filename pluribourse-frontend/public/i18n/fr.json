@@ -316,6 +316,7 @@
         },
         "lotForm": {
           "createTitle": "Créer un lot",
+          "editTitle": "Modifier le lot",
           "lotName": "Nom du lot",
           "lotPrice": "Prix global du lot (€)",
           "itemsLabel": "Articles du lot — 2 minimum",
@@ -326,10 +327,11 @@
           "addItem": "Ajouter un article au lot",
           "removeItem": "Retirer l'article",
           "submit": "Valider le lot ({{ count }} articles)",
+          "save": "Enregistrer",
           "cancel": "Annuler",
           "error": {
             "save": "Impossible d'enregistrer le lot.",
-            "phaseLocked": "Ce lot ne peut pas être créé en dehors de la phase Dépôt.",
+            "phaseLocked": "Ce lot ne peut pas être créé ou modifié en dehors de la phase Dépôt.",
             "noActiveEdition": "Cette édition n'est plus active. Rechargez la page ou reconnectez-vous."
           }
         },
@@ -344,21 +346,30 @@
           "delete": "Supprimer l'article",
           "editComment": "Modifier le commentaire",
           "lotBadge": "Lot",
-          "lotPriceFormat": "{{ price }} € (lot)"
+          "lotPriceFormat": "{{ price }} € (lot)",
+          "editLot": "Modifier le lot",
+          "deleteLot": "Supprimer le lot"
         },
         "error": {
           "load": "Impossible de charger les articles.",
           "loadCategories": "Impossible de charger les catégories.",
           "update": "Impossible de mettre à jour l'article.",
           "delete": "Impossible de supprimer l'article.",
-          "phaseLocked": "Cet article ne peut pas être modifié en dehors de la phase Dépôt."
+          "phaseLocked": "Cet article ne peut pas être modifié en dehors de la phase Dépôt.",
+          "deleteLot": "Impossible de supprimer le lot.",
+          "deleteLotPhaseLocked": "Ce lot ne peut pas être supprimé en dehors de la phase Dépôt."
         },
         "success": {
-          "delete": "Article supprimé."
+          "delete": "Article supprimé.",
+          "deleteLot": "Lot supprimé."
         },
         "deleteDialog": {
           "title": "Supprimer l'article ?",
           "description": "Voulez-vous vraiment supprimer l'article « {{ name }} » ? Cette action est irréversible."
+        },
+        "deleteLotDialog": {
+          "title": "Supprimer le lot ?",
+          "description": "Voulez-vous vraiment supprimer le lot « {{ name }} » ? Tous les articles de ce lot seront également supprimés. Cette action est irréversible."
         }
       },
       "button": {

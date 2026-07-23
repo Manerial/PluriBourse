@@ -68,7 +68,22 @@ const MOCK_LOT_ITEM: ItemDto = {
   lotPrice: 15,
 };
 
-const MOCK_LOT: LotDto = { id: 20, name: 'Lot Jouets', globalPrice: 15, items: [MOCK_LOT_ITEM] };
+const MOCK_LOT_ITEM_2: ItemDto = {
+  id: 12,
+  sellerProfileId: 5,
+  categoryId: 1,
+  categoryName: 'Jouets',
+  name: 'Autre piece de lot',
+  price: null,
+  incomplete: false,
+  comment: null,
+  tableNumber: 1,
+  lotId: 20,
+  lotName: 'Lot Jouets',
+  lotPrice: 15,
+};
+
+const MOCK_LOT: LotDto = { id: 20, name: 'Lot Jouets', globalPrice: 15, items: [MOCK_LOT_ITEM, MOCK_LOT_ITEM_2] };
 
 describe('DepositPageComponent', () => {
   let fixture: ComponentFixture<DepositPageComponent>;
@@ -81,7 +96,10 @@ describe('DepositPageComponent', () => {
     delete: vi.fn().mockReturnValue(of(undefined)),
   };
   const sellerServiceMock = { search: vi.fn().mockReturnValue(of([])) };
-  const lotServiceMock = { create: vi.fn().mockReturnValue(of(MOCK_LOT)) };
+  const lotServiceMock = {
+    create: vi.fn().mockReturnValue(of(MOCK_LOT)),
+    delete: vi.fn().mockReturnValue(of(undefined)),
+  };
   const depositServiceMock = { validateDeposit: vi.fn().mockReturnValue(of(undefined)), reprintDepositSlip: vi.fn().mockReturnValue(of(undefined)) };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
   const confirmDialogMock = { open: vi.fn().mockReturnValue(of(true)) };
@@ -96,6 +114,7 @@ describe('DepositPageComponent', () => {
     itemServiceMock.delete.mockReturnValue(of(undefined));
     sellerServiceMock.search.mockReturnValue(of([]));
     lotServiceMock.create.mockReturnValue(of(MOCK_LOT));
+    lotServiceMock.delete.mockReturnValue(of(undefined));
     depositServiceMock.validateDeposit.mockReturnValue(of(undefined));
     depositServiceMock.reprintDepositSlip.mockReturnValue(of(undefined));
     confirmDialogMock.open.mockReturnValue(of(true));
@@ -292,8 +311,8 @@ describe('DepositPageComponent', () => {
     expect(itemServiceMock.getBySeller).toHaveBeenCalledWith(5);
   });
 
-  it('renders the lot badge and lot price for items belonging to a lot, without any row actions', async () => {
-    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM]));
+  it('renders the lot badge and lot price for items belonging to a lot, with lot actions only on the first member row', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
     selectMockSeller();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -301,8 +320,162 @@ describe('DepositPageComponent', () => {
 
     const rowText = fixture.nativeElement.textContent as string;
     expect(rowText).toContain('Lot Jouets');
-    const actionButtons = fixture.debugElement.queryAll(By.css('.article-row__actions button'));
-    expect(actionButtons).toHaveLength(0);
+    const rows = fixture.debugElement.queryAll(By.css('.article-row'));
+    expect(rows).toHaveLength(2);
+    expect(rows[0].queryAll(By.css('.article-row__actions button'))).toHaveLength(2);
+    expect(rows[1].queryAll(By.css('.article-row__actions button'))).toHaveLength(0);
+  });
+
+  it('clicking the rendered lot action buttons calls startEditLot()/confirmDeleteLot() with the lot id/name, not the row item id', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const startEditLotSpy = vi.spyOn(component, 'startEditLot').mockImplementation(() => {});
+    const confirmDeleteLotSpy = vi.spyOn(component, 'confirmDeleteLot').mockResolvedValue();
+
+    const firstRowButtons = fixture.debugElement.queryAll(By.css('.article-row__actions button'));
+    expect(firstRowButtons).toHaveLength(2);
+
+    (firstRowButtons[0].nativeElement as HTMLButtonElement).click();
+    expect(startEditLotSpy).toHaveBeenCalledWith(MOCK_LOT_ITEM.lotId);
+
+    (firstRowButtons[1].nativeElement as HTMLButtonElement).click();
+    expect(confirmDeleteLotSpy).toHaveBeenCalledWith(MOCK_LOT_ITEM.lotId, MOCK_LOT_ITEM.lotName);
+  });
+
+  it('isFirstLotRow() is true only for the first member row of a given lot', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.isFirstLotRow(MOCK_LOT_ITEM)).toBe(true);
+    expect(component.isFirstLotRow(MOCK_LOT_ITEM_2)).toBe(false);
+  });
+
+  it('startEditLot() rebuilds the LotDto from already-loaded items without a new HTTP call', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_ITEM, MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    itemServiceMock.getBySeller.mockClear();
+
+    component.startEditLot(20);
+
+    expect(component.editingLot()).toEqual({
+      id: 20,
+      name: 'Lot Jouets',
+      globalPrice: 15,
+      items: [MOCK_LOT_ITEM, MOCK_LOT_ITEM_2],
+    });
+    expect(component.depositMode()).toBe('lot');
+    expect(component.editingItem()).toBeNull();
+    expect(itemServiceMock.getBySeller).not.toHaveBeenCalled();
+  });
+
+  it('starting an individual item edit clears editingLot, and starting a lot edit clears editingItem', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_ITEM, MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component.startEditLot(20);
+    expect(component.editingLot()).not.toBeNull();
+    component.startEdit(MOCK_ITEM);
+    expect(component.editingLot()).toBeNull();
+    expect(component.editingItem()).toEqual(MOCK_ITEM);
+
+    component.startEditLot(20);
+    expect(component.editingItem()).toBeNull();
+  });
+
+  it('setDepositMode() clears editingLot in addition to editingItem', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    component.startEditLot(20);
+
+    component.setDepositMode('individual');
+
+    expect(component.editingLot()).toBeNull();
+  });
+
+  it('selecting a new seller clears editingLot', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    component.startEditLot(20);
+
+    const otherSeller = { id: 6, firstName: 'Bruno', lastName: 'Durand', email: 'durand@email.com', phone: '0698765432' };
+    getSellerSearch().changeSeller();
+    getSellerSearch().selectSeller(otherSeller);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.editingLot()).toBeNull();
+  });
+
+  it('onLotSaved() clears editingLot in addition to switching back to individual mode', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    component.startEditLot(20);
+
+    component.onLotSaved();
+
+    expect(component.editingLot()).toBeNull();
+    expect(component.depositMode()).toBe('individual');
+  });
+
+  it('confirmDeleteLot() does nothing when the user cancels the dialog', async () => {
+    confirmDialogMock.open.mockReturnValueOnce(of(false));
+    await component.confirmDeleteLot(20, 'Lot Jouets');
+    expect(lotServiceMock.delete).not.toHaveBeenCalled();
+  });
+
+  it('confirmDeleteLot() deletes the lot, shows a success toast and reloads the list', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    component.startEditLot(20);
+
+    await component.confirmDeleteLot(20, 'Lot Jouets');
+
+    expect(lotServiceMock.delete).toHaveBeenCalledWith(20);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(component.editingLot()).toBeNull();
+    expect(itemServiceMock.getBySeller).toHaveBeenCalledWith(5);
+  });
+
+  it('confirmDeleteLot() shows the phase-locked toast on 422 item-modification-locked', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    lotServiceMock.delete.mockReturnValueOnce(
+      throwError(() => new HttpErrorResponse({ status: 422, error: { type: 'https://pluribourse/errors/item-modification-locked' } }))
+    );
+
+    await component.confirmDeleteLot(20, 'Lot Jouets');
+
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.item.error.deleteLotPhaseLocked');
+  });
+
+  it('confirmDeleteLot() shows a generic error toast on other failures', async () => {
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    lotServiceMock.delete.mockReturnValueOnce(throwError(() => new Error('server')));
+
+    await component.confirmDeleteLot(20, 'Lot Jouets');
+
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.deposit.item.error.deleteLot');
   });
 
   function getValidateButton(): HTMLButtonElement {

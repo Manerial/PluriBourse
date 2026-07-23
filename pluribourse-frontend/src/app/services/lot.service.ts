@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CreateLotRequest, LotDto } from '../models/lot.model';
+import { CreateLotRequest, LotDto, UpdateLotRequest } from '../models/lot.model';
 
 @Injectable({ providedIn: 'root' })
 export class LotService {
@@ -9,5 +9,13 @@ export class LotService {
 
   create(data: CreateLotRequest): Observable<LotDto> {
     return this.http.post<LotDto>('/api/lots', data);
+  }
+
+  update(id: number, data: UpdateLotRequest): Observable<LotDto> {
+    return this.http.put<LotDto>(`/api/lots/${id}`, data);
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/lots/${id}`);
   }
 }

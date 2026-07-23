@@ -316,6 +316,7 @@
         },
         "lotForm": {
           "createTitle": "Create a lot",
+          "editTitle": "Edit lot",
           "lotName": "Lot name",
           "lotPrice": "Lot global price (€)",
           "itemsLabel": "Lot items — 2 minimum",
@@ -326,10 +327,11 @@
           "addItem": "Add item to lot",
           "removeItem": "Remove item",
           "submit": "Confirm lot ({{ count }} items)",
+          "save": "Save",
           "cancel": "Cancel",
           "error": {
             "save": "Failed to save the lot.",
-            "phaseLocked": "This lot cannot be created outside the Deposit phase.",
+            "phaseLocked": "This lot cannot be created or modified outside the Deposit phase.",
             "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
           }
         },
@@ -344,21 +346,30 @@
           "delete": "Delete item",
           "editComment": "Edit comment",
           "lotBadge": "Lot",
-          "lotPriceFormat": "{{ price }} € (lot)"
+          "lotPriceFormat": "{{ price }} € (lot)",
+          "editLot": "Edit lot",
+          "deleteLot": "Delete lot"
         },
         "error": {
           "load": "Failed to load items.",
           "loadCategories": "Failed to load categories.",
           "update": "Failed to update the item.",
           "delete": "Failed to delete the item.",
-          "phaseLocked": "This item cannot be modified outside the Deposit phase."
+          "phaseLocked": "This item cannot be modified outside the Deposit phase.",
+          "deleteLot": "Failed to delete the lot.",
+          "deleteLotPhaseLocked": "This lot cannot be deleted outside the Deposit phase."
         },
         "success": {
-          "delete": "Item deleted."
+          "delete": "Item deleted.",
+          "deleteLot": "Lot deleted."
         },
         "deleteDialog": {
           "title": "Delete item?",
           "description": "Are you sure you want to delete the item \"{{ name }}\"? This action cannot be undone."
+        },
+        "deleteLotDialog": {
+          "title": "Delete lot?",
+          "description": "Are you sure you want to delete the lot \"{{ name }}\"? All items in this lot will also be deleted. This action cannot be undone."
         }
       },
       "button": {

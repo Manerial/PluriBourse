@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-22"  # Story 3-8 (registre des imprimantes admin) revue de code terminée, statut passé à done
+last_updated: "2026-07-22"  # Story 6-1 (catalogue articles) créée avec create-story ; epic 6 passé en in-progress
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -81,6 +81,7 @@ development_status:
   3-7-vue-admin-de-diagnostic-des-imprimantes: done
   3-8-registre-des-imprimantes-admin: done
   3-9-selection-dimprimante-par-le-benevole-a-la-connexion: done
+  3-10-modification-dun-lot-apres-saisie: done
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────

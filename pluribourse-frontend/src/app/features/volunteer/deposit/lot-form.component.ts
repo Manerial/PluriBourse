@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,10 +10,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { EditionCategoryDto } from '../../../models/category.model';
-import { CreateLotRequest, LotDto } from '../../../models/lot.model';
+import { CreateLotRequest, LotDto, UpdateLotRequest } from '../../../models/lot.model';
 import { LotService } from '../../../services/lot.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { extractErrorType } from '../../../shared/http-error.util';
+
+interface LotItemRow {
+  id: number | null;
+  name: string;
+  categoryId: number | null;
+  incomplete: boolean;
+  comment: string;
+}
 
 @Component({
   selector: 'app-lot-form',
@@ -38,9 +46,12 @@ export class LotFormComponent {
 
   readonly sellerId = input.required<number>();
   readonly categories = input.required<EditionCategoryDto[]>();
+  readonly editingLot = input<LotDto | null>(null);
 
   readonly saved = output<LotDto>();
   readonly cancelled = output<void>();
+
+  readonly isEditing = computed(() => this.editingLot() !== null);
 
   readonly itemsFormArray = this.fb.array([this.createItemRow(), this.createItemRow()]);
 
@@ -52,6 +63,29 @@ export class LotFormComponent {
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      const lot = this.editingLot();
+      this.sellerId(); // re-run this effect on seller change too, even if editingLot() stays null
+      this.error.set(null);
+      if (lot) {
+        this.form.patchValue({ name: lot.name, globalPrice: lot.globalPrice });
+        this.setItemRows(
+          lot.items.map(item => ({
+            id: item.id,
+            name: item.name,
+            categoryId: item.categoryId,
+            incomplete: item.incomplete,
+            comment: item.comment ?? '',
+          }))
+        );
+      } else {
+        this.form.patchValue({ name: '', globalPrice: 0 });
+        this.setItemRows([this.emptyItemRow(), this.emptyItemRow()]);
+      }
+    });
+  }
 
   addItemRow(): void {
     this.itemsFormArray.push(this.createItemRow());
@@ -69,24 +103,44 @@ export class LotFormComponent {
       return;
     }
     const raw = this.form.getRawValue();
-    const dto: CreateLotRequest = {
-      sellerProfileId: this.sellerId(),
-      name: raw.name.trim(),
-      globalPrice: Math.round(raw.globalPrice * 100) / 100,
-      items: raw.items.map(item => ({
-        categoryId: item.categoryId!,
-        name: item.name.trim(),
-        incomplete: item.incomplete,
-        comment: item.comment.trim() ? item.comment.trim() : null,
-      })),
-    };
+    const editingLot = this.editingLot();
 
     this.error.set(null);
     this.loading.set(true);
     try {
-      const result = await firstValueFrom(this.lotService.create(dto));
+      let result: LotDto;
+      if (editingLot) {
+        const dto: UpdateLotRequest = {
+          name: raw.name.trim(),
+          globalPrice: Math.round(raw.globalPrice * 100) / 100,
+          items: raw.items.map(item => ({
+            id: item.id,
+            categoryId: item.categoryId!,
+            name: item.name.trim(),
+            incomplete: item.incomplete,
+            comment: item.comment.trim() ? item.comment.trim() : null,
+          })),
+        };
+        result = await firstValueFrom(this.lotService.update(editingLot.id, dto));
+      } else {
+        const dto: CreateLotRequest = {
+          sellerProfileId: this.sellerId(),
+          name: raw.name.trim(),
+          globalPrice: Math.round(raw.globalPrice * 100) / 100,
+          items: raw.items.map(item => ({
+            categoryId: item.categoryId!,
+            name: item.name.trim(),
+            incomplete: item.incomplete,
+            comment: item.comment.trim() ? item.comment.trim() : null,
+          })),
+        };
+        result = await firstValueFrom(this.lotService.create(dto));
+      }
       this.saved.emit(result);
-      this.resetForm();
+      if (!editingLot) {
+        this.form.patchValue({ name: '', globalPrice: 0 });
+        this.setItemRows([this.emptyItemRow(), this.emptyItemRow()]);
+      }
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/item-modification-locked')) {
         this.error.set('volunteer.deposit.item.lotForm.error.phaseLocked');
@@ -104,21 +158,26 @@ export class LotFormComponent {
     this.cancelled.emit();
   }
 
-  private createItemRow() {
+  private createItemRow(initial: LotItemRow = this.emptyItemRow()) {
     return this.fb.nonNullable.group({
-      name: ['', [Validators.required, Validators.maxLength(200)]],
-      categoryId: [null as number | null, [Validators.required]],
-      incomplete: [false],
-      comment: ['', [Validators.maxLength(500)]],
+      id: [initial.id as number | null],
+      name: [initial.name, [Validators.required, Validators.maxLength(200)]],
+      categoryId: [initial.categoryId, [Validators.required]],
+      incomplete: [initial.incomplete],
+      comment: [initial.comment, [Validators.maxLength(500)]],
     });
   }
 
-  private resetForm(): void {
-    this.form.patchValue({ name: '', globalPrice: 0 });
+  private emptyItemRow(): LotItemRow {
+    return { id: null, name: '', categoryId: null, incomplete: false, comment: '' };
+  }
+
+  private setItemRows(rows: LotItemRow[]): void {
     while (this.itemsFormArray.length > 0) {
       this.itemsFormArray.removeAt(0);
     }
-    this.itemsFormArray.push(this.createItemRow());
-    this.itemsFormArray.push(this.createItemRow());
+    for (const row of rows) {
+      this.itemsFormArray.push(this.createItemRow(row));
+    }
   }
 }
