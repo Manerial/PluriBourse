@@ -560,7 +560,11 @@
       "create": {
         "title": "Add a printer",
         "name": "Name",
-        "printerBridgeId": "Detected printer",
+        "registerAction": "Register",
+        "registerActionFor": "Register {{ name }}",
+        "ignoreAction": "Ignore",
+        "ignoreActionFor": "Ignore {{ name }}",
+        "back": "Back",
         "widthMm": "Width",
         "widthValue": "{{ width }} mm",
         "submit": "Add",
@@ -570,17 +574,28 @@
         "title": "Delete this printer?",
         "description": "This printer and its print queue will be permanently deleted. This action is irreversible."
       },
+      "ignoredSection": {
+        "title": "Ignored printers ({{ count }})",
+        "dateColumn": "Ignored on",
+        "reactivate": "Reactivate",
+        "reactivateFor": "Reactivate {{ name }}",
+        "empty": "No ignored printer."
+      },
       "empty": "No printer registered yet.",
       "success": {
         "delete": "Printer deleted.",
-        "testPrint": "Test print sent."
+        "testPrint": "Test print sent.",
+        "ignore": "Printer ignored.",
+        "reactivate": "Printer reactivated."
       },
       "error": {
         "load": "Failed to load the printer registry.",
         "create": "Failed to add the printer.",
         "delete": "Failed to delete the printer.",
         "testPrint": "Test print failed.",
-        "discoveryUnavailable": "The PrinterBridge service is not responding on this machine. Check that it is running."
+        "discoveryUnavailable": "The PrinterBridge service is not responding on this machine. Check that it is running.",
+        "ignore": "Failed to ignore the printer.",
+        "reactivate": "Failed to reactivate the printer."
       }
     }
   }

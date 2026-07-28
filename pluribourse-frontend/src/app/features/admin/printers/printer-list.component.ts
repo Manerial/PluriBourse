@@ -3,10 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { Dialog } from '@angular/cdk/dialog';
-import { DiscoveredPrinter, PrinterSummary, PrintResult } from '../../../models/printer-registry.model';
+import { DiscoveredPrinter, IgnoredPrinter, PrinterSummary, PrintResult } from '../../../models/printer-registry.model';
 import { PrinterRegistryService } from '../../../services/printer-registry.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/skeleton-row.component';
@@ -18,7 +19,7 @@ import { PrinterFormComponent, PrinterFormDialogData } from './printer-form.comp
 @Component({
   selector: 'app-printer-list',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
+  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatExpansionModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
   templateUrl: './printer-list.component.html',
   styleUrl: './printer-list.component.scss'
 })
@@ -36,6 +37,8 @@ export class PrinterListComponent implements OnInit {
   readonly submitting = signal(false);
   readonly testingId = signal<number | null>(null);
   readonly discovering = signal(false);
+  readonly ignoredPrinters = signal<IgnoredPrinter[]>([]);
+  readonly reactivatingId = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
     await this.load();
@@ -106,6 +109,19 @@ export class PrinterListComponent implements OnInit {
     ref.closed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.load());
   }
 
+  async reactivate(printer: IgnoredPrinter): Promise<void> {
+    this.reactivatingId.set(printer.printerBridgeId);
+    try {
+      await firstValueFrom(this.printerRegistryService.reactivate(printer.printerBridgeId));
+      this.ignoredPrinters.update(list => list.filter(p => p.printerBridgeId !== printer.printerBridgeId));
+      this.toast.showSuccess(this.translate.instant('admin.printers.success.reactivate'));
+    } catch {
+      this.toast.showError(this.translate.instant('admin.printers.error.reactivate'));
+    } finally {
+      this.reactivatingId.set(null);
+    }
+  }
+
   private async load(): Promise<void> {
     this.isLoading.set(true);
     this.error.set(null);
@@ -115,6 +131,12 @@ export class PrinterListComponent implements OnInit {
       this.error.set('admin.printers.error.load');
     } finally {
       this.isLoading.set(false);
+    }
+
+    try {
+      this.ignoredPrinters.set(await firstValueFrom(this.printerRegistryService.listIgnored()));
+    } catch {
+      this.ignoredPrinters.set([]);
     }
   }
 }

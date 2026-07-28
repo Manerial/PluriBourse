@@ -217,6 +217,7 @@ Une fois connecté en tant qu'administrateur :
    - **Taux de commission par défaut (%)** — appliqué à chaque nouvelle édition
    - **Langue des documents par défaut** — langue utilisée pour les bordereaux et bilans imprimés
 3. Cliquez sur **Enregistrer les paramètres**.
+4. Installez et lancez **PrinterBridge** sur le poste qui pilotera vos imprimantes (voir le repository dédié `github.com/Manerial/PrinterBridge`) — ce composant natif séparé détecte vos imprimantes Bluetooth et A4 et les expose à PluriBourse. Rendez-vous ensuite dans **Imprimantes** (`/admin/printers`) pour enregistrer les imprimantes détectées.
 
 Ces paramètres peuvent être modifiés à tout moment. Votre instance est maintenant opérationnelle.
 

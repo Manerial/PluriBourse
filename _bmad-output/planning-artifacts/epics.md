@@ -1148,6 +1148,8 @@ afin que les ensembles vendus ensemble soient traités comme une unité atomique
 ### Story 3.4 : Infrastructure d'impression — Registre d'imprimantes & Files dynamiques
 
 > **Story technique prérequise (infrastructure enabler)** — Aucune valeur utilisateur visible en sprint review. Livrée avant les Stories 3.5, 3.6, 3.7, 3.8 et 3.9 qui l'utilisent. La Definition of Done est basée sur les ACs techniques ci-dessous.
+>
+> ⚠️ Mécanisme de connexion remplacé par les Stories 3.11/3.12 (voir `sprint-change-proposal-2026-07-27.md`). Les ACs ci-dessous décrivent l'implémentation d'origine, obsolète depuis l'introduction de PrinterBridge.
 
 En tant que bénévole déclenchant une impression,
 je veux que les travaux d'impression soient traités côté serveur et routés vers l'imprimante que j'ai sélectionnée,
@@ -1241,6 +1243,8 @@ afin que le vendeur dispose d'un justificatif papier de ce qu'il a déposé et d
 
 ### Story 3.7 : Vue admin de diagnostic des imprimantes
 
+> ⚠️ Mécanisme de connexion remplacé par les Stories 3.11/3.12 (voir `sprint-change-proposal-2026-07-27.md`). Les ACs ci-dessous décrivent l'implémentation d'origine, obsolète depuis l'introduction de PrinterBridge.
+
 En tant qu'administrateur,
 je veux consulter l'état en temps réel de chaque imprimante enregistrée et de ses jobs en cours,
 afin de diagnostiquer les problèmes d'imprimante sans interrompre l'événement.
@@ -1268,6 +1272,8 @@ afin de diagnostiquer les problèmes d'imprimante sans interrompre l'événement
 **Alors** l'accès est refusé avec un 403 — vue admin uniquement
 
 ### Story 3.8 : Registre des imprimantes (Admin)
+
+> ⚠️ Mécanisme de connexion remplacé par les Stories 3.11/3.12 (voir `sprint-change-proposal-2026-07-27.md`). Les ACs ci-dessous décrivent l'implémentation d'origine, obsolète depuis l'introduction de PrinterBridge.
 
 En tant qu'administrateur,
 je veux enregistrer et gérer les imprimantes thermiques et A4 disponibles,
@@ -1300,6 +1306,8 @@ afin que les bénévoles puissent les sélectionner à leur connexion et que cha
 **Alors** l'accès est refusé avec un 403 — vue admin uniquement
 
 ### Story 3.9 : Sélection d'imprimante par le bénévole à la connexion (FR-098)
+
+> ⚠️ Mécanisme de connexion remplacé par les Stories 3.11/3.12 (voir `sprint-change-proposal-2026-07-27.md`). Les ACs ci-dessous décrivent l'implémentation d'origine, obsolète depuis l'introduction de PrinterBridge.
 
 En tant que bénévole,
 je veux choisir mon imprimante thermique et mon imprimante A4 à ma connexion,
@@ -1360,6 +1368,97 @@ afin de pouvoir corriger une erreur de saisie sans devoir supprimer et recréer 
 **Étant donné** que l'édition a dépassé la phase Dépôt
 **Quand** un bénévole tente de modifier, ajouter/retirer un article, ou supprimer un lot
 **Alors** l'action est bloquée avec un message explicite (même règle que pour les articles individuels)
+
+---
+
+### Story 3.11 : Intégration de PrinterBridge — connexion et statut
+
+> **Story ajoutée après coup (2026-07-27)** — remplace le mécanisme de connexion directe des Stories 3.4/3.7/3.8/3.9 (voir `sprint-change-proposal-2026-07-27.md`). Le Bluetooth est un périphérique matériel de la machine hôte, invisible depuis un conteneur Docker — PrinterBridge (repository séparé, composant natif installé sur le poste admin) possède seul l'accès matériel et l'expose via une API HTTP/WebSocket locale.
+
+En tant qu'administrateur,
+je veux enregistrer une imprimante en la sélectionnant dans la liste détectée par PrinterBridge plutôt qu'en saisissant un port série ou une adresse IP,
+afin que le backend n'ait plus jamais à ouvrir lui-même une connexion matérielle.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin ouvre le dialog "Ajouter une imprimante"
+**Quand** le dialog se charge
+**Alors** la liste des imprimantes détectées par PrinterBridge est affichée (nom, type déduit, statut), à l'exclusion des imprimantes déjà enregistrées
+**Et** un indicateur de chargement s'affiche pendant l'appel à PrinterBridge, avant que le dialog ne s'ouvre
+
+**Étant donné** que PrinterBridge est injoignable
+**Quand** l'appel de découverte échoue
+**Alors** un message d'avertissement remplace le formulaire : "Le service PrinterBridge ne répond pas sur ce poste. Vérifiez qu'il est lancé."
+
+**Étant donné** que l'admin sélectionne une imprimante détectée
+**Quand** le formulaire est soumis
+**Alors** le type (THERMAL/A4) est dérivé automatiquement de l'imprimante sélectionnée — plus de sélecteur manuel — et l'imprimante est enregistrée avec un identifiant opaque `printerBridgeId` (fini port série/IP+port)
+
+**Étant donné** qu'une imprimante enregistrée doit être vérifiée (démarrage du serveur ou création)
+**Quand** la vérification de connectivité s'exécute
+**Alors** elle interroge le statut PrinterBridge de l'imprimante plutôt que d'ouvrir une socket/port série ; une erreur PrinterBridge injoignable est distinguée d'une imprimante spécifiquement signalée hors ligne
+
+**Étant donné** qu'une imprimante est enregistrée
+**Quand** l'admin clique sur "Tester l'impression"
+**Alors** un test d'impression réel est déclenché via PrinterBridge, avec retour succès/erreur
+
+### Story 3.12 : Intégration de PrinterBridge — envoi des jobs d'impression
+
+En tant que bénévole validant un dépôt,
+je veux que le contenu à imprimer (étiquettes thermiques, bordereau PDF) soit transmis à PrinterBridge plutôt qu'écrit directement sur un port série ou une socket TCP,
+afin que l'impression fonctionne réellement depuis un backend conteneurisé.
+
+**Critères d'acceptation :**
+
+**Étant donné** qu'un job d'impression thermique est soumis (étiquettes articles)
+**Quand** le job est traité
+**Alors** l'intégralité du contenu ESC/POS est construite en un seul payload et transmise à PrinterBridge via WebSocket (`WS /printers/{id}/print`)
+
+**Étant donné** qu'un job d'impression de document A4 est soumis (bordereau de dépôt)
+**Quand** le job est traité
+**Alors** le PDF déjà généré est transmis à PrinterBridge via le même canal WebSocket, qui le soumet au spouleur OS
+
+**Étant donné** que PrinterBridge ne répond pas dans le délai imparti (10s) ou refuse la connexion
+**Quand** le job échoue à ce niveau
+**Alors** l'erreur remonte comme une indisponibilité de PrinterBridge, distincte d'un échec d'impression signalé par PrinterBridge lui-même
+
+**Étant donné** le contrat `PrintQueueService.submit(printerId, job)` existant
+**Quand** cette story est implémentée
+**Alors** sa signature reste strictement inchangée — aucun impact sur les epics 4/5 qui en dépendront
+
+### Story 3.13 : Ignorer une imprimante détectée (FR-100)
+
+> **Story ajoutée après coup (2026-07-28)** — capacité demandée après livraison des Stories 3.11/3.12.
+
+En tant qu'administrateur,
+je veux ignorer une imprimante détectée par PrinterBridge mais que je ne veux pas enregistrer (ex. l'imprimante d'un voisin, une imprimante temporaire),
+afin qu'elle cesse d'encombrer la liste de découverte à chaque scan.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin ouvre le dialog "Ajouter une imprimante"
+**Quand** le dialog affiche les imprimantes détectées
+**Alors** chaque imprimante détectée est présentée comme une ligne avec deux actions : "Enregistrer" et "Ignorer" (remplace le menu déroulant unique de la Story 3.11)
+
+**Étant donné** que l'admin clique sur "Ignorer" pour une imprimante détectée
+**Quand** l'action est confirmée
+**Alors** l'imprimante est ajoutée au registre des imprimantes ignorées et disparaît immédiatement de la liste de découverte, y compris lors des scans suivants
+
+**Étant donné** qu'une imprimante a été ignorée
+**Quand** l'admin consulte `/admin/printers`
+**Alors** une section "Imprimantes ignorées" (repliée par défaut) liste les imprimantes ignorées, avec une action "Réactiver" par ligne
+
+**Étant donné** qu'une imprimante ignorée est réactivée
+**Quand** l'action est confirmée
+**Alors** elle est retirée du registre des imprimantes ignorées et réapparaît dans la liste de découverte au prochain scan
+
+**Étant donné** qu'une imprimante détectée est déjà enregistrée dans le registre des imprimantes
+**Quand** la liste de découverte est construite
+**Alors** elle n'apparaît ni dans la liste "à enregistrer" ni dans la liste "ignorées" — l'action "Ignorer" ne s'applique qu'aux imprimantes non enregistrées (cohérent avec Story 3.11, filtrage déjà en place)
+
+**Étant donné** qu'un bénévole tente d'accéder à une route liée aux imprimantes ignorées
+**Quand** la route est chargée
+**Alors** l'accès est refusé avec un 403 — vue admin uniquement (cohérent avec Story 3.8)
 
 ---
 

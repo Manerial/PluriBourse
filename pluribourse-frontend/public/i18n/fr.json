@@ -560,7 +560,11 @@
       "create": {
         "title": "Ajouter une imprimante",
         "name": "Nom",
-        "printerBridgeId": "Imprimante détectée",
+        "registerAction": "Enregistrer",
+        "registerActionFor": "Enregistrer {{ name }}",
+        "ignoreAction": "Ignorer",
+        "ignoreActionFor": "Ignorer {{ name }}",
+        "back": "Retour",
         "widthMm": "Largeur",
         "widthValue": "{{ width }} mm",
         "submit": "Ajouter",
@@ -570,17 +574,28 @@
         "title": "Supprimer l'imprimante ?",
         "description": "Cette imprimante et sa file d'impression seront définitivement supprimées. Cette action est irréversible."
       },
+      "ignoredSection": {
+        "title": "Imprimantes ignorées ({{ count }})",
+        "dateColumn": "Ignorée le",
+        "reactivate": "Réactiver",
+        "reactivateFor": "Réactiver {{ name }}",
+        "empty": "Aucune imprimante ignorée."
+      },
       "empty": "Aucune imprimante enregistrée pour le moment.",
       "success": {
         "delete": "Imprimante supprimée.",
-        "testPrint": "Impression de test envoyée."
+        "testPrint": "Impression de test envoyée.",
+        "ignore": "Imprimante ignorée.",
+        "reactivate": "Imprimante réactivée."
       },
       "error": {
         "load": "Impossible de charger le registre des imprimantes.",
         "create": "Impossible d'ajouter l'imprimante.",
         "delete": "Impossible de supprimer l'imprimante.",
         "testPrint": "Échec de l'impression de test.",
-        "discoveryUnavailable": "Le service PrinterBridge ne répond pas sur ce poste. Vérifiez qu'il est lancé."
+        "discoveryUnavailable": "Le service PrinterBridge ne répond pas sur ce poste. Vérifiez qu'il est lancé.",
+        "ignore": "Impossible d'ignorer l'imprimante.",
+        "reactivate": "Impossible de réactiver l'imprimante."
       }
     }
   }

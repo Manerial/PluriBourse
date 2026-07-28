@@ -66,4 +66,44 @@
       </table>
     }
   }
+
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        {{ 'admin.printers.ignoredSection.title' | translate: { count: ignoredPrinters().length } }}
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+
+    @if (ignoredPrinters().length === 0) {
+      <p>{{ 'admin.printers.ignoredSection.empty' | translate }}</p>
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.printers.columns.name' | translate }}</th>
+            <th>{{ 'admin.printers.ignoredSection.dateColumn' | translate }}</th>
+            <th>{{ 'admin.printers.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (printer of ignoredPrinters(); track printer.printerBridgeId) {
+            <tr>
+              <td>{{ printer.name ?? printer.printerBridgeId }}</td>
+              <td>{{ printer.ignoredAt }}</td>
+              <td>
+                <button
+                  type="button"
+                  mat-button
+                  [attr.aria-label]="'admin.printers.ignoredSection.reactivateFor' | translate: { name: printer.name ?? printer.printerBridgeId }"
+                  [disabled]="reactivatingId() === printer.printerBridgeId"
+                  (click)="reactivate(printer)">
+                  {{ 'admin.printers.ignoredSection.reactivate' | translate }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </mat-expansion-panel>
 </div>

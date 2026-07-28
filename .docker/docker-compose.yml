@@ -31,6 +31,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/actuator/health || exit 1"]
       start_period: 60s

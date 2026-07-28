@@ -258,8 +258,16 @@ Toutes les dépendances sélectionnées utilisent des licences permissives ou fa
 | Garantie de livraison | Au-plus-une fois | Acceptable : tous les travaux d'impression sont redéclenchables depuis l'interface (FR-078) ; source de données toujours disponible en BDD |
 | Injection de la file | Injectée par constructeur (pas statique) | Permet une file bornée dans les tests pour vérifier le comportement sous contre-pression |
 | Gestion des erreurs | Les erreurs d'imprimante remontent vers l'interface via SSE ou réponse de polling (FR-079). La file est suspendue. L'utilisateur peut relancer le job en erreur ou l'ignorer. L'admin dispose d'une vue de l'état de la file et des erreurs en cours. | Utilisateur notifié ; peut réessayer ou ignorer ; admin peut diagnostiquer |
-| Imprimante thermique | ESC/POS via `escpos-coffee` (ou équivalent) — travaux séquentiels | Une file, un thread consommateur |
-| Imprimante A4/document | PDF généré par OpenPDF 3.0.0 → envoyé à l'imprimante USB | Une file, un thread consommateur |
+| Imprimante thermique | ESC/POS construit en un seul payload, transmis via WebSocket à PrinterBridge (`WS /printers/{id}/print`) | Une file, un thread consommateur |
+| Imprimante A4/document | PDF généré par OpenPDF 3.0.0 → transmis via WebSocket à PrinterBridge, qui le soumet au spouleur OS | Une file, un thread consommateur |
+
+---
+
+### Frontière PrinterBridge
+
+PluriBourse ↔ PrinterBridge communiquent via HTTP/WebSocket (`host.docker.internal` / `extra_hosts: host-gateway` sous Docker Engine natif — résolu nativement par Docker Desktop). PrinterBridge est un repository séparé (`github.com/Manerial/PrinterBridge`), pas un module du monorepo — un composant natif installé sur le poste admin, seul à posséder l'accès matériel (Bluetooth + spouleur d'impression OS). Le backend ne stocke plus d'adresse physique, uniquement un identifiant opaque renvoyé par PrinterBridge. Endpoints consommés : `GET /printers` (découverte), `GET /printers/{id}/status` (connectivité), `POST /printers/{id}/test-print` (test d'impression), `WS /printers/{id}/print` (envoi d'un job).
+
+Les imprimantes ignorées (table `ignored_printers`) sont un concept propre à PluriBourse — PrinterBridge n'a aucune notion d'ignorer et continue de détecter la même imprimante à chaque scan ; le filtrage se fait entièrement côté PluriBourse au moment de `discover()`, au même endroit que le filtrage des imprimantes déjà enregistrées.
 
 ---
 
@@ -293,6 +301,7 @@ Toutes les dépendances sélectionnées utilisent des licences permissives ou fa
 | Décision | Choix | Justification |
 |---|---|---|
 | Déploiement | Docker Compose (`docker-compose.yml`) — fichier unique | Déclaré dans l'addendum PRD ; `docker compose up -d` / `docker compose pull && up -d` |
+| Passerelle hôte | `extra_hosts: - "host.docker.internal:host-gateway"` dans `docker-compose.yml` | Nécessaire sous Docker Engine natif (Linux/RPi4) pour joindre PrinterBridge sur le poste admin — Docker Desktop le résout nativement |
 | Journalisation | SLF4J + Logback (défaut Spring Boot) — **aucune DCP dans les journaux** | NFR-007 + contrainte CLAUDE.md ; noms, emails, téléphones des vendeurs jamais journalisés |
 | Monitoring | Aucun pour la v1 | Hors périmètre ; cible Raspberry Pi, usage mono-événement |
 | CI/CD | Aucun pour la v1 | Projet communautaire/hobby ; mises à jour appliquées manuellement |
@@ -563,6 +572,8 @@ PluriBourse/                          ← racine du monorepo
 └── pluribourse-frontend/             ← module Angular
 ```
 
+Note : PrinterBridge (`github.com/Manerial/PrinterBridge`) est un repository frère, hors de ce monorepo — composant natif installé sur le poste admin, pas un module PluriBourse.
+
 ---
 
 ### Backend — Structure de Répertoires Complète
@@ -626,8 +637,9 @@ pluribourse-backend/
     │   │   ├── print/                            ← F9
     │   │   │   ├── controller/  PrintController.java, PrinterController.java
     │   │   │   ├── service/     PrintQueueService.java, ThermalPrintService.java, DocumentPrintService.java
-    │   │   │   ├── repository/  PrinterRepository.java
-    │   │   │   ├── entity/      Printer.java  (type: THERMAL | A4, port série ou IP/port)
+    │   │   │   ├── repository/  PrinterRepository.java, IgnoredPrinterRepository.java
+    │   │   │   ├── entity/      Printer.java  (type: THERMAL | A4, printerBridgeId — identifiant opaque renvoyé par PrinterBridge, widthMm — THERMAL uniquement),
+    │   │   │   │                IgnoredPrinter.java  (printerBridgeId, ignoredAt — imprimante détectée par PrinterBridge mais exclue de la découverte, jamais enregistrée dans printers)
     │   │   │   ├── dto/         PrintJobDto.java, PrinterDto.java, CreatePrinterDto.java
     │   │   │   └── mapper/      PrinterMapper.java
     │   │   └── shared/

@@ -18,6 +18,7 @@ describe('PrinterFormComponent', () => {
 
   const printerRegistryServiceMock = {
     create: vi.fn().mockReturnValue(of(undefined)),
+    ignore: vi.fn().mockReturnValue(of(undefined)),
   };
   const dialogRefMock = { close: vi.fn() };
 
@@ -42,12 +43,52 @@ describe('PrinterFormComponent', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     printerRegistryServiceMock.create.mockReturnValue(of(undefined));
+    printerRegistryServiceMock.ignore.mockReturnValue(of(undefined));
     await createComponent({ discoveredPrinters: MOCK_DISCOVERED, discoveryError: false });
   });
 
   it('exposes the discovered printers received from the dialog data', () => {
     expect(component.discoveredPrinters()).toEqual(MOCK_DISCOVERED);
     expect(component.discoveryError()).toBe(false);
+  });
+
+  it('shows the list by default, with no printer selected', () => {
+    expect(component.selectedPrinter()).toBeNull();
+  });
+
+  it('selectRow() selects the printer and derives its type', () => {
+    component.selectRow(MOCK_DISCOVERED[0]);
+    expect(component.selectedPrinter()).toEqual(MOCK_DISCOVERED[0]);
+    expect(component.form.controls.printerBridgeId.value).toBe('bridge-thermal-1');
+    expect(component.selectedType()).toBe('THERMAL');
+  });
+
+  it('backToList() clears the selection and resets the form without closing the dialog', () => {
+    component.selectRow(MOCK_DISCOVERED[0]);
+    component.form.controls.name.setValue('Guichet');
+
+    component.backToList();
+
+    expect(component.selectedPrinter()).toBeNull();
+    expect(component.selectedType()).toBeNull();
+    expect(component.form.controls.name.value).toBe('');
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
+  });
+
+  it('ignoreRow() removes the printer from the list and shows a success toast, without closing the dialog', async () => {
+    await component.ignoreRow(MOCK_DISCOVERED[0]);
+
+    expect(printerRegistryServiceMock.ignore).toHaveBeenCalledWith('bridge-thermal-1');
+    expect(component.discoveredPrinters()).toEqual([MOCK_DISCOVERED[1]]);
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
+  });
+
+  it('ignoreRow() leaves the list untouched when the call fails', async () => {
+    printerRegistryServiceMock.ignore.mockReturnValueOnce(throwError(() => new Error('server')));
+
+    await component.ignoreRow(MOCK_DISCOVERED[0]);
+
+    expect(component.discoveredPrinters()).toEqual(MOCK_DISCOVERED);
   });
 
   it('shows the discovery-unavailable state when the dialog data reports a discovery error', async () => {

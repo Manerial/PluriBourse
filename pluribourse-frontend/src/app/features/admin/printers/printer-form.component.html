@@ -2,46 +2,82 @@
   @if (discoveryError()) {
     <app-notification-inline [message]="'admin.printers.error.discoveryUnavailable' | translate" variant="warning" />
   } @else {
-    @if (error()) {
-      <app-notification-inline [message]="error()! | translate" variant="error" />
-    }
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dialog-form">
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'admin.printers.create.name' | translate }}</mat-label>
-        <input matInput formControlName="name" type="text" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'admin.printers.create.printerBridgeId' | translate }}</mat-label>
-        <mat-select formControlName="printerBridgeId">
+    @if (!selectedPrinter()) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.printers.columns.name' | translate }}</th>
+            <th>{{ 'admin.printers.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
           @for (printer of discoveredPrinters(); track printer.printerBridgeId) {
-            <mat-option [value]="printer.printerBridgeId">
-              {{ printer.name }} ({{ 'admin.printers.discoveryStatus.' + printer.status | translate }})
-            </mat-option>
+            <tr>
+              <td>{{ printer.name }} ({{ 'admin.printers.discoveryStatus.' + printer.status | translate }})</td>
+              <td>
+                <div class="actions-cell">
+                  <button
+                    type="button"
+                    mat-button
+                    [attr.aria-label]="'admin.printers.create.registerActionFor' | translate: { name: printer.name }"
+                    [disabled]="ignoringId() === printer.printerBridgeId"
+                    (click)="selectRow(printer)">
+                    {{ 'admin.printers.create.registerAction' | translate }}
+                  </button>
+                  <button
+                    type="button"
+                    mat-button
+                    [attr.aria-label]="'admin.printers.create.ignoreActionFor' | translate: { name: printer.name }"
+                    [disabled]="ignoringId() === printer.printerBridgeId"
+                    (click)="ignoreRow(printer)">
+                    {{ 'admin.printers.create.ignoreAction' | translate }}
+                  </button>
+                </div>
+              </td>
+            </tr>
           }
-        </mat-select>
-      </mat-form-field>
-
-      @if (selectedType() === 'THERMAL') {
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'admin.printers.create.widthMm' | translate }}</mat-label>
-          <mat-select formControlName="widthMm">
-            @for (width of widthOptions; track width) {
-              <mat-option [value]="width">{{ 'admin.printers.create.widthValue' | translate: { width } }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      }
+        </tbody>
+      </table>
 
       <div class="dialog__actions">
         <button type="button" mat-button (click)="cancel()">
           {{ 'admin.printers.create.cancel' | translate }}
         </button>
-        <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
-          {{ 'admin.printers.create.submit' | translate }}
-        </button>
       </div>
-    </form>
+    } @else {
+      @if (error()) {
+        <app-notification-inline [message]="error()! | translate" variant="error" />
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dialog-form">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'admin.printers.create.name' | translate }}</mat-label>
+          <input matInput formControlName="name" type="text" />
+        </mat-form-field>
+
+        @if (selectedType() === 'THERMAL') {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'admin.printers.create.widthMm' | translate }}</mat-label>
+            <mat-select formControlName="widthMm">
+              @for (width of widthOptions; track width) {
+                <mat-option [value]="width">{{ 'admin.printers.create.widthValue' | translate: { width } }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        <div class="dialog__actions">
+          <button type="button" mat-button (click)="backToList()">
+            {{ 'admin.printers.create.back' | translate }}
+          </button>
+          <button type="button" mat-button (click)="cancel()">
+            {{ 'admin.printers.create.cancel' | translate }}
+          </button>
+          <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || loading()">
+            {{ 'admin.printers.create.submit' | translate }}
+          </button>
+        </div>
+      </form>
+    }
   }
 </app-dialog-shell>
