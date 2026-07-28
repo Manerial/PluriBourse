@@ -9,9 +9,10 @@ import org.pluribourse.shared.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
+import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.*;
 
-import java.net.*;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * printer used here is registered by this class itself (never in test-data.sql, see story 3.4 Dev
  * Notes § Stratégie de test), and assertions target the specific printer created by each test by
  * id rather than assuming a fixed listing size (see Dev Notes § Isolation des tests — printers
- * registered by earlier methods in this class remain visible to later ones).
+ * registered by earlier methods in this class remain visible to later ones). Since story 3.11,
+ * reachability is decided by {@link PrinterBridgeDouble}, not a raw socket.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PrintQueueDiagnosticsIT extends IntegrationTest {
@@ -36,15 +38,25 @@ class PrintQueueDiagnosticsIT extends IntegrationTest {
     @Autowired
     private PrintQueueService printQueueService;
 
-    private static ServerSocket reachableTarget;
+    private static PrinterBridgeDouble printerBridgeDouble;
+    private static int nextFakeId = 1;
 
     private MockHttpSession adminSession;
     private MockHttpSession volunteerSession;
 
-    @BeforeAll
-    void setUpSessionsAndTarget() throws Exception {
-        reachableTarget = new ServerSocket(0);
+    @DynamicPropertySource
+    static void printerBridgeProperties(DynamicPropertyRegistry registry) throws IOException {
+        printerBridgeDouble = PrinterBridgeDouble.start();
+        registry.add("printerbridge.base-url", printerBridgeDouble::baseUrl);
+    }
 
+    @AfterAll
+    static void tearDownDouble() {
+        printerBridgeDouble.stop();
+    }
+
+    @BeforeAll
+    void setUpSessions() throws Exception {
         MvcResult adminLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "test_admin")
@@ -60,11 +72,6 @@ class PrintQueueDiagnosticsIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
         volunteerSession = (MockHttpSession) volunteerLogin.getRequest().getSession(false);
-    }
-
-    @AfterAll
-    void tearDownTarget() throws Exception {
-        reachableTarget.close();
     }
 
     @Test
@@ -279,15 +286,17 @@ class PrintQueueDiagnosticsIT extends IntegrationTest {
     }
 
     private Long createReachablePrinter(String name) throws Exception {
-        return createPrinter(name, "127.0.0.1", reachableTarget.getLocalPort());
+        return createPrinter(name, "ONLINE");
     }
 
     private Long createUnreachablePrinter(String name) throws Exception {
-        return createPrinter(name, "127.0.0.1", 1);
+        return createPrinter(name, "OFFLINE");
     }
 
-    private Long createPrinter(String name, String host, int port) throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, null, host, port);
+    private Long createPrinter(String name, String bridgeStatus) throws Exception {
+        String bridgeId = "bridge-" + nextFakeId++;
+        printerBridgeDouble.register(bridgeId, "Fake " + bridgeId, "NETWORK", bridgeStatus);
+        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, bridgeId);
         MvcResult result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

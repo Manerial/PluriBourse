@@ -547,20 +547,22 @@
         "THERMAL": "Thermique",
         "A4": "A4"
       },
+      "discoveryStatus": {
+        "ONLINE": "en ligne",
+        "OFFLINE": "hors ligne",
+        "UNKNOWN": "statut inconnu"
+      },
       "actions": {
         "create": "Ajouter une imprimante",
-        "delete": "Supprimer"
+        "delete": "Supprimer",
+        "testPrint": "Tester l'impression"
       },
       "create": {
         "title": "Ajouter une imprimante",
         "name": "Nom",
-        "type": "Type",
-        "serialPort": "Port série",
+        "printerBridgeId": "Imprimante détectée",
         "widthMm": "Largeur",
         "widthValue": "{{ width }} mm",
-        "host": "Adresse IP / hôte",
-        "port": "Port TCP",
-        "noSerialPort": "Aucun port série détecté. Vérifiez que l'imprimante est appairée et branchée.",
         "submit": "Ajouter",
         "cancel": "Annuler"
       },
@@ -570,12 +572,15 @@
       },
       "empty": "Aucune imprimante enregistrée pour le moment.",
       "success": {
-        "delete": "Imprimante supprimée."
+        "delete": "Imprimante supprimée.",
+        "testPrint": "Impression de test envoyée."
       },
       "error": {
         "load": "Impossible de charger le registre des imprimantes.",
         "create": "Impossible d'ajouter l'imprimante.",
-        "delete": "Impossible de supprimer l'imprimante."
+        "delete": "Impossible de supprimer l'imprimante.",
+        "testPrint": "Échec de l'impression de test.",
+        "discoveryUnavailable": "Le service PrinterBridge ne répond pas sur ce poste. Vérifiez qu'il est lancé."
       }
     }
   }

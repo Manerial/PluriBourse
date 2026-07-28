@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Story 3.11: printers are now connected via PrinterBridge, an external native service —
+         PluriBourse no longer opens a serial port or a TCP socket itself, only stores the
+         opaque id PrinterBridge assigns to the physical device. -->
+    <changeSet id="018-printer-bridge-id" author="pluribourse">
+        <dropColumn tableName="printers" columnName="serial_port"/>
+        <dropColumn tableName="printers" columnName="host"/>
+        <dropColumn tableName="printers" columnName="port"/>
+        <addColumn tableName="printers">
+            <column name="printer_bridge_id" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

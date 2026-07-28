@@ -17,9 +17,11 @@ import org.pluribourse.shared.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
+import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.*;
 import org.springframework.transaction.annotation.*;
 
+import java.io.IOException;
 import java.math.*;
 import java.nio.charset.*;
 import java.time.*;
@@ -38,7 +40,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * name, lot position) is asserted by calling the real, fully-wired {@link ThermalLabelRenderer}
  * bean directly on entities persisted through the controllers — same justified exception as
  * {@code PrintInfrastructureIT} (no controller can expose rendered bytes; the Spring context is the
- * genuine integration context, this is not an isolated unit test).
+ * genuine integration context, this is not an isolated unit test). Since story 3.11/3.12,
+ * connectivity and delivery both go through {@link PrinterBridgeClient} — see
+ * {@link PrinterBridgeDouble} for the fake PrinterBridge process backing
+ * {@code printerbridge.base-url} in this class.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ThermalLabelPrintingIT extends IntegrationTest {
@@ -58,12 +63,25 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     @Autowired
     private ThermalPrintService thermalPrintService;
 
+    private static PrinterBridgeDouble printerBridgeDouble;
+
     private MockHttpSession adminSession;
     private MockHttpSession volunteerSession;
     private Long editionId;
     private Long categoryId;
     private Long sellerAId;
     private Long unavailablePrinterId;
+
+    @DynamicPropertySource
+    static void printerBridgeProperties(DynamicPropertyRegistry registry) throws IOException {
+        printerBridgeDouble = PrinterBridgeDouble.start();
+        registry.add("printerbridge.base-url", printerBridgeDouble::baseUrl);
+    }
+
+    @AfterAll
+    static void tearDownDouble() {
+        printerBridgeDouble.stop();
+    }
 
     @BeforeAll
     void setUpSessions() throws Exception {
@@ -251,14 +269,16 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     @Test
     @Order(12)
     void register_thermal_printer_and_select_it_despite_being_unavailable() throws Exception {
-        // No real serial hardware in this environment: the connectivity check always fails, so this
-        // printer starts "in error". Bypassing PrinterSelectionService's own availability gate by
-        // writing the session attribute directly simulates a printer that *was* available at
-        // selection time (story 3.9) and has since become unavailable (AC3 of this story).
+        // Never registered in printerBridgeDouble — PrinterBridgeClient.checkStatus() gets a 404,
+        // translated to OFFLINE, so this printer starts "in error", same intent as the previous
+        // "no real serial hardware" gap (story 3.4/3.9). Bypassing PrinterSelectionService's own
+        // availability gate by writing the session attribute directly simulates a printer that
+        // *was* available at selection time (story 3.9) and has since become unavailable (AC3 of
+        // this story).
         MvcResult printerResult = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreatePrinterDto("Thermique Test", PrinterType.THERMAL, "COM_TEST_99", 57, null, null))))
+                        .content(objectMapper.writeValueAsString(new CreatePrinterDto("Thermique Test", PrinterType.THERMAL, 57, "bridge-thermal-never-registered"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         unavailablePrinterId = objectMapper.readValue(printerResult.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -280,13 +300,17 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     @Order(14)
     @Transactional(readOnly = true)
         // read-only, no HTTP writes in this test: safe to keep the session open for lazy access below
-    void thermal_print_job_propagates_serial_port_failure_uncaught() {
+    void thermal_print_job_propagates_printer_bridge_connection_failure_uncaught() {
+        // printerBridgeDouble is HTTP-only (see class Javadoc / PrinterBridgeDouble) — it cannot
+        // complete a real WebSocket handshake, so PrinterBridgeClient.print() fails the same way
+        // it would if PrinterBridge itself were down. Real successful WS delivery is covered by
+        // DepositSlipPrintingIT's mocked-client test and PrinterBridgeClient's own dedicated test.
         SellerProfile seller = sellerRepository.findById(sellerAId).orElseThrow();
         List<Item> items = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         Printer printer = printerRepository.findById(unavailablePrinterId).orElseThrow();
 
         assertThatThrownBy(() -> thermalPrintService.buildDepositJob(seller, items, Locale.FRENCH).execute(printer))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(org.pluribourse.domain.print.exception.PrinterBridgeUnavailableException.class);
     }
 
     @Test

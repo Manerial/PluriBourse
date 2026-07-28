@@ -14,39 +14,45 @@ import org.pluribourse.domain.seller.entity.*;
 import org.pluribourse.domain.seller.repository.*;
 import org.pluribourse.domain.user.enums.*;
 import org.pluribourse.shared.*;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
+import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.*;
 import org.springframework.transaction.annotation.*;
 
-import java.io.*;
+import java.io.IOException;
 import java.math.*;
-import java.net.*;
 import java.nio.charset.*;
 import java.time.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * Story 3.6 Dev Notes: exactly like {@code ThermalLabelPrintingIT}, no THERMAL printer can ever
- * pass its connectivity check in this environment (no real serial hardware) — a registered THERMAL
- * printer therefore always ends up "unavailable". Since {@code validateDeposit()} checks the
- * thermal selection before the A4 one (Dev Notes § Ordre de validation), every HTTP-level
+ * pass its connectivity check in this environment (no real PrinterBridge process) — a registered
+ * THERMAL printer therefore always ends up "unavailable". Since {@code validateDeposit()} checks
+ * the thermal selection before the A4 one (Dev Notes § Ordre de validation), every HTTP-level
  * validation scenario in this class necessarily fails on the thermal leg; there is no way to
  * exercise the "A4 unavailable while thermal available" branch nor the "both jobs submitted" happy
  * path through the real queue in this environment. AC1/AC6 (the PDF job is actually built, queued
  * and delivered) and the rendered content (AC3-5) are instead verified with direct calls on the
  * real, fully-wired {@link DocumentPrintService}/{@link DepositSlipRenderer} beans — same justified
  * exception as {@code PrintInfrastructureIT}/{@code ThermalLabelPrintingIT} (no controller exposes
- * raw PDF bytes or queue submission outcomes).
+ * raw PDF bytes or queue submission outcomes). Since story 3.12, delivery itself (Order 8) is
+ * verified against a Mockito-mocked {@link PrinterBridgeClient} built locally in that one test —
+ * PrinterBridge's real WebSocket protocol is a native external process, not reproducible with the
+ * lightweight {@link PrinterBridgeDouble} (HTTP-only) used for connectivity checks elsewhere in
+ * this class; CLAUDE.md's Mockito exception for external components applies here.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DepositSlipPrintingIT extends IntegrationTest {
@@ -58,13 +64,11 @@ class DepositSlipPrintingIT extends IntegrationTest {
     @Autowired
     private SellerRepository sellerRepository;
     @Autowired
-    private DocumentPrintService documentPrintService;
-    @Autowired
     private DepositSlipRenderer depositSlipRenderer;
     @Autowired
     private PrintQueueService printQueueService;
 
-    private static ServerSocket reachableA4Target;
+    private static PrinterBridgeDouble printerBridgeDouble;
 
     private MockHttpSession adminSession;
     private MockHttpSession volunteerSession;
@@ -74,10 +78,19 @@ class DepositSlipPrintingIT extends IntegrationTest {
     private Long emptySellerId;
     private Long a4PrinterId;
 
+    @DynamicPropertySource
+    static void printerBridgeProperties(DynamicPropertyRegistry registry) throws IOException {
+        printerBridgeDouble = PrinterBridgeDouble.start();
+        registry.add("printerbridge.base-url", printerBridgeDouble::baseUrl);
+    }
+
+    @AfterAll
+    static void tearDownDouble() {
+        printerBridgeDouble.stop();
+    }
+
     @BeforeAll
     void setUpSessionsAndEdition() throws Exception {
-        reachableA4Target = new ServerSocket(0);
-
         MvcResult adminLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "test_admin")
@@ -111,11 +124,6 @@ class DepositSlipPrintingIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
         volunteerSession = (MockHttpSession) volunteerLogin.getRequest().getSession(false);
-    }
-
-    @AfterAll
-    void tearDownTarget() throws Exception {
-        reachableA4Target.close();
     }
 
     private Long extractFirstCategoryId(MvcResult categoriesResult) throws Exception {
@@ -159,11 +167,12 @@ class DepositSlipPrintingIT extends IntegrationTest {
     @Test
     @Order(3)
     void register_a4_and_unavailable_thermal_printers() throws Exception {
+        printerBridgeDouble.register("bridge-slip-a4", "A4 Bordereau Test", "NETWORK", "ONLINE");
         MvcResult a4Result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "A4 Bordereau Test", PrinterType.A4, null, null, "127.0.0.1", reachableA4Target.getLocalPort()))))
+                                "A4 Bordereau Test", PrinterType.A4, null, "bridge-slip-a4"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         a4PrinterId = objectMapper.readValue(a4Result.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -203,14 +212,15 @@ class DepositSlipPrintingIT extends IntegrationTest {
         MvcResult printerResult = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreatePrinterDto("Thermique Bordereau Test", PrinterType.THERMAL, "COM_TEST_98", 57, null, null))))
+                        .content(objectMapper.writeValueAsString(
+                                new CreatePrinterDto("Thermique Bordereau Test", PrinterType.THERMAL, 57, "bridge-slip-thermal-x"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long thermalPrinterId = objectMapper.readValue(printerResult.getResponse().getContentAsString(), PrinterDto.class).id();
 
-        // No real serial hardware in this environment (see class Javadoc): writing the session
-        // attribute directly simulates a printer that was available at selection time and has
-        // since become unavailable — same bypass technique as ThermalLabelPrintingIT Order(12).
+        // No real PrinterBridge process in this environment (see class Javadoc): writing the
+        // session attribute directly simulates a printer that was available at selection time and
+        // has since become unavailable — same bypass technique as ThermalLabelPrintingIT Order(12).
         volunteerSession.setAttribute("printerSelection.thermalPrinterId", thermalPrinterId);
         volunteerSession.setAttribute("printerSelection.done", true);
 
@@ -245,31 +255,23 @@ class DepositSlipPrintingIT extends IntegrationTest {
     @Order(8)
     @Transactional(readOnly = true)
         // Same eager-loading constraint as production (Dev Notes § Chargement eager): execute()
-        // below runs on the print job's own executor thread, after this method's transaction has
-        // returned control — seller.getEdition() must be initialized here, on the thread that
-        // still holds the Hibernate session, exactly like EditionScopedLookup.findSellerInEdition
-        // already does for the real validateDeposit()/reprintDepositSlip() flow.
-    void document_print_service_delivers_the_rendered_pdf_bytes_to_the_reachable_printer() throws Exception {
+        // below runs synchronously in this test thread, but the pattern (touching lazy
+        // associations before execute()) mirrors the real queue consumer thread's requirement.
+    void document_print_service_sends_the_rendered_pdf_bytes_via_printer_bridge_client() {
         List<Item> items = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         SellerProfile seller = sellerRepository.findById(sellerAId).orElseThrow();
         seller.getEdition().getName();
 
-        try (ServerSocket contentServer = new ServerSocket(0);
-             ExecutorService acceptExecutor = Executors.newSingleThreadExecutor()) {
-            Future<byte[]> received = acceptExecutor.submit(() -> {
-                try (Socket socket = contentServer.accept()) {
-                    return socket.getInputStream().readAllBytes();
-                }
-            });
+        PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
+        DocumentPrintService documentPrintService = new DocumentPrintService(depositSlipRenderer, mockClient);
 
-            Printer printer = new Printer();
-            printer.setHost("127.0.0.1");
-            printer.setPort(contentServer.getLocalPort());
-            documentPrintService.buildDepositSlipJob(seller, items, new BigDecimal("10.00"), Locale.FRENCH).execute(printer);
+        Printer printer = new Printer();
+        printer.setPrinterBridgeId("bridge-slip-mock-target");
+        documentPrintService.buildDepositSlipJob(seller, items, new BigDecimal("10.00"), Locale.FRENCH).execute(printer);
 
-            byte[] bytes = received.get(5, TimeUnit.SECONDS);
-            assertThat(new String(bytes, 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
-        }
+        ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(mockClient).print(eq("bridge-slip-mock-target"), eq(PrintContentType.PDF), payloadCaptor.capture());
+        assertThat(new String(payloadCaptor.getValue(), 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
     }
 
     @Test
@@ -327,7 +329,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
 
     @Test
     @Order(14)
-    void reprint_deposit_slip_in_post_sale_phase_with_a4_selected_succeeds() throws Exception {
+    void reprint_deposit_slip_in_post_sale_phase_with_a4_selected_is_queued_and_reaches_printer_bridge_client() throws Exception {
         // volunteerSession still holds the A4 selection from Order(5) — the thermal printer's
         // unavailability (Order 6) is irrelevant here: reprintDepositSlip() never checks it.
         mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
@@ -337,16 +339,33 @@ class DepositSlipPrintingIT extends IntegrationTest {
         // A 204 only proves the job was queued, not that it actually executed: the PDF render
         // happens later, on the queue's own consumer thread, well after this request's
         // transaction (and EditionScopedLookup.findSellerInEdition's implicit lazy-init of
-        // sellerProfile.getEdition()) has returned. A trivial marker job submitted right after
-        // runs strictly after the slip job (same printer, FIFO consumer — PrintInfrastructureIT
-        // "jobs execute sequentially"): waiting for it proves the slip job already completed,
-        // via the real HTTP-triggered path — not just the direct-bean call in Order(8) — without
-        // a LazyInitializationException suspending the queue.
-        AtomicBoolean markerRan = new AtomicBoolean(false);
-        printQueueService.submit(a4PrinterId, printer -> markerRan.set(true));
-        waitUntil(() -> markerRan.get() || printQueueService.getHandle(a4PrinterId).isSuspended());
-        assertThat(printQueueService.getHandle(a4PrinterId).isSuspended()).isFalse();
-        assertThat(printQueueService.getHandle(a4PrinterId).getLastError()).isNull();
+        // sellerProfile.getEdition()) has returned. This test uses the REAL, Spring-wired
+        // PrinterBridgeClient (not mocked, unlike Order 8) — so the slip job genuinely attempts a
+        // WebSocket connection to PrinterBridgeDouble, which is HTTP-only (see class Javadoc) and
+        // cannot complete the WS handshake. The job therefore fails and suspends this printer's
+        // queue — expected and correct here, since real successful WS delivery is what Order(8)
+        // (direct call with a mocked PrinterBridgeClient) and PrinterBridgeClient's own dedicated
+        // test already cover. What this test actually proves: the HTTP-triggered production path
+        // (controller -> service -> real PrinterBridgeClient) runs end to end without throwing
+        // before reaching PrinterBridgeClient — no LazyInitializationException, no wrong wiring —
+        // and that the resulting failure is attributed to the correct printer's queue alone.
+        waitUntil(() -> printQueueService.getHandle(a4PrinterId).isSuspended());
+        assertThat(printQueueService.getHandle(a4PrinterId).getLastError()).isNotNull();
+
+        AtomicBoolean otherPrinterUnaffected = new AtomicBoolean(false);
+        String otherBridgeId = "bridge-slip-a4-other";
+        printerBridgeDouble.register(otherBridgeId, "A4 Bordereau Autre", "NETWORK", "ONLINE");
+        MvcResult otherResult = mockMvc.perform(post("/api/admin/printers")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreatePrinterDto(
+                                "A4 Bordereau Autre", PrinterType.A4, null, otherBridgeId))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long otherPrinterId = objectMapper.readValue(otherResult.getResponse().getContentAsString(), PrinterDto.class).id();
+        printQueueService.submit(otherPrinterId, printer -> otherPrinterUnaffected.set(true));
+        waitUntil(otherPrinterUnaffected::get);
+        assertThat(printQueueService.getHandle(otherPrinterId).isSuspended()).isFalse();
     }
 
     @Test

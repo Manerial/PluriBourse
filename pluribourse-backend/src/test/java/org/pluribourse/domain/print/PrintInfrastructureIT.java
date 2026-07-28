@@ -11,9 +11,10 @@ import org.pluribourse.shared.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
+import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.*;
 
-import java.net.*;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -28,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * real print job (stories 3.5/3.6) or reads queue status (story 3.7), so this class combines HTTP
  * calls (POST /admin/printers) with direct calls on the real, fully-wired {@link PrintQueueService}
  * bean — not an isolated service test, the Spring context is the genuine integration context.
+ * Since story 3.11, reachability is decided by {@link PrinterBridgeDouble}, not a raw socket.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PrintInfrastructureIT extends IntegrationTest {
@@ -39,15 +41,25 @@ class PrintInfrastructureIT extends IntegrationTest {
     @Autowired
     private PrinterRepository printerRepository;
 
-    private static ServerSocket reachableTarget;
+    private static PrinterBridgeDouble printerBridgeDouble;
+    private static int nextFakeId = 1;
 
     private MockHttpSession adminSession;
     private MockHttpSession volunteerSession;
 
-    @BeforeAll
-    void setUpSessionsAndTarget() throws Exception {
-        reachableTarget = new ServerSocket(0);
+    @DynamicPropertySource
+    static void printerBridgeProperties(DynamicPropertyRegistry registry) throws IOException {
+        printerBridgeDouble = PrinterBridgeDouble.start();
+        registry.add("printerbridge.base-url", printerBridgeDouble::baseUrl);
+    }
 
+    @AfterAll
+    static void tearDownDouble() {
+        printerBridgeDouble.stop();
+    }
+
+    @BeforeAll
+    void setUpSessions() throws Exception {
         MvcResult adminLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "test_admin")
@@ -65,27 +77,25 @@ class PrintInfrastructureIT extends IntegrationTest {
         volunteerSession = (MockHttpSession) volunteerLogin.getRequest().getSession(false);
     }
 
-    @AfterAll
-    void tearDownTarget() throws Exception {
-        reachableTarget.close();
-    }
-
     @Test
     @Order(1)
-    void create_printer_thermal_without_serial_port_is_rejected_with_422() throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto("Thermique Invalide", PrinterType.THERMAL, null, null, null, null);
+    void create_printer_without_printer_bridge_id_is_rejected_with_400() throws Exception {
+        // printerBridgeId is unconditionally required (@NotBlank on CreatePrinterDto) — enforced
+        // by Bean Validation before the controller method runs, hence 400, not the service-level
+        // 422 used for widthMm (which is only conditionally required, for THERMAL).
+        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Invalide", PrinterType.A4, null, "");
         mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-configuration")));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/validation-failed")));
     }
 
     @Test
     @Order(2)
-    void create_printer_a4_without_host_is_rejected_with_422() throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto("A4 Invalide", PrinterType.A4, null, null, null, null);
+    void create_printer_thermal_without_width_is_rejected_with_422() throws Exception {
+        CreatePrinterDto payload = new CreatePrinterDto("Thermique Invalide", PrinterType.THERMAL, null, "bridge-id-1");
         mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -97,7 +107,8 @@ class PrintInfrastructureIT extends IntegrationTest {
     @Test
     @Order(3)
     void create_printer_as_volunteer_is_forbidden() throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Benevole", PrinterType.A4, null, null, "127.0.0.1", reachableTarget.getLocalPort());
+        String bridgeId = registerFakePrinter("ONLINE");
+        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Benevole", PrinterType.A4, null, bridgeId);
         mockMvc.perform(post("/api/admin/printers")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -108,7 +119,8 @@ class PrintInfrastructureIT extends IntegrationTest {
     @Test
     @Order(4)
     void create_printer_a4_returns_created_without_runtime_status_fields() throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Guichet", PrinterType.A4, null, null, "127.0.0.1", reachableTarget.getLocalPort());
+        String bridgeId = registerFakePrinter("ONLINE");
+        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Guichet", PrinterType.A4, null, bridgeId);
         mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -116,8 +128,7 @@ class PrintInfrastructureIT extends IntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Imprimante Guichet"))
                 .andExpect(jsonPath("$.type").value("A4"))
-                .andExpect(jsonPath("$.host").value("127.0.0.1"))
-                .andExpect(jsonPath("$.port").value(reachableTarget.getLocalPort()))
+                .andExpect(jsonPath("$.printerBridgeId").value(bridgeId))
                 .andExpect(jsonPath("$.suspended").doesNotExist())
                 .andExpect(jsonPath("$.lastError").doesNotExist())
                 .andExpect(jsonPath("$.status").doesNotExist());
@@ -125,24 +136,13 @@ class PrintInfrastructureIT extends IntegrationTest {
 
     @Test
     @Order(5)
-    void create_printer_a4_without_explicit_port_defaults_to_9100() throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Port Defaut", PrinterType.A4, null, null, "127.0.0.1", null);
-        mockMvc.perform(post("/api/admin/printers")
-                        .session(adminSession).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.port").value(9100));
-    }
-
-    @Test
-    @Order(6)
     void create_printer_with_unreachable_target_still_succeeds_and_is_marked_in_error() throws Exception {
+        String bridgeId = registerFakePrinter("OFFLINE");
         MvcResult result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreatePrinterDto("Imprimante Hors Ligne", PrinterType.A4, null, null, "127.0.0.1", 1))))
+                                new CreatePrinterDto("Imprimante Hors Ligne", PrinterType.A4, null, bridgeId))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long printerId = objectMapper.readValue(result.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -154,7 +154,7 @@ class PrintInfrastructureIT extends IntegrationTest {
     }
 
     @Test
-    @Order(7)
+    @Order(6)
     void jobs_submitted_to_same_printer_execute_sequentially() throws Exception {
         Long printerId = createReachablePrinter("Imprimante Sequentielle");
         List<Integer> executionOrder = Collections.synchronizedList(new ArrayList<>());
@@ -169,7 +169,7 @@ class PrintInfrastructureIT extends IntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(7)
     void jobs_on_different_printers_execute_independently() throws Exception {
         Long printerA = createReachablePrinter("Imprimante Lente A");
         Long printerB = createReachablePrinter("Imprimante Rapide B");
@@ -199,7 +199,7 @@ class PrintInfrastructureIT extends IntegrationTest {
     }
 
     @Test
-    @Order(9)
+    @Order(8)
     void failed_job_suspends_its_queue_without_affecting_others() throws Exception {
         Long faultyPrinter = createReachablePrinter("Imprimante en Panne");
         Long healthyPrinter = createReachablePrinter("Imprimante Saine");
@@ -222,7 +222,7 @@ class PrintInfrastructureIT extends IntegrationTest {
     }
 
     @Test
-    @Order(10)
+    @Order(9)
     void submit_to_unknown_printer_throws_not_found() {
         assertThatThrownBy(() -> printQueueService.submit(999999L, printer -> {
         }))
@@ -230,13 +230,14 @@ class PrintInfrastructureIT extends IntegrationTest {
     }
 
     @Test
-    @Order(11)
+    @Order(10)
     void reload_from_database_registers_existing_printer_and_marks_it_in_error_when_unreachable() {
         Printer printer = new Printer();
         printer.setName("Imprimante Redemarrage");
         printer.setType(PrinterType.A4);
-        printer.setHost("127.0.0.1");
-        printer.setPort(1);
+        // Never registered in printerBridgeDouble — PrinterBridgeClient.checkStatus() gets a 404
+        // from the double, translated to OFFLINE (see PrinterBridgeClient Javadoc).
+        printer.setPrinterBridgeId("bridge-never-registered");
         printer = printerRepository.save(printer);
 
         assertThat(printQueueService.getHandle(printer.getId())).isNull();
@@ -249,7 +250,8 @@ class PrintInfrastructureIT extends IntegrationTest {
     }
 
     private Long createReachablePrinter(String name) throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, null, "127.0.0.1", reachableTarget.getLocalPort());
+        String bridgeId = registerFakePrinter("ONLINE");
+        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, bridgeId);
         MvcResult result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -257,6 +259,12 @@ class PrintInfrastructureIT extends IntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn();
         return objectMapper.readValue(result.getResponse().getContentAsString(), PrinterDto.class).id();
+    }
+
+    private String registerFakePrinter(String status) {
+        String id = "bridge-" + nextFakeId++;
+        printerBridgeDouble.register(id, "Fake " + id, "NETWORK", status);
+        return id;
     }
 
     private void waitUntil(BooleanSupplier condition) throws InterruptedException {

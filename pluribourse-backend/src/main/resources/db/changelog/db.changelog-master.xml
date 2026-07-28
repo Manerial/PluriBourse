@@ -21,5 +21,6 @@
     <include file="db/changelog/015-lots.xml"/>
     <include file="db/changelog/016-printers.xml"/>
     <include file="db/changelog/017-item-and-seller-numbering.xml"/>
+    <include file="db/changelog/018-printer-bridge-id.xml"/>
 
 </databaseChangeLog>

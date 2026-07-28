@@ -62,6 +62,7 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 ### Backend (Spring Boot)
 - Frameworks : JUnit 5, pas de Mockito sauf pour les composants externes (email, API tierce)
 - **Philosophie : E2E par les contrôleurs uniquement.** On ne teste pas les couches en isolation (pas de tests de service seuls, pas de tests de migration Liquibase, pas de tests de config Spring Security). Chaque test passe par le contrôleur HTTP et vérifie l'état en BDD après.
+  - **Exception : le client d'un système externe peut avoir son propre test de service isolé** (ex. `PrinterBridgeClient`, Story 3.11/3.12) — un client HTTP/WebSocket sortant est une frontière avec l'extérieur du même ordre que les composants externes déjà exemptés de la règle no-Mockito ci-dessus, pas une couche interne de l'application. Ce test isolé s'ajoute à la couverture E2E (qui reste obligatoire pour le comportement métier autour de ce client), il ne la remplace pas.
 - **Une classe = un scénario métier**, lu comme un story-board. Les tests sont ordonnés avec `@TestMethodOrder(MethodOrderer.OrderAnnotation.class)` + `@Order(N)`. Les données persistent entre les méthodes (pas de `@Transactional` au niveau classe).
 - **Infrastructure de base :**
   - Toutes les classes IT étendent `org.pluribourse.shared.IntegrationTest` (`@SpringBootTest` + `@DirtiesContext(classMode = AFTER_CLASS)` + `@TestInstance(Lifecycle.PER_CLASS)`)

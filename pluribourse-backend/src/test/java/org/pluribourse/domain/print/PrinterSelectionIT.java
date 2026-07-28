@@ -8,9 +8,10 @@ import org.pluribourse.shared.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
+import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.*;
 
-import java.net.*;
+import java.io.IOException;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * A4 printer here instead, exactly like {@link PrintInfrastructureIT}. No THERMAL printer is
  * created (jSerialComm not testable without hardware, gap already accepted in story 3.4); the
  * "wrong type" branch is exercised using the available A4 printer as a thermalPrinterId instead.
+ * Since story 3.11, reachability is decided by {@link PrinterBridgeDouble}, not a raw socket.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PrinterSelectionIT extends IntegrationTest {
@@ -30,7 +32,7 @@ class PrinterSelectionIT extends IntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private static ServerSocket reachableTarget;
+    private static PrinterBridgeDouble printerBridgeDouble;
 
     private MockHttpSession adminSession;
     private MockHttpSession volunteerSession;
@@ -38,10 +40,19 @@ class PrinterSelectionIT extends IntegrationTest {
     private Long availableA4PrinterId;
     private Long unavailableA4PrinterId;
 
+    @DynamicPropertySource
+    static void printerBridgeProperties(DynamicPropertyRegistry registry) throws IOException {
+        printerBridgeDouble = PrinterBridgeDouble.start();
+        registry.add("printerbridge.base-url", printerBridgeDouble::baseUrl);
+    }
+
+    @AfterAll
+    static void tearDownDouble() {
+        printerBridgeDouble.stop();
+    }
+
     @BeforeAll
     void setUpSessions() throws Exception {
-        reachableTarget = new ServerSocket(0);
-
         MvcResult adminLogin = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", "test_admin")
@@ -59,11 +70,6 @@ class PrinterSelectionIT extends IntegrationTest {
         volunteerSession = (MockHttpSession) volunteerLogin.getRequest().getSession(false);
     }
 
-    @AfterAll
-    void tearDownTarget() throws Exception {
-        reachableTarget.close();
-    }
-
     @Test
     @Order(1)
     void available_printers_is_empty_when_none_registered() throws Exception {
@@ -76,12 +82,14 @@ class PrinterSelectionIT extends IntegrationTest {
     @Test
     @Order(2)
     void register_available_and_unavailable_a4_printers() throws Exception {
+        printerBridgeDouble.register("bridge-available", "Fake Available", "NETWORK", "ONLINE");
+        printerBridgeDouble.register("bridge-unavailable", "Fake Unavailable", "NETWORK", "OFFLINE");
+
         MvcResult available = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "Imprimante Disponible", PrinterType.A4, null, null,
-                                "127.0.0.1", reachableTarget.getLocalPort()))))
+                                "Imprimante Disponible", PrinterType.A4, null, "bridge-available"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         availableA4PrinterId = objectMapper.readValue(available.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -90,8 +98,7 @@ class PrinterSelectionIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "Imprimante Indisponible", PrinterType.A4, null, null,
-                                "127.0.0.1", 1))))
+                                "Imprimante Indisponible", PrinterType.A4, null, "bridge-unavailable"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         unavailableA4PrinterId = objectMapper.readValue(unavailable.getResponse().getContentAsString(), PrinterDto.class).id();

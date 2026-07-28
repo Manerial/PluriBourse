@@ -50,4 +50,17 @@ describe('EmptyStateComponent', () => {
     fixture.nativeElement.querySelector('button').click();
     expect(actionSpy).toHaveBeenCalledOnce();
   });
+
+  it('disables the action button and shows a spinner when actionLoading is true', () => {
+    const fixture = TestBed.createComponent(EmptyStateComponent);
+    fixture.componentRef.setInput('icon', 'group');
+    fixture.componentRef.setInput('message', 'Empty');
+    fixture.componentRef.setInput('actionLabel', 'Add item');
+    fixture.componentRef.setInput('actionLoading', true);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('button');
+    expect(btn.disabled).toBe(true);
+    expect(btn.textContent).not.toContain('Add item');
+    expect(fixture.nativeElement.querySelector('mat-progress-spinner')).not.toBeNull();
+  });
 });

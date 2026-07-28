@@ -24,14 +24,9 @@ public class Printer {
     @Column(nullable = false, length = 20)
     private PrinterType type;
 
-    @Column(name = "serial_port", length = 100)
-    private String serialPort;
-
     @Column(name = "width_mm")
     private Integer widthMm;
 
-    @Column(length = 255)
-    private String host;
-
-    private Integer port;
+    @Column(name = "printer_bridge_id", nullable = false, length = 32)
+    private String printerBridgeId;
 }

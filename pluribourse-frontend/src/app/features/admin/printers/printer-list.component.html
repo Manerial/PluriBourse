@@ -1,8 +1,12 @@
 <div class="card card--list">
   <div class="card__header">
     <h1 class="card__title">{{ 'admin.printers.title' | translate }}</h1>
-    <button type="button" mat-flat-button color="primary" (click)="openCreateDialog()">
-      {{ 'admin.printers.actions.create' | translate }}
+    <button type="button" mat-flat-button color="primary" (click)="openCreateDialog()" [disabled]="discovering()">
+      @if (discovering()) {
+        <mat-progress-spinner diameter="18" mode="indeterminate" />
+      } @else {
+        {{ 'admin.printers.actions.create' | translate }}
+      }
     </button>
   </div>
 
@@ -20,6 +24,7 @@
         icon="print_connect"
         [message]="'admin.printers.empty' | translate"
         [actionLabel]="'admin.printers.actions.create' | translate"
+        [actionLoading]="discovering()"
         (action)="openCreateDialog()"
       />
     } @else {
@@ -45,6 +50,10 @@
               </td>
               <td>
                 <div class="actions-cell">
+                  <button type="button" mat-button (click)="testPrint(printer)" [disabled]="testingId() === printer.id">
+                    <mat-icon>print</mat-icon>
+                    {{ 'admin.printers.actions.testPrint' | translate }}
+                  </button>
                   <button type="button" mat-button color="warn" (click)="confirmDelete(printer)" [disabled]="submitting()">
                     <mat-icon>delete</mat-icon>
                     {{ 'admin.printers.actions.delete' | translate }}

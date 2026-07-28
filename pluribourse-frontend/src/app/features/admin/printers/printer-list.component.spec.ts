@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { Dialog } from '@angular/cdk/dialog';
 import { PrinterListComponent } from './printer-list.component';
 import { PrinterRegistryService } from '../../../services/printer-registry.service';
-import { PrinterSummary } from '../../../models/printer-registry.model';
+import { DiscoveredPrinter, PrinterSummary, PrintResult } from '../../../models/printer-registry.model';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PrinterFormComponent } from './printer-form.component';
@@ -16,6 +16,10 @@ const MOCK_PRINTERS: PrinterSummary[] = [
   { id: 2, name: 'Guichet A4', type: 'A4', connected: false },
 ];
 
+const MOCK_DISCOVERED: DiscoveredPrinter[] = [
+  { printerBridgeId: 'bridge-thermal-1', name: 'Zebra ZQ320', type: 'THERMAL', status: 'ONLINE' },
+];
+
 describe('PrinterListComponent', () => {
   let fixture: ComponentFixture<PrinterListComponent>;
   let component: PrinterListComponent;
@@ -23,6 +27,8 @@ describe('PrinterListComponent', () => {
   const printerRegistryServiceMock = {
     list: vi.fn().mockReturnValue(of(MOCK_PRINTERS)),
     delete: vi.fn().mockReturnValue(of(undefined)),
+    testPrint: vi.fn().mockReturnValue(of({ status: 'OK', message: null } satisfies PrintResult)),
+    discover: vi.fn().mockReturnValue(of(MOCK_DISCOVERED)),
   };
 
   const toastMock = {
@@ -41,6 +47,8 @@ describe('PrinterListComponent', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     printerRegistryServiceMock.list.mockReturnValue(of(MOCK_PRINTERS));
+    printerRegistryServiceMock.testPrint.mockReturnValue(of({ status: 'OK', message: null } satisfies PrintResult));
+    printerRegistryServiceMock.discover.mockReturnValue(of(MOCK_DISCOVERED));
     dialogMock.open.mockReturnValue({ closed: of(undefined) });
     confirmDialogMock.open.mockReturnValue(of(false));
 
@@ -82,14 +90,28 @@ describe('PrinterListComponent', () => {
     expect(component.printers().length).toBe(0);
   });
 
-  it('openCreateDialog opens PrinterFormComponent', () => {
-    component.openCreateDialog();
-    expect(dialogMock.open).toHaveBeenCalledWith(PrinterFormComponent, expect.anything());
+  it('openCreateDialog waits for discovery before opening PrinterFormComponent', async () => {
+    await component.openCreateDialog();
+    expect(printerRegistryServiceMock.discover).toHaveBeenCalledTimes(1);
+    expect(dialogMock.open).toHaveBeenCalledWith(
+      PrinterFormComponent,
+      expect.objectContaining({ data: { discoveredPrinters: MOCK_DISCOVERED, discoveryError: false } })
+    );
+    expect(component.discovering()).toBe(false);
+  });
+
+  it('openCreateDialog still opens the dialog with a discovery error flag when discover() fails', async () => {
+    printerRegistryServiceMock.discover.mockReturnValueOnce(throwError(() => new Error('503')));
+    await component.openCreateDialog();
+    expect(dialogMock.open).toHaveBeenCalledWith(
+      PrinterFormComponent,
+      expect.objectContaining({ data: { discoveredPrinters: [], discoveryError: true } })
+    );
   });
 
   it('reloads the printer list after the create dialog closes', async () => {
     printerRegistryServiceMock.list.mockClear();
-    component.openCreateDialog();
+    await component.openCreateDialog();
     await fixture.whenStable();
     expect(printerRegistryServiceMock.list).toHaveBeenCalledTimes(1);
   });
@@ -116,5 +138,28 @@ describe('PrinterListComponent', () => {
     expect(toastMock.showError).toHaveBeenCalledOnce();
     expect(toastMock.showSuccess).not.toHaveBeenCalled();
     expect(component.submitting()).toBe(false);
+  });
+
+  it('testPrint shows a success toast and clears the testing state on a successful result', async () => {
+    printerRegistryServiceMock.testPrint.mockReturnValueOnce(of({ status: 'OK', message: null } satisfies PrintResult));
+    await component.testPrint(MOCK_PRINTERS[0]);
+    expect(printerRegistryServiceMock.testPrint).toHaveBeenCalledWith(1);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(toastMock.showError).not.toHaveBeenCalled();
+    expect(component.testingId()).toBeNull();
+  });
+
+  it('testPrint shows the error message from an ERROR result', async () => {
+    printerRegistryServiceMock.testPrint.mockReturnValueOnce(of({ status: 'ERROR', message: 'bourrage papier' } satisfies PrintResult));
+    await component.testPrint(MOCK_PRINTERS[0]);
+    expect(toastMock.showError).toHaveBeenCalledWith('bourrage papier');
+    expect(toastMock.showSuccess).not.toHaveBeenCalled();
+  });
+
+  it('testPrint shows a generic error toast when the call itself fails', async () => {
+    printerRegistryServiceMock.testPrint.mockReturnValueOnce(throwError(() => new Error('network')));
+    await component.testPrint(MOCK_PRINTERS[0]);
+    expect(toastMock.showError).toHaveBeenCalledWith('admin.printers.error.testPrint');
+    expect(component.testingId()).toBeNull();
   });
 });

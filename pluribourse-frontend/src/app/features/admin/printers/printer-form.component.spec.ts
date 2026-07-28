@@ -1,14 +1,15 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { DialogRef } from '@angular/cdk/dialog';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
-import { PrinterFormComponent } from './printer-form.component';
+import { PrinterFormComponent, PrinterFormDialogData } from './printer-form.component';
 import { PrinterRegistryService } from '../../../services/printer-registry.service';
-import { SerialPortOption } from '../../../models/printer-registry.model';
+import { DiscoveredPrinter } from '../../../models/printer-registry.model';
 
-const MOCK_SERIAL_PORTS: SerialPortOption[] = [
-  { systemPortName: 'COM3', descriptiveName: 'Zebra ZQ320 Bluetooth' },
+const MOCK_DISCOVERED: DiscoveredPrinter[] = [
+  { printerBridgeId: 'bridge-thermal-1', name: 'Zebra ZQ320', type: 'THERMAL', status: 'ONLINE' },
+  { printerBridgeId: 'bridge-a4-1', name: 'Bureau A4', type: 'A4', status: 'OFFLINE' },
 ];
 
 describe('PrinterFormComponent', () => {
@@ -16,22 +17,19 @@ describe('PrinterFormComponent', () => {
   let component: PrinterFormComponent;
 
   const printerRegistryServiceMock = {
-    listSerialPorts: vi.fn().mockReturnValue(of(MOCK_SERIAL_PORTS)),
     create: vi.fn().mockReturnValue(of(undefined)),
   };
   const dialogRefMock = { close: vi.fn() };
 
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    printerRegistryServiceMock.listSerialPorts.mockReturnValue(of(MOCK_SERIAL_PORTS));
-    printerRegistryServiceMock.create.mockReturnValue(of(undefined));
-
+  async function createComponent(data: PrinterFormDialogData): Promise<void> {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [PrinterFormComponent],
       providers: [
         provideTranslateService({ lang: 'en' }),
         { provide: PrinterRegistryService, useValue: printerRegistryServiceMock },
         { provide: DialogRef, useValue: dialogRefMock },
+        { provide: DIALOG_DATA, useValue: data },
       ],
     }).compileComponents();
 
@@ -39,77 +37,51 @@ describe('PrinterFormComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
+  }
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    printerRegistryServiceMock.create.mockReturnValue(of(undefined));
+    await createComponent({ discoveredPrinters: MOCK_DISCOVERED, discoveryError: false });
   });
 
-  it('defaults type to THERMAL', () => {
-    expect(component.form.controls.type.value).toBe('THERMAL');
+  it('exposes the discovered printers received from the dialog data', () => {
+    expect(component.discoveredPrinters()).toEqual(MOCK_DISCOVERED);
+    expect(component.discoveryError()).toBe(false);
   });
 
-  it('loads serial ports on init', () => {
-    expect(printerRegistryServiceMock.listSerialPorts).toHaveBeenCalledTimes(1);
-    expect(component.serialPorts()).toEqual(MOCK_SERIAL_PORTS);
+  it('shows the discovery-unavailable state when the dialog data reports a discovery error', async () => {
+    await createComponent({ discoveredPrinters: [], discoveryError: true });
+    expect(component.discoveryError()).toBe(true);
   });
 
-  it('form is invalid when THERMAL fields are empty', () => {
+  it('form is invalid until a printer is selected', () => {
     component.form.controls.name.setValue('Guichet');
     expect(component.form.invalid).toBe(true);
   });
 
-  it('form is valid once THERMAL required fields are filled', () => {
+  it('selecting a THERMAL printer derives the type and requires widthMm', () => {
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.serialPort.setValue('COM3');
+    component.form.controls.printerBridgeId.setValue('bridge-thermal-1');
+    expect(component.selectedType()).toBe('THERMAL');
+    expect(component.form.controls.widthMm.hasError('required')).toBe(true);
+
     component.form.controls.widthMm.setValue(80);
     expect(component.form.valid).toBe(true);
   });
 
-  it('switching type to A4 clears THERMAL validators and requires host', () => {
+  it('selecting an A4 printer derives the type and does not require widthMm', () => {
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.type.setValue('A4');
-    expect(component.form.controls.serialPort.hasError('required')).toBe(false);
-    expect(component.form.controls.widthMm.hasError('required')).toBe(false);
-    expect(component.form.invalid).toBe(true);
-
-    component.form.controls.host.setValue('192.168.1.50');
+    component.form.controls.printerBridgeId.setValue('bridge-a4-1');
+    expect(component.selectedType()).toBe('A4');
     expect(component.form.valid).toBe(true);
   });
 
-  it('switching back to THERMAL clears the A4 host validator', () => {
-    component.form.controls.name.setValue('Guichet');
-    component.form.controls.type.setValue('A4');
-    component.form.controls.type.setValue('THERMAL');
-    expect(component.form.controls.host.hasError('required')).toBe(false);
-  });
-
-  it('switching from THERMAL to A4 resets the stale serialPort/widthMm values', () => {
-    component.form.controls.serialPort.setValue('COM3');
+  it('switching from a THERMAL to an A4 selection resets the stale widthMm value', () => {
+    component.form.controls.printerBridgeId.setValue('bridge-thermal-1');
     component.form.controls.widthMm.setValue(80);
-    component.form.controls.type.setValue('A4');
-    expect(component.form.controls.serialPort.value).toBeNull();
+    component.form.controls.printerBridgeId.setValue('bridge-a4-1');
     expect(component.form.controls.widthMm.value).toBeNull();
-  });
-
-  it('switching from A4 to THERMAL resets the stale host and port values', () => {
-    component.form.controls.type.setValue('A4');
-    component.form.controls.host.setValue('192.168.1.50');
-    component.form.controls.port.setValue(9100);
-    component.form.controls.type.setValue('THERMAL');
-    expect(component.form.controls.host.value).toBeNull();
-    expect(component.form.controls.port.value).toBeNull();
-  });
-
-  it('rejects a port below the valid TCP range', () => {
-    component.form.controls.port.setValue(0);
-    expect(component.form.controls.port.hasError('min')).toBe(true);
-  });
-
-  it('rejects a port above the valid TCP range', () => {
-    component.form.controls.port.setValue(65536);
-    expect(component.form.controls.port.hasError('max')).toBe(true);
-  });
-
-  it('accepts a port within the valid TCP range', () => {
-    component.form.controls.port.setValue(9100);
-    expect(component.form.controls.port.valid).toBe(true);
   });
 
   it('does not call create when the form is invalid', async () => {
@@ -117,9 +89,9 @@ describe('PrinterFormComponent', () => {
     expect(printerRegistryServiceMock.create).not.toHaveBeenCalled();
   });
 
-  it('calls create with THERMAL payload on valid submit and closes the dialog', async () => {
+  it('calls create with the derived THERMAL payload on valid submit and closes the dialog', async () => {
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.serialPort.setValue('COM3');
+    component.form.controls.printerBridgeId.setValue('bridge-thermal-1');
     component.form.controls.widthMm.setValue(80);
 
     await component.onSubmit();
@@ -127,44 +99,31 @@ describe('PrinterFormComponent', () => {
     expect(printerRegistryServiceMock.create).toHaveBeenCalledWith({
       name: 'Guichet',
       type: 'THERMAL',
-      serialPort: 'COM3',
+      printerBridgeId: 'bridge-thermal-1',
       widthMm: 80,
-      host: null,
-      port: null,
     });
     expect(dialogRefMock.close).toHaveBeenCalledOnce();
     expect(component.loading()).toBe(false);
   });
 
-  it('calls create with A4 payload on valid submit', async () => {
+  it('calls create with the derived A4 payload on valid submit', async () => {
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.type.setValue('A4');
-    component.form.controls.host.setValue('192.168.1.50');
+    component.form.controls.printerBridgeId.setValue('bridge-a4-1');
 
     await component.onSubmit();
 
     expect(printerRegistryServiceMock.create).toHaveBeenCalledWith({
       name: 'Guichet',
       type: 'A4',
-      serialPort: null,
+      printerBridgeId: 'bridge-a4-1',
       widthMm: null,
-      host: '192.168.1.50',
-      port: null,
     });
     expect(dialogRefMock.close).toHaveBeenCalledOnce();
   });
 
-  it('shows a notification when no serial port is detected', () => {
-    printerRegistryServiceMock.listSerialPorts.mockReturnValue(of([]));
-    fixture = TestBed.createComponent(PrinterFormComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    expect(component.serialPorts()).toEqual([]);
-  });
-
   it('sets error key and stops loading when create fails', async () => {
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.serialPort.setValue('COM3');
+    component.form.controls.printerBridgeId.setValue('bridge-thermal-1');
     component.form.controls.widthMm.setValue(80);
     printerRegistryServiceMock.create.mockReturnValue(throwError(() => new Error('server')));
 

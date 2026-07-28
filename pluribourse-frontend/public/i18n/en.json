@@ -547,20 +547,22 @@
         "THERMAL": "Thermal",
         "A4": "A4"
       },
+      "discoveryStatus": {
+        "ONLINE": "online",
+        "OFFLINE": "offline",
+        "UNKNOWN": "status unknown"
+      },
       "actions": {
         "create": "Add a printer",
-        "delete": "Delete"
+        "delete": "Delete",
+        "testPrint": "Test print"
       },
       "create": {
         "title": "Add a printer",
         "name": "Name",
-        "type": "Type",
-        "serialPort": "Serial port",
+        "printerBridgeId": "Detected printer",
         "widthMm": "Width",
         "widthValue": "{{ width }} mm",
-        "host": "IP address / host",
-        "port": "TCP port",
-        "noSerialPort": "No serial port detected. Check that the printer is paired and plugged in.",
         "submit": "Add",
         "cancel": "Cancel"
       },
@@ -570,12 +572,15 @@
       },
       "empty": "No printer registered yet.",
       "success": {
-        "delete": "Printer deleted."
+        "delete": "Printer deleted.",
+        "testPrint": "Test print sent."
       },
       "error": {
         "load": "Failed to load the printer registry.",
         "create": "Failed to add the printer.",
-        "delete": "Failed to delete the printer."
+        "delete": "Failed to delete the printer.",
+        "testPrint": "Test print failed.",
+        "discoveryUnavailable": "The PrinterBridge service is not responding on this machine. Check that it is running."
       }
     }
   }

@@ -3,9 +3,10 @@ package org.pluribourse.domain.print.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.print.dto.CreatePrinterDto;
+import org.pluribourse.domain.print.dto.DiscoveredPrinterDto;
 import org.pluribourse.domain.print.dto.PrinterDto;
 import org.pluribourse.domain.print.dto.PrinterSummaryDto;
-import org.pluribourse.domain.print.dto.SerialPortDto;
+import org.pluribourse.domain.print.service.PrintResult;
 import org.pluribourse.domain.print.service.PrinterService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,14 +34,19 @@ public class PrinterController {
         return service.list();
     }
 
-    @GetMapping("/serial-ports")
-    public List<SerialPortDto> listAvailableSerialPorts() {
-        return service.listAvailableSerialPorts();
+    @GetMapping("/discovered")
+    public List<DiscoveredPrinterDto> discover() {
+        return service.discover();
     }
 
     @PostMapping
     public ResponseEntity<PrinterDto> create(@Valid @RequestBody CreatePrinterDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
+    }
+
+    @PostMapping("/{id}/test-print")
+    public PrintResult testPrint(@PathVariable Long id) {
+        return service.testPrint(id);
     }
 
     @DeleteMapping("/{id}")

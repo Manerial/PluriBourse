@@ -2,22 +2,23 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { Dialog } from '@angular/cdk/dialog';
-import { PrinterSummary } from '../../../models/printer-registry.model';
+import { DiscoveredPrinter, PrinterSummary, PrintResult } from '../../../models/printer-registry.model';
 import { PrinterRegistryService } from '../../../services/printer-registry.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/skeleton-row.component';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
-import { PrinterFormComponent } from './printer-form.component';
+import { PrinterFormComponent, PrinterFormDialogData } from './printer-form.component';
 
 @Component({
   selector: 'app-printer-list',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
+  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, TranslatePipe, SkeletonRowComponent, NotificationInlineComponent, EmptyStateComponent],
   templateUrl: './printer-list.component.html',
   styleUrl: './printer-list.component.scss'
 })
@@ -33,9 +34,27 @@ export class PrinterListComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
+  readonly testingId = signal<number | null>(null);
+  readonly discovering = signal(false);
 
   async ngOnInit(): Promise<void> {
     await this.load();
+  }
+
+  async testPrint(printer: PrinterSummary): Promise<void> {
+    this.testingId.set(printer.id);
+    try {
+      const result: PrintResult = await firstValueFrom(this.printerRegistryService.testPrint(printer.id));
+      if (result.status === 'OK') {
+        this.toast.showSuccess(this.translate.instant('admin.printers.success.testPrint'));
+      } else {
+        this.toast.showError(result.message ?? this.translate.instant('admin.printers.error.testPrint'));
+      }
+    } catch {
+      this.toast.showError(this.translate.instant('admin.printers.error.testPrint'));
+    } finally {
+      this.testingId.set(null);
+    }
   }
 
   async confirmDelete(printer: PrinterSummary): Promise<void> {
@@ -61,10 +80,22 @@ export class PrinterListComponent implements OnInit {
     }
   }
 
-  openCreateDialog(): void {
-    const ref = this.dialog.open<void, void, PrinterFormComponent>(
+  async openCreateDialog(): Promise<void> {
+    this.discovering.set(true);
+    let discoveredPrinters: DiscoveredPrinter[] = [];
+    let discoveryError = false;
+    try {
+      discoveredPrinters = await firstValueFrom(this.printerRegistryService.discover());
+    } catch {
+      discoveryError = true;
+    } finally {
+      this.discovering.set(false);
+    }
+
+    const ref = this.dialog.open<void, PrinterFormDialogData, PrinterFormComponent>(
       PrinterFormComponent,
       {
+        data: { discoveredPrinters, discoveryError },
         hasBackdrop: true,
         backdropClass: 'dialog-backdrop',
         panelClass: 'dialog-panel',

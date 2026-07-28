@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-22"  # Story 6-1 (catalogue articles) créée avec create-story ; epic 6 passé en in-progress
+last_updated: "2026-07-27"  # Stories 3-11 et 3-12 revues conjointement (bmad-code-review) : 4 decision-needed + 6 patch résolus, 300/300 backend / 430/430 frontend — statut done
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -82,6 +82,10 @@ development_status:
   3-8-registre-des-imprimantes-admin: done
   3-9-selection-dimprimante-par-le-benevole-a-la-connexion: done
   3-10-modification-dun-lot-apres-saisie: done
+  # Sprint change proposal 2026-07-27 : remplace la connexion directe (port série/socket TCP)
+  # par une intégration au service PrinterBridge (repo séparé). Priorisées avant 6-1.
+  3-11-integration-printerbridge-connexion-et-statut: done
+  3-12-integration-printerbridge-envoi-des-jobs-dimpression: done
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────

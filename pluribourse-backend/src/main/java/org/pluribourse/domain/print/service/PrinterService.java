@@ -1,12 +1,11 @@
 package org.pluribourse.domain.print.service;
 
-import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pluribourse.domain.print.dto.CreatePrinterDto;
+import org.pluribourse.domain.print.dto.DiscoveredPrinterDto;
 import org.pluribourse.domain.print.dto.PrinterDto;
 import org.pluribourse.domain.print.dto.PrinterSummaryDto;
-import org.pluribourse.domain.print.dto.SerialPortDto;
 import org.pluribourse.domain.print.entity.Printer;
 import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.exception.InvalidPrinterConfigurationException;
@@ -16,31 +15,27 @@ import org.pluribourse.domain.print.repository.PrinterRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PrinterService {
 
-    private static final int DEFAULT_A4_PORT = 9100;
     private static final int THERMAL_WIDTH_57 = 57;
     private static final int THERMAL_WIDTH_80 = 80;
 
     private final PrinterRepository repository;
     private final PrinterMapper mapper;
     private final PrintQueueService printQueueService;
+    private final PrinterBridgeClient printerBridgeClient;
 
     @Transactional
     public PrinterDto create(CreatePrinterDto dto) {
         validateConfiguration(dto);
         Printer printer = mapper.toEntity(dto);
-        if (printer.getType() == PrinterType.A4 && printer.getPort() == null) {
-            printer.setPort(DEFAULT_A4_PORT);
-        }
         try {
             printer = repository.save(printer);
         } catch (DataIntegrityViolationException e) {
@@ -71,22 +66,34 @@ public class PrinterService {
     }
 
     /**
-     * Enumerates serial ports currently visible to the JVM (story 3.8, AC3) — a simple
-     * enumeration, not a potentially blocking I/O call like {@code openPort()}, so no timeout
-     * wrapper is needed here (unlike {@link SerialPrinterConnectivityChecker}). Falls back to an
-     * empty list if the native jSerialComm library fails to load or throws (e.g. no serial
-     * subsystem available in a container) — the admin form already treats an empty list as "no
-     * port detected" (code review finding, story 3.8).
+     * Printers PrinterBridge currently knows about (story 3.11, AC1) — powers the admin
+     * registration form's picker, replacing the manual serial-port/IP entry of story 3.8. Lets
+     * {@link org.pluribourse.domain.print.exception.PrinterBridgeUnavailableException} propagate
+     * uncaught — handled generically by {@code GlobalExceptionHandler} as a 503, distinct from an
+     * empty result (PrinterBridge reachable, nothing detected). Already-registered printers are
+     * excluded so the picker only ever offers printers that can actually be added.
      */
-    public List<SerialPortDto> listAvailableSerialPorts() {
-        try {
-            return Arrays.stream(SerialPort.getCommPorts())
-                    .map(port -> new SerialPortDto(port.getSystemPortName(), port.getDescriptivePortName()))
-                    .toList();
-        } catch (RuntimeException | LinkageError e) {
-            log.warn("Failed to enumerate serial ports: {}", e.getMessage());
-            return List.of();
-        }
+    public List<DiscoveredPrinterDto> discover() {
+        Set<String> registeredPrinterBridgeIds = repository.findAllPrinterBridgeIds();
+        return printerBridgeClient.discover().stream()
+                .filter(printer -> !registeredPrinterBridgeIds.contains(printer.id()))
+                .map(this::toDiscoveredPrinterDto)
+                .toList();
+    }
+
+    private DiscoveredPrinterDto toDiscoveredPrinterDto(PrinterBridgeDiscoveredPrinter printer) {
+        PrinterType type = printer.type() == PrinterBridgePrinterType.BLUETOOTH_THERMAL ? PrinterType.THERMAL : PrinterType.A4;
+        return new DiscoveredPrinterDto(printer.id(), printer.name(), type, printer.status());
+    }
+
+    /**
+     * Triggers an actual test print through PrinterBridge (story 3.11, AC5) — a stronger signal
+     * than the connectivity check alone, since a dead Bluetooth link can still report as reachable
+     * (see PrinterBridge's own dev notes).
+     */
+    public PrintResult testPrint(Long id) {
+        Printer printer = repository.findById(id).orElseThrow(() -> new PrinterNotFoundException(id));
+        return printerBridgeClient.testPrint(printer.getPrinterBridgeId());
     }
 
     /**
@@ -100,18 +107,18 @@ public class PrinterService {
         printQueueService.unregisterPrinter(id);
     }
 
+    // printerBridgeId is unconditionally required for every type, so it is enforced declaratively
+    // via @NotBlank on CreatePrinterDto (framework-level 400) — unlike widthMm below, which is
+    // only required for THERMAL and therefore can't be expressed as a plain Bean Validation
+    // annotation, hence the manual check here (422, story-specific business rule).
     private void validateConfiguration(CreatePrinterDto dto) {
         if (dto.type() == PrinterType.THERMAL) {
-            if (!StringUtils.hasText(dto.serialPort()) || dto.widthMm() == null) {
-                throw new InvalidPrinterConfigurationException(
-                        "A THERMAL printer requires serialPort and widthMm.");
+            if (dto.widthMm() == null) {
+                throw new InvalidPrinterConfigurationException("A THERMAL printer requires widthMm.");
             }
             if (dto.widthMm() != THERMAL_WIDTH_57 && dto.widthMm() != THERMAL_WIDTH_80) {
-                throw new InvalidPrinterConfigurationException(
-                        "widthMm must be 57 or 80 for a THERMAL printer.");
+                throw new InvalidPrinterConfigurationException("widthMm must be 57 or 80 for a THERMAL printer.");
             }
-        } else if (!StringUtils.hasText(dto.host())) {
-            throw new InvalidPrinterConfigurationException("An A4 printer requires a host.");
         }
     }
 }

@@ -5,16 +5,21 @@ export interface PrinterSummary {
   connected: boolean;
 }
 
-export interface SerialPortOption {
-  systemPortName: string;
-  descriptiveName: string;
+export interface DiscoveredPrinter {
+  printerBridgeId: string;
+  name: string;
+  type: 'THERMAL' | 'A4';
+  status: 'ONLINE' | 'OFFLINE' | 'UNKNOWN';
 }
 
 export interface CreatePrinterPayload {
   name: string;
   type: 'THERMAL' | 'A4';
-  serialPort: string | null;
   widthMm: number | null;
-  host: string | null;
-  port: number | null;
+  printerBridgeId: string;
+}
+
+export interface PrintResult {
+  status: 'OK' | 'ERROR';
+  message: string | null;
 }

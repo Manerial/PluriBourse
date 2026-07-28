@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CreatePrinterPayload, PrinterSummary, SerialPortOption } from '../models/printer-registry.model';
+import { CreatePrinterPayload, DiscoveredPrinter, PrintResult, PrinterSummary } from '../models/printer-registry.model';
 
 @Injectable({ providedIn: 'root' })
 export class PrinterRegistryService {
@@ -11,12 +11,16 @@ export class PrinterRegistryService {
     return this.http.get<PrinterSummary[]>('/api/admin/printers');
   }
 
-  listSerialPorts(): Observable<SerialPortOption[]> {
-    return this.http.get<SerialPortOption[]>('/api/admin/printers/serial-ports');
+  discover(): Observable<DiscoveredPrinter[]> {
+    return this.http.get<DiscoveredPrinter[]>('/api/admin/printers/discovered');
   }
 
   create(payload: CreatePrinterPayload): Observable<void> {
     return this.http.post<void>('/api/admin/printers', payload);
+  }
+
+  testPrint(id: number): Observable<PrintResult> {
+    return this.http.post<PrintResult>(`/api/admin/printers/${id}/test-print`, {});
   }
 
   delete(id: number): Observable<void> {
