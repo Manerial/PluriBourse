@@ -22,4 +22,9 @@ export const volunteerRoutes: Routes = [
     loadComponent: () =>
       import('./deposit/deposit-page.component').then((m) => m.DepositPageComponent),
   },
+  {
+    path: 'catalog',
+    loadComponent: () =>
+      import('../catalog/item-catalog.component').then((m) => m.ItemCatalogComponent),
+  },
 ];

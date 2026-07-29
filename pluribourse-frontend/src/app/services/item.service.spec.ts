@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
 import { ItemService } from './item.service';
-import { CreateItemRequest, ItemDto } from '../models/item.model';
+import { CatalogFilter, CreateItemRequest, ItemCatalogPageResponse, ItemDto } from '../models/item.model';
 
 const MOCK_ITEM: ItemDto = {
   id: 1,
@@ -75,6 +75,55 @@ describe('ItemService', () => {
     const req = http.expectOne('/api/items/1');
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
+    await p;
+  });
+
+  it('getCatalog() sends GET /api/catalog with only the defined filter params', async () => {
+    const filter: CatalogFilter = { page: 0, size: 50 };
+    const p = firstValueFrom(service.getCatalog(filter));
+    const req = http.expectOne(
+      (r) => r.url === '/api/catalog' && r.params.get('page') === '0' && r.params.get('size') === '50'
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.has('name')).toBe(false);
+    expect(req.request.params.has('barcode')).toBe(false);
+    expect(req.request.params.has('categoryId')).toBe(false);
+    expect(req.request.params.has('tableNumber')).toBe(false);
+    expect(req.request.params.has('sold')).toBe(false);
+    expect(req.request.params.has('incomplete')).toBe(false);
+    expect(req.request.params.has('sellerName')).toBe(false);
+    expect(req.request.params.has('sort')).toBe(false);
+    const response: ItemCatalogPageResponse = {
+      page: { content: [], totalElements: 0, totalPages: 0, number: 0, size: 50 },
+    };
+    req.flush(response);
+    expect(await p).toEqual(response);
+  });
+
+  it('getCatalog() forwards every defined filter param, including falsy boolean values', async () => {
+    const filter: CatalogFilter = {
+      name: 'Kapla',
+      barcode: '0001',
+      categoryId: 3,
+      tableNumber: 1,
+      sold: false,
+      incomplete: true,
+      sellerName: 'Vendeuse',
+      page: 2,
+      size: 50,
+      sort: 'name,asc',
+    };
+    const p = firstValueFrom(service.getCatalog(filter));
+    const req = http.expectOne((r) => r.url === '/api/catalog');
+    expect(req.request.params.get('name')).toBe('Kapla');
+    expect(req.request.params.get('barcode')).toBe('0001');
+    expect(req.request.params.get('categoryId')).toBe('3');
+    expect(req.request.params.get('tableNumber')).toBe('1');
+    expect(req.request.params.get('sold')).toBe('false');
+    expect(req.request.params.get('incomplete')).toBe('true');
+    expect(req.request.params.get('sellerName')).toBe('Vendeuse');
+    expect(req.request.params.get('sort')).toBe('name,asc');
+    req.flush({ page: { content: [], totalElements: 0, totalPages: 0, number: 0, size: 50 } });
     await p;
   });
 });

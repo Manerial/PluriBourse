@@ -36,4 +36,9 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./printers/printer-list.component').then((m) => m.PrinterListComponent),
   },
+  {
+    path: 'catalog',
+    loadComponent: () =>
+      import('../catalog/item-catalog.component').then((m) => m.ItemCatalogComponent),
+  },
 ];

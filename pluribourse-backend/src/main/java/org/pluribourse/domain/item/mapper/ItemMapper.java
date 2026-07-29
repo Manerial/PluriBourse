@@ -28,6 +28,16 @@ public interface ItemMapper {
     @Mapping(target = "version", ignore = true)
     Item toEntity(CreateItemDto dto);
 
+    @Mapping(target = "barcode", source = "formattedBarcode")
+    @Mapping(target = "categoryName", source = "category.name")
+    @Mapping(target = "sellerFirstName", source = "sellerProfile.firstName")
+    @Mapping(target = "sellerLastName", source = "sellerProfile.lastName")
+    @Mapping(target = "lotId", source = "lot.id")
+    @Mapping(target = "lotName", source = "lot.name")
+    ItemCatalogDto toCatalogDto(Item item);
+
+    List<ItemCatalogDto> toCatalogDtos(List<Item> items);
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "edition", ignore = true)
     @Mapping(target = "sellerProfile", ignore = true)

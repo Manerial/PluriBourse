@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-28"  # Story 3-13 revue de code terminée (bmad-code-review) : 6 patch appliqués, 6 defer consignés — 307/307 backend, 441/441 frontend — statut done
+last_updated: "2026-07-29"  # Story 6-1 : catalogue d'articles filtrable/triable — revue de code terminée (bmad-code-review) : 1 decision-needed résolue (pivot de scope vers édition active uniquement, consultation des éditions passées reportée à une nouvelle story), 10 patch appliqués, 1 defer, 3 rejetés comme bruit — ARCH-005 corrigé en amont (JPageFlow 1.7.0) — 328/328 backend, 462/462 frontend, aucune régression — statut done
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -115,5 +115,5 @@ development_status:
   # 6-1 reste ready-for-dev mais est dépriorisée derrière 3-11/3-12 (sprint change
   # proposal 2026-07-27) — un flux d'impression déjà en usage réel prime sur une
   # nouvelle fonctionnalité pas encore commencée.
-  6-1-catalogue-articles-liste-filtrable-triable: ready-for-dev
+  6-1-catalogue-articles-liste-filtrable-triable: done
   epic-6-retrospective: optional

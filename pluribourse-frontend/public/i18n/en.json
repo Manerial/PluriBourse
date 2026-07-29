@@ -598,5 +598,46 @@
         "reactivate": "Failed to reactivate the printer."
       }
     }
+  },
+  "catalog": {
+    "title": "Item catalog",
+    "columns": {
+      "barcode": "Barcode",
+      "name": "Name",
+      "category": "Category",
+      "table": "Table",
+      "seller": "Seller",
+      "price": "Price",
+      "priceFormat": "{{ price }} €",
+      "complete": "Completeness",
+      "sold": "Sold"
+    },
+    "filters": {
+      "name": "Name",
+      "barcode": "Barcode",
+      "category": "Category",
+      "table": "Table",
+      "sold": "Sold status",
+      "incomplete": "Completeness",
+      "seller": "Seller",
+      "all": "All",
+      "soldOptions": {
+        "sold": "Sold",
+        "unsold": "Unsold",
+        "all": "All"
+      },
+      "completeOptions": {
+        "complete": "Complete",
+        "incomplete": "Incomplete",
+        "all": "All"
+      }
+    },
+    "empty": {
+      "noResults": "No items match the current filters."
+    },
+    "error": {
+      "noActiveEdition": "No edition is currently active.",
+      "load": "Failed to load the catalog."
+    }
   }
 }

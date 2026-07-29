@@ -598,5 +598,46 @@
         "reactivate": "Impossible de réactiver l'imprimante."
       }
     }
+  },
+  "catalog": {
+    "title": "Catalogue des articles",
+    "columns": {
+      "barcode": "Code-barres",
+      "name": "Nom",
+      "category": "Catégorie",
+      "table": "Table",
+      "seller": "Vendeur",
+      "price": "Prix",
+      "priceFormat": "{{ price }} €",
+      "complete": "État",
+      "sold": "Vendu"
+    },
+    "filters": {
+      "name": "Nom",
+      "barcode": "Code-barres",
+      "category": "Catégorie",
+      "table": "Table",
+      "sold": "Statut de vente",
+      "incomplete": "État",
+      "seller": "Vendeur",
+      "all": "Tous",
+      "soldOptions": {
+        "sold": "Vendu",
+        "unsold": "Non vendu",
+        "all": "Tous"
+      },
+      "completeOptions": {
+        "complete": "Complet",
+        "incomplete": "Incomplet",
+        "all": "Tous"
+      }
+    },
+    "empty": {
+      "noResults": "Aucun article ne correspond aux filtres actuels."
+    },
+    "error": {
+      "noActiveEdition": "Aucune édition n'est actuellement active.",
+      "load": "Impossible de charger le catalogue."
+    }
   }
 }

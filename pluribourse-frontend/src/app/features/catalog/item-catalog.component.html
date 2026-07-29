@@ -1,0 +1,112 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'catalog.title' | translate }}</h1>
+  </div>
+
+  <div class="filters-row">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'catalog.filters.name' | translate }}</mat-label>
+      <input matInput [value]="nameFilter()" [disabled]="isLoading()" (input)="onNameInput($any($event.target).value)" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'catalog.filters.barcode' | translate }}</mat-label>
+      <input matInput [value]="barcodeFilter()" [disabled]="isLoading()" (input)="onBarcodeInput($any($event.target).value)" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'catalog.filters.category' | translate }}</mat-label>
+      <mat-select [value]="categoryIdFilter()" [disabled]="isLoading()" (selectionChange)="onCategoryChange($event.value)">
+        <mat-option [value]="null">{{ 'catalog.filters.all' | translate }}</mat-option>
+        @for (category of categories(); track category.id) {
+          <mat-option [value]="category.id">{{ category.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'catalog.filters.table' | translate }}</mat-label>
+      <mat-select [value]="tableNumberFilter()" [disabled]="isLoading()" (selectionChange)="onTableChange($event.value)">
+        <mat-option [value]="null">{{ 'catalog.filters.all' | translate }}</mat-option>
+        @for (table of tableOptions(); track table) {
+          <mat-option [value]="table">{{ table }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'catalog.filters.sold' | translate }}</mat-label>
+      <mat-select [value]="soldFilter()" [disabled]="isLoading()" (selectionChange)="onSoldChange($event.value)">
+        <mat-option [value]="null">{{ 'catalog.filters.soldOptions.all' | translate }}</mat-option>
+        <mat-option [value]="true">{{ 'catalog.filters.soldOptions.sold' | translate }}</mat-option>
+        <mat-option [value]="false">{{ 'catalog.filters.soldOptions.unsold' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'catalog.filters.incomplete' | translate }}</mat-label>
+      <mat-select [value]="incompleteFilter()" [disabled]="isLoading()" (selectionChange)="onIncompleteChange($event.value)">
+        <mat-option [value]="null">{{ 'catalog.filters.completeOptions.all' | translate }}</mat-option>
+        <mat-option [value]="true">{{ 'catalog.filters.completeOptions.incomplete' | translate }}</mat-option>
+        <mat-option [value]="false">{{ 'catalog.filters.completeOptions.complete' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'catalog.filters.seller' | translate }}</mat-label>
+      <input matInput [value]="sellerNameFilter()" [disabled]="isLoading()" (input)="onSellerNameInput($any($event.target).value)" />
+    </mat-form-field>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="5" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error()) {
+    @if (totalElements() === 0) {
+      <app-empty-state icon="inventory_2" [message]="'catalog.empty.noResults' | translate" />
+    } @else {
+      <table class="data-table" matSort matSortDisableClear [matSortActive]="sortField() ?? ''" [matSortDirection]="sortDirection()" (matSortChange)="onSortChange($event)">
+        <thead>
+          <tr>
+            <th>{{ 'catalog.columns.barcode' | translate }}</th>
+            <th mat-sort-header="name">{{ 'catalog.columns.name' | translate }}</th>
+            <th mat-sort-header="category.name">{{ 'catalog.columns.category' | translate }}</th>
+            <th mat-sort-header="tableNumber">{{ 'catalog.columns.table' | translate }}</th>
+            <th mat-sort-header="sellerProfile.lastName">{{ 'catalog.columns.seller' | translate }}</th>
+            <th mat-sort-header="price">{{ 'catalog.columns.price' | translate }}</th>
+            <th mat-sort-header="incomplete">{{ 'catalog.columns.complete' | translate }}</th>
+            <th mat-sort-header="sold">{{ 'catalog.columns.sold' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td>{{ item.barcode }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.categoryName }}</td>
+              <td>{{ item.tableNumber }}</td>
+              <td>{{ item.sellerFirstName }} {{ item.sellerLastName }}</td>
+              <td>{{ 'catalog.columns.priceFormat' | translate: { price: item.price } }}</td>
+              <td>{{ (item.incomplete ? 'catalog.filters.completeOptions.incomplete' : 'catalog.filters.completeOptions.complete') | translate }}</td>
+              <td>{{ (item.sold ? 'catalog.filters.soldOptions.sold' : 'catalog.filters.soldOptions.unsold') | translate }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <mat-paginator
+        [length]="totalElements()"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex()"
+        [hidePageSize]="true"
+        [disabled]="isLoading()"
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    }
+  }
+</div>

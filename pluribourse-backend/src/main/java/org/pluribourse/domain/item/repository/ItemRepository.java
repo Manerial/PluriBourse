@@ -58,4 +58,16 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             """)
     List<Object[]> countByTableNumber(@Param("editionId") Long editionId, @Param("tableNumbers") Collection<Integer> tableNumbers,
                                       @Param("excludeItemId") Long excludeItemId);
+
+    /**
+     * Catalog listing (Story 6.1): eagerly fetches {@code sellerProfile}/{@code category} because
+     * {@code ItemCatalogService} filters/sorts the entire edition's item list in memory before
+     * paginating — without JOIN FETCH, touching those associations while filtering would trigger
+     * up to ~1700 extra lazy-load queries per catalog page view (same pattern as
+     * {@link #findAllBySellerProfileIdOrderByItemNumberAsc}). The explicit ORDER BY gives a stable
+     * base order: JPageFlow skips sorting entirely when no {@code sort} param is supplied, and
+     * without one, pagination across requests could return duplicate or skipped rows.
+     */
+    @Query("SELECT i FROM Item i JOIN FETCH i.sellerProfile JOIN FETCH i.category LEFT JOIN FETCH i.lot WHERE i.edition.id = :editionId ORDER BY i.id ASC")
+    List<Item> findAllByEditionIdForCatalog(@Param("editionId") Long editionId);
 }

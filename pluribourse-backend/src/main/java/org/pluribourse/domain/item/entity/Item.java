@@ -43,6 +43,9 @@ public class Item {
     @Column(nullable = false)
     private boolean incomplete;
 
+    @Column(nullable = false)
+    private boolean sold;
+
     @Column(length = 500)
     private String comment;
 
