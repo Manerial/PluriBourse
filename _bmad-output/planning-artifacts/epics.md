@@ -305,6 +305,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-092 : Epic 5 — Export CSV des reversements (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
 - FR-093 : Epic 4 — Moyen de paiement enregistré à la validation (espèces, chèque, carte)
 - FR-094 : Epic 5 — Ventilation des recettes par moyen de paiement dans les bilans journalier et d'édition — addendum
+- FR-102 : Epic 6 — Consultation du catalogue archivé d'une édition passée (admin uniquement, dépend de la Story 2.7) — addendum 2026-07-29
 
 ## Liste des épics
 
@@ -1426,7 +1427,7 @@ afin que l'impression fonctionne réellement depuis un backend conteneurisé.
 **Quand** cette story est implémentée
 **Alors** sa signature reste strictement inchangée — aucun impact sur les epics 4/5 qui en dépendront
 
-### Story 3.13 : Ignorer une imprimante détectée (FR-100)
+### Story 3.13 : Ignorer une imprimante détectée (FR-104)
 
 > **Story ajoutée après coup (2026-07-28)** — capacité demandée après livraison des Stories 3.11/3.12.
 
@@ -1830,7 +1831,7 @@ afin d'éviter de déclencher les impressions une par une avant de commencer les
 
 ## Epic 6 : Catalogue articles
 
-Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases.
+Les administrateurs et les bénévoles peuvent parcourir, rechercher et filtrer tous les articles de l'édition active dans toutes les phases. Les administrateurs peuvent également consulter le catalogue archivé d'une édition passée.
 
 ### Story 6.1 : Catalogue articles — Liste filtrable & triable
 
@@ -1865,3 +1866,35 @@ afin de localiser rapidement n'importe quel article quelle que soit la phase de 
 **Étant donné** que plusieurs utilisateurs filtrent le catalogue simultanément
 **Quand** chacun soumet des combinaisons de filtres différentes
 **Alors** chacun reçoit son propre résultat correct de manière indépendante
+
+### Story 6.2 : Consultation du catalogue d'une édition archivée
+
+⚠ Dépend de la Story 2.7 (mécanisme d'archivage + table d'archivage) — ne peut pas être implémentée avant. Ajoutée le 2026-07-29, voir `sprint-change-proposal-2026-07-29.md`.
+
+En tant qu'administrateur,
+je veux consulter le catalogue archivé d'une édition passée,
+afin de retrouver l'historique d'une édition après sa clôture et son archivage.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin navigue vers la consultation des éditions archivées
+**Quand** la page se charge
+**Alors** un sélecteur liste toutes les éditions archivées (nom, dates)
+**Et** aucun article n'est affiché tant qu'aucune édition n'est sélectionnée
+
+**Étant donné** que l'admin sélectionne une édition archivée
+**Quand** la sélection est confirmée
+**Alors** la liste des articles archivés de cette édition s'affiche avec pagination (50 par page, MatPaginator), limitée aux données conservées par l'archivage : nom, catégorie, statut vendu/invendu (FR-102)
+
+**Étant donné** que l'utilisateur applique un ou plusieurs filtres
+**Quand** les filtres sont soumis
+**Alors** la liste se met à jour, filtrée par nom, catégorie, statut vendu/invendu — pas de filtre code-barres/table/vendeur, ces données n'existant plus après archivage (FR-088)
+
+**Étant donné** que l'utilisateur clique sur un en-tête de colonne triable
+**Quand** cliqué une fois
+**Alors** la liste est triée par ordre croissant avec un indicateur visible
+**Et** cliquer à nouveau trie par ordre décroissant
+
+**Étant donné** qu'un bénévole (non admin) tente d'accéder à cette consultation
+**Quand** la requête est envoyée
+**Alors** l'accès est refusé (403) — réservé aux administrateurs

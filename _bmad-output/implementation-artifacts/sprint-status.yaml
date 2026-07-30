@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-29"  # Story 6-1 : catalogue d'articles filtrable/triable — revue de code terminée (bmad-code-review) : 1 decision-needed résolue (pivot de scope vers édition active uniquement, consultation des éditions passées reportée à une nouvelle story), 10 patch appliqués, 1 defer, 3 rejetés comme bruit — ARCH-005 corrigé en amont (JPageFlow 1.7.0) — 328/328 backend, 462/462 frontend, aucune régression — statut done
+last_updated: "2026-07-29"  # Story 6-1 : catalogue d'articles filtrable/triable — revue de code terminée (bmad-code-review) : 1 decision-needed résolue (pivot de scope vers édition active uniquement, consultation des éditions passées reportée à une nouvelle story), 10 patch appliqués, 1 defer, 3 rejetés comme bruit — ARCH-005 corrigé en amont (JPageFlow 1.7.0) — 328/328 backend, 462/462 frontend, aucune régression — statut done. Sprint change proposal 2026-07-29 : nouvelle story 6-2 (consultation catalogue édition archivée, FR-102), dépend de la Story 2.7 — ajoutée en backlog.
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -116,4 +116,8 @@ development_status:
   # proposal 2026-07-27) — un flux d'impression déjà en usage réel prime sur une
   # nouvelle fonctionnalité pas encore commencée.
   6-1-catalogue-articles-liste-filtrable-triable: done
+  # 6-2 ajoutée le 2026-07-29 suite à la revue de code de 6-1 (sprint change
+  # proposal 2026-07-29) — dépend de la Story 2.7 (table d'archivage), qui
+  # n'existe pas encore : ne peut pas démarrer avant que 2.7 soit done.
+  6-2-consultation-catalogue-edition-archivee: backlog
   epic-6-retrospective: optional

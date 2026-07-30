@@ -5,6 +5,8 @@ status: approved
 author: Manerial (via Claude Code)
 ---
 
+> **Correction 2026-07-29** : ce document assignait FR-100 à la nouvelle exigence "ignorer une imprimante", en collision avec le FR-100 pré-existant des dates d'édition (Story 2.4). Renumérotée en **FR-104** dans le PRD et `epics.md` — voir `sprint-change-proposal-2026-07-29.md`. Les mentions ci-dessous sont laissées telles quelles pour l'historique, à lire comme FR-104.
+
 # Proposition de changement de sprint : Ignorer une imprimante détectée + rattrapage documentaire PrinterBridge
 
 ## 1. Résumé du problème

@@ -151,7 +151,7 @@ Dernier changelog inclus dans `db.changelog-master.xml` : `018-printer-bridge-id
 
 - [Source: _bmad-output/planning-artifacts/sprint-change-proposal-2026-07-28.md] — origine et justification complète de cette story
 - [Source: _bmad-output/planning-artifacts/epics.md#Story 3.13] — ACs source
-- [Source: _bmad-output/planning-artifacts/prds/prd-PluriBourse-2026-06-08/prd.md#FR-100]
+- [Source: _bmad-output/planning-artifacts/prds/prd-PluriBourse-2026-06-08/prd.md#FR-104] *(renumérotée depuis FR-100 le 2026-07-29, collision avec les dates d'édition — voir sprint-change-proposal-2026-07-29.md)*
 - [Source: _bmad-output/implementation-artifacts/3-11-integration-printerbridge-connexion-et-statut.md] — pattern `discover()`/filtrage, pattern d'exception (`BusinessException`), leçon sur `findPrinterBridgeIdBy()` (échec de la convention dérivée Spring Data, résolu par `@Query` explicite), commit `1091033` (état réel livré, y compris le filtrage des imprimantes déjà enregistrées ajouté en session)
 - [Source: pluribourse-backend/src/main/java/org/pluribourse/domain/print/service/PrinterService.java, repository/PrinterRepository.java, controller/PrinterController.java, entity/Printer.java, exception/PrinterNotFoundException.java, exception/InvalidPrinterConfigurationException.java] — lus intégralement
 - [Source: pluribourse-frontend/src/app/features/admin/printers/printer-form.component.ts, .html, printer-list.component.ts, .html] — lus intégralement
