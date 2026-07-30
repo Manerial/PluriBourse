@@ -24,5 +24,7 @@
     <include file="db/changelog/018-printer-bridge-id.xml"/>
     <include file="db/changelog/019-ignored-printers.xml"/>
     <include file="db/changelog/020-item-sold-status.xml"/>
+    <include file="db/changelog/021-pos-baskets.xml"/>
+    <include file="db/changelog/022-items-sale-fk-set-null.xml"/>
 
 </databaseChangeLog>

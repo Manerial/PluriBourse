@@ -10,18 +10,40 @@
       <h2 class="card__title">{{ 'volunteer.pos.basket.title' | translate }}</h2>
     </div>
     <div class="card__body">
-      @if (basket().length === 0) {
+      @if (!basket() || basket()!.items.length === 0) {
         <p class="basket-empty">{{ 'volunteer.pos.basket.empty' | translate }}</p>
       } @else {
         <ul class="basket-list">
-          @for (item of basket(); track item.itemId) {
+          @for (item of basket()!.items; track item.itemId) {
             <li class="basket-item">
               <span class="basket-item__name">{{ item.name }}</span>
-              <span class="basket-item__price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price } }}</span>
+              @if (item.price != null) {
+                <span class="basket-item__price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price } }}</span>
+              } @else {
+                <span class="basket-item__price">{{ 'volunteer.pos.basket.partOfLot' | translate }}</span>
+              }
+              <button
+                type="button"
+                mat-icon-button
+                class="basket-item__remove"
+                [attr.aria-label]="'volunteer.pos.basket.remove' | translate: { name: item.name }"
+                (click)="removeItem(item.itemId)">
+                <mat-icon>close</mat-icon>
+              </button>
             </li>
           }
         </ul>
       }
+      <div class="basket-total">{{ 'volunteer.pos.basket.total' | translate: { total: basket()?.total ?? 0 } }}</div>
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        class="basket-validate"
+        [disabled]="!basket() || basket()!.items.length === 0"
+        (click)="openPaymentDialog()">
+        {{ 'volunteer.pos.basket.validate' | translate }}
+      </button>
     </div>
   </div>
 </div>

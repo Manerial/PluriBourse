@@ -3,6 +3,7 @@ package org.pluribourse.domain.item.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.pluribourse.domain.edition.entity.*;
+import org.pluribourse.domain.pos.entity.*;
 import org.pluribourse.domain.seller.entity.*;
 
 import java.math.*;
@@ -45,6 +46,10 @@ public class Item {
 
     @Column(nullable = false)
     private boolean sold;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sale_id")
+    private Sale sale;
 
     @Column(length = 500)
     private String comment;

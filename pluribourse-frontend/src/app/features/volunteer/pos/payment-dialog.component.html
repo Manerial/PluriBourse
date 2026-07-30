@@ -1,0 +1,70 @@
+<app-dialog-shell [title]="'volunteer.pos.payment.title' | translate" (close)="cancel()">
+  <div class="recap">
+    <span class="recap__title" id="dialog-desc">{{ 'volunteer.pos.payment.recap.title' | translate }}</span>
+    @for (item of data.items; track item.itemId) {
+      <div class="recap__row">
+        <span class="recap__row-name">{{ item.name }}</span>
+        @if (item.price != null) {
+          <span class="recap__row-price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price } }}</span>
+        } @else {
+          <span class="recap__row-price">{{ 'volunteer.pos.basket.partOfLot' | translate }}</span>
+        }
+      </div>
+    }
+    <div class="recap__divider"></div>
+    <div class="recap__total-row">
+      <span class="recap__total-label">{{ 'volunteer.pos.payment.recap.total' | translate }}</span>
+      <span class="recap__total-amount">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: data.total } }}</span>
+    </div>
+  </div>
+
+  <div class="payment-method">
+    <div class="payment-method__title" id="payment-method-label">
+      {{ 'volunteer.pos.payment.method.label' | translate }}
+    </div>
+    <mat-radio-group
+      aria-labelledby="payment-method-label"
+      class="payment-method__group"
+      [value]="paymentMethod()"
+      (change)="selectMethod($event)">
+      <mat-radio-button class="payment-method__option" value="CASH" cdkFocusInitial>
+        {{ 'volunteer.pos.payment.method.cash' | translate }}
+      </mat-radio-button>
+
+      @if (paymentMethod() === 'CASH') {
+        <div class="cash-detail">
+          <mat-form-field appearance="outline" class="dialog__field">
+            <mat-label>{{ 'volunteer.pos.payment.amountGiven.label' | translate }}</mat-label>
+            <input
+              matInput
+              type="number"
+              step="0.01"
+              min="0"
+              (input)="onAmountGivenChange($event)"
+              (keydown.enter)="onAmountGivenEnter($event)" />
+          </mat-form-field>
+          <p class="cash-detail__note">{{ 'volunteer.pos.payment.amountGiven.note' | translate }}</p>
+          @if (changeDue() !== null) {
+            <p class="cash-detail__change">{{ 'volunteer.pos.payment.change' | translate: { amount: changeDue() } }}</p>
+          }
+        </div>
+      }
+
+      <mat-radio-button class="payment-method__option" value="CHECK">
+        {{ 'volunteer.pos.payment.method.check' | translate }}
+      </mat-radio-button>
+      <mat-radio-button class="payment-method__option" value="CARD">
+        {{ 'volunteer.pos.payment.method.card' | translate }}
+      </mat-radio-button>
+    </mat-radio-group>
+  </div>
+
+  <div class="dialog__actions">
+    <button type="button" mat-button (click)="cancel()">
+      {{ 'common.dialog.cancel' | translate }}
+    </button>
+    <button #confirmButton type="button" mat-flat-button color="primary" [disabled]="confirmDisabled()" (click)="confirm()">
+      {{ 'common.dialog.confirm' | translate }}
+    </button>
+  </div>
+</app-dialog-shell>

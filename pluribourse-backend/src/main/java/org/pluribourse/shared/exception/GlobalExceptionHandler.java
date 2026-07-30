@@ -3,6 +3,7 @@ package org.pluribourse.shared.exception;
 import jakarta.servlet.http.*;
 import jakarta.validation.*;
 import org.jspecify.annotations.*;
+import org.pluribourse.domain.pos.exception.BasketValidationConflictException;
 import org.springframework.http.*;
 import org.springframework.web.bind.*;
 import org.springframework.web.bind.annotation.*;
@@ -38,13 +39,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(pd);
     }
 
+    @ExceptionHandler(BasketValidationConflictException.class)
+    public ResponseEntity<ProblemDetail> handleBasketValidationConflict(
+            BasketValidationConflictException ex, HttpServletRequest request) {
+        ProblemDetail pd = buildBaseProblemDetail(ex, request);
+        pd.setProperty("conflictingItems", ex.getConflictingItems());
+        return ResponseEntity.status(ex.getStatus()).body(pd);
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ProblemDetail> handleBusiness(
             BusinessException ex, HttpServletRequest request) {
+        return ResponseEntity.status(ex.getStatus()).body(buildBaseProblemDetail(ex, request));
+    }
+
+    private ProblemDetail buildBaseProblemDetail(BusinessException ex, HttpServletRequest request) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
         pd.setType(URI.create("https://pluribourse/errors/" + ex.getErrorCode()));
         pd.setInstance(URI.create(request.getRequestURI()));
-        return ResponseEntity.status(ex.getStatus()).body(pd);
+        return pd;
     }
 
     @ExceptionHandler(IllegalStateException.class)

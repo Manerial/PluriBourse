@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="022-items-sale-fk-set-null" author="pluribourse">
+        <!-- fk_sales_edition (021) cascades on edition deletion; without this, that cascade
+             would hit the default RESTRICT on items.sale_id and fail whenever the edition being
+             deleted has any completed sale. items.sale_id stays nullable and un-cascaded on
+             purpose (a Sale being removed must never delete the Items it sold) — SET NULL just
+             clears the now-dangling reference instead of blocking the edition deletion. -->
+        <dropForeignKeyConstraint baseTableName="items" constraintName="fk_items_sale"/>
+        <addForeignKeyConstraint baseTableName="items" baseColumnNames="sale_id"
+                                  constraintName="fk_items_sale"
+                                  referencedTableName="sales" referencedColumnNames="id"
+                                  onDelete="SET NULL"/>
+    </changeSet>
+
+</databaseChangeLog>

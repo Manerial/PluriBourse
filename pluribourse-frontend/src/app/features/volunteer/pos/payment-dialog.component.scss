@@ -1,0 +1,104 @@
+.recap {
+  background: var(--mat-sys-surface-variant);
+  border-radius: var(--pb-rounded-md);
+  padding: var(--pb-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-xs);
+  margin-bottom: var(--pb-space-lg);
+
+  &__title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mat-sys-on-surface-variant);
+    margin-bottom: var(--pb-space-xs);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: var(--pb-space-sm);
+  }
+
+  &__row-name {
+    font-size: 13px;
+    color: var(--mat-sys-on-surface);
+    flex: 1;
+  }
+
+  &__row-price {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    white-space: nowrap;
+  }
+
+  &__divider {
+    height: 1px;
+    background: var(--mat-sys-outline-variant);
+    margin: var(--pb-space-xs) 0;
+  }
+
+  &__total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__total-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__total-amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--mat-sys-primary);
+  }
+}
+
+.payment-method {
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    margin-bottom: var(--pb-space-sm);
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pb-space-sm);
+  }
+
+  &__option {
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--pb-rounded-md);
+    padding: var(--pb-space-sm) var(--pb-space-md);
+  }
+}
+
+.cash-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-xs);
+  padding: var(--pb-space-sm) var(--pb-space-md);
+  background: var(--mat-sys-surface-variant);
+  border-radius: var(--pb-rounded-md);
+
+  &__note {
+    margin: 0;
+    font-size: 11px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__change {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--mat-sys-primary);
+  }
+}

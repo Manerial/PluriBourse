@@ -403,12 +403,35 @@
       "basket": {
         "title": "Panier",
         "empty": "Aucun article scanné.",
-        "priceFormat": "{{ price }} €"
+        "priceFormat": "{{ price }} €",
+        "partOfLot": "Fait partie d'un lot",
+        "remove": "Retirer {{ name }}",
+        "total": "Total : {{ total }} €",
+        "validate": "Valider la transaction"
+      },
+      "payment": {
+        "title": "Valider la transaction",
+        "recap": {
+          "title": "Récapitulatif",
+          "total": "Total à encaisser"
+        },
+        "method": {
+          "label": "Moyen de paiement",
+          "cash": "Espèces",
+          "check": "Chèque",
+          "card": "Carte bancaire"
+        },
+        "amountGiven": {
+          "label": "Somme remise (optionnel)",
+          "note": "Si vous ne renseignez pas ce champ, le montant exact est supposé."
+        },
+        "change": "Monnaie à rendre : {{ amount }} €"
       },
       "error": {
         "alreadySold": "Article déjà vendu sur un autre poste.",
         "notFound": "Article introuvable.",
-        "generic": "Impossible de scanner l'article."
+        "generic": "Impossible de scanner l'article.",
+        "conflict": "Articles déjà vendus sur un autre poste : {{ names }}"
       },
       "warning": {
         "incomplete": "Article incomplet : {{ comment }}",

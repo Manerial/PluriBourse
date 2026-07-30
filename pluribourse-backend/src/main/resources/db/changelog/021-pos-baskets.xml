@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="021-pos-baskets" author="pluribourse">
+        <createTable tableName="sales">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="edition_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_sales_edition"
+                             references="editions(id)" deleteCascade="true"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_sales_user" references="users(id)"/>
+            </column>
+            <column name="payment_method" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount_given" type="DECIMAL(10,2)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sold_at" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addColumn tableName="items">
+            <column name="sale_id" type="BIGINT">
+                <constraints nullable="true" foreignKeyName="fk_items_sale" references="sales(id)"/>
+            </column>
+        </addColumn>
+
+        <createTable tableName="baskets">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="edition_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_baskets_edition"
+                             references="editions(id)" deleteCascade="true"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_baskets_user" references="users(id)"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="baskets" columnNames="edition_id, user_id"
+                              constraintName="uk_baskets_edition_user"/>
+
+        <createTable tableName="basket_items">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="basket_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_basket_items_basket"
+                             references="baskets(id)" deleteCascade="true"/>
+            </column>
+            <column name="item_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_basket_items_item" references="items(id)"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="basket_items" columnNames="basket_id, item_id"
+                              constraintName="uk_basket_items_basket_item"/>
+    </changeSet>
+
+</databaseChangeLog>

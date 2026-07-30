@@ -31,6 +31,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--pb-space-sm);
   padding: var(--pb-space-sm) var(--pb-space-md);
   background: var(--mat-sys-surface-variant);
   border-radius: var(--pb-rounded-md);
@@ -39,10 +40,29 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--mat-sys-on-surface);
+    flex: 1;
   }
 
   &__price {
     font-size: 14px;
     color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
   }
+
+  &__remove {
+    flex-shrink: 0;
+  }
+}
+
+.basket-total {
+  margin-top: var(--pb-space-md);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--mat-sys-on-surface);
+  text-align: right;
+}
+
+.basket-validate {
+  width: 100%;
+  margin-top: var(--pb-space-sm);
 }

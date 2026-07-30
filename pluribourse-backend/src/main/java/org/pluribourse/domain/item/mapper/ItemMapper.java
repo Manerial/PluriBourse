@@ -26,6 +26,7 @@ public interface ItemMapper {
     @Mapping(target = "lot", ignore = true)
     @Mapping(target = "tableNumber", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "sale", ignore = true)
     Item toEntity(CreateItemDto dto);
 
     @Mapping(target = "barcode", source = "formattedBarcode")
@@ -47,5 +48,6 @@ public interface ItemMapper {
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "incomplete", ignore = true)
     @Mapping(target = "comment", ignore = true)
+    @Mapping(target = "sale", ignore = true)
     void updateEntityFromDto(CreateItemDto dto, @MappingTarget Item item);
 }

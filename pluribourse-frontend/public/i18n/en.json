@@ -403,12 +403,35 @@
       "basket": {
         "title": "Basket",
         "empty": "No item scanned yet.",
-        "priceFormat": "€{{ price }}"
+        "priceFormat": "€{{ price }}",
+        "partOfLot": "Part of a lot",
+        "remove": "Remove {{ name }}",
+        "total": "Total: €{{ total }}",
+        "validate": "Validate transaction"
+      },
+      "payment": {
+        "title": "Validate transaction",
+        "recap": {
+          "title": "Summary",
+          "total": "Total due"
+        },
+        "method": {
+          "label": "Payment method",
+          "cash": "Cash",
+          "check": "Check",
+          "card": "Card"
+        },
+        "amountGiven": {
+          "label": "Amount given (optional)",
+          "note": "If you leave this field empty, the exact amount is assumed."
+        },
+        "change": "Change due: €{{ amount }}"
       },
       "error": {
         "alreadySold": "Item already sold at another checkout.",
         "notFound": "Item not found.",
-        "generic": "Could not scan the item."
+        "generic": "Could not scan the item.",
+        "conflict": "Items already sold at another checkout: {{ names }}"
       },
       "warning": {
         "incomplete": "Incomplete item: {{ comment }}",
