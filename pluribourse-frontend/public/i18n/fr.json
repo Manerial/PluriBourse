@@ -394,6 +394,26 @@
         "title": "Réimprimer le bordereau ?",
         "description": "Le bordereau de dépôt sera régénéré et renvoyé à l'imprimante A4. Continuer ?"
       }
+    },
+    "pos": {
+      "scanner": {
+        "placeholder": "Scanner ou saisir un code-barres",
+        "ariaLabel": "Scanner ou saisir un code-barres"
+      },
+      "basket": {
+        "title": "Panier",
+        "empty": "Aucun article scanné.",
+        "priceFormat": "{{ price }} €"
+      },
+      "error": {
+        "alreadySold": "Article déjà vendu sur un autre poste.",
+        "notFound": "Article introuvable.",
+        "generic": "Impossible de scanner l'article."
+      },
+      "warning": {
+        "incomplete": "Article incomplet : {{ comment }}",
+        "alreadyInBasket": "Cet article est déjà dans le panier."
+      }
     }
   },
   "admin": {

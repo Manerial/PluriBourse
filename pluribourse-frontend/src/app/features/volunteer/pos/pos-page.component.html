@@ -1,0 +1,27 @@
+<div class="pos-page">
+  <app-scanner-input (barcodeScanned)="onScan($event)" />
+
+  @if (lastScanIssue(); as issue) {
+    <app-notification-inline [message]="issue.message" [variant]="issue.variant" />
+  }
+
+  <div class="card basket-card">
+    <div class="card__header">
+      <h2 class="card__title">{{ 'volunteer.pos.basket.title' | translate }}</h2>
+    </div>
+    <div class="card__body">
+      @if (basket().length === 0) {
+        <p class="basket-empty">{{ 'volunteer.pos.basket.empty' | translate }}</p>
+      } @else {
+        <ul class="basket-list">
+          @for (item of basket(); track item.itemId) {
+            <li class="basket-item">
+              <span class="basket-item__name">{{ item.name }}</span>
+              <span class="basket-item__price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price } }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</div>

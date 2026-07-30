@@ -394,6 +394,26 @@
         "title": "Reprint the deposit slip?",
         "description": "The deposit slip will be regenerated and resent to the A4 printer. Continue?"
       }
+    },
+    "pos": {
+      "scanner": {
+        "placeholder": "Scan or enter a barcode",
+        "ariaLabel": "Scan or enter a barcode"
+      },
+      "basket": {
+        "title": "Basket",
+        "empty": "No item scanned yet.",
+        "priceFormat": "€{{ price }}"
+      },
+      "error": {
+        "alreadySold": "Item already sold at another checkout.",
+        "notFound": "Item not found.",
+        "generic": "Could not scan the item."
+      },
+      "warning": {
+        "incomplete": "Incomplete item: {{ comment }}",
+        "alreadyInBasket": "This item is already in the basket."
+      }
     }
   },
   "admin": {

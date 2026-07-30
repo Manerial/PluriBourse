@@ -959,6 +959,8 @@ afin de toujours savoir quelle interface utiliser sans recharger manuellement la
 
 ### Story 2.7 : Clôture de l'édition & Archivage de l'édition
 
+⚠ Dépend de la Story 5.1 (flux de solde des vendeurs — statut Soldé/Non soldé, bouton « Non réclamé » et transfert en recettes association, FR-052/FR-096) et d'une story de génération du bilan d'édition PDF EN/FR (FR-013, cf. Epic 5) — ne peut pas être implémentée avant que ces deux capacités existent. Dépendance identifiée le 2026-07-30, non documentée à la création initiale de la story.
+
 En tant qu'administrateur,
 je veux clôturer officiellement une édition et optionnellement archiver ses enregistrements d'articles,
 afin que l'édition soit correctement archivée et que le stockage puisse être libéré après l'événement.
@@ -998,6 +1000,8 @@ afin que l'édition soit correctement archivée et que le stockage puisse être 
 **Alors** les métriques agrégées (total des ventes, recettes, commission) restent visibles en lecture seule (FR-059)
 
 ### Story 2.8 : Annulation du panier lors d'une transition de phase — côté serveur
+
+⚠ Dépend de la Story 4.2 (Gestion du panier & validation du paiement) qui crée l'entité panier POS — ne peut pas être implémentée avant, puisque le serveur doit pouvoir identifier des paniers actifs qui n'existent pas encore. Aucun lien avec la Story 2.7 (mécanismes indépendants). Dépendance identifiée le 2026-07-30, non documentée à la création initiale de la story.
 
 En tant qu'administrateur déclenchant une transition de phase,
 je veux que le serveur invalide automatiquement les paniers POS actifs et notifie les clients via SSE,

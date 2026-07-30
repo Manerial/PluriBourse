@@ -5,9 +5,9 @@ import { EMPTY, of } from 'rxjs';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { EditionDto, PhaseType } from '../../models/edition.model';
 import { Language } from '../../models/language.enum';
-import { depositPhaseGuard } from './deposit-phase.guard';
+import { salePhaseGuard } from './sale-phase.guard';
 
-describe('depositPhaseGuard', () => {
+describe('salePhaseGuard', () => {
   let router: Router;
   let mockEdition: ReturnType<typeof signal<EditionDto | null>>;
   let loadEdition: ReturnType<typeof vi.fn>;
@@ -40,20 +40,15 @@ describe('depositPhaseGuard', () => {
     router = TestBed.inject(Router);
   });
 
-  const runGuard = () => TestBed.runInInjectionContext(() => depositPhaseGuard({} as any, {} as any));
+  const runGuard = () => TestBed.runInInjectionContext(() => salePhaseGuard({} as any, {} as any));
 
-  it('allows activation when the active edition is in the Deposit phase', async () => {
-    mockEdition.set(edition('DEPOSIT'));
-    expect(await runGuard()).toBe(true);
-  });
-
-  it('allows activation when the active edition is in the Post-vente phase', async () => {
-    mockEdition.set(edition('POST_SALE'));
-    expect(await runGuard()).toBe(true);
-  });
-
-  it('redirects to /404 when the active edition is in another phase', async () => {
+  it('allows activation when the active edition is in the Sale phase', async () => {
     mockEdition.set(edition('SALE'));
+    expect(await runGuard()).toBe(true);
+  });
+
+  it('redirects to /404 when the active edition is in the Deposit phase', async () => {
+    mockEdition.set(edition('DEPOSIT'));
     const result = await runGuard();
     expect(result).toBeInstanceOf(UrlTree);
     expect(router.serializeUrl(result as UrlTree)).toBe('/404');

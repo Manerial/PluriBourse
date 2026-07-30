@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-07-29"  # Story 6-1 : catalogue d'articles filtrable/triable — revue de code terminée (bmad-code-review) : 1 decision-needed résolue (pivot de scope vers édition active uniquement, consultation des éditions passées reportée à une nouvelle story), 10 patch appliqués, 1 defer, 3 rejetés comme bruit — ARCH-005 corrigé en amont (JPageFlow 1.7.0) — 328/328 backend, 462/462 frontend, aucune régression — statut done. Sprint change proposal 2026-07-29 : nouvelle story 6-2 (consultation catalogue édition archivée, FR-102), dépend de la Story 2.7 — ajoutée en backlog.
+last_updated: "2026-07-30"  # Story 6-1 : catalogue d'articles filtrable/triable — revue de code terminée (bmad-code-review) : 1 decision-needed résolue (pivot de scope vers édition active uniquement, consultation des éditions passées reportée à une nouvelle story), 10 patch appliqués, 1 defer, 3 rejetés comme bruit — ARCH-005 corrigé en amont (JPageFlow 1.7.0) — 328/328 backend, 462/462 frontend, aucune régression — statut done. Sprint change proposal 2026-07-29 : nouvelle story 6-2 (consultation catalogue édition archivée, FR-102), dépend de la Story 2.7 — ajoutée en backlog. 2026-07-30 : en cherchant la prochaine story à développer, dépendance cachée découverte sur 2.7 (CA suppose Story 5.1 solde vendeurs + génération bilan d'édition PDF, toutes deux backlog) — documentée sur 2.7 dans epics.md et sprint-status.yaml, aucun artefact de planification restructuré au-delà de cette documentation. Dépendance cachée également découverte sur 2.8 (CA suppose l'entité panier POS créée par la Story 4.2, Epic 4 non démarré) — documentée de la même façon, aucun lien entre 2.7 et 2.8 elles-mêmes. Story 4-1 (composant scanner & scan d'articles) créée : première story de l'Epic 4 (Point de vente), épic passé en in-progress. Story 4-1 implémentée puis revue en 2 passes (bmad-code-review) : nouveau package backend `pos` (scan uniquement), route `/volunteer/pos` + garde de phase Vente côté front. Round 1 : 2 decision-needed résolues, 8 patch appliqués, 2 defer. Round 2 (diff patché) : 2 des correctifs du round 1 avaient eux-mêmes introduit de nouveaux défauts (collage non câblé, buffer trop agressivement vidé) — 7 patch supplémentaires appliqués (collage réellement fonctionnel, vidage du buffer découplé du re-focus, protection anti-vol-de-focus étendue aux widgets ARIA, garde de réentrance sur le scan, logique de garde de phase partagée extraite, Javadoc corrigée, track par itemId), 2 defer supplémentaires — 340/340 backend, 495/495 frontend, aucune régression — statut done (confirmé).
 project: PluriBourse
 project_key: NOKEY
 tracking_system: file-system
@@ -66,7 +66,16 @@ development_status:
   2-4-dates-debut-fin-edition: done
   2-5-categories-de-ledition-correspondance-des-tables: done
   2-6-notification-de-phase-en-temps-reel-via-sse: done
+  # Dépendance cachée identifiée le 2026-07-30 (non documentée à la création
+  # initiale) : les CA de 2.7 supposent le statut Soldé/Non soldé et le bouton
+  # « Non réclamé » (Story 5.1, backlog) ainsi que la génération du bilan
+  # d'édition PDF EN/FR (FR-013, Epic 5). Ne peut pas démarrer avant 5.1
+  # (et la story de génération du bilan d'édition).
   2-7-cloture-de-ledition-archivage-de-ledition: backlog
+  # Dépendance cachée identifiée le 2026-07-30 (non documentée à la création
+  # initiale) : les CA de 2.8 supposent l'existence d'une entité panier POS
+  # active, créée par la Story 4.2 (Epic 4, backlog, non démarré). Aucun lien
+  # avec 2.7 (mécanismes indépendants). Ne peut pas démarrer avant 4.1 → 4.2.
   2-8-annulation-du-panier-lors-dune-transition-de-phase-cote-serveur: backlog
   epic-2-retrospective: optional
 
@@ -91,8 +100,8 @@ development_status:
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────
-  epic-4: backlog
-  4-1-composant-scanner-scan-darticles: backlog
+  epic-4: in-progress
+  4-1-composant-scanner-scan-darticles: done
   4-2-gestion-du-panier-validation-du-paiement: backlog
   4-3-gestion-des-lots-au-pos: backlog
   4-4-securite-de-la-concurrence-multi-postes: backlog

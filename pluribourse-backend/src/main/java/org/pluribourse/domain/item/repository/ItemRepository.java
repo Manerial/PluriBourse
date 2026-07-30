@@ -70,4 +70,15 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
      */
     @Query("SELECT i FROM Item i JOIN FETCH i.sellerProfile JOIN FETCH i.category LEFT JOIN FETCH i.lot WHERE i.edition.id = :editionId ORDER BY i.id ASC")
     List<Item> findAllByEditionIdForCatalog(@Param("editionId") Long editionId);
+
+    /**
+     * Resolves a POS scan (story 4.1): the barcode is never persisted, only derivable from
+     * {@code sellerProfile.sellerNumber} (scoped per edition) + {@code itemNumber}. No
+     * {@code JOIN FETCH} on {@code sellerProfile} — {@link org.pluribourse.domain.pos.dto.ScanResultDto}
+     * never exposes seller data, so eagerly fetching it here would load an association never read.
+     */
+    @Query("SELECT i FROM Item i WHERE i.edition.id = :editionId " +
+            "AND i.sellerProfile.sellerNumber = :sellerNumber AND i.itemNumber = :itemNumber")
+    Optional<Item> findByEditionIdAndSellerNumberAndItemNumber(
+            @Param("editionId") Long editionId, @Param("sellerNumber") int sellerNumber, @Param("itemNumber") int itemNumber);
 }

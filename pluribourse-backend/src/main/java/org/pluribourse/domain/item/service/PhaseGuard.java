@@ -5,8 +5,8 @@ import org.pluribourse.domain.item.exception.*;
 
 /**
  * Items and lots can only be created, modified or deleted while the edition is in the
- * Deposit phase (FR-024). Shared between ItemService and LotService so the rule and its
- * error type (item-modification-locked) are defined once.
+ * Deposit phase (FR-024). Shared between ItemService, LotService and PosScanService so the
+ * phase rules and their error types are defined once.
  */
 public final class PhaseGuard {
 
@@ -26,6 +26,17 @@ public final class PhaseGuard {
     public static void requireDepositOrPostSalePhase(Edition edition) {
         if (edition.getPhase() != PhaseType.DEPOSIT && edition.getPhase() != PhaseType.POST_SALE) {
             throw new DepositReprintNotAllowedException();
+        }
+    }
+
+    /**
+     * POS scanning (story 4.1) is only allowed while the edition is in the Sale phase — a
+     * server-side mirror of the frontend's sale-phase route guard, since the client is never
+     * trusted alone.
+     */
+    public static void requireSalePhase(Edition edition) {
+        if (edition.getPhase() != PhaseType.SALE) {
+            throw new SalePhaseRequiredException();
         }
     }
 }
