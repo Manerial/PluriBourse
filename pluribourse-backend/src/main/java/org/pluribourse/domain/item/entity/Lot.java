@@ -6,6 +6,7 @@ import org.pluribourse.domain.edition.entity.*;
 import org.pluribourse.domain.seller.entity.*;
 
 import java.math.*;
+import java.util.*;
 
 @Entity
 @Table(name = "lots")
@@ -31,6 +32,13 @@ public class Lot {
 
     @Column(name = "global_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal globalPrice;
+
+    // Read side of Item.lot (mappedBy — no new FK, items.lot_id already owns the relationship).
+    // Ordered by id, matching ItemRepository#findAllByLotIdOrderById, the query this replaces at
+    // call sites that switch to it.
+    @OneToMany(mappedBy = "lot", fetch = FetchType.EAGER)
+    @OrderBy("id ASC")
+    private List<Item> items = new ArrayList<>();
 
     @Version
     private Long version;

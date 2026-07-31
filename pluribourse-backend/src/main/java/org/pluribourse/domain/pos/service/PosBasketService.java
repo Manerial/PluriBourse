@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.edition.entity.Edition;
 import org.pluribourse.domain.edition.service.EditionService;
 import org.pluribourse.domain.item.entity.Item;
-import org.pluribourse.domain.item.entity.Lot;
 import org.pluribourse.domain.item.repository.ItemRepository;
+import org.pluribourse.domain.item.service.ItemPricing;
 import org.pluribourse.domain.item.service.PhaseGuard;
 import org.pluribourse.domain.pos.dto.BasketDto;
 import org.pluribourse.domain.pos.dto.ConflictingItemDto;
@@ -35,9 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Story 4.2 — persisted POS basket (replaces the client-only basket from story 4.1's scanner,
@@ -128,7 +126,7 @@ public class PosBasketService {
             throw new BasketValidationConflictException(alreadySold);
         }
 
-        BigDecimal total = computeTotal(items);
+        BigDecimal total = ItemPricing.computeTotal(items);
         if (dto.paymentMethod() == PaymentMethod.CASH
                 && dto.amountGiven() != null
                 && dto.amountGiven().compareTo(total) < 0) {
@@ -198,31 +196,10 @@ public class PosBasketService {
     private BasketDto toDto(Basket basket) {
         List<Item> items = basketItemsOf(basket);
         List<ScanResultDto> itemDtos = items.stream().map(scanResultMapper::toDto).toList();
-        return new BasketDto(basket.getId(), itemDtos, computeTotal(items));
+        return new BasketDto(basket.getId(), itemDtos, ItemPricing.computeTotal(items));
     }
 
     private List<Item> basketItemsOf(Basket basket) {
         return basketItemRepository.findAllByBasketIdOrderById(basket.getId()).stream().map(BasketItem::getItem).toList();
-    }
-
-    /**
-     * A lot item never carries its own {@code price} (see {@code LotService}) — its {@code Lot}
-     * carries a single global price that must be counted exactly once per distinct lot present in
-     * the basket, however many of its items were individually scanned.
-     */
-    private BigDecimal computeTotal(List<Item> items) {
-        BigDecimal total = BigDecimal.ZERO;
-        Set<Long> countedLotIds = new HashSet<>();
-        for (Item item : items) {
-            Lot lot = item.getLot();
-            if (lot != null) {
-                if (countedLotIds.add(lot.getId())) {
-                    total = total.add(lot.getGlobalPrice());
-                }
-            } else {
-                total = total.add(item.getPrice());
-            }
-        }
-        return total;
     }
 }

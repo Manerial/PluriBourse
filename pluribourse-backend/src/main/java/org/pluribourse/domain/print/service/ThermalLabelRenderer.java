@@ -1,17 +1,15 @@
 package org.pluribourse.domain.print.service;
 
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.oned.Code128Writer;
-import lombok.RequiredArgsConstructor;
-import org.pluribourse.domain.item.entity.Item;
-import org.springframework.context.MessageSource;
-import org.springframework.stereotype.Component;
+import com.google.zxing.common.*;
+import com.google.zxing.oned.*;
+import lombok.*;
+import org.pluribourse.domain.item.entity.*;
+import org.springframework.context.*;
+import org.springframework.stereotype.*;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
+import java.io.*;
+import java.nio.charset.*;
+import java.util.*;
 
 /**
  * Renders thermal roll content as raw ESC/POS bytes (FR-026/FR-027/FR-030/FR-032/FR-045). Text is
@@ -52,12 +50,8 @@ public class ThermalLabelRenderer {
 
     /**
      * A single article label — never mentions the seller's name (RGPD, FR-027).
-     *
-     * @param sellerItems all of the seller's currently-registered items, from the same snapshot
-     *                    used to build the whole print job — used to compute a lot item's X/N
-     *                    position (AC5) without a fresh DB query. Ignored for non-lot items.
      */
-    public byte[] renderLabel(Item item, List<Item> sellerItems, int printerWidthMm, Locale locale) {
+    public byte[] renderLabel(Item item, int printerWidthMm, Locale locale) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         writeBytes(out, INIT);
         writeBytes(out, SELECT_CODEPAGE_858);
@@ -66,13 +60,13 @@ public class ThermalLabelRenderer {
         writeLine(out, item.getEdition().getName());
         writeBytes(out, LINE_FEED);
         writeLine(out, "--- " + messageSource.getMessage("print.label.category", null, locale) + " ---");
-
-        if (item.getLot() != null) {
+        Lot lot = item.getLot();
+        if (lot != null) {
             writeLine(out, item.getName());
-            String globalPrice = String.format(Locale.ROOT, "%.2f", item.getLot().getGlobalPrice());
+            List<Item> lotItems = lot.getItems();
+            String globalPrice = String.format(Locale.ROOT, "%.2f", lot.getGlobalPrice());
             writeLine(out, messageSource.getMessage("print.label.lotPrice", new Object[]{globalPrice}, locale));
-            int[] position = lotPosition(item, sellerItems);
-            writeLine(out, messageSource.getMessage("print.label.lotIndivisible", new Object[]{String.valueOf(position[0]), String.valueOf(position[1])}, locale));
+            writeLine(out, messageSource.getMessage("print.label.lotIndivisible", new Object[]{String.valueOf(lotItems.indexOf(item) + 1), String.valueOf(lotItems.size())}, locale));
         } else {
             String price = String.format(Locale.ROOT, "%.2f", item.getPrice());
             writeLine(out, messageSource.getMessage("print.label.itemPrice", new Object[]{item.getName(), price}, locale));
@@ -98,29 +92,6 @@ public class ThermalLabelRenderer {
      */
     public byte[] articleSeparator() {
         return PARTIAL_CUT.clone();
-    }
-
-    /**
-     * [X, N] — X = 1-based position of this item among its lot siblings in creation order, N =
-     * sibling count (FR-045). Computed from the already-loaded {@code sellerItems} snapshot
-     * (every lot sibling belongs to the same seller) rather than a fresh repository query: the
-     * print job runs on the queue's consumer thread, detached from the original request, so
-     * re-querying here would both cost one query per lot item and risk failing outright if a
-     * sibling was deleted between deposit validation and the (possibly delayed) actual print.
-     */
-    private static int[] lotPosition(Item item, List<Item> sellerItems) {
-        List<Item> siblings = sellerItems.stream()
-                .filter(i -> item.getLot().getId().equals(i.getLot() != null ? i.getLot().getId() : null))
-                .sorted(Comparator.comparing(Item::getId))
-                .toList();
-        int position = 1;
-        for (Item sibling : siblings) {
-            if (sibling.getId().equals(item.getId())) {
-                break;
-            }
-            position++;
-        }
-        return new int[]{position, siblings.size()};
     }
 
     private static int printAreaDots(int printerWidthMm) {

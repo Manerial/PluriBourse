@@ -77,8 +77,8 @@ describe('EditionCategoriesComponent', () => {
 
   it('loads categories on init', () => {
     expect(categoryServiceMock.getCategories).toHaveBeenCalledWith(1);
-    expect(component.categories).toHaveLength(1);
-    expect(component.categories[0].name).toBe('Jouets');
+    expect(component.categories()).toHaveLength(1);
+    expect(component.categories()[0].name).toBe('Jouets');
   });
 
   it('loads closed editions on init (excluding current)', () => {
@@ -110,17 +110,17 @@ describe('EditionCategoriesComponent', () => {
   });
 
   it('addCategory pushes a new empty row', () => {
-    const before = component.categories.length;
+    const before = component.categories().length;
     component.addCategory();
-    expect(component.categories.length).toBe(before + 1);
-    expect(component.categories[before].name).toBe('');
+    expect(component.categories().length).toBe(before + 1);
+    expect(component.categories()[before].name).toBe('');
   });
 
   it('removeCategory removes the row at given index', () => {
     component.addCategory();
-    const before = component.categories.length;
+    const before = component.categories().length;
     component.removeCategory(0);
-    expect(component.categories.length).toBe(before - 1);
+    expect(component.categories().length).toBe(before - 1);
   });
 
   it('closedEditions is empty when no closed editions exist', async () => {
@@ -136,52 +136,52 @@ describe('EditionCategoriesComponent', () => {
   });
 
   it('onSave calls saveCategories with parsed tableNumbers and shows success toast', async () => {
-    component.categories = [{ id: null, name: 'Jouets', tableInput: '1, 2', rowError: null }];
+    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1, 2', rowError: null }]);
     await component.onSave();
     expect(categoryServiceMock.saveCategories).toHaveBeenCalledWith(1, [
       { id: null, name: 'Jouets', tableNumbers: [1, 2] },
     ]);
     expect(toastMock.showSuccess).toHaveBeenCalled();
-    expect(component.categories[0].name).toBe('Jouets');
+    expect(component.categories()[0].name).toBe('Jouets');
   });
 
   it('onSave blocks save and sets nameRequired error when name is blank', async () => {
-    component.categories = [{ id: null, name: '', tableInput: '1, 2', rowError: null }];
+    component.categories.set([{ id: null, name: '', tableInput: '1, 2', rowError: null }]);
     await component.onSave();
     expect(categoryServiceMock.saveCategories).not.toHaveBeenCalled();
-    expect(component.categories[0].rowError).toBe('category.row.error.nameRequired');
+    expect(component.categories()[0].rowError).toBe('category.row.error.nameRequired');
   });
 
   it('onSave blocks save and sets tableRequired error when no tables assigned', async () => {
-    component.categories = [{ id: null, name: 'Jouets', tableInput: '', rowError: null }];
+    component.categories.set([{ id: null, name: 'Jouets', tableInput: '', rowError: null }]);
     await component.onSave();
     expect(categoryServiceMock.saveCategories).not.toHaveBeenCalled();
-    expect(component.categories[0].rowError).toBe('category.row.error.tableRequired');
+    expect(component.categories()[0].rowError).toBe('category.row.error.tableRequired');
   });
 
   it('onSave shows error toast when service fails', async () => {
     categoryServiceMock.saveCategories.mockReturnValue(throwError(() => new Error('server')));
-    component.categories = [{ id: null, name: 'Jouets', tableInput: '1', rowError: null }];
+    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1', rowError: null }]);
     await component.onSave();
     expect(toastMock.showError).toHaveBeenCalled();
   });
 
   it('onSave closes the dialog after a successful save', async () => {
     categoryServiceMock.saveCategories.mockReturnValue(of([MOCK_CATEGORY]));
-    component.categories = [{ id: null, name: 'Jouets', tableInput: '1, 2', rowError: null }];
+    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1, 2', rowError: null }]);
     await component.onSave();
     expect(dialogRefMock.close).toHaveBeenCalledOnce();
   });
 
   it('onSave does not close the dialog when the service fails', async () => {
     categoryServiceMock.saveCategories.mockReturnValue(throwError(() => new Error('server')));
-    component.categories = [{ id: null, name: 'Jouets', tableInput: '1', rowError: null }];
+    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1', rowError: null }]);
     await component.onSave();
     expect(dialogRefMock.close).not.toHaveBeenCalled();
   });
 
   it('onSave does not close the dialog when validation fails', async () => {
-    component.categories = [{ id: null, name: '', tableInput: '1, 2', rowError: null }];
+    component.categories.set([{ id: null, name: '', tableInput: '1, 2', rowError: null }]);
     await component.onSave();
     expect(dialogRefMock.close).not.toHaveBeenCalled();
   });
@@ -190,8 +190,8 @@ describe('EditionCategoriesComponent', () => {
     component.onSelectSource(2);
     await component.onCopy();
     expect(categoryServiceMock.copyFromEdition).toHaveBeenCalledWith(1, 2);
-    expect(component.categories).toHaveLength(1);
-    expect(component.categories[0].name).toBe('Jouets');
+    expect(component.categories()).toHaveLength(1);
+    expect(component.categories()[0].name).toBe('Jouets');
     expect(toastMock.showSuccess).toHaveBeenCalled();
   });
 

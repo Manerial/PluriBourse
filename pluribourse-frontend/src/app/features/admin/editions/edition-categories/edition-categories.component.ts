@@ -65,7 +65,7 @@ export class EditionCategoriesComponent implements OnInit {
     return phase ? this.translate.instant('edition.phase.' + phase) : '';
   });
 
-  categories: EditableCategoryRow[] = [];
+  readonly categories = signal<EditableCategoryRow[]>([]);
 
   private editionId = 0;
 
@@ -84,7 +84,7 @@ export class EditionCategoriesComponent implements OnInit {
         firstValueFrom(this.editionService.getAll()),
       ]);
       this.edition.set(ed);
-      this.categories = cats.map(c => this.toRow(c));
+      this.categories.set(cats.map(c => this.toRow(c)));
       this.closedEditions.set(allEditions.filter(e => e.phase === 'CLOSED' && e.id !== this.editionId));
     } catch {
       this.error.set('category.load.error');
@@ -94,11 +94,11 @@ export class EditionCategoriesComponent implements OnInit {
   }
 
   addCategory(): void {
-    this.categories = [...this.categories, { id: null, name: '', tableInput: '', rowError: null }];
+    this.categories.update(rows => [...rows, { id: null, name: '', tableInput: '', rowError: null }]);
   }
 
   removeCategory(index: number): void {
-    this.categories = this.categories.filter((_, i) => i !== index);
+    this.categories.update(rows => rows.filter((_, i) => i !== index));
   }
 
   async onSave(): Promise<void> {
@@ -110,13 +110,13 @@ export class EditionCategoriesComponent implements OnInit {
     }
     this.isSaving.set(true);
     try {
-      const dtos: EditionCategoryDto[] = this.categories.map(row => ({
+      const dtos: EditionCategoryDto[] = this.categories().map(row => ({
         id: row.id,
         name: row.name,
         tableNumbers: this.parseTableInput(row.tableInput),
       }));
       const saved = await firstValueFrom(this.categoryService.saveCategories(this.editionId, dtos));
-      this.categories = saved.map(c => this.toRow(c));
+      this.categories.set(saved.map(c => this.toRow(c)));
       this.toast.showSuccess(this.translate.instant('category.save.success'));
       this.dialogRef.close();
     } catch {
@@ -134,7 +134,7 @@ export class EditionCategoriesComponent implements OnInit {
     this.isSaving.set(true);
     try {
       const copied = await firstValueFrom(this.categoryService.copyFromEdition(this.editionId, sourceId));
-      this.categories = copied.map(c => this.toRow(c));
+      this.categories.set(copied.map(c => this.toRow(c)));
       this.toast.showSuccess(this.translate.instant('category.copy.success'));
     } catch {
       this.toast.showError(this.translate.instant('category.copy.error'));
@@ -157,17 +157,19 @@ export class EditionCategoriesComponent implements OnInit {
 
   private validateRows(): boolean {
     let valid = true;
-    this.categories = this.categories.map(row => {
-      if (!row.name.trim()) {
-        valid = false;
-        return { ...row, rowError: 'category.row.error.nameRequired' };
-      }
-      if (this.parseTableInput(row.tableInput).length === 0) {
-        valid = false;
-        return { ...row, rowError: 'category.row.error.tableRequired' };
-      }
-      return { ...row, rowError: null };
-    });
+    this.categories.update(rows =>
+      rows.map(row => {
+        if (!row.name.trim()) {
+          valid = false;
+          return { ...row, rowError: 'category.row.error.nameRequired' };
+        }
+        if (this.parseTableInput(row.tableInput).length === 0) {
+          valid = false;
+          return { ...row, rowError: 'category.row.error.tableRequired' };
+        }
+        return { ...row, rowError: null };
+      })
+    );
     return valid;
   }
 

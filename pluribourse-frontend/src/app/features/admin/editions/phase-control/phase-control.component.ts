@@ -14,8 +14,7 @@ import { SkeletonRowComponent } from '../../../../shared/components/skeleton-row
 import { NotificationInlineComponent } from '../../../../shared/components/notification-inline/notification-inline.component';
 import { DialogShellComponent } from '../../../../shared/components/dialog-shell/dialog-shell.component';
 import { extractErrorType } from '../../../../shared/http-error.util';
-
-const PHASE_ORDER: PhaseType[] = ['PREPARATION', 'DEPOSIT', 'SALE', 'POST_SALE', 'CLOSED'];
+import { ALL_PHASES } from '../../../../models/active-phase.enum';
 
 export interface PhaseControlDialogData {
   editionId: number;
@@ -83,8 +82,8 @@ export class PhaseControlComponent implements OnInit {
     if (!current) {
       return null;
     }
-    const idx = PHASE_ORDER.indexOf(current);
-    return idx < PHASE_ORDER.length - 1 ? PHASE_ORDER[idx + 1] : null;
+    const idx = ALL_PHASES.indexOf(current);
+    return idx < ALL_PHASES.length - 1 ? ALL_PHASES[idx + 1] : null;
   }
 
   prevPhase(): PhaseType | null {
@@ -92,8 +91,8 @@ export class PhaseControlComponent implements OnInit {
     if (!current) {
       return null;
     }
-    const idx = PHASE_ORDER.indexOf(current);
-    return idx > 0 ? PHASE_ORDER[idx - 1] : null;
+    const idx = ALL_PHASES.indexOf(current);
+    return idx > 0 ? ALL_PHASES[idx - 1] : null;
   }
 
   confirmAdvance(): void {

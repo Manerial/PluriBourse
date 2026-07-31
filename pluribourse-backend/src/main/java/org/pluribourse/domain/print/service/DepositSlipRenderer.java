@@ -13,6 +13,7 @@ import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfStream;
 import org.openpdf.text.pdf.PdfWriter;
 import org.pluribourse.domain.item.entity.Item;
+import org.pluribourse.domain.item.service.ItemPricing;
 import org.pluribourse.domain.seller.entity.SellerProfile;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -21,10 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 /**
  * Renders the A4 deposit slip as a PDF (FR-031): every standalone item on its own line, every lot
@@ -77,7 +76,7 @@ public class DepositSlipRenderer {
             document.add(buildItemsTable(items, documentLocale));
             document.add(new Paragraph(" "));
 
-            BigDecimal total = computeTotal(items);
+            BigDecimal total = ItemPricing.computeTotal(items);
             BigDecimal net = computeNetPayout(total, commissionRate);
             document.add(new Paragraph(
                     messageSource.getMessage("print.slip.commission", new Object[]{commissionRate.toPlainString()}, documentLocale), BODY_FONT));
@@ -91,45 +90,20 @@ public class DepositSlipRenderer {
         return out.toByteArray();
     }
 
-    /**
-     * A lot is dedicated a single row keyed on {@code lot.getId()} the first time one of its
-     * member items is encountered — {@code items} is already ordered by {@code itemNumber}
-     * (see {@code ItemRepository.findAllBySellerProfileIdOrderByItemNumberAsc}), so a
-     * {@link LinkedHashSet} preserves a deterministic row order.
-     */
     private PdfPTable buildItemsTable(List<Item> items, Locale documentLocale) {
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
         table.addCell(headerCell(messageSource.getMessage("print.slip.column.item", null, documentLocale)));
         table.addCell(headerCell(messageSource.getMessage("print.slip.column.price", null, documentLocale)));
 
-        Set<Long> seenLotIds = new LinkedHashSet<>();
-        for (Item item : items) {
+        for (Item item : ItemPricing.distinctByLot(items)) {
             if (item.getLot() != null) {
-                if (!seenLotIds.add(item.getLot().getId())) {
-                    continue;
-                }
                 addRow(table, item.getLot().getName(), item.getLot().getGlobalPrice());
             } else {
                 addRow(table, item.getName(), item.getPrice());
             }
         }
         return table;
-    }
-
-    private BigDecimal computeTotal(List<Item> items) {
-        BigDecimal total = BigDecimal.ZERO;
-        Set<Long> seenLotIds = new LinkedHashSet<>();
-        for (Item item : items) {
-            if (item.getLot() != null) {
-                if (seenLotIds.add(item.getLot().getId())) {
-                    total = total.add(item.getLot().getGlobalPrice());
-                }
-            } else {
-                total = total.add(item.getPrice());
-            }
-        }
-        return total;
     }
 
     private BigDecimal computeNetPayout(BigDecimal total, BigDecimal commissionRate) {

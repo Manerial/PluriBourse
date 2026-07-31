@@ -52,7 +52,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of categories; track $index; let i = $index) {
+        @for (row of categories(); track $index; let i = $index) {
           <tr>
             <td>
               <mat-form-field appearance="outline" class="table-field" subscriptSizing="dynamic">
@@ -87,7 +87,7 @@
             }
           </tr>
         }
-        @if (categories.length === 0 && isReadOnly()) {
+        @if (categories().length === 0 && isReadOnly()) {
           <tr>
             <td colspan="2" class="empty-cell">{{ 'category.table.empty' | translate }}</td>
           </tr>

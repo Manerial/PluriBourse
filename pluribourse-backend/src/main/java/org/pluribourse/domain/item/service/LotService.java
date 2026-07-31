@@ -111,7 +111,7 @@ public class LotService {
                 .map(item -> editionScopedLookup.findCategoryInEdition(item.categoryId(), edition))
                 .toList();
 
-        List<Item> currentMembers = itemRepository.findAllByLotIdOrderById(lot.getId());
+        List<Item> currentMembers = lot.getItems();
         Map<Long, Item> currentById = currentMembers.stream().collect(Collectors.toMap(Item::getId, item -> item));
 
         // Partition submitted items: entries with a non-null id are updates to an existing member
@@ -232,7 +232,7 @@ public class LotService {
         Lot lot = repository.findById(lotId).orElseThrow(() -> new LotNotFoundException(lotId));
         PhaseGuard.requireDepositPhase(lot.getEdition());
         // fk_items_lot has no delete cascade (015-lots.xml) — members must be deleted first.
-        itemRepository.deleteAll(itemRepository.findAllByLotIdOrderById(lot.getId()));
+        itemRepository.deleteAll(lot.getItems());
         repository.delete(lot);
     }
 }

@@ -1,16 +1,13 @@
 package org.pluribourse.domain.print.service;
 
-import lombok.RequiredArgsConstructor;
-import org.pluribourse.domain.item.entity.Item;
-import org.pluribourse.domain.print.entity.PrintContentType;
-import org.pluribourse.domain.seller.entity.SellerProfile;
-import org.springframework.stereotype.Component;
+import lombok.*;
+import org.pluribourse.domain.item.entity.*;
+import org.pluribourse.domain.print.entity.*;
+import org.pluribourse.domain.seller.entity.*;
+import org.springframework.stereotype.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.List;
-import java.util.Locale;
+import java.io.*;
+import java.util.*;
 
 /**
  * Builds the single {@link PrintJob} submitted when a seller's labels are (re)printed (FR-028):
@@ -36,18 +33,21 @@ public class ThermalPrintService {
     }
 
     private void print(String printerBridgeId, String sellerFullName, String editionName, List<Item> items,
-            int printerWidthMm, Locale documentLocale) {
+                       int printerWidthMm, Locale documentLocale) {
         byte[] payload = buildPayload(sellerFullName, editionName, items, printerWidthMm, documentLocale);
         printerBridgeClient.print(printerBridgeId, PrintContentType.ESC_POS, payload);
     }
 
-    private byte[] buildPayload(String sellerFullName, String editionName, List<Item> items, int printerWidthMm,
-            Locale documentLocale) {
+    private byte[] buildPayload(String sellerFullName,
+                                String editionName,
+                                List<Item> items,
+                                int printerWidthMm,
+                                Locale documentLocale) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             baos.write(renderer.renderSellerSeparator(sellerFullName, editionName));
             for (int i = 0; i < items.size(); i++) {
-                baos.write(renderer.renderLabel(items.get(i), items, printerWidthMm, documentLocale));
+                baos.write(renderer.renderLabel(items.get(i), printerWidthMm, documentLocale));
                 if (i < items.size() - 1) {
                     baos.write(renderer.articleSeparator());
                 }

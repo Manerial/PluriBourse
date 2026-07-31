@@ -65,7 +65,7 @@ export class LoginComponent {
       }
     } catch (err) {
       const errorType = err instanceof HttpErrorResponse ? extractErrorType(err) : undefined;
-      if (errorType === 'https://pluribourse/errors/account-disabled') {
+      if (errorType?.endsWith('/account-disabled')) {
         this.error.set('account-disabled');
       } else {
         this.error.set('invalid-credentials');

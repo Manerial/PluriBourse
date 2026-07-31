@@ -21,7 +21,7 @@ import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.*;
 import org.springframework.transaction.annotation.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.math.*;
 import java.nio.charset.*;
 import java.time.*;
@@ -210,7 +210,7 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     void render_standard_label_contains_barcode_and_no_seller_name() throws Exception {
         List<Item> sellerItems = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         Item item1 = sellerItems.getFirst();
-        byte[] rawBytes = renderer.renderLabel(item1, sellerItems, 57, Locale.FRENCH);
+        byte[] rawBytes = renderer.renderLabel(item1, 57, Locale.FRENCH);
         String rendered = new String(rawBytes, LABEL_CHARSET);
 
         assertThat(rendered).contains(item1.getFormattedBarcode());
@@ -232,19 +232,19 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     void render_incomplete_label_shows_incomplete_marker() throws Exception {
         List<Item> sellerItems = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         Item incompleteItem = sellerItems.get(1);
-        String rendered = new String(renderer.renderLabel(incompleteItem, sellerItems, 57, Locale.FRENCH), LABEL_CHARSET);
+        String rendered = new String(renderer.renderLabel(incompleteItem, 57, Locale.FRENCH), LABEL_CHARSET);
         assertThat(rendered).contains("INCOMPLET");
     }
 
     @Test
     @Order(8)
-    void render_lot_label_shows_bundle_price_and_indivisible_position() throws Exception {
+    void render_lot_label_shows_bundle_price_and_indivisible_position() {
         List<Item> sellerItems = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         Item lotItem1 = sellerItems.get(2);
         Item lotItem2 = sellerItems.get(3);
 
-        String renderedFirst = new String(renderer.renderLabel(lotItem1, sellerItems, 57, Locale.FRENCH), LABEL_CHARSET);
-        String renderedSecond = new String(renderer.renderLabel(lotItem2, sellerItems, 57, Locale.FRENCH), LABEL_CHARSET);
+        String renderedFirst = new String(renderer.renderLabel(lotItem1, 57, Locale.FRENCH), LABEL_CHARSET);
+        String renderedSecond = new String(renderer.renderLabel(lotItem2, 57, Locale.FRENCH), LABEL_CHARSET);
 
         assertThat(renderedFirst).contains("Prix du lot : 12.00").contains("Lot indivisible : 1/2");
         assertThat(renderedSecond).contains("Lot indivisible : 2/2");
@@ -330,8 +330,8 @@ class ThermalLabelPrintingIT extends IntegrationTest {
         List<Item> sellerItems = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         Item item = sellerItems.getFirst();
 
-        byte[] narrow = renderer.renderLabel(item, sellerItems, 57, Locale.FRENCH);
-        byte[] wide = renderer.renderLabel(item, sellerItems, 80, Locale.FRENCH);
+        byte[] narrow = renderer.renderLabel(item, 57, Locale.FRENCH);
+        byte[] wide = renderer.renderLabel(item, 80, Locale.FRENCH);
 
         assertThat(wide.length - narrow.length).isEqualTo(1920);
     }

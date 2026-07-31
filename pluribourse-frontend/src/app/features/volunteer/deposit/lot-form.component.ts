@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
+import Big from 'big.js';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { CreateLotRequest, LotDto, UpdateLotRequest } from '../../../models/lot.model';
 import { LotService } from '../../../services/lot.service';
@@ -112,7 +113,7 @@ export class LotFormComponent {
       if (editingLot) {
         const dto: UpdateLotRequest = {
           name: raw.name.trim(),
-          globalPrice: Math.round(raw.globalPrice * 100) / 100,
+          globalPrice: new Big(raw.globalPrice).round(2).toNumber(),
           items: raw.items.map(item => ({
             id: item.id,
             categoryId: item.categoryId!,
@@ -126,7 +127,7 @@ export class LotFormComponent {
         const dto: CreateLotRequest = {
           sellerProfileId: this.sellerId(),
           name: raw.name.trim(),
-          globalPrice: Math.round(raw.globalPrice * 100) / 100,
+          globalPrice: new Big(raw.globalPrice).round(2).toNumber(),
           items: raw.items.map(item => ({
             categoryId: item.categoryId!,
             name: item.name.trim(),
@@ -173,9 +174,7 @@ export class LotFormComponent {
   }
 
   private setItemRows(rows: LotItemRow[]): void {
-    while (this.itemsFormArray.length > 0) {
-      this.itemsFormArray.removeAt(0);
-    }
+    this.itemsFormArray.clear();
     for (const row of rows) {
       this.itemsFormArray.push(this.createItemRow(row));
     }

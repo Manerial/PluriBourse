@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioChange, MatRadioModule } from '@angular/material/radio';
 import { TranslatePipe } from '@ngx-translate/core';
+import Big from 'big.js';
 import { PaymentMethod, ScanResult, ValidateBasketRequest } from '../../../models/pos.model';
 import { DialogShellComponent } from '../../../shared/components/dialog-shell/dialog-shell.component';
 
@@ -38,8 +39,7 @@ export class PaymentDialogComponent {
     if (this.paymentMethod() !== 'CASH' || given === null) {
       return null;
     }
-    // Rounded to avoid floating-point artifacts (e.g. 4.999999999999998) in a displayed amount.
-    return Math.round((given - this.data.total) * 100) / 100;
+    return new Big(given).minus(this.data.total).toNumber();
   });
 
   // A given amount below the total (including negative) must never be confirmable — no AC

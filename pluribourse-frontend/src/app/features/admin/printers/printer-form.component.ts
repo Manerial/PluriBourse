@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -33,6 +34,7 @@ export class PrinterFormComponent {
   private readonly dialogData = inject<PrinterFormDialogData>(DIALOG_DATA);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject<DialogRef<void>>(DialogRef);
 
   readonly widthOptions = [THERMAL_WIDTH_57, THERMAL_WIDTH_80];
@@ -52,7 +54,9 @@ export class PrinterFormComponent {
   readonly ignoringId = signal<string | null>(null);
 
   constructor() {
-    this.form.controls.printerBridgeId.valueChanges.subscribe(id => this.applySelectedPrinter(id));
+    this.form.controls.printerBridgeId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(id => this.applySelectedPrinter(id));
   }
 
   async onSubmit(): Promise<void> {

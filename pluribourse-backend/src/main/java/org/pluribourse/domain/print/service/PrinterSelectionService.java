@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.print.dto.AvailablePrinterDto;
 import org.pluribourse.domain.print.dto.PrinterSelectionDto;
-import org.pluribourse.domain.print.dto.PrinterSelectionStatusDto;
 import org.pluribourse.domain.print.entity.Printer;
 import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.exception.InvalidPrinterSelectionException;
@@ -38,14 +37,14 @@ public class PrinterSelectionService {
                 .toList();
     }
 
-    public PrinterSelectionStatusDto getStatus(HttpSession session) {
+    public PrinterSelectionDto getStatus(HttpSession session) {
         Boolean done = (Boolean) session.getAttribute(DONE_SESSION_ATTRIBUTE);
         Long thermalPrinterId = (Long) session.getAttribute(THERMAL_SESSION_ATTRIBUTE);
         Long a4PrinterId = (Long) session.getAttribute(A4_SESSION_ATTRIBUTE);
-        return new PrinterSelectionStatusDto(Boolean.TRUE.equals(done), thermalPrinterId, a4PrinterId);
+        return new PrinterSelectionDto(thermalPrinterId, a4PrinterId, Boolean.TRUE.equals(done));
     }
 
-    public PrinterSelectionStatusDto selectPrinters(HttpSession session, PrinterSelectionDto dto) {
+    public PrinterSelectionDto selectPrinters(HttpSession session, PrinterSelectionDto dto) {
         if (dto.thermalPrinterId() != null) {
             validateSelection(dto.thermalPrinterId(), PrinterType.THERMAL);
         }
