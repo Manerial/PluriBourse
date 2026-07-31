@@ -6,7 +6,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { Language } from '../models/language.enum';
 import { extractErrorType } from '../shared/http-error.util';
 import { detectBrowserLanguage } from '../shared/browser-language.util';
-import { PrintService } from './print.service';
 
 export interface CurrentUser {
   username: string;
@@ -20,38 +19,13 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly translateService = inject(TranslateService);
-  private readonly printService = inject(PrintService);
 
   private readonly _currentUser = signal<CurrentUser | null>(null);
   readonly currentUser = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
 
-  // Defaults to true so ADMIN and any other non-VOLUNTEER role is never blocked by authGuard.
-  readonly printerSelectionDone = signal(true);
-
   clearSession(): void {
     this._currentUser.set(null);
-    this.printerSelectionDone.set(true);
-  }
-
-  markPrinterSelectionDone(): void {
-    this.printerSelectionDone.set(true);
-  }
-
-  // Isolated in its own try/catch so a printer-service failure never fails login()/restoreSession()
-  // outright, nor gets misclassified by restoreSession()'s 403-password-change catch. Defaults to
-  // false on error: worst case the volunteer sees the printer-selection screen again, which is harmless.
-  private async refreshPrinterSelectionStatus(user: CurrentUser): Promise<void> {
-    if (user.role !== 'VOLUNTEER') {
-      this.printerSelectionDone.set(true);
-      return;
-    }
-    try {
-      const status = await firstValueFrom(this.printService.getSelectionStatus());
-      this.printerSelectionDone.set(status.done);
-    } catch {
-      this.printerSelectionDone.set(false);
-    }
   }
 
   setPreferredLanguage(lang: Language): void {
@@ -70,7 +44,6 @@ export class AuthService {
     );
     this._currentUser.set(user);
     await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
-    await this.refreshPrinterSelectionStatus(user);
     return user;
   }
 
@@ -94,7 +67,6 @@ export class AuthService {
       const user = await firstValueFrom(this.http.get<CurrentUser>('/api/auth/me'));
       this._currentUser.set(user);
       await firstValueFrom(this.translateService.use((user.preferredLanguage ?? Language.EN).toLowerCase()));
-      await this.refreshPrinterSelectionStatus(user);
     } catch (error) {
       // 403 password-change-required: session is still valid. If currentUser is already
       // populated (e.g., after changePassword), keep it unchanged. On a cold load where

@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Story 3.5 Dev Notes: no THERMAL printer can ever pass its connectivity check in this environment
  * (no real serial hardware, gap already accepted since story 3.4/3.9 — see {@code PrinterSelectionIT}).
  * A THERMAL printer registered here therefore always ends up "unavailable" — used on purpose to
- * exercise the deposit-validation error branch. The actual rendering content (barcode, no seller
+ * exercise the labels-reprint error branch. The actual rendering content (barcode, no seller
  * name, lot position) is asserted by calling the real, fully-wired {@link ThermalLabelRenderer}
  * bean directly on entities persisted through the controllers — same justified exception as
  * {@code PrintInfrastructureIT} (no controller can expose rendered bytes; the Spring context is the
@@ -48,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ThermalLabelPrintingIT extends IntegrationTest {
 
-    private static final Charset LABEL_CHARSET = Charset.forName("ISO-8859-15");
+    private static final Charset LABEL_CHARSET = Charset.forName("Cp858");
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -127,14 +127,14 @@ class ThermalLabelPrintingIT extends IntegrationTest {
 
     @Test
     @Order(1)
-    void validate_deposit_outside_deposit_phase_is_blocked() throws Exception {
+    void reprint_labels_outside_deposit_or_post_sale_phase_is_blocked() throws Exception {
         // No seller can exist yet (SellerService also requires DEPOSIT phase) — same reasoning as
         // LotManagementIT Order(1): PhaseGuard runs before seller resolution, so a made-up id
         // still reaches the phase check first.
-        mockMvc.perform(post("/api/sellers/1/deposit/validate")
+        mockMvc.perform(post("/api/sellers/1/deposit/labels/reprint")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-modification-locked")));
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/deposit-reprint-not-allowed")));
     }
 
     @Test
@@ -210,13 +210,21 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     void render_standard_label_contains_barcode_and_no_seller_name() throws Exception {
         List<Item> sellerItems = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         Item item1 = sellerItems.getFirst();
-        String rendered = new String(renderer.renderLabel(item1, sellerItems, 57, Locale.FRENCH), LABEL_CHARSET);
+        byte[] rawBytes = renderer.renderLabel(item1, sellerItems, 57, Locale.FRENCH);
+        String rendered = new String(rawBytes, LABEL_CHARSET);
 
         assertThat(rendered).contains(item1.getFormattedBarcode());
         // "--- Categorie ---" is fixed heading text per AC4 (epics.md 1209) — the category's own
         // name is deliberately not printed on the label, only on the edition/table context.
         assertThat(rendered).contains("Bourse Etiquettes 2026").contains("Catégorie").contains("Peluche");
         assertThat(rendered).doesNotContain("Alice").doesNotContain("Vendeuse");
+
+        // On real hardware, ESC/POS printers default to CP437/CP850, not ISO-8859-15 — the byte
+        // ISO-8859-15 uses for € collides with CP437/CP850's ñ. Cp858 (PC858) has both the accented
+        // Latin characters and the euro sign; INIT resets the printer's table to its power-on
+        // default, so the code page must be explicitly re-selected right after every INIT.
+        assertThat(rendered).contains("Peluche - 5.00€");
+        assertThat(rawBytes).startsWith(0x1B, 0x40, 0x1B, 0x74, 19);
     }
 
     @Test
@@ -259,8 +267,8 @@ class ThermalLabelPrintingIT extends IntegrationTest {
 
     @Test
     @Order(11)
-    void validate_deposit_without_thermal_printer_selected_returns_422() throws Exception {
-        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/validate")
+    void reprint_labels_without_thermal_printer_selected_returns_422() throws Exception {
+        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/labels/reprint")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-selection")));
@@ -289,8 +297,8 @@ class ThermalLabelPrintingIT extends IntegrationTest {
 
     @Test
     @Order(13)
-    void validate_deposit_with_unavailable_thermal_printer_returns_422() throws Exception {
-        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/validate")
+    void reprint_labels_with_unavailable_thermal_printer_returns_422() throws Exception {
+        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/labels/reprint")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-selection")));
@@ -330,10 +338,10 @@ class ThermalLabelPrintingIT extends IntegrationTest {
 
     @Test
     @Order(16)
-    void validate_deposit_for_seller_with_no_items_returns_422() throws Exception {
+    void reprint_labels_for_seller_with_no_items_returns_422() throws Exception {
         Long emptySellerId = createSeller("Diane", "Vendeuse", "diane.labels@email.com");
 
-        mockMvc.perform(post("/api/sellers/" + emptySellerId + "/deposit/validate")
+        mockMvc.perform(post("/api/sellers/" + emptySellerId + "/deposit/labels/reprint")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/empty-deposit")));

@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
 export class DepositService {
   private readonly http = inject(HttpClient);
 
-  validateDeposit(sellerProfileId: number): Observable<void> {
-    return this.http.post<void>(`/api/sellers/${sellerProfileId}/deposit/validate`, null);
+  reprintLabels(sellerProfileId: number): Observable<void> {
+    return this.http.post<void>(`/api/sellers/${sellerProfileId}/deposit/labels/reprint`, null);
   }
 
   reprintDepositSlip(sellerProfileId: number): Observable<void> {

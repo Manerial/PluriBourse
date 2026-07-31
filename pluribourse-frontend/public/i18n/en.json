@@ -21,6 +21,10 @@
       "title": "Sign in",
       "username": "Username",
       "password": "Password",
+      "passwordToggle": {
+        "show": "Show password",
+        "hide": "Hide password"
+      },
       "submit": "Sign in",
       "error": {
         "invalid-credentials": "Invalid username or password.",
@@ -55,6 +59,7 @@
   },
   "account": {
     "title": "Account Settings",
+    "back": "Back to the app",
     "language": {
       "label": "Interface language",
       "EN": "English",
@@ -69,6 +74,7 @@
   "nav": {
     "logout": "Sign out",
     "account": "My account",
+    "printerSelection": "Printer selection",
     "userMenu": "User menu",
     "phase": {
       "none": "No active edition"
@@ -373,26 +379,26 @@
         }
       },
       "button": {
-        "validate": "Validate deposit and print labels",
-        "reprintSlip": "Reprint the deposit slip"
+        "reprintSlip": "Print the deposit slip",
+        "reprintLabels": "Print the labels"
       },
       "success": {
-        "validate": "Labels and deposit slip sent to the printer.",
-        "reprintSlip": "Deposit slip sent to the printer."
+        "reprintSlip": "Deposit slip sent to the printer.",
+        "reprintLabels": "Labels sent to the printer."
       },
       "error": {
-        "validate": "Unable to validate the deposit.",
-        "printersUnavailable": "Make sure an available thermal printer and A4 printer are both selected.",
-        "reprintSlip": "Unable to reprint the deposit slip.",
-        "a4PrinterUnavailable": "No A4 printer available to print the deposit slip."
-      },
-      "validateDialog": {
-        "title": "Validate the deposit?",
-        "description": "Every label and the deposit slip currently due for this seller will be (re)printed. Continue?"
+        "reprintSlip": "Unable to print the deposit slip.",
+        "a4PrinterUnavailable": "No A4 printer available to print the deposit slip.",
+        "reprintLabels": "Unable to print the labels.",
+        "thermalPrinterUnavailable": "No thermal printer available to print the labels."
       },
       "reprintDialog": {
-        "title": "Reprint the deposit slip?",
+        "title": "Print the deposit slip?",
         "description": "The deposit slip will be regenerated and resent to the A4 printer. Continue?"
+      },
+      "reprintLabelsDialog": {
+        "title": "Print the labels?",
+        "description": "Every label currently due for this seller will be (re)printed. Continue?"
       }
     },
     "pos": {
@@ -570,6 +576,7 @@
       },
       "error": {
         "load": "Failed to load printer statuses.",
+        "refresh": "Failed to check printer statuses.",
         "resume": "Failed to resume the queue.",
         "discard": "Failed to discard the failed job."
       }

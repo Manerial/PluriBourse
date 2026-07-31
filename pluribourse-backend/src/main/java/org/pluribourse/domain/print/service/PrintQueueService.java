@@ -98,6 +98,33 @@ public class PrintQueueService {
         return handle != null && !handle.isSuspended() && handle.getLastError() == null;
     }
 
+    /**
+     * Re-runs the live connectivity check against every registered printer (FR-079 refresh
+     * action) — the one-time check at {@link #registerPrinter} time goes stale as soon as a
+     * printer that never has a job submitted to it comes back online or drops offline; nothing
+     * else updates {@code lastError} for it in the meantime. Suspended handles are skipped: their
+     * {@code lastError}/{@code suspended} pair is owned exclusively by job execution and admin
+     * resume/discard (see {@link PrinterQueueHandle} Javadoc on the torn-state invariant), never
+     * by a plain connectivity check.
+     */
+    public void refreshConnectivity() {
+        printerRepository.findAll().forEach(printer -> {
+            PrinterQueueHandle handle = handles.get(printer.getId());
+            if (handle == null || handle.isSuspended()) {
+                return;
+            }
+            PrinterConnectivityChecker checker = connectivityCheckersByType.get(printer.getType());
+            try {
+                checker.checkAccessibility(printer);
+                handle.setLastError(null);
+            } catch (RuntimeException e) {
+                String error = PrinterQueueHandle.describeError(e);
+                handle.setLastError(error);
+                log.warn("Printer {} is not accessible: {}", printer.getId(), error);
+            }
+        });
+    }
+
     private PrinterQueueHandle createHandle(Printer printer) {
         PrinterQueueHandle handle = new PrinterQueueHandle(printer);
         PrinterConnectivityChecker checker = connectivityCheckersByType.get(printer.getType());

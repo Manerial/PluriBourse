@@ -4,7 +4,6 @@ import { provideRouter, Router } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
-import { AuthService } from '../../../services/auth.service';
 import { PrintService } from '../../../services/print.service';
 import { PrinterSelectionComponent } from './printer-selection.component';
 
@@ -12,10 +11,6 @@ describe('PrinterSelectionComponent', () => {
   const mockPrintService = {
     getAvailablePrinters: vi.fn(),
     submitSelection: vi.fn(),
-  };
-
-  const mockAuth = {
-    markPrinterSelectionDone: vi.fn(),
   };
 
   let fixture: ReturnType<typeof TestBed.createComponent<PrinterSelectionComponent>>;
@@ -39,7 +34,6 @@ describe('PrinterSelectionComponent', () => {
         provideRouter([]),
         provideAnimationsAsync(),
         { provide: PrintService, useValue: mockPrintService },
-        { provide: AuthService, useValue: mockAuth },
       ],
     }).compileComponents();
 
@@ -70,11 +64,10 @@ describe('PrinterSelectionComponent', () => {
     expect(btn.disabled).toBe(false);
   });
 
-  it('submits the selection, marks it done, and navigates to /volunteer', async () => {
+  it('submits the selection and navigates to /volunteer', async () => {
     component.form.setValue({ thermalPrinterId: 1, a4PrinterId: 2 });
     await component.onSubmit();
     expect(mockPrintService.submitSelection).toHaveBeenCalledWith(1, 2);
-    expect(mockAuth.markPrinterSelectionDone).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/volunteer']);
   });
 
@@ -97,7 +90,6 @@ describe('PrinterSelectionComponent', () => {
     mockPrintService.submitSelection.mockReturnValue(throwError(() => new Error('printer unavailable')));
     await component.onSubmit();
     expect(component.error()).toBe(true);
-    expect(mockAuth.markPrinterSelectionDone).not.toHaveBeenCalled();
     expect(router.navigate).not.toHaveBeenCalled();
     expect(component.loading()).toBe(false);
   });

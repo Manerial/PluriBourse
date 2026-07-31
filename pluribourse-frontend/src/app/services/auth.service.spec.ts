@@ -14,14 +14,8 @@ describe('AuthService', () => {
   let translateServiceMock: { use: ReturnType<typeof vi.fn> };
 
   const adminUser: CurrentUser = { username: 'Admin', role: 'ADMIN', forcePasswordChange: false, preferredLanguage: Language.FR };
-  const volunteerUser: CurrentUser = { username: 'Alice', role: 'VOLUNTEER', forcePasswordChange: false, preferredLanguage: Language.FR };
 
   const setUser = (user: CurrentUser | null) => (service as any)._currentUser.set(user);
-
-  // login()/restoreSession() await translateService.use() before conditionally issuing the
-  // printer-selection HTTP call — a macrotask tick lets those pending microtasks settle so the
-  // second httpMock.expectOne() below finds the request instead of racing ahead of it.
-  const flushMicrotasks = () => new Promise(resolve => setTimeout(resolve, 0));
 
   beforeEach(() => {
     routerMock = { navigate: vi.fn().mockResolvedValue(true) };
@@ -60,64 +54,6 @@ describe('AuthService', () => {
     });
   });
 
-  describe('printerSelectionDone', () => {
-    it('defaults to true', () => {
-      expect(service.printerSelectionDone()).toBe(true);
-    });
-
-    it('is set from the server on login for a VOLUNTEER', async () => {
-      const promise = service.login('Alice', 'Secret1');
-      httpMock.expectOne('/api/auth/login').flush(volunteerUser);
-      await flushMicrotasks();
-      httpMock.expectOne('/api/printers/selection').flush({ done: false, thermalPrinterId: null, a4PrinterId: null });
-      await promise;
-      expect(service.printerSelectionDone()).toBe(false);
-    });
-
-    it('stays true on login for a non-VOLUNTEER without querying selection status', async () => {
-      const promise = service.login('Admin', 'Secret1');
-      httpMock.expectOne('/api/auth/login').flush(adminUser);
-      await promise;
-      httpMock.verify();
-      expect(service.printerSelectionDone()).toBe(true);
-    });
-
-    it('is set from the server on restoreSession for a VOLUNTEER', async () => {
-      const promise = service.restoreSession();
-      httpMock.expectOne('/api/auth/me').flush(volunteerUser);
-      await flushMicrotasks();
-      httpMock.expectOne('/api/printers/selection').flush({ done: true, thermalPrinterId: 1, a4PrinterId: null });
-      await promise;
-      expect(service.printerSelectionDone()).toBe(true);
-    });
-
-    it('markPrinterSelectionDone sets the signal to true', () => {
-      (service as any).printerSelectionDone.set(false);
-      service.markPrinterSelectionDone();
-      expect(service.printerSelectionDone()).toBe(true);
-    });
-
-    it('defaults to false and still resolves login() when the selection-status call fails', async () => {
-      const promise = service.login('Alice', 'Secret1');
-      httpMock.expectOne('/api/auth/login').flush(volunteerUser);
-      await flushMicrotasks();
-      httpMock.expectOne('/api/printers/selection').flush(null, { status: 500, statusText: 'Server Error' });
-      const result = await promise;
-      expect(result).toEqual(volunteerUser);
-      expect(service.printerSelectionDone()).toBe(false);
-    });
-
-    it('defaults to false and still resolves restoreSession() when the selection-status call fails', async () => {
-      const promise = service.restoreSession();
-      httpMock.expectOne('/api/auth/me').flush(volunteerUser);
-      await flushMicrotasks();
-      httpMock.expectOne('/api/printers/selection').flush(null, { status: 500, statusText: 'Server Error' });
-      await promise;
-      expect(service.currentUser()).toEqual(volunteerUser);
-      expect(service.printerSelectionDone()).toBe(false);
-    });
-  });
-
   describe('logout', () => {
     it('clears currentUser and navigates to /login on success', async () => {
       setUser(adminUser);
@@ -135,15 +71,6 @@ describe('AuthService', () => {
       await promise;
       expect(service.currentUser()).toBeNull();
       expect(routerMock.navigate).toHaveBeenCalledWith(['/login']);
-    });
-
-    it('resets printerSelectionDone to true so the next login is not tainted by the previous session', async () => {
-      setUser(volunteerUser);
-      (service as any).printerSelectionDone.set(false);
-      const promise = service.logout();
-      httpMock.expectOne('/api/auth/logout').flush(null);
-      await promise;
-      expect(service.printerSelectionDone()).toBe(true);
     });
   });
 

@@ -11,12 +11,5 @@ export const authGuard: CanActivateFn = (route) => {
   if (auth.currentUser()?.forcePasswordChange && route.routeConfig?.path !== 'change-password') {
     return router.createUrlTree(['/change-password']);
   }
-  if (
-    auth.currentUser()?.role === 'VOLUNTEER' &&
-    !auth.printerSelectionDone() &&
-    route.routeConfig?.path !== 'printer-selection'
-  ) {
-    return router.createUrlTree(['/printer-selection']);
-  }
   return true;
 };

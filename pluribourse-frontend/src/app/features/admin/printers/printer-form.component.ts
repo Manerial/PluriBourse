@@ -95,7 +95,7 @@ export class PrinterFormComponent {
   async ignoreRow(printer: DiscoveredPrinter): Promise<void> {
     this.ignoringId.set(printer.printerBridgeId);
     try {
-      await firstValueFrom(this.printerRegistryService.ignore(printer.printerBridgeId));
+      await firstValueFrom(this.printerRegistryService.ignore(printer.printerBridgeId, printer.name));
       this.discoveredPrinters.update(list => list.filter(p => p.printerBridgeId !== printer.printerBridgeId));
       this.toast.showSuccess(this.translate.instant('admin.printers.success.ignore'));
     } catch {

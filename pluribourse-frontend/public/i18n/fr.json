@@ -21,6 +21,10 @@
       "title": "Connexion",
       "username": "Nom d'utilisateur",
       "password": "Mot de passe",
+      "passwordToggle": {
+        "show": "Afficher le mot de passe",
+        "hide": "Masquer le mot de passe"
+      },
       "submit": "Se connecter",
       "error": {
         "invalid-credentials": "Identifiant ou mot de passe invalide.",
@@ -55,6 +59,7 @@
   },
   "account": {
     "title": "Paramètres du compte",
+    "back": "Retour à l'application",
     "language": {
       "label": "Langue de l'interface",
       "EN": "Anglais",
@@ -69,6 +74,7 @@
   "nav": {
     "logout": "Se déconnecter",
     "account": "Mon compte",
+    "printerSelection": "Sélection d'imprimante",
     "userMenu": "Menu utilisateur",
     "phase": {
       "none": "Aucune édition en cours"
@@ -373,26 +379,26 @@
         }
       },
       "button": {
-        "validate": "Valider le dépôt et imprimer les étiquettes",
-        "reprintSlip": "Réimprimer le bordereau"
+        "reprintSlip": "Imprimer le bordereau de dépôt",
+        "reprintLabels": "Imprimer les étiquettes"
       },
       "success": {
-        "validate": "Étiquettes et bordereau envoyés à l'impression.",
-        "reprintSlip": "Bordereau envoyé à l'impression."
+        "reprintSlip": "Bordereau envoyé à l'impression.",
+        "reprintLabels": "Étiquettes envoyées à l'impression."
       },
       "error": {
-        "validate": "Impossible de valider le dépôt.",
-        "printersUnavailable": "Assurez-vous qu'une imprimante thermique et une imprimante A4 disponibles sont sélectionnées.",
-        "reprintSlip": "Impossible de réimprimer le bordereau.",
-        "a4PrinterUnavailable": "Aucune imprimante A4 disponible pour l'impression du bordereau."
-      },
-      "validateDialog": {
-        "title": "Valider le dépôt ?",
-        "description": "Toutes les étiquettes et le bordereau actuellement dus pour ce vendeur seront (ré)imprimés. Continuer ?"
+        "reprintSlip": "Impossible d'imprimer le bordereau.",
+        "a4PrinterUnavailable": "Aucune imprimante A4 disponible pour l'impression du bordereau.",
+        "reprintLabels": "Impossible d'imprimer les étiquettes.",
+        "thermalPrinterUnavailable": "Aucune imprimante thermique disponible pour l'impression des étiquettes."
       },
       "reprintDialog": {
-        "title": "Réimprimer le bordereau ?",
+        "title": "Imprimer le bordereau de dépôt ?",
         "description": "Le bordereau de dépôt sera régénéré et renvoyé à l'imprimante A4. Continuer ?"
+      },
+      "reprintLabelsDialog": {
+        "title": "Imprimer les étiquettes ?",
+        "description": "Toutes les étiquettes actuellement dues pour ce vendeur seront (ré)imprimées. Continuer ?"
       }
     },
     "pos": {
@@ -570,6 +576,7 @@
       },
       "error": {
         "load": "Impossible de charger l'état des imprimantes.",
+        "refresh": "Impossible de vérifier l'état des imprimantes.",
         "resume": "Impossible de relancer la file.",
         "discard": "Impossible d'ignorer le job en erreur."
       }

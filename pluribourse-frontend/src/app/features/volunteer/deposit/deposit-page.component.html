@@ -151,28 +151,27 @@
     </div>
 
     <div class="deposit-actions">
-      @if (isDepositPhase()) {
-        <button
-          type="button"
-          mat-flat-button
-          color="primary"
-          class="validate-deposit-btn"
-          [disabled]="items().length === 0 || validatingDeposit() || reprintingSlip()"
-          (click)="validateDeposit()">
-          <mat-icon>print</mat-icon>
-          {{ 'volunteer.deposit.button.validate' | translate }}
-        </button>
-      }
-
       @if (items().length > 0) {
         <button
           type="button"
           mat-flat-button
+          color="primary"
           class="reprint-slip-btn"
-          [disabled]="reprintingSlip() || validatingDeposit()"
+          [disabled]="reprintingSlip() || reprintingLabels()"
           (click)="reprintDepositSlip()">
           <mat-icon>picture_as_pdf</mat-icon>
           {{ 'volunteer.deposit.button.reprintSlip' | translate }}
+        </button>
+
+        <button
+          type="button"
+          mat-flat-button
+          color="primary"
+          class="reprint-labels-btn"
+          [disabled]="reprintingLabels() || reprintingSlip()"
+          (click)="reprintLabels()">
+          <mat-icon>print</mat-icon>
+          {{ 'volunteer.deposit.button.reprintLabels' | translate }}
         </button>
       }
     </div>

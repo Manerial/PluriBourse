@@ -4,8 +4,9 @@ import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { extractErrorType } from '../../../shared/http-error.util';
@@ -13,7 +14,7 @@ import { extractErrorType } from '../../../shared/http-error.util';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, TranslatePipe, NotificationInlineComponent],
+  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, TranslatePipe, NotificationInlineComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -21,6 +22,7 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly translate = inject(TranslateService);
 
   readonly form = this.fb.nonNullable.group({
     username: ['', Validators.required],
@@ -29,6 +31,15 @@ export class LoginComponent {
 
   readonly loading = signal(false);
   readonly error = signal<'invalid-credentials' | 'unauthorized-role' | 'account-disabled' | null>(null);
+  readonly passwordVisible = signal(false);
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible.update(visible => !visible);
+  }
+
+  passwordToggleLabel(): string {
+    return this.translate.instant(this.passwordVisible() ? 'auth.login.passwordToggle.hide' : 'auth.login.passwordToggle.show');
+  }
 
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
@@ -39,10 +50,7 @@ export class LoginComponent {
     const { username, password } = this.form.getRawValue();
     try {
       const user = await this.auth.login(username, password);
-      if (user.forcePasswordChange) {
-        await this.router.navigate(['/change-password']);
-        return;
-      }
+      // forcePasswordChange is handled declaratively by authGuard on the target route.
       switch (user.role) {
         case 'ADMIN':
           await this.router.navigate(['/admin']);

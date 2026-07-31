@@ -15,8 +15,8 @@ export class PrinterRegistryService {
     return this.http.get<DiscoveredPrinter[]>('/api/admin/printers/discovered');
   }
 
-  ignore(printerBridgeId: string): Observable<void> {
-    return this.http.post<void>(`/api/admin/printers/discovered/${printerBridgeId}/ignore`, {});
+  ignore(printerBridgeId: string, name: string): Observable<void> {
+    return this.http.post<void>(`/api/admin/printers/discovered/${printerBridgeId}/ignore`, { name });
   }
 
   listIgnored(): Observable<IgnoredPrinter[]> {

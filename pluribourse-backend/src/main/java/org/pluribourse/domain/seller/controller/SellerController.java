@@ -30,9 +30,9 @@ public class SellerController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
-    @PostMapping("/{id}/deposit/validate")
-    public ResponseEntity<Void> validateDeposit(@PathVariable Long id, HttpSession session) {
-        depositValidationService.validateDeposit(id, session);
+    @PostMapping("/{id}/deposit/labels/reprint")
+    public ResponseEntity<Void> reprintLabels(@PathVariable Long id, HttpSession session) {
+        depositValidationService.reprintLabels(id, session);
         return ResponseEntity.noContent().build();
     }
 

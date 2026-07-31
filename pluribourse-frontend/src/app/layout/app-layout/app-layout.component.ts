@@ -65,7 +65,7 @@ export class AppLayoutComponent implements OnInit {
         return;
       }
       const currentUrl = this.router.url;
-      if (currentUrl !== '/404' && !currentUrl.startsWith('/volunteer')) {
+      if (currentUrl !== '/404' && currentUrl !== '/printer-selection' && !currentUrl.startsWith('/volunteer')) {
         return;
       }
       const target = resolveVolunteerLandingPath(phase);

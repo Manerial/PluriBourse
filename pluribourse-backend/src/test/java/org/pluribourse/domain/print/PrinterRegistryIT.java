@@ -215,7 +215,10 @@ class PrinterRegistryIT extends IntegrationTest {
         mockMvc.perform(delete("/api/admin/printers/1")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/admin/printers/discovered/some-id/ignore").session(volunteerSession).with(csrf()))
+        mockMvc.perform(post("/api/admin/printers/discovered/some-id/ignore")
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Some Printer\"}"))
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/admin/printers/ignored").session(volunteerSession))
                 .andExpect(status().isForbidden());
@@ -230,7 +233,9 @@ class PrinterRegistryIT extends IntegrationTest {
         printerBridgeDouble.register("bridge-ignore-basic-1", "Imprimante Voisin", "NETWORK", "ONLINE");
 
         mockMvc.perform(post("/api/admin/printers/discovered/bridge-ignore-basic-1/ignore")
-                        .session(adminSession).with(csrf()))
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Imprimante Voisin\"}"))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/admin/printers/discovered").session(adminSession))
@@ -244,12 +249,16 @@ class PrinterRegistryIT extends IntegrationTest {
         printerBridgeDouble.register("bridge-ignore-idempotent-1", "Imprimante Idempotente", "NETWORK", "ONLINE");
 
         mockMvc.perform(post("/api/admin/printers/discovered/bridge-ignore-idempotent-1/ignore")
-                        .session(adminSession).with(csrf()))
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Imprimante Idempotente\"}"))
                 .andExpect(status().isNoContent());
 
         // Second call on the same printerBridgeId must also succeed as a no-op, not error.
         mockMvc.perform(post("/api/admin/printers/discovered/bridge-ignore-idempotent-1/ignore")
-                        .session(adminSession).with(csrf()))
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Imprimante Idempotente\"}"))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/admin/printers/ignored").session(adminSession))
@@ -264,14 +273,16 @@ class PrinterRegistryIT extends IntegrationTest {
         createPrinter("Imprimante Deja Enregistree Pour Ignorer", "bridge-ignore-registered-1");
 
         mockMvc.perform(post("/api/admin/printers/discovered/bridge-ignore-registered-1/ignore")
-                        .session(adminSession).with(csrf()))
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Imprimante Deja Enregistree Pour Ignorer\"}"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-configuration")));
     }
 
     @Test
     @Order(16)
-    void ignored_printers_are_listed_with_their_name_resolved_from_printerbridge() throws Exception {
+    void ignored_printers_are_listed_with_the_name_captured_at_ignore_time() throws Exception {
         mockMvc.perform(get("/api/admin/printers/ignored").session(adminSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.printerBridgeId == 'bridge-ignore-basic-1')].name").value("Imprimante Voisin"))
@@ -283,7 +294,9 @@ class PrinterRegistryIT extends IntegrationTest {
     void reactivating_an_ignored_printer_returns_it_to_discovery() throws Exception {
         printerBridgeDouble.register("bridge-ignore-reactivate-1", "Imprimante A Reactiver", "NETWORK", "ONLINE");
         mockMvc.perform(post("/api/admin/printers/discovered/bridge-ignore-reactivate-1/ignore")
-                        .session(adminSession).with(csrf()))
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Imprimante A Reactiver\"}"))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(delete("/api/admin/printers/ignored/bridge-ignore-reactivate-1")
@@ -326,12 +339,14 @@ class PrinterRegistryIT extends IntegrationTest {
     void listing_ignored_printers_still_works_when_printerbridge_is_unreachable() throws Exception {
         // bridge-ignore-basic-1 (Order 13) and bridge-ignore-idempotent-1 (Order 14) were never
         // reactivated — the two entries left ignored, since bridge-ignore-reactivate-1 (Order 17)
-        // was reactivated.
+        // was reactivated. Their names were captured at ignore time, before PrinterBridge went
+        // down in Order 19, and are still correctly returned here — proof that listIgnored()
+        // never calls PrinterBridge itself.
         mockMvc.perform(get("/api/admin/printers/ignored").session(adminSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(2)))
-                .andExpect(jsonPath("$[?(@.printerBridgeId == 'bridge-ignore-basic-1')].name").value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.nullValue())))
-                .andExpect(jsonPath("$[?(@.printerBridgeId == 'bridge-ignore-idempotent-1')].name").value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.nullValue())));
+                .andExpect(jsonPath("$[?(@.printerBridgeId == 'bridge-ignore-basic-1')].name").value("Imprimante Voisin"))
+                .andExpect(jsonPath("$[?(@.printerBridgeId == 'bridge-ignore-idempotent-1')].name").value("Imprimante Idempotente"));
     }
 
     @Test
@@ -350,7 +365,9 @@ class PrinterRegistryIT extends IntegrationTest {
             results.add(executor.submit(() -> {
                 start.await();
                 return mockMvc.perform(post("/api/admin/printers/discovered/bridge-ignore-concurrent-1/ignore")
-                                .session(adminSession).with(csrf()))
+                                .session(adminSession).with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"name\":\"Imprimante Concurrente\"}"))
                         .andReturn().getResponse().getStatus();
             }));
         }

@@ -12,7 +12,6 @@ import org.pluribourse.domain.print.entity.Printer;
 import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.exception.IgnoredPrinterNotFoundException;
 import org.pluribourse.domain.print.exception.InvalidPrinterConfigurationException;
-import org.pluribourse.domain.print.exception.PrinterBridgeUnavailableException;
 import org.pluribourse.domain.print.exception.PrinterNotFoundException;
 import org.pluribourse.domain.print.mapper.PrinterMapper;
 import org.pluribourse.domain.print.repository.IgnoredPrinterRepository;
@@ -22,9 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -111,7 +108,7 @@ public class PrinterService {
      * so the surrounding transaction would still commit-fail with {@code UnexpectedRollbackException}.
      * Letting {@code save()} keep its own transaction avoids that poisoning entirely.
      */
-    public void ignore(String printerBridgeId) {
+    public void ignore(String printerBridgeId, String name) {
         if (repository.findAllPrinterBridgeIds().contains(printerBridgeId)) {
             throw new InvalidPrinterConfigurationException(
                     "Printer '" + printerBridgeId + "' is already registered and cannot be ignored.");
@@ -121,6 +118,7 @@ public class PrinterService {
         }
         IgnoredPrinter ignoredPrinter = new IgnoredPrinter();
         ignoredPrinter.setPrinterBridgeId(printerBridgeId);
+        ignoredPrinter.setName(name);
         ignoredPrinter.setIgnoredAt(LocalDate.now());
         try {
             ignoredPrinterRepository.save(ignoredPrinter);
@@ -132,36 +130,23 @@ public class PrinterService {
 
     /**
      * Ignored-printer registry for the admin's "Imprimantes ignorées" section (story 3.13, AC3).
-     * Resolves each entry's display name against PrinterBridge's raw, unfiltered discovery result
-     * (not {@link #discover()}, which would exclude the very entries being listed here). Unlike
-     * {@link #discover()}, a {@link PrinterBridgeUnavailableException} is caught locally rather
-     * than propagated — the admin must still be able to view and reactivate ignored printers even
-     * while PrinterBridge is briefly unreachable.
+     * The display name is captured once, at {@link #ignore} time (story 3.13 follow-up) — the
+     * frontend already has it from the same discovery response the admin picked the printer from,
+     * so this listing never needs to call PrinterBridge itself. {@code name} is {@code null} only
+     * for printers ignored before that column existed (see {@link IgnoredPrinterDto}).
      */
     public List<IgnoredPrinterDto> listIgnored() {
-        Map<String, String> resolvedNames = new HashMap<>();
-        try {
-            // Built with a plain put() loop rather than Collectors.toMap(): the latter rejects
-            // null values and throws on a duplicate key, either of which would crash this whole
-            // method — a lookup miss (null name) must instead just fall through silently below.
-            for (PrinterBridgeDiscoveredPrinter printer : printerBridgeClient.discover()) {
-                resolvedNames.put(printer.id(), printer.name());
-            }
-        } catch (PrinterBridgeUnavailableException e) {
-            resolvedNames = Map.of();
-        }
-        final Map<String, String> namesByPrinterBridgeId = resolvedNames;
         return ignoredPrinterRepository.findAll().stream()
                 .map(ignoredPrinter -> new IgnoredPrinterDto(
                         ignoredPrinter.getPrinterBridgeId(),
-                        namesByPrinterBridgeId.get(ignoredPrinter.getPrinterBridgeId()),
+                        ignoredPrinter.getName(),
                         ignoredPrinter.getIgnoredAt()))
                 .toList();
     }
 
     /**
-     * Reverses {@link #ignore(String)} (story 3.13, AC4) — the printer reappears in {@link #discover()}
-     * at the next scan.
+     * Reverses {@link #ignore(String, String)} (story 3.13, AC4) — the printer reappears in
+     * {@link #discover()} at the next scan.
      */
     @Transactional
     public void reactivate(String printerBridgeId) {

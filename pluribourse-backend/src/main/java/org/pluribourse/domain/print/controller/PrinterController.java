@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.print.dto.CreatePrinterDto;
 import org.pluribourse.domain.print.dto.DiscoveredPrinterDto;
+import org.pluribourse.domain.print.dto.IgnorePrinterDto;
 import org.pluribourse.domain.print.dto.IgnoredPrinterDto;
 import org.pluribourse.domain.print.dto.PrinterDto;
 import org.pluribourse.domain.print.dto.PrinterSummaryDto;
@@ -41,8 +42,8 @@ public class PrinterController {
     }
 
     @PostMapping("/discovered/{printerBridgeId}/ignore")
-    public ResponseEntity<Void> ignore(@PathVariable String printerBridgeId) {
-        service.ignore(printerBridgeId);
+    public ResponseEntity<Void> ignore(@PathVariable String printerBridgeId, @Valid @RequestBody IgnorePrinterDto dto) {
+        service.ignore(printerBridgeId, dto.name());
         return ResponseEntity.noContent().build();
     }
 

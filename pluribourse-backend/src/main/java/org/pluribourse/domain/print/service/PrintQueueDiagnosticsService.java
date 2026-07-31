@@ -28,6 +28,16 @@ public class PrintQueueDiagnosticsService {
                 .toList();
     }
 
+    /**
+     * Live-refresh action (FR-079) — {@link #listStatuses} alone only reads the cached in-memory
+     * state, which can go stale for a printer that hasn't had a job submitted to it since it was
+     * last reachable/unreachable. This re-runs the actual connectivity check first.
+     */
+    public List<PrinterStatusDto> refreshStatuses() {
+        printQueueService.refreshConnectivity();
+        return listStatuses();
+    }
+
     public void resumeQueue(Long printerId) {
         PrinterQueueHandle handle = requireHandle(printerId);
         // requeueFailedJobAtHead() checks-and-mutates atomically (synchronized) so two concurrent

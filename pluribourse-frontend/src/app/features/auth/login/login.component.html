@@ -6,7 +6,21 @@
   </mat-form-field>
   <mat-form-field appearance="outline">
     <mat-label>{{ 'auth.login.password' | translate }}</mat-label>
-    <input matInput formControlName="password" type="password" autocomplete="current-password" />
+    <input
+      matInput
+      formControlName="password"
+      [type]="passwordVisible() ? 'text' : 'password'"
+      autocomplete="current-password" />
+    <button
+      type="button"
+      mat-icon-button
+      matSuffix
+      class="password-toggle-btn"
+      (click)="togglePasswordVisibility()"
+      [attr.aria-label]="passwordToggleLabel()"
+      [attr.aria-pressed]="passwordVisible()">
+      <mat-icon aria-hidden="true">{{ passwordVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+    </button>
   </mat-form-field>
   @if (error()) {
     <app-notification-inline

@@ -8,12 +8,10 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
-import { ActivePhase } from '../../../models/active-phase.enum';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { ItemDto } from '../../../models/item.model';
 import { LotDto } from '../../../models/lot.model';
 import { CategoryService } from '../../../services/category.service';
-import { CurrentEditionService } from '../../../services/current-edition.service';
 import { DepositService } from '../../../services/deposit.service';
 import { ItemService } from '../../../services/item.service';
 import { LotService } from '../../../services/lot.service';
@@ -55,7 +53,6 @@ export class DepositPageComponent {
   private readonly itemService = inject(ItemService);
   private readonly lotService = inject(LotService);
   private readonly depositService = inject(DepositService);
-  private readonly currentEditionService = inject(CurrentEditionService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly confirmDialog = inject(ConfirmDialogService);
@@ -72,9 +69,8 @@ export class DepositPageComponent {
   readonly commentEditId = signal<number | null>(null);
   readonly commentDraft = signal('');
   readonly depositMode = signal<DepositMode>('individual');
-  readonly validatingDeposit = signal(false);
   readonly reprintingSlip = signal(false);
-  readonly isDepositPhase = computed(() => this.currentEditionService.currentEdition()?.phase === ActivePhase.DEPOSIT);
+  readonly reprintingLabels = signal(false);
 
   /**
    * A lot's edit/delete actions must appear once per lot, not once per member row — this is the
@@ -191,42 +187,42 @@ export class DepositPageComponent {
     }
   }
 
-  async validateDeposit(): Promise<void> {
+  async reprintLabels(): Promise<void> {
     const seller = this.selectedSeller();
     // Locked immediately on click, before the confirm dialog even opens — and blocked while the
     // other print action is in flight — so a rapid double-click or a click on both buttons in a
     // row can never stack two confirm dialogs or fire two overlapping print requests for the
     // same seller (each print job costs a physical sheet/roll that can't be recalled).
-    if (!seller || this.validatingDeposit() || this.reprintingSlip()) {
+    if (!seller || this.reprintingLabels() || this.reprintingSlip()) {
       return;
     }
-    this.validatingDeposit.set(true);
+    this.reprintingLabels.set(true);
     try {
       const confirmed = await firstValueFrom(
         this.confirmDialog.open({
-          title: this.translate.instant('volunteer.deposit.validateDialog.title'),
-          description: this.translate.instant('volunteer.deposit.validateDialog.description'),
+          title: this.translate.instant('volunteer.deposit.reprintLabelsDialog.title'),
+          description: this.translate.instant('volunteer.deposit.reprintLabelsDialog.description'),
         })
       );
       if (!confirmed) {
         return;
       }
-      await firstValueFrom(this.depositService.validateDeposit(seller.id));
-      this.toast.showSuccess(this.translate.instant('volunteer.deposit.success.validate'));
+      await firstValueFrom(this.depositService.reprintLabels(seller.id));
+      this.toast.showSuccess(this.translate.instant('volunteer.deposit.success.reprintLabels'));
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
-        this.toast.showError(this.translate.instant('volunteer.deposit.error.printersUnavailable'));
+        this.toast.showError(this.translate.instant('volunteer.deposit.error.thermalPrinterUnavailable'));
       } else {
-        this.toast.showError(this.translate.instant('volunteer.deposit.error.validate'));
+        this.toast.showError(this.translate.instant('volunteer.deposit.error.reprintLabels'));
       }
     } finally {
-      this.validatingDeposit.set(false);
+      this.reprintingLabels.set(false);
     }
   }
 
   async reprintDepositSlip(): Promise<void> {
     const seller = this.selectedSeller();
-    if (!seller || this.validatingDeposit() || this.reprintingSlip()) {
+    if (!seller || this.reprintingLabels() || this.reprintingSlip()) {
       return;
     }
     this.reprintingSlip.set(true);

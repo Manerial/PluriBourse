@@ -11,6 +11,12 @@ export class PrintQueueService {
     return this.http.get<PrinterStatus[]>('/api/admin/print-queue');
   }
 
+  // Live-checks every printer's connectivity through PrinterBridge before returning fresh
+  // statuses — unlike getStatuses(), which only reads the cached in-memory state.
+  refreshStatuses(): Observable<PrinterStatus[]> {
+    return this.http.post<PrinterStatus[]>('/api/admin/print-queue/refresh', null);
+  }
+
   resumeQueue(printerId: number): Observable<void> {
     return this.http.post<void>(`/api/admin/print-queue/${printerId}/resume`, null);
   }

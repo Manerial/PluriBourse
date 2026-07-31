@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Builds the single {@link PrintJob} submitted when a deposit is validated (FR-028): vendor
- * separator followed by every article label, article separators in between. Since story 3.12, the
+ * Builds the single {@link PrintJob} submitted when a seller's labels are (re)printed (FR-028):
+ * vendor separator followed by every article label, article separators in between. Since story 3.12, the
  * full content is assembled in memory and sent to PrinterBridge as one WebSocket binary frame —
  * its protocol expects one control message (declaring the total size) followed by one payload,
  * not a stream of small writes like the serial port this class used to write to directly.

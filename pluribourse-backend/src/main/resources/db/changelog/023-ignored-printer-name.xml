@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Captured once at ignore-time (the frontend already has it from the discovery picker) so
+         listing ignored printers never needs to call PrinterBridge again. Nullable: rows ignored
+         before this column existed have no retroactive name — the frontend already falls back to
+         the raw id in that case (see IgnoredPrinterDto). -->
+    <changeSet id="023-ignored-printer-name" author="pluribourse">
+        <addColumn tableName="ignored_printers">
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

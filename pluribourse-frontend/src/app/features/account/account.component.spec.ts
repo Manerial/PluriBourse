@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -50,6 +51,7 @@ describe('AccountComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AccountComponent],
       providers: [
+        provideRouter([]),
         provideTranslateService({ lang: 'en' }),
         { provide: AccountService, useValue: accountServiceMock },
         { provide: AuthService, useValue: authServiceMock },
@@ -65,6 +67,11 @@ describe('AccountComponent', () => {
 
   it('patches form with current preferredLanguage on init', () => {
     expect(component.form.getRawValue().language).toBe(Language.FR);
+  });
+
+  it('renders a link back to the app', () => {
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('a[routerLink="/"]');
+    expect(link).not.toBeNull();
   });
 
   it('calls updateLanguage with selected value on submit', async () => {

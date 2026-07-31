@@ -78,7 +78,7 @@ describe('PrinterFormComponent', () => {
   it('ignoreRow() removes the printer from the list and shows a success toast, without closing the dialog', async () => {
     await component.ignoreRow(MOCK_DISCOVERED[0]);
 
-    expect(printerRegistryServiceMock.ignore).toHaveBeenCalledWith('bridge-thermal-1');
+    expect(printerRegistryServiceMock.ignore).toHaveBeenCalledWith('bridge-thermal-1', 'Zebra ZQ320');
     expect(component.discoveredPrinters()).toEqual([MOCK_DISCOVERED[1]]);
     expect(dialogRefMock.close).not.toHaveBeenCalled();
   });

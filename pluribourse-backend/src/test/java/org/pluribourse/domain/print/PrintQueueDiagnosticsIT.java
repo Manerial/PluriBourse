@@ -243,6 +243,9 @@ class PrintQueueDiagnosticsIT extends IntegrationTest {
         mockMvc.perform(post("/api/admin/print-queue/1/discard")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/print-queue/refresh")
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -285,6 +288,75 @@ class PrintQueueDiagnosticsIT extends IntegrationTest {
         assertThat(executionOrder).containsExactly(1);
     }
 
+    @Test
+    @Order(12)
+    void refresh_detects_a_printer_that_went_offline_since_registration() throws Exception {
+        // Registered ONLINE (checkAccessibility passes at registration time), then flipped to
+        // OFFLINE on the double without any job ever being submitted — nothing else would ever
+        // notice this. Plain listStatuses() (GET) must still show the stale cached state; only
+        // the refresh action re-checks live.
+        String bridgeId = "bridge-" + nextFakeId++;
+        printerBridgeDouble.register(bridgeId, "Fake " + bridgeId, "NETWORK", "ONLINE");
+        Long printerId = createPrinterWithBridgeId("Imprimante Devenue Injoignable", bridgeId);
+        assertThat(findStatus(printerId).connected()).isTrue();
+
+        printerBridgeDouble.register(bridgeId, "Fake " + bridgeId, "NETWORK", "OFFLINE");
+        assertThat(findStatus(printerId).connected()).isTrue();
+
+        List<PrinterStatusDto> refreshed = refreshStatuses();
+        assertThat(statusFor(refreshed, printerId).connected()).isFalse();
+        assertThat(findStatus(printerId).connected()).isFalse();
+    }
+
+    @Test
+    @Order(13)
+    void refresh_detects_a_printer_that_came_back_online_since_registration() throws Exception {
+        String bridgeId = "bridge-" + nextFakeId++;
+        printerBridgeDouble.register(bridgeId, "Fake " + bridgeId, "NETWORK", "OFFLINE");
+        Long printerId = createPrinterWithBridgeId("Imprimante Redevenue Joignable", bridgeId);
+        assertThat(findStatus(printerId).connected()).isFalse();
+
+        printerBridgeDouble.register(bridgeId, "Fake " + bridgeId, "NETWORK", "ONLINE");
+
+        List<PrinterStatusDto> refreshed = refreshStatuses();
+        assertThat(statusFor(refreshed, printerId).connected()).isTrue();
+    }
+
+    @Test
+    @Order(14)
+    void refresh_does_not_touch_a_suspended_printer() throws Exception {
+        // A suspended printer's lastError/suspended pair belongs exclusively to job execution and
+        // admin resume/discard (PrinterQueueHandle's torn-state invariant) — refresh must leave it
+        // alone even though the double now reports the printer back online.
+        Long printerId = createReachablePrinter("Imprimante Suspendue Pour Refresh");
+        printQueueService.submit(printerId, printer -> {
+            throw new RuntimeException("bourrage papier");
+        });
+        waitUntil(() -> printQueueService.getHandle(printerId).isSuspended());
+
+        List<PrinterStatusDto> refreshed = refreshStatuses();
+        PrinterStatusDto status = statusFor(refreshed, printerId);
+        assertThat(status.canRetry()).isTrue();
+        assertThat(status.lastError()).contains("bourrage papier");
+    }
+
+    private List<PrinterStatusDto> refreshStatuses() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/admin/print-queue/refresh")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readValue(
+                result.getResponse().getContentAsString(),
+                objectMapper.getTypeFactory().constructCollectionType(List.class, PrinterStatusDto.class));
+    }
+
+    private PrinterStatusDto statusFor(List<PrinterStatusDto> statuses, Long printerId) {
+        return statuses.stream()
+                .filter(s -> s.id().equals(printerId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Printer not found in listing: " + printerId));
+    }
+
     private Long createReachablePrinter(String name) throws Exception {
         return createPrinter(name, "ONLINE");
     }
@@ -296,6 +368,10 @@ class PrintQueueDiagnosticsIT extends IntegrationTest {
     private Long createPrinter(String name, String bridgeStatus) throws Exception {
         String bridgeId = "bridge-" + nextFakeId++;
         printerBridgeDouble.register(bridgeId, "Fake " + bridgeId, "NETWORK", bridgeStatus);
+        return createPrinterWithBridgeId(name, bridgeId);
+    }
+
+    private Long createPrinterWithBridgeId(String name, String bridgeId) throws Exception {
         CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, bridgeId);
         MvcResult result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())

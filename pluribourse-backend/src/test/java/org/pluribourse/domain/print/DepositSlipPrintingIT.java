@@ -38,18 +38,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Story 3.6 Dev Notes: exactly like {@code ThermalLabelPrintingIT}, no THERMAL printer can ever
- * pass its connectivity check in this environment (no real PrinterBridge process) — a registered
- * THERMAL printer therefore always ends up "unavailable". Since {@code validateDeposit()} checks
- * the thermal selection before the A4 one (Dev Notes § Ordre de validation), every HTTP-level
- * validation scenario in this class necessarily fails on the thermal leg; there is no way to
- * exercise the "A4 unavailable while thermal available" branch nor the "both jobs submitted" happy
- * path through the real queue in this environment. AC1/AC6 (the PDF job is actually built, queued
- * and delivered) and the rendered content (AC3-5) are instead verified with direct calls on the
- * real, fully-wired {@link DocumentPrintService}/{@link DepositSlipRenderer} beans — same justified
- * exception as {@code PrintInfrastructureIT}/{@code ThermalLabelPrintingIT} (no controller exposes
- * raw PDF bytes or queue submission outcomes). Since story 3.12, delivery itself (Order 8) is
- * verified against a Mockito-mocked {@link PrinterBridgeClient} built locally in that one test —
+ * Story 3.6 Dev Notes: {@code reprintDepositSlip()} only resolves and checks the A4 printer — it
+ * never touches the thermal selection, so unlike {@code ThermalLabelPrintingIT} this class doesn't
+ * need a THERMAL printer at all. AC1/AC6 (the PDF job is actually built, queued and delivered) and
+ * the rendered content (AC3-5) are verified with direct calls on the real, fully-wired
+ * {@link DocumentPrintService}/{@link DepositSlipRenderer} beans — same justified exception as
+ * {@code PrintInfrastructureIT}/{@code ThermalLabelPrintingIT} (no controller exposes raw PDF
+ * bytes or queue submission outcomes). Since story 3.12, delivery itself (Order 6) is verified
+ * against a Mockito-mocked {@link PrinterBridgeClient} built locally in that one test —
  * PrinterBridge's real WebSocket protocol is a native external process, not reproducible with the
  * lightweight {@link PrinterBridgeDouble} (HTTP-only) used for connectivity checks elsewhere in
  * this class; CLAUDE.md's Mockito exception for external components applies here.
@@ -166,7 +162,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
 
     @Test
     @Order(3)
-    void register_a4_and_unavailable_thermal_printers() throws Exception {
+    void register_a4_printer() throws Exception {
         printerBridgeDouble.register("bridge-slip-a4", "A4 Bordereau Test", "NETWORK", "ONLINE");
         MvcResult a4Result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
@@ -180,58 +176,17 @@ class DepositSlipPrintingIT extends IntegrationTest {
 
     @Test
     @Order(4)
-    void validate_deposit_without_any_printer_selected_returns_422() throws Exception {
-        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/validate")
-                        .session(volunteerSession).with(csrf()))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-selection")));
-    }
-
-    @Test
-    @Order(5)
-    void select_valid_a4_printer_then_validate_deposit_still_fails_on_missing_thermal() throws Exception {
+    void select_valid_a4_printer() throws Exception {
         mockMvc.perform(post("/api/printers/selection")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"thermalPrinterId\":null,\"a4PrinterId\":" + a4PrinterId + "}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.a4PrinterId").value(a4PrinterId));
-
-        // Both selections are validated before either job is submitted (AC2, Dev Notes § Ordre de
-        // validation): a genuinely available A4 printer must not let a missing thermal selection
-        // through.
-        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/validate")
-                        .session(volunteerSession).with(csrf()))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-selection")));
     }
 
     @Test
-    @Order(6)
-    void register_thermal_printer_and_validate_deposit_still_fails_since_it_is_unreachable() throws Exception {
-        MvcResult printerResult = mockMvc.perform(post("/api/admin/printers")
-                        .session(adminSession).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreatePrinterDto("Thermique Bordereau Test", PrinterType.THERMAL, 57, "bridge-slip-thermal-x"))))
-                .andExpect(status().isCreated())
-                .andReturn();
-        Long thermalPrinterId = objectMapper.readValue(printerResult.getResponse().getContentAsString(), PrinterDto.class).id();
-
-        // No real PrinterBridge process in this environment (see class Javadoc): writing the
-        // session attribute directly simulates a printer that was available at selection time and
-        // has since become unavailable — same bypass technique as ThermalLabelPrintingIT Order(12).
-        volunteerSession.setAttribute("printerSelection.thermalPrinterId", thermalPrinterId);
-        volunteerSession.setAttribute("printerSelection.done", true);
-
-        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/validate")
-                        .session(volunteerSession).with(csrf()))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-selection")));
-    }
-
-    @Test
-    @Order(7)
+    @Order(5)
     @Transactional(readOnly = true)
         // read-only, no HTTP writes below: safe to keep the session open for lazy access
     void deposit_slip_renderer_deduplicates_lot_line_and_computes_correct_net_amount() {
@@ -252,7 +207,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(6)
     @Transactional(readOnly = true)
         // Same eager-loading constraint as production (Dev Notes § Chargement eager): execute()
         // below runs synchronously in this test thread, but the pattern (touching lazy
@@ -275,7 +230,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(9)
+    @Order(7)
     void reprint_deposit_slip_for_seller_with_no_items_returns_422() throws Exception {
         mockMvc.perform(post("/api/sellers/" + emptySellerId + "/deposit/slip/reprint")
                         .session(volunteerSession).with(csrf()))
@@ -284,7 +239,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(10)
+    @Order(8)
     void reprint_deposit_slip_without_a4_printer_selected_returns_422() throws Exception {
         MvcResult volunteer2Login = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -301,7 +256,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(11)
+    @Order(9)
     void advance_edition_to_sale_phase() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
@@ -310,7 +265,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(12)
+    @Order(10)
     void reprint_deposit_slip_outside_deposit_or_post_sale_phase_is_blocked() throws Exception {
         mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
                         .session(volunteerSession).with(csrf()))
@@ -319,7 +274,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(13)
+    @Order(11)
     void advance_edition_to_post_sale_phase() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
@@ -328,10 +283,10 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(14)
+    @Order(12)
     void reprint_deposit_slip_in_post_sale_phase_with_a4_selected_is_queued_and_reaches_printer_bridge_client() throws Exception {
-        // volunteerSession still holds the A4 selection from Order(5) — the thermal printer's
-        // unavailability (Order 6) is irrelevant here: reprintDepositSlip() never checks it.
+        // volunteerSession still holds the A4 selection from Order(4) — reprintDepositSlip() never
+        // checks the thermal printer at all.
         mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isNoContent());
@@ -340,10 +295,10 @@ class DepositSlipPrintingIT extends IntegrationTest {
         // happens later, on the queue's own consumer thread, well after this request's
         // transaction (and EditionScopedLookup.findSellerInEdition's implicit lazy-init of
         // sellerProfile.getEdition()) has returned. This test uses the REAL, Spring-wired
-        // PrinterBridgeClient (not mocked, unlike Order 8) — so the slip job genuinely attempts a
+        // PrinterBridgeClient (not mocked, unlike Order 6) — so the slip job genuinely attempts a
         // WebSocket connection to PrinterBridgeDouble, which is HTTP-only (see class Javadoc) and
         // cannot complete the WS handshake. The job therefore fails and suspends this printer's
-        // queue — expected and correct here, since real successful WS delivery is what Order(8)
+        // queue — expected and correct here, since real successful WS delivery is what Order(6)
         // (direct call with a mocked PrinterBridgeClient) and PrinterBridgeClient's own dedicated
         // test already cover. What this test actually proves: the HTTP-triggered production path
         // (controller -> service -> real PrinterBridgeClient) runs end to end without throwing
@@ -369,12 +324,12 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(15)
+    @Order(13)
     @Transactional(readOnly = true)
     void deposit_slip_renderer_rounds_net_amount_half_up_at_an_exact_tie() {
         // Independent of the shared sellerAId state above: total=10.00, rate=0.75% gives a raw net
         // of 9.9250 — an exact tie at the 3rd decimal (HALF_UP -> 9.93, HALF_EVEN -> 9.92) that the
-        // Order(7) scenario (19.00 at 10%) never exercises, since 19.00 * 10 / 100 divides evenly
+        // Order(5) scenario (19.00 at 10%) never exercises, since 19.00 * 10 / 100 divides evenly
         // with nothing left to round.
         SellerProfile seller = sellerRepository.findById(sellerAId).orElseThrow();
         Item item = new Item();

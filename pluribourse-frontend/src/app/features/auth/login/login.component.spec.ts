@@ -55,4 +55,21 @@ describe('LoginComponent', () => {
     const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-flat-button][color="primary"]');
     expect(btn).not.toBeNull();
   });
+
+  it('password field starts masked and toggling reveals it as plain text', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const passwordInput: HTMLInputElement = fixture.nativeElement.querySelector('input[autocomplete="current-password"]');
+    const toggleBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.password-toggle-btn');
+    expect(passwordInput.type).toBe('password');
+
+    toggleBtn.click();
+    fixture.detectChanges();
+    expect(passwordInput.type).toBe('text');
+    expect(fixture.componentInstance.passwordVisible()).toBe(true);
+
+    toggleBtn.click();
+    fixture.detectChanges();
+    expect(passwordInput.type).toBe('password');
+  });
 });

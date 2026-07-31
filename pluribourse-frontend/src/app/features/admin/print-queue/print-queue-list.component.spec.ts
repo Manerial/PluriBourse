@@ -46,6 +46,7 @@ describe('PrintQueueListComponent', () => {
 
   const printQueueServiceMock = {
     getStatuses: vi.fn().mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER])),
+    refreshStatuses: vi.fn().mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER])),
     resumeQueue: vi.fn().mockReturnValue(of(undefined)),
     discardFailedJob: vi.fn().mockReturnValue(of(undefined)),
   };
@@ -54,6 +55,7 @@ describe('PrintQueueListComponent', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     printQueueServiceMock.getStatuses.mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER]));
+    printQueueServiceMock.refreshStatuses.mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER]));
     printQueueServiceMock.resumeQueue.mockReturnValue(of(undefined));
     printQueueServiceMock.discardFailedJob.mockReturnValue(of(undefined));
 
@@ -72,16 +74,24 @@ describe('PrintQueueListComponent', () => {
     await fixture.whenStable();
   });
 
-  it('loads printer statuses on init', () => {
+  it('loads printer statuses on init from the cached endpoint, not a live check', () => {
     expect(printQueueServiceMock.getStatuses).toHaveBeenCalledTimes(1);
+    expect(printQueueServiceMock.refreshStatuses).not.toHaveBeenCalled();
     expect(component.statuses().length).toBe(3);
     expect(component.error()).toBeNull();
   });
 
-  it('sets error key when load fails', async () => {
-    printQueueServiceMock.getStatuses.mockReturnValue(throwError(() => new Error('network')));
+  it('sets a dedicated error key when refresh() fails', async () => {
+    printQueueServiceMock.refreshStatuses.mockReturnValue(throwError(() => new Error('network')));
     await component.refresh();
-    expect(component.error()).toBe('admin.printQueue.error.load');
+    expect(component.error()).toBe('admin.printQueue.error.refresh');
+  });
+
+  it('refresh() live-checks connectivity via refreshStatuses(), not the cached getStatuses()', async () => {
+    printQueueServiceMock.getStatuses.mockClear();
+    await component.refresh();
+    expect(printQueueServiceMock.refreshStatuses).toHaveBeenCalledOnce();
+    expect(printQueueServiceMock.getStatuses).not.toHaveBeenCalled();
   });
 
   it('renders one card per printer with the connection chip state', () => {
@@ -129,7 +139,7 @@ describe('PrintQueueListComponent', () => {
   });
 
   it('shows an empty state when no printer is registered', async () => {
-    printQueueServiceMock.getStatuses.mockReturnValue(of([]));
+    printQueueServiceMock.refreshStatuses.mockReturnValue(of([]));
     await component.refresh();
     fixture.detectChanges();
     expect(component.statuses().length).toBe(0);

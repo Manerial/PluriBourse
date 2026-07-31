@@ -19,6 +19,9 @@ public class IgnoredPrinter {
     @Column(name = "printer_bridge_id", nullable = false, unique = true, length = 32)
     private String printerBridgeId;
 
+    @Column(name = "name", length = 100)
+    private String name;
+
     @Column(name = "ignored_at", nullable = false)
     private LocalDate ignoredAt;
 }

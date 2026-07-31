@@ -46,6 +46,12 @@
           <mat-icon aria-hidden="true">person</mat-icon>
           <span>{{ 'nav.account' | translate }}</span>
         </a>
+        @if (isVolunteer()) {
+          <a mat-menu-item routerLink="/printer-selection">
+            <mat-icon aria-hidden="true">print</mat-icon>
+            <span>{{ 'nav.printerSelection' | translate }}</span>
+          </a>
+        }
         <button mat-menu-item type="button" (click)="logout()">
           <mat-icon aria-hidden="true">logout</mat-icon>
           <span>{{ 'nav.logout' | translate }}</span>

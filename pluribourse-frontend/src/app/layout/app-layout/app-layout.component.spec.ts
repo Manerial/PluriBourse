@@ -68,6 +68,7 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/editions', component: StubComponent },
           { path: 'volunteer/deposit', component: StubComponent },
           { path: 'account', component: StubComponent },
+          { path: 'printer-selection', component: StubComponent },
           { path: '404', component: StubComponent },
         ]),
         provideTranslateService({ lang: 'en' }),
@@ -102,6 +103,24 @@ describe('AppLayoutComponent', () => {
     trigger.click();
     fixture.detectChanges();
     const link: HTMLAnchorElement | null = document.querySelector('a[href="/account"]');
+    expect(link).toBeTruthy();
+  });
+
+  it('does not render a link to /printer-selection in the user menu for an admin', () => {
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('.user-menu-trigger');
+    trigger.click();
+    fixture.detectChanges();
+    const link: HTMLAnchorElement | null = document.querySelector('a[href="/printer-selection"]');
+    expect(link).toBeNull();
+  });
+
+  it('renders a link to /printer-selection in the user menu for a volunteer', () => {
+    mockCurrentUser.set(volunteerUser);
+    fixture.detectChanges();
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('.user-menu-trigger');
+    trigger.click();
+    fixture.detectChanges();
+    const link: HTMLAnchorElement | null = document.querySelector('a[href="/printer-selection"]');
     expect(link).toBeTruthy();
   });
 
@@ -280,7 +299,21 @@ describe('AppLayoutComponent', () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(router.url).toBe('/404');
+      expect(router.url).toBe('/printer-selection');
+    });
+
+    it('redirects away from /printer-selection once the phase reaches Dépôt', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'PREPARATION' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/printer-selection');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/volunteer/deposit');
     });
 
     it('redirects from /404 to /volunteer/deposit once the phase reaches Dépôt', async () => {

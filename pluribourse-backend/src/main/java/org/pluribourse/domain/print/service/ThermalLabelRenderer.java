@@ -15,16 +15,20 @@ import java.util.Locale;
 
 /**
  * Renders thermal roll content as raw ESC/POS bytes (FR-026/FR-027/FR-030/FR-032/FR-045). Text is
- * encoded as ISO-8859-15 (Latin-9): covers French/English accented characters and the euro sign
- * with a single-byte charset, which is what commodity ESC/POS thermal printers expect by default —
- * no printer-specific code-page selection command is sent (unverifiable without real hardware).
+ * encoded as code page 858 (Cp858 — CP850 with the euro sign): on real hardware, commodity ESC/POS
+ * printers default to CP437/CP850 (confirmed by the euro sign printing as "ñ", CP437/CP850's glyph
+ * at the byte position ISO-8859-15 uses for €), not ISO-8859-15 as originally assumed. Cp858 is the
+ * standard Epson ESC/POS table (index 19) for accented Latin characters plus the euro sign, so the
+ * printer must be explicitly switched to it — INIT resets the printer to its power-on default table,
+ * so SELECT_CODEPAGE_858 must follow every INIT.
  */
 @Component
 @RequiredArgsConstructor
 public class ThermalLabelRenderer {
 
-    private static final Charset LABEL_CHARSET = Charset.forName("ISO-8859-15");
+    private static final Charset LABEL_CHARSET = Charset.forName("Cp858");
     private static final byte[] INIT = {0x1B, 0x40}; // ESC @ — initialize printer
+    private static final byte[] SELECT_CODEPAGE_858 = {0x1B, 0x74, 19}; // ESC t 19 — PC858 (Multilingual Latin I + Euro)
     private static final byte[] ALIGN_CENTER = {0x1B, 0x61, 0x01}; // ESC a 1 — center alignment
     private static final byte[] LINE_FEED = {0x0A};
     private static final byte[] PARTIAL_CUT = {0x1D, 0x56, 0x01}; // GS V 1 — partial cut
@@ -38,6 +42,7 @@ public class ThermalLabelRenderer {
     public byte[] renderSellerSeparator(String sellerFullName, String editionName) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         writeBytes(out, INIT);
+        writeBytes(out, SELECT_CODEPAGE_858);
         writeBytes(out, ALIGN_CENTER);
         writeLine(out, sellerFullName);
         writeLine(out, editionName);
@@ -55,6 +60,7 @@ public class ThermalLabelRenderer {
     public byte[] renderLabel(Item item, List<Item> sellerItems, int printerWidthMm, Locale locale) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         writeBytes(out, INIT);
+        writeBytes(out, SELECT_CODEPAGE_858);
         writeBytes(out, ALIGN_CENTER);
 
         writeLine(out, item.getEdition().getName());
