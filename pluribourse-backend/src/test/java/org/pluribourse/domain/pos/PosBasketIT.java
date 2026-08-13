@@ -49,7 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * concurrency scenario.
  * <p>
  * Order matters: phase transitions are one-directional in these E2E scenarios (cf. {@link PosScanIT}) —
- * the class ends in POST_SALE, so any scenario needing the Sale phase must run before {@link #phase_guard_rejects_all_five_endpoints_once_sale_phase_ends()}.
+ * the class ends in POST_SALE, so any scenario needing the Sale phase must run before {@link #phase_guard_rejects_four_endpoints_and_the_cancelled_basket_404s_add_item()}.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PosBasketIT extends IntegrationTest {
@@ -553,13 +553,20 @@ class PosBasketIT extends IntegrationTest {
     }
 
     /**
-     * Critical scenario (AC 9): a basket may legitimately outlive a phase change — its automatic
-     * cancellation is story 2.8, out of this story's scope. Placed last because phase transitions
-     * are one-directional in this test class.
+     * Critical scenario (AC 9): once story 2.8 landed, a basket no longer outlives a phase change —
+     * the transition to POST_SALE deletes {@code volunteer1BasketId} server-side (all baskets of the
+     * edition, story 2.8) before this scenario ever calls the five endpoints below. Four of them
+     * ({@code GET current}, {@code removeItem}, {@code removeLot}, {@code validate}) check the Sale
+     * phase guard before basket ownership, so they still 422 exactly as before 2.8 — the phase itself
+     * is already wrong regardless of whether the basket still exists. {@code addItem} is the outlier:
+     * it checks basket ownership first ({@code requireOwnedBasket}), so against a now-deleted basket
+     * it 404s instead — a more accurate response than the pre-2.8 422, since the real reason is that
+     * the basket was cancelled, not merely that the phase changed. Placed last because phase
+     * transitions are one-directional in this test class.
      */
     @Test
     @Order(23)
-    void phase_guard_rejects_all_five_endpoints_once_sale_phase_ends() throws Exception {
+    void phase_guard_rejects_four_endpoints_and_the_cancelled_basket_404s_add_item() throws Exception {
         addItem(volunteer1Session, volunteer1BasketId, ITEM_6_BARCODE);
 
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
@@ -573,8 +580,8 @@ class PosBasketIT extends IntegrationTest {
         mockMvc.perform(post("/api/pos/baskets/" + volunteer1BasketId + "/items")
                         .session(volunteer1Session).with(csrf())
                         .param("barcode", ITEM_6_BARCODE))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(endsWith("/basket-not-found")));
         mockMvc.perform(delete("/api/pos/baskets/" + volunteer1BasketId + "/items/1")
                         .session(volunteer1Session).with(csrf()))
                 .andExpect(status().isUnprocessableEntity())

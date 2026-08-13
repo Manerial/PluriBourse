@@ -8,6 +8,8 @@ import org.pluribourse.domain.edition.mapper.*;
 import org.pluribourse.domain.edition.repository.*;
 import org.pluribourse.domain.instanceconfig.service.*;
 import org.pluribourse.domain.item.repository.*;
+import org.pluribourse.domain.pos.entity.*;
+import org.pluribourse.domain.pos.repository.*;
 import org.pluribourse.domain.user.enums.*;
 import org.pluribourse.shared.sse.*;
 import org.springframework.stereotype.*;
@@ -27,6 +29,7 @@ public class EditionService {
     private final SseEmitterRegistry sseEmitterRegistry;
     private final ItemRepository itemRepository;
     private final EditionCategoryRepository editionCategoryRepository;
+    private final BasketRepository basketRepository;
 
     private Edition findById(Long id) {
         return repository.findById(id)
@@ -142,18 +145,32 @@ public class EditionService {
     }
 
     /**
-     * Persists the phase change and defers the SSE broadcast to run only after the
-     * transaction commits, so listeners never observe a phase event for a change that
-     * ends up rolled back.
+     * Persists the phase change, cancels any active POS basket for the edition (FR-090 —
+     * a basket can only exist during the Sale phase, so it is always stale once the phase
+     * changes, in either direction), and defers both SSE broadcasts to run only after the
+     * transaction commits, so listeners never observe an event for a change that ends up
+     * rolled back.
      */
     private EditionDto savePhaseThenSendEvent(Long id, Edition edition, PhaseType newPhase, PhaseType previousPhase) {
         edition.setPhase(newPhase);
         Edition saved = repository.save(edition);
-        PhaseChangedEventDto event = new PhaseChangedEventDto(id, newPhase, previousPhase);
+        PhaseChangedEventDto phaseChangedEvent = new PhaseChangedEventDto(id, newPhase, previousPhase);
+
+        List<Basket> activeBaskets = basketRepository.findAllByEditionId(id);
+        BasketCancelledEventDto basketCancelledEvent = activeBaskets.isEmpty()
+                ? null
+                : new BasketCancelledEventDto(id, newPhase);
+        if (!activeBaskets.isEmpty()) {
+            basketRepository.deleteAll(activeBaskets);
+        }
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                sseEmitterRegistry.broadcast("phase-changed", event);
+                sseEmitterRegistry.broadcast("phase-changed", phaseChangedEvent);
+                if (basketCancelledEvent != null) {
+                    sseEmitterRegistry.broadcast("basket-cancelled", basketCancelledEvent);
+                }
             }
         });
         return mapper.toDto(saved);
