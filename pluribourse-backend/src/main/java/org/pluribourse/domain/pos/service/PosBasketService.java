@@ -30,8 +30,10 @@ import org.pluribourse.domain.pos.repository.BasketItemRepository;
 import org.pluribourse.domain.pos.repository.BasketRepository;
 import org.pluribourse.domain.pos.repository.SaleRepository;
 import org.pluribourse.domain.user.repositories.UserRepository;
+import org.hibernate.exception.SnapshotIsolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -174,6 +176,18 @@ public class PosBasketService {
                 itemRepository.saveAndFlush(item);
             } catch (ObjectOptimisticLockingFailureException e) {
                 conflicts.add(new ConflictingItemDto(item.getId(), item.getName()));
+            } catch (JpaSystemException e) {
+                // MariaDB (unlike H2) can detect this same row-version race at the storage-engine
+                // level and reject the UPDATE outright (native error 1020) instead of letting it
+                // apply with zero affected rows — Hibernate's MariaDB dialect surfaces that as a
+                // SnapshotIsolationException, which Spring only ever translates to the generic
+                // JpaSystemException, never to ObjectOptimisticLockingFailureException (story 4.4).
+                // Walks the full cause chain (not just e.getCause()) so this still matches if a
+                // future Spring/Hibernate version adds another layer of wrapping around the cause.
+                if (!isCausedBy(e, SnapshotIsolationException.class)) {
+                    throw e;
+                }
+                conflicts.add(new ConflictingItemDto(item.getId(), item.getName()));
             }
         }
         if (!conflicts.isEmpty()) {
@@ -241,5 +255,19 @@ public class PosBasketService {
 
     private List<Item> basketItemsOf(Basket basket) {
         return basketItemRepository.findAllByBasketIdOrderById(basket.getId()).stream().map(BasketItem::getItem).toList();
+    }
+
+    /**
+     * Walks the full cause chain of {@code throwable} for an instance of {@code type} — unlike
+     * {@code getCause()}, tolerant of extra wrapping layers a future Spring/Hibernate version
+     * might introduce between the two.
+     */
+    private static boolean isCausedBy(Throwable throwable, Class<? extends Throwable> type) {
+        for (Throwable cause = throwable.getCause(); cause != null; cause = cause.getCause()) {
+            if (type.isInstance(cause)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
