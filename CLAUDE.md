@@ -24,6 +24,7 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 - **JAMAIS** créer, réinitialiser ou modifier un mot de passe (admin ou autre) dans l'environnement de développement local, même via un outil CLI prévu à cet effet (`reset-admin-password`, `create-admin`, etc.).
 - **JAMAIS** modifier les données de la base de développement locale sans confirmation explicite préalable.
 - **TOUJOURS** demander à l'utilisateur de vérifier lui-même pour une vérification visuelle.
+- **TOUJOURS** vérifier que les anciens devs ont été commité avant de commencer le travail sur une nouvelle story.
 
 ## Architecture
 
