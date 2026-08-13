@@ -81,4 +81,15 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             "AND i.sellerProfile.sellerNumber = :sellerNumber AND i.itemNumber = :itemNumber")
     Optional<Item> findByEditionIdAndSellerNumberAndItemNumber(
             @Param("editionId") Long editionId, @Param("sellerNumber") int sellerNumber, @Param("itemNumber") int itemNumber);
+
+    /**
+     * Buyer invoice (story 4.5): {@code JOIN FETCH i.lot} for the same reason as
+     * {@link #findAllBySellerProfileIdOrderByItemNumberAsc} — the items are captured into a
+     * {@link PrintJob} executed later on the print queue's consumer thread, after this method's
+     * transaction/session has closed. Neither {@code edition} nor {@code sellerProfile} is
+     * fetched: {@code InvoiceRenderer} reads neither (the edition name is resolved separately, see
+     * {@code PosInvoicePrintService}).
+     */
+    @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.sale.id = :saleId ORDER BY i.id ASC")
+    List<Item> findAllBySaleIdOrderById(@Param("saleId") Long saleId);
 }

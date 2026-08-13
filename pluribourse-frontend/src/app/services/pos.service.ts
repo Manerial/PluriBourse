@@ -30,4 +30,8 @@ export class PosService {
   validate(basketId: number, dto: ValidateBasketRequest): Observable<Sale> {
     return this.http.post<Sale>(`/api/pos/baskets/${basketId}/validate`, dto);
   }
+
+  printInvoice(saleId: number): Observable<void> {
+    return this.http.post<void>(`/api/pos/sales/${saleId}/invoice/print`, null);
+  }
 }

@@ -447,6 +447,14 @@
       "warning": {
         "incomplete": "Article incomplet : {{ comment }}",
         "alreadyInBasket": "Cet article est déjà dans le panier."
+      },
+      "invoice": {
+        "button": "Imprimer la facture",
+        "success": "Facture envoyée à l'impression.",
+        "error": {
+          "generic": "Impossible d'imprimer la facture.",
+          "a4PrinterUnavailable": "Aucune imprimante A4 disponible pour l'impression de la facture."
+        }
       }
     }
   },

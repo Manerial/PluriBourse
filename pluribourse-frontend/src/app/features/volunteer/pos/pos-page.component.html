@@ -79,6 +79,18 @@
         (click)="openPaymentDialog()">
         {{ 'volunteer.pos.basket.validate' | translate }}
       </button>
+      @if (lastSale(); as sale) {
+        <button
+          type="button"
+          mat-flat-button
+          color="primary"
+          class="print-invoice-btn"
+          [disabled]="printingInvoice()"
+          (click)="printInvoice()">
+          <mat-icon>print</mat-icon>
+          {{ 'volunteer.pos.invoice.button' | translate }}
+        </button>
+      }
     </div>
   </div>
 </div>

@@ -447,6 +447,14 @@
       "warning": {
         "incomplete": "Incomplete item: {{ comment }}",
         "alreadyInBasket": "This item is already in the basket."
+      },
+      "invoice": {
+        "button": "Print invoice",
+        "success": "Invoice sent to print.",
+        "error": {
+          "generic": "Could not print the invoice.",
+          "a4PrinterUnavailable": "No A4 printer available to print the invoice."
+        }
       }
     }
   },

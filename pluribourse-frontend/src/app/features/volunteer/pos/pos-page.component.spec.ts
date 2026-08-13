@@ -46,6 +46,7 @@ describe('PosPageComponent', () => {
     removeItem: vi.fn(),
     removeLot: vi.fn(),
     validate: vi.fn(),
+    printInvoice: vi.fn(),
   };
   const paymentDialogServiceMock = { open: vi.fn() };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
@@ -72,6 +73,10 @@ describe('PosPageComponent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('loads the persisted basket on init and restores it (NFR-006)', async () => {
@@ -220,5 +225,95 @@ describe('PosPageComponent', () => {
     await component.onScan('00010001');
     expect(component.lastScanIssue()).toBeNull();
     expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.error.generic');
+  });
+
+  const VALIDATED_SALE = { id: 42, total: 5, paymentMethod: 'CASH' as const, amountGiven: null, changeDue: null };
+
+  it('shows the invoice button after a successful validation, with the sale it printed (AC1, AC5)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+
+    await component.openPaymentDialog();
+    fixture.detectChanges();
+
+    expect(component.lastSale()).toEqual(VALIDATED_SALE);
+    expect(fixture.nativeElement.querySelector('.print-invoice-btn')).not.toBeNull();
+  });
+
+  it('hides the invoice button 30 seconds after validation, with no user action (AC5)', async () => {
+    vi.useFakeTimers();
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+
+    await component.openPaymentDialog();
+    fixture.detectChanges();
+    expect(component.lastSale()).not.toBeNull();
+
+    vi.advanceTimersByTime(30000);
+    fixture.detectChanges();
+
+    expect(component.lastSale()).toBeNull();
+    expect(fixture.nativeElement.querySelector('.print-invoice-btn')).toBeNull();
+  });
+
+  it('a scan while the invoice button is visible never clears it (AC5, non-regression)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+    await component.openPaymentDialog();
+
+    posServiceMock.addItem.mockReturnValue(of(EMPTY_BASKET));
+    await component.onScan('00010001');
+
+    expect(component.lastSale()).toEqual(VALIDATED_SALE);
+  });
+
+  it('printing the invoice calls the service with the sale id and shows a success toast (AC1)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+    await component.openPaymentDialog();
+
+    posServiceMock.printInvoice.mockReturnValue(of(undefined));
+    await component.printInvoice();
+
+    expect(posServiceMock.printInvoice).toHaveBeenCalledWith(VALIDATED_SALE.id);
+    expect(toastMock.showSuccess).toHaveBeenCalledWith('volunteer.pos.invoice.success');
+  });
+
+  it('shows a dedicated toast when no A4 printer is available (AC7)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+    await component.openPaymentDialog();
+
+    posServiceMock.printInvoice.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 422, error: { type: 'https://pluribourse/errors/invalid-printer-selection' } }))
+    );
+    await component.printInvoice();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.invoice.error.a4PrinterUnavailable');
+  });
+
+  it('reprinting within the 30s window calls the service again without hiding the button (AC4)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+    await component.openPaymentDialog();
+
+    posServiceMock.printInvoice.mockReturnValue(of(undefined));
+    await component.printInvoice();
+    await component.printInvoice();
+
+    expect(posServiceMock.printInvoice).toHaveBeenCalledTimes(2);
+    expect(component.lastSale()).toEqual(VALIDATED_SALE);
   });
 });
