@@ -89,6 +89,22 @@ export class PosPageComponent implements OnInit {
     }
   }
 
+  async removeLot(lotId: number): Promise<void> {
+    const currentBasket = this.basket();
+    if (this.removeInFlight || !currentBasket) {
+      return;
+    }
+    this.removeInFlight = true;
+    try {
+      const updated = await firstValueFrom(this.posService.removeLot(currentBasket.id, lotId));
+      this.basket.set(updated);
+    } catch {
+      this.toast.showError(this.translate.instant('volunteer.pos.error.generic'));
+    } finally {
+      this.removeInFlight = false;
+    }
+  }
+
   async openPaymentDialog(): Promise<void> {
     const currentBasket = this.basket();
     if (this.validateInFlight || !currentBasket || currentBasket.items.length === 0) {

@@ -7,6 +7,7 @@ public record ScanResultDto(
         String name,
         BigDecimal price,
         boolean incomplete,
-        String comment
+        String comment,
+        Long lotId
 ) {
 }

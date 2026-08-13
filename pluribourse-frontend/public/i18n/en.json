@@ -413,7 +413,12 @@
         "partOfLot": "Part of a lot",
         "remove": "Remove {{ name }}",
         "total": "Total: €{{ total }}",
-        "validate": "Validate transaction"
+        "validate": "Validate transaction",
+        "lot": {
+          "header": "{{ name }} — {{ scanned }}/{{ total }} scanned",
+          "remove": "Remove entire lot",
+          "incomplete": "Incomplete lot — {{ missing }} item(s) missing out of {{ total }}. You can validate the sale or remove the lot."
+        }
       },
       "payment": {
         "title": "Validate transaction",

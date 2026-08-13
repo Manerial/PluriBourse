@@ -46,6 +46,12 @@ public class PosBasketController {
         return ResponseEntity.ok(service.removeItem(basketId, itemId, userId(authentication)));
     }
 
+    @DeleteMapping("/{basketId}/lots/{lotId}")
+    public ResponseEntity<BasketDto> removeLot(
+            @PathVariable Long basketId, @PathVariable Long lotId, Authentication authentication) {
+        return ResponseEntity.ok(service.removeLot(basketId, lotId, userId(authentication)));
+    }
+
     @PostMapping("/{basketId}/validate")
     public ResponseEntity<SaleDto> validate(
             @PathVariable Long basketId, @Valid @RequestBody ValidateBasketDto dto, Authentication authentication) {

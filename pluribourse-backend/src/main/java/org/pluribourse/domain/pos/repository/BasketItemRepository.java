@@ -21,4 +21,7 @@ public interface BasketItemRepository extends JpaRepository<BasketItem, Long> {
      */
     @Query("SELECT bi FROM BasketItem bi JOIN FETCH bi.item i LEFT JOIN FETCH i.lot WHERE bi.basket.id = :basketId ORDER BY bi.id ASC")
     List<BasketItem> findAllByBasketIdOrderById(@Param("basketId") Long basketId);
+
+    @Query("SELECT bi FROM BasketItem bi JOIN bi.item i WHERE bi.basket.id = :basketId AND i.lot.id = :lotId")
+    List<BasketItem> findAllByBasketIdAndItemLotId(@Param("basketId") Long basketId, @Param("lotId") Long lotId);
 }

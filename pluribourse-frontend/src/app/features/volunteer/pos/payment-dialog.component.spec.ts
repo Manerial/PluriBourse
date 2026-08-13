@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { PaymentDialogComponent, PaymentDialogData } from './payment-dialog.component';
 import { ScanResult } from '../../../models/pos.model';
 
-const MOCK_ITEM: ScanResult = { itemId: 1, name: 'Kapla', price: 5, incomplete: false, comment: null };
+const MOCK_ITEM: ScanResult = { itemId: 1, name: 'Kapla', price: 5, incomplete: false, comment: null, lotId: null };
 
 const testData: PaymentDialogData = {
   items: [MOCK_ITEM],

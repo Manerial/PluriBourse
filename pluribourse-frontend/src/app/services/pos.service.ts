@@ -23,6 +23,10 @@ export class PosService {
     return this.http.delete<Basket>(`/api/pos/baskets/${basketId}/items/${itemId}`);
   }
 
+  removeLot(basketId: number, lotId: number): Observable<Basket> {
+    return this.http.delete<Basket>(`/api/pos/baskets/${basketId}/lots/${lotId}`);
+  }
+
   validate(basketId: number, dto: ValidateBasketRequest): Observable<Sale> {
     return this.http.post<Sale>(`/api/pos/baskets/${basketId}/validate`, dto);
   }

@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.edition.entity.Edition;
 import org.pluribourse.domain.edition.service.EditionService;
 import org.pluribourse.domain.item.entity.Item;
+import org.pluribourse.domain.item.entity.Lot;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.item.service.ItemPricing;
 import org.pluribourse.domain.item.service.PhaseGuard;
 import org.pluribourse.domain.pos.dto.BasketDto;
 import org.pluribourse.domain.pos.dto.ConflictingItemDto;
+import org.pluribourse.domain.pos.dto.LotGroupDto;
 import org.pluribourse.domain.pos.dto.SaleDto;
 import org.pluribourse.domain.pos.dto.ScanResultDto;
 import org.pluribourse.domain.pos.dto.ValidateBasketDto;
@@ -17,6 +19,7 @@ import org.pluribourse.domain.pos.entity.BasketItem;
 import org.pluribourse.domain.pos.entity.PaymentMethod;
 import org.pluribourse.domain.pos.entity.Sale;
 import org.pluribourse.domain.pos.exception.BasketItemNotFoundException;
+import org.pluribourse.domain.pos.exception.BasketLotNotFoundException;
 import org.pluribourse.domain.pos.exception.BasketNotFoundException;
 import org.pluribourse.domain.pos.exception.BasketValidationConflictException;
 import org.pluribourse.domain.pos.exception.EmptyBasketException;
@@ -39,8 +42,8 @@ import java.util.List;
 
 /**
  * Story 4.2 — persisted POS basket (replaces the client-only basket from story 4.1's scanner,
- * NFR-006). All four public methods require the Sale phase (AC 9): {@code addItem} inherits the
- * guard from {@link PosScanService#scan}, the other three re-check it explicitly since a basket
+ * NFR-006). All five public methods require the Sale phase (AC 9): {@code addItem} inherits the
+ * guard from {@link PosScanService#scan}, the other four re-check it explicitly since a basket
  * can legitimately outlive a phase change (its server-side cancellation is story 2.8, not this
  * story) and must never let a stale basket validate a payment outside the Sale phase.
  */
@@ -96,6 +99,23 @@ public class PosBasketService {
         BasketItem basketItem = basketItemRepository.findByBasketIdAndItemId(basketId, itemId)
                 .orElseThrow(() -> new BasketItemNotFoundException(basketId, itemId));
         basketItemRepository.delete(basketItem);
+        return toDto(basket);
+    }
+
+    /**
+     * Removes every item of the given lot currently in the basket in one call (AC 4) — not an
+     * item-by-item client-side removal. Same guard order as {@code removeItem} (phase before
+     * ownership, AC 9).
+     */
+    @Transactional
+    public BasketDto removeLot(Long basketId, Long lotId, Long userId) {
+        PhaseGuard.requireSalePhase(editionService.getActiveEdition());
+        Basket basket = requireOwnedBasket(basketId, userId);
+        List<BasketItem> lotItems = basketItemRepository.findAllByBasketIdAndItemLotId(basketId, lotId);
+        if (lotItems.isEmpty()) {
+            throw new BasketLotNotFoundException(basketId, lotId);
+        }
+        basketItemRepository.deleteAll(lotItems);
         return toDto(basket);
     }
 
@@ -196,7 +216,27 @@ public class PosBasketService {
     private BasketDto toDto(Basket basket) {
         List<Item> items = basketItemsOf(basket);
         List<ScanResultDto> itemDtos = items.stream().map(scanResultMapper::toDto).toList();
-        return new BasketDto(basket.getId(), itemDtos, ItemPricing.computeTotal(items));
+        return new BasketDto(basket.getId(), itemDtos, buildLotGroups(items), ItemPricing.computeTotal(items));
+    }
+
+    /**
+     * One group per distinct lot present in {@code items} (order of first appearance), each
+     * reporting how many of its members are in this basket versus the lot's total membership —
+     * the frontend uses this to render the incomplete/complete lot states (AC 2, 3).
+     */
+    private List<LotGroupDto> buildLotGroups(List<Item> items) {
+        List<LotGroupDto> groups = new ArrayList<>();
+        for (Item representative : ItemPricing.distinctByLot(items)) {
+            Lot lot = representative.getLot();
+            if (lot == null) {
+                continue;
+            }
+            long scannedCount = items.stream()
+                    .filter(item -> item.getLot() != null && lot.getId().equals(item.getLot().getId()))
+                    .count();
+            groups.add(new LotGroupDto(lot.getId(), lot.getName(), lot.getGlobalPrice(), (int) scannedCount, lot.getItems().size()));
+        }
+        return groups;
     }
 
     private List<Item> basketItemsOf(Basket basket) {

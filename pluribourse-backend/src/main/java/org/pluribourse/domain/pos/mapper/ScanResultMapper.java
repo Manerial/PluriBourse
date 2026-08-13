@@ -9,5 +9,6 @@ import org.pluribourse.domain.pos.dto.ScanResultDto;
 public interface ScanResultMapper {
 
     @Mapping(target = "itemId", source = "id")
+    @Mapping(target = "lotId", source = "lot.id")
     ScanResultDto toDto(Item item);
 }

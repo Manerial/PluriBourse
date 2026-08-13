@@ -15,24 +15,59 @@
       } @else {
         <ul class="basket-list">
           @for (item of basket()!.items; track item.itemId) {
-            <li class="basket-item">
-              <span class="basket-item__name">{{ item.name }}</span>
-              @if (item.price != null) {
+            @if (item.lotId === null) {
+              <li class="basket-item">
+                <span class="basket-item__name">{{ item.name }}</span>
                 <span class="basket-item__price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price } }}</span>
-              } @else {
-                <span class="basket-item__price">{{ 'volunteer.pos.basket.partOfLot' | translate }}</span>
-              }
-              <button
-                type="button"
-                mat-icon-button
-                class="basket-item__remove"
-                [attr.aria-label]="'volunteer.pos.basket.remove' | translate: { name: item.name }"
-                (click)="removeItem(item.itemId)">
-                <mat-icon>close</mat-icon>
-              </button>
-            </li>
+                <button
+                  type="button"
+                  mat-icon-button
+                  class="basket-item__remove"
+                  [attr.aria-label]="'volunteer.pos.basket.remove' | translate: { name: item.name }"
+                  (click)="removeItem(item.itemId)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </li>
+            }
           }
         </ul>
+
+        @for (group of basket()!.lotGroups; track group.lotId) {
+          <div class="lot-group" [class.lot-group--complete]="group.scannedCount === group.totalCount">
+            <div class="lot-group__header">
+              <mat-icon class="lot-group__icon">{{ group.scannedCount === group.totalCount ? 'check_circle' : 'warning' }}</mat-icon>
+              <span class="lot-group__label">
+                {{ 'volunteer.pos.basket.lot.header' | translate: { name: group.lotName, scanned: group.scannedCount, total: group.totalCount } }}
+              </span>
+              <span class="lot-group__subtotal">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: group.globalPrice } }}</span>
+              <button type="button" mat-button class="lot-group__remove" (click)="removeLot(group.lotId)">
+                {{ 'volunteer.pos.basket.lot.remove' | translate }}
+              </button>
+            </div>
+            <ul class="lot-group__items">
+              @for (item of basket()!.items; track item.itemId) {
+                @if (item.lotId === group.lotId) {
+                  <li class="basket-item">
+                    <span class="basket-item__name">{{ item.name }}</span>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      class="basket-item__remove"
+                      [attr.aria-label]="'volunteer.pos.basket.remove' | translate: { name: item.name }"
+                      (click)="removeItem(item.itemId)">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </li>
+                }
+              }
+            </ul>
+            @if (group.scannedCount < group.totalCount) {
+              <app-notification-inline
+                [message]="'volunteer.pos.basket.lot.incomplete' | translate: { missing: group.totalCount - group.scannedCount, total: group.totalCount }"
+                [variant]="'warning'" />
+            }
+          </div>
+        }
       }
       <div class="basket-total">{{ 'volunteer.pos.basket.total' | translate: { total: basket()?.total ?? 0 } }}</div>
       <button

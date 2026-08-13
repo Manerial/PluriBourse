@@ -41,13 +41,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Story 4.2 — persisted POS basket & payment validation. Alice (seller 1) gets 4 individual items
- * (barcodes 0001-0003 for the shopping-cart scenarios, 0006 reserved untouched for the end-of-class
- * phase-guard scenario) plus a 2-item lot (barcodes 0004-0005, global price 10.00) to prove the
- * lot-aware total. Bob (seller 2) gets a single item used only by the concurrency scenario.
+ * Story 4.2/4.3 — persisted POS basket, payment validation & lot handling. Alice (seller 1) gets 4
+ * individual items (barcodes 0001-0003 for the shopping-cart scenarios, 0006 reserved untouched
+ * for the end-of-class phase-guard scenario) plus a 2-item lot (barcodes 0004-0005, global price
+ * 10.00) to prove the lot-aware total, and a second 2-item lot (barcodes 0008-0009, global price
+ * 6.00) used only by the lot-removal scenario. Bob (seller 2) gets a single item used only by the
+ * concurrency scenario.
  * <p>
  * Order matters: phase transitions are one-directional in these E2E scenarios (cf. {@link PosScanIT}) —
- * the class ends in POST_SALE, so any scenario needing the Sale phase must run before {@link #phase_guard_rejects_all_four_endpoints_once_sale_phase_ends()}.
+ * the class ends in POST_SALE, so any scenario needing the Sale phase must run before {@link #phase_guard_rejects_all_five_endpoints_once_sale_phase_ends()}.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PosBasketIT extends IntegrationTest {
@@ -72,10 +74,13 @@ class PosBasketIT extends IntegrationTest {
     private static final String LOT_ITEM_2_BARCODE = "00010005";
     private static final String ITEM_6_BARCODE = "00010006"; // Backup, 1.50 — untouched until phase-guard scenario
     private static final String ITEM_7_BARCODE = "00010007"; // Insuffisant, 4.00 — insufficient-amount scenario only
+    private static final String LOT2_ITEM_1_BARCODE = "00010008"; // Lot Retrait, 6.00 — removal scenario only
+    private static final String LOT2_ITEM_2_BARCODE = "00010009";
     private static final String BOB_ITEM_BARCODE = "00020001"; // Boardgame, 6.00 — concurrency scenario only
 
     private Long item1Id;
     private Long volunteer1BasketId;
+    private Long lotJouetsId;
 
     @org.junit.jupiter.api.BeforeAll
     void setUpSessions() throws Exception {
@@ -169,6 +174,16 @@ class PosBasketIT extends IntegrationTest {
         createItem(aliceId, "Backup", "1.50");
         createItem(aliceId, "Insuffisant", "4.00");
 
+        CreateLotDto lot2Payload = new CreateLotDto(aliceId, "Lot Retrait", new BigDecimal("6.00"),
+                List.of(new CreateLotItemDto(categoryId, "Lot retrait item A", false, null),
+                        new CreateLotItemDto(categoryId, "Lot retrait item B", false, null)));
+        mockMvc.perform(post("/api/lots")
+                        .session(volunteer1Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lot2Payload)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
         SellerDto bobPayload = new SellerDto(null, "Bob", "Vendeur", "bob.panier@email.com", "0600000002");
         MvcResult bobResult = mockMvc.perform(post("/api/sellers")
                         .session(volunteer1Session).with(csrf())
@@ -234,11 +249,17 @@ class PosBasketIT extends IntegrationTest {
 
         BasketDto afterFirstLotItem = addItem(volunteer1Session, volunteer1BasketId, LOT_ITEM_1_BARCODE);
         assertThat(afterFirstLotItem.total()).isEqualByComparingTo("15.00");
+        assertThat(afterFirstLotItem.lotGroups()).hasSize(1);
+        assertThat(afterFirstLotItem.lotGroups().get(0).scannedCount()).isEqualTo(1);
+        assertThat(afterFirstLotItem.lotGroups().get(0).totalCount()).isEqualTo(2);
+        assertThat(afterFirstLotItem.lotGroups().get(0).globalPrice()).isEqualByComparingTo("10.00");
+        lotJouetsId = afterFirstLotItem.lotGroups().get(0).lotId();
 
         // The lot's global price must be counted once, not twice, once its second member joins too.
         BasketDto afterSecondLotItem = addItem(volunteer1Session, volunteer1BasketId, LOT_ITEM_2_BARCODE);
         assertThat(afterSecondLotItem.total()).isEqualByComparingTo("15.00");
         assertThat(afterSecondLotItem.items()).hasSize(3);
+        assertThat(afterSecondLotItem.lotGroups().get(0).scannedCount()).isEqualTo(2);
     }
 
     private BasketDto addItem(MockHttpSession session, Long basketId, String barcode) throws Exception {
@@ -434,6 +455,38 @@ class PosBasketIT extends IntegrationTest {
 
     @Test
     @Order(19)
+    void removing_the_entire_lot_removes_all_its_items() throws Exception {
+        MvcResult v2CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer2Session))
+                .andReturn();
+        Long v2BasketId = objectMapper.readValue(v2CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+
+        BasketDto afterFirst = addItem(volunteer2Session, v2BasketId, LOT2_ITEM_1_BARCODE);
+        assertThat(afterFirst.lotGroups()).hasSize(1);
+        assertThat(afterFirst.lotGroups().get(0).scannedCount()).isEqualTo(1);
+        assertThat(afterFirst.lotGroups().get(0).totalCount()).isEqualTo(2);
+        Long lot2Id = afterFirst.lotGroups().get(0).lotId();
+
+        BasketDto afterSecond = addItem(volunteer2Session, v2BasketId, LOT2_ITEM_2_BARCODE);
+        assertThat(afterSecond.lotGroups().get(0).scannedCount()).isEqualTo(2);
+        assertThat(afterSecond.total()).isEqualByComparingTo("6.00");
+
+        MvcResult removeResult = mockMvc.perform(delete("/api/pos/baskets/" + v2BasketId + "/lots/" + lot2Id)
+                        .session(volunteer2Session).with(csrf()))
+                .andExpect(status().isOk())
+                .andReturn();
+        BasketDto afterRemove = objectMapper.readValue(removeResult.getResponse().getContentAsString(), BasketDto.class);
+        assertThat(afterRemove.items()).isEmpty();
+        assertThat(afterRemove.lotGroups()).isEmpty();
+        assertThat(afterRemove.total()).isEqualByComparingTo("0");
+
+        mockMvc.perform(delete("/api/pos/baskets/" + v2BasketId + "/lots/" + lot2Id)
+                        .session(volunteer2Session).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(endsWith("/basket-lot-not-found")));
+    }
+
+    @Test
+    @Order(20)
     void a_sale_conflict_is_detected_at_validation_not_at_scan() throws Exception {
         MvcResult v1CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer1Session))
                 .andReturn();
@@ -472,14 +525,17 @@ class PosBasketIT extends IntegrationTest {
     }
 
     @Test
-    @Order(20)
-    void seller_role_is_forbidden_on_all_four_endpoints() throws Exception {
+    @Order(21)
+    void seller_role_is_forbidden_on_all_five_endpoints() throws Exception {
         mockMvc.perform(get("/api/pos/baskets/current").session(sellerSession))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/pos/baskets/" + volunteer1BasketId + "/items")
                         .session(sellerSession).with(csrf()).param("barcode", ITEM_6_BARCODE))
                 .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/pos/baskets/" + volunteer1BasketId + "/items/1")
+                        .session(sellerSession).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/pos/baskets/" + volunteer1BasketId + "/lots/1")
                         .session(sellerSession).with(csrf()))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/pos/baskets/" + volunteer1BasketId + "/validate")
@@ -490,7 +546,7 @@ class PosBasketIT extends IntegrationTest {
     }
 
     @Test
-    @Order(21)
+    @Order(22)
     void unauthenticated_request_returns_401() throws Exception {
         mockMvc.perform(get("/api/pos/baskets/current"))
                 .andExpect(status().isUnauthorized());
@@ -502,8 +558,8 @@ class PosBasketIT extends IntegrationTest {
      * are one-directional in this test class.
      */
     @Test
-    @Order(22)
-    void phase_guard_rejects_all_four_endpoints_once_sale_phase_ends() throws Exception {
+    @Order(23)
+    void phase_guard_rejects_all_five_endpoints_once_sale_phase_ends() throws Exception {
         addItem(volunteer1Session, volunteer1BasketId, ITEM_6_BARCODE);
 
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
@@ -520,6 +576,10 @@ class PosBasketIT extends IntegrationTest {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));
         mockMvc.perform(delete("/api/pos/baskets/" + volunteer1BasketId + "/items/1")
+                        .session(volunteer1Session).with(csrf()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));
+        mockMvc.perform(delete("/api/pos/baskets/" + volunteer1BasketId + "/lots/" + lotJouetsId)
                         .session(volunteer1Session).with(csrf()))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));

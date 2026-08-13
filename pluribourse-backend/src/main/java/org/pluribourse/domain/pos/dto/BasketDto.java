@@ -6,6 +6,7 @@ import java.util.List;
 public record BasketDto(
         Long id,
         List<ScanResultDto> items,
+        List<LotGroupDto> lotGroups,
         BigDecimal total
 ) {
 }

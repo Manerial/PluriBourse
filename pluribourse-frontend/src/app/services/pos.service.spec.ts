@@ -11,11 +11,13 @@ const MOCK_SCAN_RESULT: ScanResult = {
   price: 5,
   incomplete: false,
   comment: null,
+  lotId: null,
 };
 
 const MOCK_BASKET: Basket = {
   id: 1,
   items: [MOCK_SCAN_RESULT],
+  lotGroups: [],
   total: 5,
 };
 
@@ -66,6 +68,14 @@ describe('PosService', () => {
   it('removeItem() sends DELETE /api/pos/baskets/{basketId}/items/{itemId}', async () => {
     const p = firstValueFrom(service.removeItem(1, 2));
     const req = http.expectOne('/api/pos/baskets/1/items/2');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(MOCK_BASKET);
+    expect(await p).toEqual(MOCK_BASKET);
+  });
+
+  it('removeLot() sends DELETE /api/pos/baskets/{basketId}/lots/{lotId}', async () => {
+    const p = firstValueFrom(service.removeLot(1, 2));
+    const req = http.expectOne('/api/pos/baskets/1/lots/2');
     expect(req.request.method).toBe('DELETE');
     req.flush(MOCK_BASKET);
     expect(await p).toEqual(MOCK_BASKET);

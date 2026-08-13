@@ -9,12 +9,32 @@ import { PaymentDialogService } from './payment-dialog.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { Basket, ScanResult } from '../../../models/pos.model';
 
-const ITEM_1: ScanResult = { itemId: 1, name: 'Kapla', price: 5, incomplete: false, comment: null };
-const ITEM_2_INCOMPLETE: ScanResult = { itemId: 2, name: 'Puzzle', price: 3, incomplete: true, comment: 'Manque une piece' };
-const LOT_ITEM: ScanResult = { itemId: 3, name: 'Lot item A', price: null, incomplete: false, comment: null };
+const ITEM_1: ScanResult = { itemId: 1, name: 'Kapla', price: 5, incomplete: false, comment: null, lotId: null };
+const ITEM_2_INCOMPLETE: ScanResult = {
+  itemId: 2,
+  name: 'Puzzle',
+  price: 3,
+  incomplete: true,
+  comment: 'Manque une piece',
+  lotId: null,
+};
+const LOT_ITEM_A: ScanResult = { itemId: 3, name: 'Lot item A', price: null, incomplete: false, comment: null, lotId: 100 };
+const LOT_ITEM_B: ScanResult = { itemId: 4, name: 'Lot item B', price: null, incomplete: false, comment: null, lotId: 100 };
 
-const EMPTY_BASKET: Basket = { id: 10, items: [], total: 0 };
-const BASKET_WITH_ITEM_1: Basket = { id: 10, items: [ITEM_1], total: 5 };
+const EMPTY_BASKET: Basket = { id: 10, items: [], lotGroups: [], total: 0 };
+const BASKET_WITH_ITEM_1: Basket = { id: 10, items: [ITEM_1], lotGroups: [], total: 5 };
+const BASKET_WITH_INCOMPLETE_LOT: Basket = {
+  id: 10,
+  items: [ITEM_1, LOT_ITEM_A],
+  lotGroups: [{ lotId: 100, lotName: 'Lot Jouets', globalPrice: 10, scannedCount: 1, totalCount: 2 }],
+  total: 15,
+};
+const BASKET_WITH_COMPLETE_LOT: Basket = {
+  id: 10,
+  items: [LOT_ITEM_A, LOT_ITEM_B],
+  lotGroups: [{ lotId: 100, lotName: 'Lot Jouets', globalPrice: 10, scannedCount: 2, totalCount: 2 }],
+  total: 10,
+};
 
 describe('PosPageComponent', () => {
   let fixture: ComponentFixture<PosPageComponent>;
@@ -24,6 +44,7 @@ describe('PosPageComponent', () => {
     getCurrentBasket: vi.fn(),
     addItem: vi.fn(),
     removeItem: vi.fn(),
+    removeLot: vi.fn(),
     validate: vi.fn(),
   };
   const paymentDialogServiceMock = { open: vi.fn() };
@@ -70,7 +91,7 @@ describe('PosPageComponent', () => {
 
   it('shows a warning when the newly added item is incomplete', async () => {
     await createComponent();
-    posServiceMock.addItem.mockReturnValue(of({ id: 10, items: [ITEM_2_INCOMPLETE], total: 3 }));
+    posServiceMock.addItem.mockReturnValue(of({ id: 10, items: [ITEM_2_INCOMPLETE], lotGroups: [], total: 3 }));
     await component.onScan('00010002');
     expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.warning.incomplete', variant: 'warning' });
   });
@@ -114,17 +135,48 @@ describe('PosPageComponent', () => {
     expect(validateBtn.disabled).toBe(false);
   });
 
-  it('a null item price (lot item) is never interpolated as a raw price (AC1)', async () => {
-    await createComponent({ id: 10, items: [LOT_ITEM], total: 10 });
-    const priceEl: HTMLElement = fixture.nativeElement.querySelector('.basket-item__price');
-    expect(priceEl.textContent).toContain('volunteer.pos.basket.partOfLot');
+  it('an incomplete lot is rendered as a separate group with the scanned counter and a warning notification (AC1, AC2)', async () => {
+    await createComponent(BASKET_WITH_INCOMPLETE_LOT);
+    const lotGroup: HTMLElement = fixture.nativeElement.querySelector('.lot-group');
+    expect(lotGroup).not.toBeNull();
+    expect(lotGroup.classList.contains('lot-group--complete')).toBe(false);
+    const warning: HTMLElement = fixture.nativeElement.querySelector('app-notification-inline');
+    expect(warning).not.toBeNull();
+  });
+
+  it('a complete lot shows no warning notification (AC3)', async () => {
+    await createComponent(BASKET_WITH_COMPLETE_LOT);
+    const lotGroup: HTMLElement = fixture.nativeElement.querySelector('.lot-group');
+    expect(lotGroup.classList.contains('lot-group--complete')).toBe(true);
+    expect(fixture.nativeElement.querySelector('app-notification-inline')).toBeNull();
+  });
+
+  it('clicking "remove entire lot" calls removeLot() and updates the basket display (AC4)', async () => {
+    await createComponent(BASKET_WITH_INCOMPLETE_LOT);
+    posServiceMock.removeLot.mockReturnValue(of(EMPTY_BASKET));
+    await component.removeLot(100);
+    expect(posServiceMock.removeLot).toHaveBeenCalledWith(BASKET_WITH_INCOMPLETE_LOT.id, 100);
+    expect(component.basket()).toEqual(EMPTY_BASKET);
+  });
+
+  it('the validate button stays active with an incomplete lot in the basket (AC2, non-regression)', async () => {
+    await createComponent(BASKET_WITH_INCOMPLETE_LOT);
+    const validateBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.basket-validate');
+    expect(validateBtn.disabled).toBe(false);
+  });
+
+  it('never renders an individual price for a lot item, in or out of its group (AC1)', async () => {
+    await createComponent(BASKET_WITH_INCOMPLETE_LOT);
+    const priceEls: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.basket-item__price'));
+    expect(priceEls).toHaveLength(1);
+    expect(priceEls[0].textContent).not.toContain('null');
   });
 
   it('validating opens the payment dialog and, on success, reloads a fresh empty basket (AC4)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
     paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
     posServiceMock.validate.mockReturnValue(of({ id: 1, total: 5, paymentMethod: 'CASH', amountGiven: null, changeDue: null }));
-    const newBasket: Basket = { id: 11, items: [], total: 0 };
+    const newBasket: Basket = { id: 11, items: [], lotGroups: [], total: 0 };
     posServiceMock.getCurrentBasket.mockReturnValue(of(newBasket));
 
     await component.openPaymentDialog();

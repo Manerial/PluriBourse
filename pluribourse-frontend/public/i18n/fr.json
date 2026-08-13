@@ -413,7 +413,12 @@
         "partOfLot": "Fait partie d'un lot",
         "remove": "Retirer {{ name }}",
         "total": "Total : {{ total }} €",
-        "validate": "Valider la transaction"
+        "validate": "Valider la transaction",
+        "lot": {
+          "header": "{{ name }} — {{ scanned }}/{{ total }} scannés",
+          "remove": "Retirer le lot entier",
+          "incomplete": "Lot incomplet — il manque {{ missing }} article(s) sur {{ total }}. Vous pouvez valider la vente ou retirer le lot."
+        }
       },
       "payment": {
         "title": "Valider la transaction",
