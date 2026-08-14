@@ -67,6 +67,7 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/settings', component: StubComponent },
           { path: 'admin/editions', component: StubComponent },
           { path: 'volunteer/deposit', component: StubComponent },
+          { path: 'volunteer/settlement', component: StubComponent },
           { path: 'account', component: StubComponent },
           { path: 'printer-selection', component: StubComponent },
           { path: '404', component: StubComponent },
@@ -330,7 +331,7 @@ describe('AppLayoutComponent', () => {
       expect(router.url).toBe('/volunteer/deposit');
     });
 
-    it('does not redirect away from /volunteer/deposit when the phase moves from Dépôt to Post-vente', async () => {
+    it('redirects away from /volunteer/deposit to /volunteer/settlement once the phase moves to Post-vente', async () => {
       const router = TestBed.inject(Router);
       mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
       fixture.detectChanges();
@@ -341,7 +342,21 @@ describe('AppLayoutComponent', () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(router.url).toBe('/volunteer/deposit');
+      expect(router.url).toBe('/volunteer/settlement');
+    });
+
+    it('redirects from /404 to /volunteer/settlement once the phase reaches Post-vente', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/404');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'POST_SALE' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/volunteer/settlement');
     });
 
     it('does not redirect away from unrelated pages such as /account', async () => {

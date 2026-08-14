@@ -8,6 +8,7 @@ import org.pluribourse.domain.edition.repository.*;
 import org.pluribourse.domain.edition.service.*;
 import org.pluribourse.domain.item.entity.*;
 import org.pluribourse.domain.item.repository.*;
+import org.pluribourse.domain.payout.repository.SettlementRepository;
 import org.pluribourse.domain.seller.dto.*;
 import org.pluribourse.domain.seller.entity.*;
 import org.pluribourse.domain.seller.exception.*;
@@ -31,6 +32,7 @@ public class SellerService {
     private final EditionRepository editionRepository;
     private final SellerMapper mapper;
     private final ItemRepository itemRepository;
+    private final SettlementRepository settlementRepository;
 
     @Transactional(readOnly = true)
     public List<SellerDto> search(String query) {
@@ -82,6 +84,12 @@ public class SellerService {
                 .orElseThrow(() -> new SellerNotFoundException(id));
         boolean hasNoRegisteredArticles = !itemRepository.existsBySellerProfileId(id);
         if (!seller.canBeDeleted(hasNoRegisteredArticles)) {
+            throw new SellerDeletionNotAllowedException();
+        }
+        // A settled/unclaimed payout (story 5.1) is a financial record — deleting its seller must
+        // never silently cascade-delete it (the settlements FK has no deleteCascade specifically
+        // for this reason). Checked here rather than left to surface as a raw constraint violation.
+        if (settlementRepository.findBySellerProfileId(id).isPresent()) {
             throw new SellerDeletionNotAllowedException();
         }
         repository.delete(seller);

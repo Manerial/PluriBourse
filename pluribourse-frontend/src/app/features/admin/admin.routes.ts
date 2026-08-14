@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { settlementPhaseGuard } from '../../core/guards/settlement-phase.guard';
 
 export const adminRoutes: Routes = [
   {
@@ -40,5 +41,11 @@ export const adminRoutes: Routes = [
     path: 'catalog',
     loadComponent: () =>
       import('../catalog/item-catalog.component').then((m) => m.ItemCatalogComponent),
+  },
+  {
+    path: 'settlement',
+    canActivate: [settlementPhaseGuard],
+    loadComponent: () =>
+      import('../settlement/settlement-list.component').then((m) => m.SettlementListComponent),
   },
 ];

@@ -1,33 +1,22 @@
 package org.pluribourse.domain.print.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.pluribourse.domain.print.entity.PrintContentType;
-import org.pluribourse.domain.print.entity.PrinterStatus;
-import org.pluribourse.domain.print.exception.PrinterBridgeUnavailableException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.socket.BinaryMessage;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
-import org.springframework.web.util.UriComponentsBuilder;
+import com.fasterxml.jackson.databind.*;
+import org.pluribourse.domain.print.entity.*;
+import org.pluribourse.domain.print.exception.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.core.*;
+import org.springframework.http.client.*;
+import org.springframework.stereotype.*;
+import org.springframework.web.client.*;
+import org.springframework.web.socket.*;
+import org.springframework.web.socket.client.standard.*;
+import org.springframework.web.socket.handler.*;
+import org.springframework.web.util.*;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.io.*;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Sole point of contact with PrinterBridge (the native, separately-installed service that owns
@@ -41,7 +30,7 @@ import java.util.concurrent.TimeoutException;
 public class PrinterBridgeClient {
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(2);
-    private static final Duration STATUS_READ_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration STATUS_READ_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration PRINT_READ_TIMEOUT = Duration.ofSeconds(15);
     private static final long PRINT_WS_TIMEOUT_SECONDS = 10;
 
@@ -78,7 +67,7 @@ public class PrinterBridgeClient {
             return statusClient.get()
                     .uri("/printers")
                     .retrieve()
-                    .body(new ParameterizedTypeReference<List<PrinterBridgeDiscoveredPrinter>>() {
+                    .body(new ParameterizedTypeReference<>() {
                     });
         } catch (ResourceAccessException e) {
             throw unavailable(e);

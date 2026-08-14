@@ -1,0 +1,116 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'settlement.title' | translate }}</h1>
+    @if (!isAdmin()) {
+      <a routerLink="/volunteer/deposit" mat-button class="reprint-link">
+        <mat-icon aria-hidden="true">print</mat-icon>
+        {{ 'settlement.actions.reprintDepositSlip' | translate }}
+      </a>
+    }
+  </div>
+
+  <div class="filter-toggle" role="group" [attr.aria-label]="'settlement.title' | translate">
+    <button type="button" class="filter-btn" [class.active]="statusFilter() === 'all'" (click)="setStatusFilter('all')">
+      {{ 'settlement.filters.all' | translate }}
+    </button>
+    <button type="button" class="filter-btn" [class.active]="statusFilter() === 'unsettled'" (click)="setStatusFilter('unsettled')">
+      {{ 'settlement.filters.unsettled' | translate }}
+    </button>
+    <button type="button" class="filter-btn" [class.active]="statusFilter() === 'settled'" (click)="setStatusFilter('settled')">
+      {{ 'settlement.filters.settled' | translate }}
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="5" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error()) {
+    @if (filteredSettlements().length === 0) {
+      <app-empty-state icon="payments" [message]="'settlement.empty' | translate" />
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'settlement.columns.name' | translate }}</th>
+            @if (isAdmin()) {
+              <th>{{ 'settlement.columns.phone' | translate }}</th>
+              <th>{{ 'settlement.columns.email' | translate }}</th>
+            }
+            <th>{{ 'settlement.columns.amountDue' | translate }}</th>
+            <th>{{ 'settlement.columns.status' | translate }}</th>
+            <th>{{ 'settlement.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (settlement of filteredSettlements(); track settlement.sellerId) {
+            <tr>
+              <td>{{ settlement.firstName }} {{ settlement.lastName }}</td>
+              @if (isAdmin()) {
+                <td>{{ settlement.phone }}</td>
+                <td>{{ settlement.email }}</td>
+              }
+              <td>{{ 'settlement.amountFormat' | translate: { amount: settlement.amountDue.toFixed(2) } }}</td>
+              <td>{{ ('settlement.status.' + settlement.status) | translate }}</td>
+              <td>
+                @if (settlement.status === 'UNSETTLED') {
+                  <div class="actions-cell">
+                    <button type="button" mat-button color="primary" [disabled]="submitting()" (click)="openSettleForm(settlement)">
+                      {{ 'settlement.actions.settle' | translate }}
+                    </button>
+                    <button type="button" mat-button [disabled]="submitting()" (click)="confirmUnclaimed(settlement)">
+                      <mat-icon aria-hidden="true">block</mat-icon>
+                      {{ 'settlement.actions.unclaimed' | translate }}
+                    </button>
+                  </div>
+                }
+              </td>
+            </tr>
+            @if (openSettleFormForSellerId() === settlement.sellerId) {
+              <tr class="settlement-form-row">
+                <td [attr.colspan]="isAdmin() ? 6 : 4">
+                  <div class="settlement-form-inner">
+                    <label class="form-label" [for]="'settle-amount-' + settlement.sellerId">
+                      {{ 'settlement.form.amountLabel' | translate }}
+                    </label>
+                    <mat-form-field appearance="outline" class="settlement-form-inner__field">
+                      <input
+                        matInput
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        [id]="'settle-amount-' + settlement.sellerId"
+                        [value]="settleAmount()"
+                        (input)="onSettleAmountChange($event)" />
+                    </mat-form-field>
+                    <button
+                      type="button"
+                      mat-flat-button
+                      color="primary"
+                      [disabled]="blockedAboveDue() || settleAmount() === null || submitting()"
+                      (click)="confirmSettle(settlement.sellerId)">
+                      {{ 'settlement.actions.confirm' | translate }}
+                    </button>
+                    <button type="button" mat-button (click)="closeSettleForm()">
+                      {{ 'settlement.actions.cancel' | translate }}
+                    </button>
+                  </div>
+                  @if (warningBelowDue()) {
+                    <app-notification-inline [message]="warningMessage()" variant="warning" />
+                  }
+                  @if (blockedAboveDue()) {
+                    <app-notification-inline [message]="'settlement.form.errorAboveDue' | translate" variant="error" />
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  }
+</div>

@@ -92,4 +92,21 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
      */
     @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.sale.id = :saleId ORDER BY i.id ASC")
     List<Item> findAllBySaleIdOrderById(@Param("saleId") Long saleId);
+
+    /**
+     * Settlement list (story 5.1): sold items across the whole edition, grouped by seller in
+     * memory afterwards. JOIN FETCH on lot only — sellerProfile is read only via its already-
+     * cached id (item.getSellerProfile().getId()) to key the grouping, which never triggers a
+     * lazy load on a Hibernate proxy (same reasoning as ScanResultDto's scan query).
+     */
+    @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.edition.id = :editionId AND i.sold = true")
+    List<Item> findAllByEditionIdAndSoldTrue(@Param("editionId") Long editionId);
+
+    /**
+     * Single-seller settlement amount (story 5.1): scoped by sellerProfileId rather than
+     * re-scanning the whole edition's sold items in memory like {@link #findAllByEditionIdAndSoldTrue}
+     * does for the bulk list — {@code settle}/{@code markUnclaimed} only ever need one seller's total.
+     */
+    @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.sellerProfile.id = :sellerProfileId AND i.sold = true")
+    List<Item> findAllBySellerProfileIdAndSoldTrue(@Param("sellerProfileId") Long sellerProfileId);
 }

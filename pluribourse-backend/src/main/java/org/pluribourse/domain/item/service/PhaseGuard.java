@@ -5,8 +5,8 @@ import org.pluribourse.domain.item.exception.*;
 
 /**
  * Items and lots can only be created, modified or deleted while the edition is in the
- * Deposit phase (FR-024). Shared between ItemService, LotService and PosScanService so the
- * phase rules and their error types are defined once.
+ * Deposit phase (FR-024). Shared between ItemService, LotService, PosScanService and
+ * SettlementService so the phase rules and their error types are defined once.
  */
 public final class PhaseGuard {
 
@@ -37,6 +37,17 @@ public final class PhaseGuard {
     public static void requireSalePhase(Edition edition) {
         if (edition.getPhase() != PhaseType.SALE) {
             throw new SalePhaseRequiredException();
+        }
+    }
+
+    /**
+     * Settlement (story 5.1) is only reachable while the edition is in Post-vente — a
+     * server-side mirror of the frontend's settlementPhaseGuard, since the client is never
+     * trusted alone (same rationale as requireSalePhase).
+     */
+    public static void requirePostSalePhase(Edition edition) {
+        if (edition.getPhase() != PhaseType.POST_SALE) {
+            throw new SettlementNotAllowedException();
         }
     }
 }

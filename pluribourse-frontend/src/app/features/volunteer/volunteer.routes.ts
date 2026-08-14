@@ -5,6 +5,7 @@ import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { depositPhaseGuard } from '../../core/guards/deposit-phase.guard';
 import { salePhaseGuard } from '../../core/guards/sale-phase.guard';
+import { settlementPhaseGuard } from '../../core/guards/settlement-phase.guard';
 
 export const volunteerRoutes: Routes = [
   {
@@ -33,5 +34,11 @@ export const volunteerRoutes: Routes = [
     path: 'catalog',
     loadComponent: () =>
       import('../catalog/item-catalog.component').then((m) => m.ItemCatalogComponent),
+  },
+  {
+    path: 'settlement',
+    canActivate: [settlementPhaseGuard],
+    loadComponent: () =>
+      import('../settlement/settlement-list.component').then((m) => m.SettlementListComponent),
   },
 ];

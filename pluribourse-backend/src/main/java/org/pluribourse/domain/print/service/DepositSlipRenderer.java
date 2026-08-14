@@ -77,7 +77,7 @@ public class DepositSlipRenderer {
             document.add(new Paragraph(" "));
 
             BigDecimal total = ItemPricing.computeTotal(items);
-            BigDecimal net = computeNetPayout(total, commissionRate);
+            BigDecimal net = ItemPricing.computeNetPayout(total, commissionRate);
             document.add(new Paragraph(
                     messageSource.getMessage("print.slip.commission", new Object[]{commissionRate.toPlainString()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
@@ -104,11 +104,6 @@ public class DepositSlipRenderer {
             }
         }
         return table;
-    }
-
-    private BigDecimal computeNetPayout(BigDecimal total, BigDecimal commissionRate) {
-        BigDecimal commission = total.multiply(commissionRate).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-        return total.subtract(commission).setScale(2, RoundingMode.HALF_UP);
     }
 
     private PdfPCell headerCell(String text) {

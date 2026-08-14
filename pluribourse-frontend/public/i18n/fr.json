@@ -98,7 +98,8 @@
       "editions": "Éditions",
       "sellers": "Vendeurs",
       "printQueue": "File d'impression",
-      "printers": "Imprimantes"
+      "printers": "Imprimantes",
+      "settlement": "Reversements"
     }
   },
   "edition": {
@@ -703,5 +704,55 @@
       "noActiveEdition": "Aucune édition n'est actuellement active.",
       "load": "Impossible de charger le catalogue."
     }
+  },
+  "settlement": {
+    "title": "Reversements",
+    "filters": {
+      "all": "Tous",
+      "unsettled": "Non soldés",
+      "settled": "Soldés"
+    },
+    "columns": {
+      "name": "Vendeur",
+      "phone": "Téléphone",
+      "email": "Email",
+      "amountDue": "Montant dû",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "amountFormat": "{{ amount }} €",
+    "status": {
+      "UNSETTLED": "Non soldé",
+      "SETTLED": "Soldé",
+      "UNCLAIMED": "Non réclamé"
+    },
+    "actions": {
+      "settle": "Solder",
+      "unclaimed": "Non réclamé",
+      "confirm": "Valider",
+      "cancel": "Annuler",
+      "reprintDepositSlip": "Réimprimer le bordereau de dépôt"
+    },
+    "form": {
+      "amountLabel": "Montant remis en espèces (€)",
+      "warningBelowDue": "Le montant saisi ({{ amount }} €) est inférieur au montant dû ({{ due }} €).",
+      "errorAboveDue": "Le montant saisi ne peut pas dépasser le montant dû."
+    },
+    "unclaimedDialog": {
+      "title": "Confirmer « Non réclamé »",
+      "description": "Le montant de {{ amount }} € sera transféré aux recettes de l'association. Cette action est irréversible."
+    },
+    "success": {
+      "settle": "Vendeur réglé.",
+      "unclaimed": "Montant transféré aux recettes de l'association."
+    },
+    "error": {
+      "load": "Impossible de charger la liste des reversements.",
+      "noActiveEdition": "Aucune édition n'est actuellement active.",
+      "settle": "Impossible d'enregistrer le solde.",
+      "alreadySettled": "Ce vendeur a déjà été soldé.",
+      "amountTooHigh": "Le montant saisi dépasse le montant dû."
+    },
+    "empty": "Aucun vendeur enregistré pour cette édition."
   }
 }

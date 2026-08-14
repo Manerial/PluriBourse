@@ -98,7 +98,8 @@
       "editions": "Editions",
       "sellers": "Sellers",
       "printQueue": "Print queue",
-      "printers": "Printers"
+      "printers": "Printers",
+      "settlement": "Settlements"
     }
   },
   "edition": {
@@ -703,5 +704,55 @@
       "noActiveEdition": "No edition is currently active.",
       "load": "Failed to load the catalog."
     }
+  },
+  "settlement": {
+    "title": "Settlements",
+    "filters": {
+      "all": "All",
+      "unsettled": "Unsettled",
+      "settled": "Settled"
+    },
+    "columns": {
+      "name": "Seller",
+      "phone": "Phone",
+      "email": "Email",
+      "amountDue": "Amount due",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "amountFormat": "{{ amount }} €",
+    "status": {
+      "UNSETTLED": "Unsettled",
+      "SETTLED": "Settled",
+      "UNCLAIMED": "Unclaimed"
+    },
+    "actions": {
+      "settle": "Settle",
+      "unclaimed": "Unclaimed",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "reprintDepositSlip": "Reprint the deposit slip"
+    },
+    "form": {
+      "amountLabel": "Amount given in cash (€)",
+      "warningBelowDue": "The given amount ({{ amount }} €) is lower than the amount due ({{ due }} €).",
+      "errorAboveDue": "The given amount cannot exceed the amount due."
+    },
+    "unclaimedDialog": {
+      "title": "Confirm \"Unclaimed\"",
+      "description": "The amount of {{ amount }} € will be transferred to the association's revenue. This action is irreversible."
+    },
+    "success": {
+      "settle": "Seller settled.",
+      "unclaimed": "Amount transferred to the association's revenue."
+    },
+    "error": {
+      "load": "Failed to load the settlement list.",
+      "noActiveEdition": "No edition is currently active.",
+      "settle": "Failed to record the settlement.",
+      "alreadySettled": "This seller has already been settled.",
+      "amountTooHigh": "The given amount exceeds the amount due."
+    },
+    "empty": "No sellers registered for this edition."
   }
 }

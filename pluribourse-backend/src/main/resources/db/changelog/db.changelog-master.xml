@@ -27,5 +27,6 @@
     <include file="db/changelog/021-pos-baskets.xml"/>
     <include file="db/changelog/022-items-sale-fk-set-null.xml"/>
     <include file="db/changelog/023-ignored-printer-name.xml"/>
+    <include file="db/changelog/024-settlements.xml"/>
 
 </databaseChangeLog>

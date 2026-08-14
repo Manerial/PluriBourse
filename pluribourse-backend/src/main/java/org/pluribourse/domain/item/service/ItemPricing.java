@@ -4,6 +4,7 @@ import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.entity.Lot;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,11 @@ public final class ItemPricing {
             total = total.add(item.getLot() != null ? item.getLot().getGlobalPrice() : item.getPrice());
         }
         return total;
+    }
+
+    public static BigDecimal computeNetPayout(BigDecimal total, BigDecimal commissionRate) {
+        BigDecimal commission = total.multiply(commissionRate).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+        return total.subtract(commission).setScale(2, RoundingMode.HALF_UP);
     }
 
     /**

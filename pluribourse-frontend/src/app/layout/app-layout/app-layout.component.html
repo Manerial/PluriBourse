@@ -142,6 +142,18 @@
           <span class="sidebar__item-label">{{ 'nav.admin.printQueue' | translate }}</span>
         </a>
 
+        <a
+          routerLink="/admin/settlement"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item"
+          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.settlement' | translate) : null"
+          [matTooltip]="sidebarCollapsed() ? ('nav.admin.settlement' | translate) : ''"
+          matTooltipPosition="right">
+          <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+          <span class="sidebar__item-label">{{ 'nav.admin.settlement' | translate }}</span>
+        </a>
+
       </div>
 
       <div class="sidebar__toggle-wrap">
