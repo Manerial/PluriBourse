@@ -57,8 +57,16 @@
               <td>{{ 'settlement.amountFormat' | translate: { amount: settlement.amountDue.toFixed(2) } }}</td>
               <td>{{ ('settlement.status.' + settlement.status) | translate }}</td>
               <td>
-                @if (settlement.status === 'UNSETTLED') {
-                  <div class="actions-cell">
+                <div class="actions-cell">
+                  <button
+                    type="button"
+                    mat-button
+                    [disabled]="printingReportForSellerId() !== null"
+                    (click)="printReport(settlement)">
+                    <mat-icon aria-hidden="true">print</mat-icon>
+                    {{ 'settlement.actions.printReport' | translate }}
+                  </button>
+                  @if (settlement.status === 'UNSETTLED') {
                     <button type="button" mat-button color="primary" [disabled]="submitting()" (click)="openSettleForm(settlement)">
                       {{ 'settlement.actions.settle' | translate }}
                     </button>
@@ -66,8 +74,8 @@
                       <mat-icon aria-hidden="true">block</mat-icon>
                       {{ 'settlement.actions.unclaimed' | translate }}
                     </button>
-                  </div>
-                }
+                  }
+                </div>
               </td>
             </tr>
             @if (openSettleFormForSellerId() === settlement.sellerId) {

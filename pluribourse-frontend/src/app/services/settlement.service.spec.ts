@@ -51,4 +51,12 @@ describe('SettlementService', () => {
     req.flush({ ...MOCK_SETTLEMENT, status: 'UNCLAIMED' });
     expect(await p).toEqual({ ...MOCK_SETTLEMENT, status: 'UNCLAIMED' });
   });
+
+  it('printReport() sends POST /api/settlements/1/report/print', async () => {
+    const p = firstValueFrom(service.printReport(1));
+    const req = http.expectOne('/api/settlements/1/report/print');
+    expect(req.request.method).toBe('POST');
+    req.flush(null);
+    await p;
+  });
 });

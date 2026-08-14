@@ -1,9 +1,11 @@
 package org.pluribourse.domain.payout.controller;
 
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.payout.dto.SettleDto;
 import org.pluribourse.domain.payout.dto.SettlementDto;
+import org.pluribourse.domain.payout.service.SettlementReportPrintService;
 import org.pluribourse.domain.payout.service.SettlementService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +23,7 @@ import java.util.List;
 public class SettlementController {
 
     private final SettlementService service;
+    private final SettlementReportPrintService reportPrintService;
 
     @GetMapping
     public ResponseEntity<List<SettlementDto>> getSettlements() {
@@ -35,5 +38,11 @@ public class SettlementController {
     @PostMapping("/{sellerId}/unclaimed")
     public ResponseEntity<SettlementDto> markUnclaimed(@PathVariable Long sellerId) {
         return ResponseEntity.ok(service.markUnclaimed(sellerId));
+    }
+
+    @PostMapping("/{sellerId}/report/print")
+    public ResponseEntity<Void> printReport(@PathVariable Long sellerId, HttpSession session) {
+        reportPrintService.printReport(sellerId, session);
+        return ResponseEntity.noContent().build();
     }
 }

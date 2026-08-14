@@ -23,6 +23,7 @@ public class DocumentPrintService {
 
     private final DepositSlipRenderer depositSlipRenderer;
     private final InvoiceRenderer invoiceRenderer;
+    private final SettlementReportRenderer settlementReportRenderer;
     private final PrinterBridgeClient printerBridgeClient;
 
     public PrintJob buildDepositSlipJob(SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate, Locale documentLocale) {
@@ -34,6 +35,10 @@ public class DocumentPrintService {
         return printer -> printInvoice(printer.getPrinterBridgeId(), associationName, editionName, soldAt, items, documentLocale);
     }
 
+    public PrintJob buildSettlementReportJob(SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate, Locale documentLocale) {
+        return printer -> printSettlementReport(printer.getPrinterBridgeId(), sellerProfile, items, commissionRate, documentLocale);
+    }
+
     private void printDepositSlip(String printerBridgeId, SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate,
             Locale documentLocale) {
         byte[] pdf = depositSlipRenderer.renderSlip(sellerProfile, items, commissionRate, documentLocale);
@@ -43,6 +48,12 @@ public class DocumentPrintService {
     private void printInvoice(String printerBridgeId, String associationName, String editionName, LocalDateTime soldAt,
             List<Item> items, Locale documentLocale) {
         byte[] pdf = invoiceRenderer.renderInvoice(associationName, editionName, soldAt, items, documentLocale);
+        printPdf(printerBridgeId, pdf);
+    }
+
+    private void printSettlementReport(String printerBridgeId, SellerProfile sellerProfile, List<Item> items,
+            BigDecimal commissionRate, Locale documentLocale) {
+        byte[] pdf = settlementReportRenderer.renderReport(sellerProfile, items, commissionRate, documentLocale);
         printPdf(printerBridgeId, pdf);
     }
 

@@ -107,12 +107,14 @@ describe('AppLayoutComponent', () => {
     expect(link).toBeTruthy();
   });
 
-  it('does not render a link to /printer-selection in the user menu for an admin', () => {
+  it('renders a link to /printer-selection in the user menu for an admin', () => {
+    // Story 5.2 (AC 5): an admin now selects an A4 printer too, to print a seller's sales report
+    // from /admin/settlement — same interstitial the volunteer already used.
     const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('.user-menu-trigger');
     trigger.click();
     fixture.detectChanges();
     const link: HTMLAnchorElement | null = document.querySelector('a[href="/printer-selection"]');
-    expect(link).toBeNull();
+    expect(link).toBeTruthy();
   });
 
   it('renders a link to /printer-selection in the user menu for a volunteer', () => {

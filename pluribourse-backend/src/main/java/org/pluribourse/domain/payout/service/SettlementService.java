@@ -86,9 +86,10 @@ public class SettlementService {
 
     /**
      * Never distinguishes "doesn't exist" from "belongs to another edition" (IDOR — same
-     * rationale as PosBasketService.requireOwnedBasket).
+     * rationale as PosBasketService.requireOwnedBasket). Package-private (story 5.2): reused as-is
+     * by {@link SettlementReportPrintService}, same package, rather than duplicated.
      */
-    private SellerProfile requireSellerOfEdition(Long sellerId, Edition edition) {
+    SellerProfile requireSellerOfEdition(Long sellerId, Edition edition) {
         SellerProfile seller = sellerRepository.findById(sellerId)
                 .orElseThrow(() -> new SellerNotFoundException(sellerId));
         if (!seller.getEdition().getId().equals(edition.getId())) {

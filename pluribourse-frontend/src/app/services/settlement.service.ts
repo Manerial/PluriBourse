@@ -19,4 +19,8 @@ export class SettlementService {
   markUnclaimed(sellerId: number): Observable<SettlementDto> {
     return this.http.post<SettlementDto>(`/api/settlements/${sellerId}/unclaimed`, {});
   }
+
+  printReport(sellerId: number): Observable<void> {
+    return this.http.post<void>(`/api/settlements/${sellerId}/report/print`, null);
+  }
 }

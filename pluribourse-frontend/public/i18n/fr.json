@@ -731,7 +731,8 @@
       "unclaimed": "Non réclamé",
       "confirm": "Valider",
       "cancel": "Annuler",
-      "reprintDepositSlip": "Réimprimer le bordereau de dépôt"
+      "reprintDepositSlip": "Réimprimer le bordereau de dépôt",
+      "printReport": "Imprimer le bilan"
     },
     "form": {
       "amountLabel": "Montant remis en espèces (€)",
@@ -744,14 +745,17 @@
     },
     "success": {
       "settle": "Vendeur réglé.",
-      "unclaimed": "Montant transféré aux recettes de l'association."
+      "unclaimed": "Montant transféré aux recettes de l'association.",
+      "printReport": "Bilan envoyé à l'imprimante."
     },
     "error": {
       "load": "Impossible de charger la liste des reversements.",
       "noActiveEdition": "Aucune édition n'est actuellement active.",
       "settle": "Impossible d'enregistrer le solde.",
       "alreadySettled": "Ce vendeur a déjà été soldé.",
-      "amountTooHigh": "Le montant saisi dépasse le montant dû."
+      "amountTooHigh": "Le montant saisi dépasse le montant dû.",
+      "printReport": "Impossible d'imprimer le bilan.",
+      "printerUnavailable": "Aucune imprimante A4 disponible. Sélectionnez une imprimante."
     },
     "empty": "Aucun vendeur enregistré pour cette édition."
   }

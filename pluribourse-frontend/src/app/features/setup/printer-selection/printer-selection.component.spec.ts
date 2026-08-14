@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
+import { AuthService } from '../../../services/auth.service';
 import { PrintService } from '../../../services/print.service';
 import { PrinterSelectionComponent } from './printer-selection.component';
 
@@ -13,12 +14,17 @@ describe('PrinterSelectionComponent', () => {
     submitSelection: vi.fn(),
   };
 
+  const mockAuthService = {
+    currentUser: vi.fn().mockReturnValue({ role: 'VOLUNTEER' }),
+  };
+
   let fixture: ReturnType<typeof TestBed.createComponent<PrinterSelectionComponent>>;
   let component: PrinterSelectionComponent;
   let router: Router;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    mockAuthService.currentUser.mockReturnValue({ role: 'VOLUNTEER' });
     mockPrintService.getAvailablePrinters.mockReturnValue(
       of([
         { id: 1, name: 'Thermique Guichet', type: 'THERMAL' },
@@ -34,6 +40,7 @@ describe('PrinterSelectionComponent', () => {
         provideRouter([]),
         provideAnimationsAsync(),
         { provide: PrintService, useValue: mockPrintService },
+        { provide: AuthService, useValue: mockAuthService },
       ],
     }).compileComponents();
 
@@ -64,11 +71,19 @@ describe('PrinterSelectionComponent', () => {
     expect(btn.disabled).toBe(false);
   });
 
-  it('submits the selection and navigates to /volunteer', async () => {
+  it('submits the selection and navigates to /volunteer for a volunteer', async () => {
     component.form.setValue({ thermalPrinterId: 1, a4PrinterId: 2 });
     await component.onSubmit();
     expect(mockPrintService.submitSelection).toHaveBeenCalledWith(1, 2);
     expect(router.navigate).toHaveBeenCalledWith(['/volunteer']);
+  });
+
+  it('submits the selection and navigates to /admin for an admin', async () => {
+    mockAuthService.currentUser.mockReturnValue({ role: 'ADMIN' });
+    component.form.setValue({ thermalPrinterId: 1, a4PrinterId: 2 });
+    await component.onSubmit();
+    expect(mockPrintService.submitSelection).toHaveBeenCalledWith(1, 2);
+    expect(router.navigate).toHaveBeenCalledWith(['/admin']);
   });
 
   it('submits with both selections empty', async () => {

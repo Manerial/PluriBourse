@@ -109,4 +109,13 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
      */
     @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.sellerProfile.id = :sellerProfileId AND i.sold = true")
     List<Item> findAllBySellerProfileIdAndSoldTrue(@Param("sellerProfileId") Long sellerProfileId);
+
+    /**
+     * Seller sales report PDF (story 5.2): all items (sold and unsold) for one seller, captured
+     * into a PrintJob closure like {@link #findAllBySaleIdOrderById} — JOIN FETCH category in
+     * addition to lot (unlike {@link #findAllBySellerProfileIdOrderByItemNumberAsc}), since unsold
+     * items must show their category name (FR-050) and the renderer never touches sellerProfile/edition.
+     */
+    @Query("SELECT i FROM Item i JOIN FETCH i.category LEFT JOIN FETCH i.lot WHERE i.sellerProfile.id = :sellerProfileId ORDER BY i.itemNumber ASC")
+    List<Item> findAllBySellerProfileIdForSettlementReport(@Param("sellerProfileId") Long sellerProfileId);
 }

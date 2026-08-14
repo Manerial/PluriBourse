@@ -64,6 +64,8 @@ class DepositSlipPrintingIT extends IntegrationTest {
     @Autowired
     private InvoiceRenderer invoiceRenderer;
     @Autowired
+    private SettlementReportRenderer settlementReportRenderer;
+    @Autowired
     private PrintQueueService printQueueService;
 
     private static PrinterBridgeDouble printerBridgeDouble;
@@ -220,7 +222,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
         seller.getEdition().getName();
 
         PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
-        DocumentPrintService documentPrintService = new DocumentPrintService(depositSlipRenderer, invoiceRenderer, mockClient);
+        DocumentPrintService documentPrintService = new DocumentPrintService(depositSlipRenderer, invoiceRenderer, settlementReportRenderer, mockClient);
 
         Printer printer = new Printer();
         printer.setPrinterBridgeId("bridge-slip-mock-target");

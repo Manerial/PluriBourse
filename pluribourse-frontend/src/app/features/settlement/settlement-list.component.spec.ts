@@ -1,7 +1,8 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError, Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { SettlementListComponent } from './settlement-list.component';
 import { SettlementService } from '../../services/settlement.service';
@@ -38,6 +39,7 @@ describe('SettlementListComponent', () => {
     getSettlements: vi.fn().mockReturnValue(of([ALICE, BOB])),
     settle: vi.fn(),
     markUnclaimed: vi.fn(),
+    printReport: vi.fn(),
   };
 
   const authMock = {
@@ -211,5 +213,88 @@ describe('SettlementListComponent', () => {
   it('the deposit slip reprint link is present for a non-admin role', async () => {
     await setup();
     expect(fixture.nativeElement.querySelector('.reprint-link')).not.toBeNull();
+  });
+
+  it('the print report button is available on both an unsettled and a settled row', async () => {
+    await setup();
+    component.setStatusFilter('all');
+    fixture.detectChanges();
+    const rows: HTMLTableRowElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('tbody tr:not(.settlement-form-row)')
+    );
+    expect(rows.length).toBe(2);
+    // Alice (UNSETTLED): print + settle + unclaimed = 3 buttons. Bob (SETTLED): print only = 1.
+    const buttonCounts = rows.map((row) => row.querySelectorAll('.actions-cell button').length);
+    expect(buttonCounts.sort()).toEqual([1, 3]);
+  });
+
+  it('a successful print report shows a success toast', async () => {
+    await setup();
+    settlementServiceMock.printReport.mockReturnValue(of(undefined));
+
+    await component.printReport(ALICE);
+
+    expect(settlementServiceMock.printReport).toHaveBeenCalledWith(ALICE.sellerId);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+  });
+
+  it('a 422 invalid-printer-selection error shows the printer-unavailable toast', async () => {
+    await setup();
+    settlementServiceMock.printReport.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 422,
+            error: { type: 'https://pluribourse/errors/invalid-printer-selection' },
+          })
+      )
+    );
+
+    await component.printReport(ALICE);
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printerUnavailable');
+  });
+
+  it('any other print error shows the generic print-report toast', async () => {
+    await setup();
+    settlementServiceMock.printReport.mockReturnValue(throwError(() => new Error('server')));
+
+    await component.printReport(ALICE);
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printReport');
+  });
+
+  it('every print button is disabled while one report is in flight, and re-enabled once it settles', async () => {
+    await setup();
+    const inFlight = new Subject<void>();
+    settlementServiceMock.printReport.mockReturnValueOnce(inFlight);
+
+    const printPromise = component.printReport(ALICE);
+    expect(component.printingReportForSellerId()).toBe(ALICE.sellerId);
+
+    // A click on a different row's button while the first is still in flight is ignored — the
+    // backend print queue is single-threaded per printer anyway (PrintQueueService).
+    await component.printReport(BOB);
+    expect(settlementServiceMock.printReport).toHaveBeenCalledOnce();
+    expect(settlementServiceMock.printReport).not.toHaveBeenCalledWith(BOB.sellerId);
+
+    inFlight.next(undefined);
+    inFlight.complete();
+    await printPromise;
+    expect(component.printingReportForSellerId()).toBeNull();
+  });
+
+  it('a second click on the same row while a print is in flight is ignored', async () => {
+    await setup();
+    const inFlight = new Subject<void>();
+    settlementServiceMock.printReport.mockReturnValueOnce(inFlight);
+
+    const first = component.printReport(ALICE);
+    await component.printReport(ALICE);
+    expect(settlementServiceMock.printReport).toHaveBeenCalledOnce();
+
+    inFlight.next(undefined);
+    inFlight.complete();
+    await first;
   });
 });

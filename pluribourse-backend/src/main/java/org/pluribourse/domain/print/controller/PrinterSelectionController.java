@@ -11,9 +11,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Story 5.2 (AC 5) widened this from VOLUNTEER-only to VOLUNTEER+ADMIN: an admin needs to select an
+ * A4 printer to print a seller's sales report from {@code /admin/settlement}, the same interstitial
+ * (FR-098) a volunteer already uses. Still not open to SELLER (blocked globally, see SecurityConfig).
+ */
 @RestController
 @RequestMapping("/printers")
-@PreAuthorize("hasRole('VOLUNTEER')")
+@PreAuthorize("hasAnyRole('VOLUNTEER', 'ADMIN')")
 @RequiredArgsConstructor
 public class PrinterSelectionController {
 

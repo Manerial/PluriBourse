@@ -194,16 +194,19 @@ class PrinterSelectionIT extends IntegrationTest {
 
     @Test
     @Order(10)
-    void admin_session_is_forbidden_on_all_endpoints() throws Exception {
+        // Story 5.2 (AC 5): an admin can now select an A4 printer too, so they can print a
+        // seller's sales report from /admin/settlement — same interstitial as the volunteer.
+    void admin_session_can_reach_all_endpoints() throws Exception {
         mockMvc.perform(get("/api/printers/available").session(adminSession))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
         mockMvc.perform(get("/api/printers/selection").session(adminSession))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
         mockMvc.perform(post("/api/printers/selection")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"thermalPrinterId\":null,\"a4PrinterId\":null}"))
-                .andExpect(status().isForbidden());
+                        .content("{\"thermalPrinterId\":null,\"a4PrinterId\":" + availableA4PrinterId + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.a4PrinterId").value(availableA4PrinterId));
     }
 
     @Test

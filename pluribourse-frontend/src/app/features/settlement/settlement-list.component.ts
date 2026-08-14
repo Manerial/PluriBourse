@@ -61,6 +61,7 @@ export class SettlementListComponent implements OnInit {
 
   readonly openSettleFormForSellerId = signal<number | null>(null);
   readonly settleAmount = signal<number | null>(null);
+  readonly printingReportForSellerId = signal<number | null>(null);
 
   private readonly openSettlement = computed(() => {
     const id = this.openSettleFormForSellerId();
@@ -166,6 +167,29 @@ export class SettlementListComponent implements OnInit {
       this.toast.showError(this.translate.instant('settlement.error.settle'));
     } finally {
       this.submitting.set(false);
+    }
+  }
+
+  async printReport(settlement: SettlementDto): Promise<void> {
+    // Reentrancy guard: mirrors deposit-page.component.ts's reprintDepositSlip/reprintLabels — a
+    // print job costs a physical sheet that can't be recalled, so a double-click must never queue
+    // twice. Global (not per-row): the backend print queue is single-threaded per printer anyway
+    // (PrintQueueService), so every print button is disabled while any one report is in flight.
+    if (this.printingReportForSellerId() !== null) {
+      return;
+    }
+    this.printingReportForSellerId.set(settlement.sellerId);
+    try {
+      await firstValueFrom(this.settlementService.printReport(settlement.sellerId));
+      this.toast.showSuccess(this.translate.instant('settlement.success.printReport'));
+    } catch (err: unknown) {
+      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+        this.toast.showError(this.translate.instant('settlement.error.printerUnavailable'));
+      } else {
+        this.toast.showError(this.translate.instant('settlement.error.printReport'));
+      }
+    } finally {
+      this.printingReportForSellerId.set(null);
     }
   }
 

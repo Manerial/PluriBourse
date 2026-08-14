@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { AvailablePrinter } from '../../../models/printer.model';
+import { AuthService } from '../../../services/auth.service';
 import { PrintService } from '../../../services/print.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 
@@ -19,6 +20,7 @@ import { NotificationInlineComponent } from '../../../shared/components/notifica
 })
 export class PrinterSelectionComponent implements OnInit {
   private readonly printService = inject(PrintService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -48,7 +50,10 @@ export class PrinterSelectionComponent implements OnInit {
     const { thermalPrinterId, a4PrinterId } = this.form.getRawValue();
     try {
       await firstValueFrom(this.printService.submitSelection(thermalPrinterId, a4PrinterId));
-      await this.router.navigate(['/volunteer']);
+      // Story 5.2 (AC 5): an admin selecting a printer here must land back on /admin, not on a
+      // volunteer-only page.
+      const target = this.auth.currentUser()?.role === 'ADMIN' ? '/admin' : '/volunteer';
+      await this.router.navigate([target]);
     } catch {
       this.error.set(true);
     } finally {

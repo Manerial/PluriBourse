@@ -731,7 +731,8 @@
       "unclaimed": "Unclaimed",
       "confirm": "Confirm",
       "cancel": "Cancel",
-      "reprintDepositSlip": "Reprint the deposit slip"
+      "reprintDepositSlip": "Reprint the deposit slip",
+      "printReport": "Print the report"
     },
     "form": {
       "amountLabel": "Amount given in cash (€)",
@@ -744,14 +745,17 @@
     },
     "success": {
       "settle": "Seller settled.",
-      "unclaimed": "Amount transferred to the association's revenue."
+      "unclaimed": "Amount transferred to the association's revenue.",
+      "printReport": "Report sent to the printer."
     },
     "error": {
       "load": "Failed to load the settlement list.",
       "noActiveEdition": "No edition is currently active.",
       "settle": "Failed to record the settlement.",
       "alreadySettled": "This seller has already been settled.",
-      "amountTooHigh": "The given amount exceeds the amount due."
+      "amountTooHigh": "The given amount exceeds the amount due.",
+      "printReport": "Failed to print the report.",
+      "printerUnavailable": "No A4 printer available. Select a printer."
     },
     "empty": "No sellers registered for this edition."
   }
