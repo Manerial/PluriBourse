@@ -43,13 +43,7 @@ public class DepositValidationService {
 
     @Transactional(readOnly = true)
     public void reprintLabels(Long sellerProfileId, HttpSession session) {
-        Edition edition = editionService.getActiveEdition();
-        PhaseGuard.requireDepositOrPostSalePhase(edition);
-        SellerProfile sellerProfile = editionScopedLookup.findSellerInEdition(sellerProfileId, edition);
-        List<Item> items = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerProfile.getId());
-        if (items.isEmpty()) {
-            throw new EmptyDepositException(sellerProfileId);
-        }
+        SellerDeposit deposit = resolveSellerDeposit(sellerProfileId);
 
         Long thermalPrinterId = printerSelectionService.getSelectedPrinterId(session, PrinterType.THERMAL)
                 .orElseThrow(() -> new InvalidPrinterSelectionException("No thermal printer selected in session"));
@@ -57,19 +51,14 @@ public class DepositValidationService {
             throw new InvalidPrinterSelectionException("Selected thermal printer is not currently available");
         }
 
-        Locale documentLocale = resolveDocumentLocale(edition);
-        printQueueService.submit(thermalPrinterId, thermalPrintService.buildDepositJob(sellerProfile, items, documentLocale));
+        Locale documentLocale = resolveDocumentLocale(deposit.edition());
+        printQueueService.submit(thermalPrinterId,
+                thermalPrintService.buildDepositJob(deposit.sellerProfile(), deposit.items(), documentLocale));
     }
 
     @Transactional(readOnly = true)
     public void reprintDepositSlip(Long sellerProfileId, HttpSession session) {
-        Edition edition = editionService.getActiveEdition();
-        PhaseGuard.requireDepositOrPostSalePhase(edition);
-        SellerProfile sellerProfile = editionScopedLookup.findSellerInEdition(sellerProfileId, edition);
-        List<Item> items = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerProfile.getId());
-        if (items.isEmpty()) {
-            throw new EmptyDepositException(sellerProfileId);
-        }
+        SellerDeposit deposit = resolveSellerDeposit(sellerProfileId);
 
         Long a4PrinterId = printerSelectionService.getSelectedPrinterId(session, PrinterType.A4)
                 .orElseThrow(() -> new InvalidPrinterSelectionException("No A4 printer selected in session"));
@@ -77,8 +66,23 @@ public class DepositValidationService {
             throw new InvalidPrinterSelectionException("Selected A4 printer is not currently available");
         }
 
-        Locale documentLocale = resolveDocumentLocale(edition);
-        printQueueService.submit(a4PrinterId, buildDepositSlipJob(sellerProfile, items, edition, documentLocale));
+        Locale documentLocale = resolveDocumentLocale(deposit.edition());
+        printQueueService.submit(a4PrinterId,
+                buildDepositSlipJob(deposit.sellerProfile(), deposit.items(), deposit.edition(), documentLocale));
+    }
+
+    private SellerDeposit resolveSellerDeposit(Long sellerProfileId) {
+        Edition edition = editionService.getActiveEdition();
+        PhaseGuard.requireDepositOrPostSalePhase(edition);
+        SellerProfile sellerProfile = editionScopedLookup.findSellerInEdition(sellerProfileId, edition);
+        List<Item> items = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerProfile.getId());
+        if (items.isEmpty()) {
+            throw new EmptyDepositException(sellerProfileId);
+        }
+        return new SellerDeposit(edition, sellerProfile, items);
+    }
+
+    private record SellerDeposit(Edition edition, SellerProfile sellerProfile, List<Item> items) {
     }
 
     private PrintJob buildDepositSlipJob(SellerProfile sellerProfile, List<Item> items, Edition edition, Locale documentLocale) {

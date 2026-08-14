@@ -1,7 +1,7 @@
 package org.pluribourse.domain.item.repository;
 
-import org.pluribourse.domain.print.service.*;
 import org.pluribourse.domain.item.entity.Item;
+import org.pluribourse.domain.print.service.PrintJob;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
