@@ -222,6 +222,14 @@ describe('ScannerInputComponent', () => {
     document.body.removeChild(otherInput);
   });
 
+  it('renders the native input as disabled when the disabled input is set (Story 4.6)', async () => {
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.scannerInput()!.nativeElement.disabled).toBe(true);
+  });
+
   it('does not steal focus from a composite ARIA widget such as an open mat-select (Review finding, round 2)', () => {
     vi.useFakeTimers();
     fixture.destroy();

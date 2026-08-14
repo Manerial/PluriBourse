@@ -8,6 +8,11 @@ export interface PhaseChangedEvent {
   previousPhase: PhaseType;
 }
 
+export interface BasketCancelledEvent {
+  editionId: number;
+  newPhase: PhaseType;
+}
+
 export interface EditionDto {
   id: number;
   name: string;

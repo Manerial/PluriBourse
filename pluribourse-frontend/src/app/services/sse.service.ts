@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { PhaseChangedEvent, PhaseType } from '../models/edition.model';
+import { BasketCancelledEvent, PhaseChangedEvent, PhaseType } from '../models/edition.model';
 import { ALL_PHASES } from '../models/active-phase.enum';
 import { AuthService } from './auth.service';
 import { CurrentEditionService } from './current-edition.service';
@@ -22,6 +22,14 @@ function isPhaseChangedEvent(value: unknown): value is PhaseChangedEvent {
     && isPhaseType(candidate['previousPhase']);
 }
 
+function isBasketCancelledEvent(value: unknown): value is BasketCancelledEvent {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate['editionId'] === 'number' && isPhaseType(candidate['newPhase']);
+}
+
 @Injectable({ providedIn: 'root' })
 export class SseService {
   private readonly auth = inject(AuthService);
@@ -29,12 +37,20 @@ export class SseService {
   private readonly currentEditionService = inject(CurrentEditionService);
 
   phaseChanges(): Observable<PhaseChangedEvent> {
+    return this.listen('phase-changed', isPhaseChangedEvent);
+  }
+
+  basketCancelled(): Observable<BasketCancelledEvent> {
+    return this.listen('basket-cancelled', isBasketCancelledEvent);
+  }
+
+  private listen<T>(eventName: string, isValid: (value: unknown) => value is T): Observable<T> {
     return new Observable(observer => {
       const source = new EventSource('/api/sse/events', { withCredentials: true });
-      source.addEventListener('phase-changed', (event: MessageEvent) => {
+      source.addEventListener(eventName, (event: MessageEvent) => {
         try {
           const parsed: unknown = JSON.parse(event.data);
-          if (isPhaseChangedEvent(parsed)) {
+          if (isValid(parsed)) {
             observer.next(parsed);
           }
         } catch {

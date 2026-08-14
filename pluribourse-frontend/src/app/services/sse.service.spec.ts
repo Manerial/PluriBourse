@@ -3,7 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SseService } from './sse.service';
 import { AuthService } from './auth.service';
-import { PhaseChangedEvent } from '../models/edition.model';
+import { BasketCancelledEvent, PhaseChangedEvent } from '../models/edition.model';
 
 type MockEventSourceInstance = {
   addEventListener: ReturnType<typeof vi.fn>;
@@ -105,6 +105,23 @@ describe('SseService', () => {
     handler({ data: '42' });
 
     expect(received).toHaveLength(0);
+    subscription.unsubscribe();
+  });
+
+  it('emits parsed BasketCancelledEvent on basket-cancelled message', () => {
+    const { ctor, instance } = createMockEventSource();
+    vi.stubGlobal('EventSource', ctor);
+
+    const received: BasketCancelledEvent[] = [];
+    const subscription = service.basketCancelled().subscribe(e => received.push(e));
+
+    const handler = instance.addEventListener.mock.calls.find(c => c[0] === 'basket-cancelled')?.[1];
+    const event: BasketCancelledEvent = { editionId: 1, newPhase: 'DEPOSIT' };
+    handler({ data: JSON.stringify(event) });
+
+    expect(received).toHaveLength(1);
+    expect(received[0]).toEqual(event);
+
     subscription.unsubscribe();
   });
 

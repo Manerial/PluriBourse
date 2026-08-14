@@ -442,7 +442,8 @@
         "alreadySold": "Article déjà vendu sur un autre poste.",
         "notFound": "Article introuvable.",
         "generic": "Impossible de scanner l'article.",
-        "conflict": "Articles déjà vendus sur un autre poste : {{ names }}"
+        "conflict": "Articles déjà vendus sur un autre poste : {{ names }}",
+        "phaseChanged": "La phase a changé. Votre panier a été annulé."
       },
       "warning": {
         "incomplete": "Article incomplet : {{ comment }}",

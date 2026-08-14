@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, DestroyRef, ElementRef, HostListener, inject, output, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, HostListener, inject, input, output, signal, viewChild } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -40,6 +40,8 @@ export class ScannerInputComponent implements AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly scannerInput = viewChild<ElementRef<HTMLInputElement>>('scannerInput');
+
+  readonly disabled = input(false);
 
   readonly barcodeScanned = output<string>();
 

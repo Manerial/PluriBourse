@@ -1,5 +1,5 @@
 <div class="pos-page">
-  <app-scanner-input (barcodeScanned)="onScan($event)" />
+  <app-scanner-input [disabled]="basketCancelled()" (barcodeScanned)="onScan($event)" />
 
   @if (lastScanIssue(); as issue) {
     <app-notification-inline [message]="issue.message" [variant]="issue.variant" />

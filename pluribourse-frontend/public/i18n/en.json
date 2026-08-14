@@ -442,7 +442,8 @@
         "alreadySold": "Item already sold at another checkout.",
         "notFound": "Item not found.",
         "generic": "Could not scan the item.",
-        "conflict": "Items already sold at another checkout: {{ names }}"
+        "conflict": "Items already sold at another checkout: {{ names }}",
+        "phaseChanged": "The phase has changed. Your basket was cancelled."
       },
       "warning": {
         "incomplete": "Incomplete item: {{ comment }}",

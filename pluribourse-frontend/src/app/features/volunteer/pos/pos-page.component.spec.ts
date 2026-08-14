@@ -1,13 +1,15 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideTranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject, NEVER } from 'rxjs';
 import { vi } from 'vitest';
 import { PosPageComponent } from './pos-page.component';
 import { PosService } from '../../../services/pos.service';
+import { SseService } from '../../../services/sse.service';
 import { PaymentDialogService } from './payment-dialog.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { Basket, ScanResult } from '../../../models/pos.model';
+import { Basket, Sale, ScanResult } from '../../../models/pos.model';
+import { BasketCancelledEvent } from '../../../models/edition.model';
 
 const ITEM_1: ScanResult = { itemId: 1, name: 'Kapla', price: 5, incomplete: false, comment: null, lotId: null };
 const ITEM_2_INCOMPLETE: ScanResult = {
@@ -50,6 +52,9 @@ describe('PosPageComponent', () => {
   };
   const paymentDialogServiceMock = { open: vi.fn() };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
+  // Story 4.6: recreated fresh in beforeEach (not reused across tests) so no test can leak a
+  // subscription from a previous component instance into another test's assertions.
+  let basketCancelled$: Subject<BasketCancelledEvent>;
 
   async function createComponent(initialBasket: Basket = EMPTY_BASKET): Promise<void> {
     posServiceMock.getCurrentBasket.mockReturnValue(of(initialBasket));
@@ -59,6 +64,7 @@ describe('PosPageComponent', () => {
       providers: [
         provideTranslateService({ lang: 'en' }),
         { provide: PosService, useValue: posServiceMock },
+        { provide: SseService, useValue: { basketCancelled: () => basketCancelled$.asObservable() } },
         { provide: PaymentDialogService, useValue: paymentDialogServiceMock },
         { provide: ToastService, useValue: toastMock },
       ],
@@ -73,6 +79,7 @@ describe('PosPageComponent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    basketCancelled$ = new Subject<BasketCancelledEvent>();
   });
 
   afterEach(() => {
@@ -315,5 +322,135 @@ describe('PosPageComponent', () => {
 
     expect(posServiceMock.printInvoice).toHaveBeenCalledTimes(2);
     expect(component.lastSale()).toEqual(VALIDATED_SALE);
+  });
+
+  it('a basket-cancelled event empties the basket, clears any scan issue, disables the scanner and shows a persistent toast (AC1)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.addItem.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409, error: { type: 'https://pluribourse/errors/item-already-sold' } }))
+    );
+    await component.onScan('00010001');
+    expect(component.lastScanIssue()).not.toBeNull();
+
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+
+    expect(component.basket()).toBeNull();
+    expect(component.lastScanIssue()).toBeNull();
+    expect(component.basketCancelled()).toBe(true);
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.error.phaseChanged');
+  });
+
+  it('propagates basketCancelled to the scanner-input component (AC1, AC2)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+    fixture.detectChanges();
+
+    const scannerInput: HTMLInputElement = fixture.nativeElement.querySelector('app-scanner-input input');
+    expect(scannerInput.disabled).toBe(true);
+  });
+
+  it('ignores a basket-cancelled event received before the initial basket load resolves (AC3)', async () => {
+    posServiceMock.getCurrentBasket.mockReturnValue(NEVER);
+
+    await TestBed.configureTestingModule({
+      imports: [PosPageComponent],
+      providers: [
+        provideTranslateService({ lang: 'en' }),
+        { provide: PosService, useValue: posServiceMock },
+        { provide: SseService, useValue: { basketCancelled: () => basketCancelled$.asObservable() } },
+        { provide: PaymentDialogService, useValue: paymentDialogServiceMock },
+        { provide: ToastService, useValue: toastMock },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(PosPageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.basket()).toBeNull();
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+
+    expect(toastMock.showError).not.toHaveBeenCalled();
+    expect(component.basketCancelled()).toBe(false);
+  });
+
+  it('does not resurrect the basket from a scan that was already in flight when the basket was cancelled (regression, success path)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    const addItem$ = new Subject<Basket>();
+    posServiceMock.addItem.mockReturnValue(addItem$);
+    const scanPromise = component.onScan('00010001');
+
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+    expect(component.basket()).toBeNull();
+
+    addItem$.next(BASKET_WITH_ITEM_1);
+    addItem$.complete();
+    await scanPromise;
+
+    expect(component.basket()).toBeNull();
+  });
+
+  it('does not let a late scan error overwrite the persistent cancellation toast (regression, error path)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    const addItem$ = new Subject<Basket>();
+    posServiceMock.addItem.mockReturnValue(addItem$);
+    const scanPromise = component.onScan('00010001');
+
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+
+    addItem$.error(new HttpErrorResponse({ status: 422, error: { type: 'https://pluribourse/errors/sale-phase-required' } }));
+    await scanPromise;
+
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.error.phaseChanged');
+  });
+
+  it('does not let a late remove-item error overwrite the persistent cancellation toast (regression, error path)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    const removeItem$ = new Subject<Basket>();
+    posServiceMock.removeItem.mockReturnValue(removeItem$);
+    const removePromise = component.removeItem(ITEM_1.itemId);
+
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+
+    removeItem$.error(new HttpErrorResponse({ status: 404, error: { type: 'https://pluribourse/errors/basket-not-found' } }));
+    await removePromise;
+
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.error.phaseChanged');
+  });
+
+  it('does not let a late validate error overwrite the persistent cancellation toast (regression, error path)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    const validate$ = new Subject<Sale>();
+    posServiceMock.validate.mockReturnValue(validate$);
+    const validatePromise = component.openPaymentDialog();
+
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+
+    validate$.error(new HttpErrorResponse({ status: 404, error: { type: 'https://pluribourse/errors/basket-not-found' } }));
+    await validatePromise;
+
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.error.phaseChanged');
+  });
+
+  it('does not let a late remove-lot error overwrite the persistent cancellation toast (regression, error path)', async () => {
+    await createComponent(BASKET_WITH_INCOMPLETE_LOT);
+    const removeLot$ = new Subject<Basket>();
+    posServiceMock.removeLot.mockReturnValue(removeLot$);
+    const removePromise = component.removeLot(100);
+
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+
+    removeLot$.error(new HttpErrorResponse({ status: 404, error: { type: 'https://pluribourse/errors/basket-not-found' } }));
+    await removePromise;
+
+    expect(toastMock.showError).toHaveBeenCalledTimes(1);
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.error.phaseChanged');
   });
 });

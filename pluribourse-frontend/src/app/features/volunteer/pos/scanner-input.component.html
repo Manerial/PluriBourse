@@ -5,6 +5,7 @@
     matInput
     type="text"
     [value]="buffer()"
+    [disabled]="disabled()"
     (keydown)="onKeydown($event)"
     (paste)="onPaste($event)"
     [attr.aria-label]="'volunteer.pos.scanner.ariaLabel' | translate"

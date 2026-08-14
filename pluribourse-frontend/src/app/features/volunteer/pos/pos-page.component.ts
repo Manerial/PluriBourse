@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +7,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { Basket, Sale } from '../../../models/pos.model';
 import { PosService } from '../../../services/pos.service';
+import { SseService } from '../../../services/sse.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { extractConflictingItems, extractErrorType } from '../../../shared/http-error.util';
@@ -30,6 +32,7 @@ const INVOICE_BUTTON_VISIBLE_MS = 30000;
 })
 export class PosPageComponent implements OnInit {
   private readonly posService = inject(PosService);
+  private readonly sseService = inject(SseService);
   private readonly paymentDialogService = inject(PaymentDialogService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
@@ -43,6 +46,11 @@ export class PosPageComponent implements OnInit {
   // (AC 5): the scanner stays usable for a new transaction while the print button is still shown.
   readonly lastSale = signal<Sale | null>(null);
   readonly printingInvoice = signal(false);
+  // Story 4.6: set once by onBasketCancelled() and never cleared until a full page reload —
+  // the scanner has no re-enable path in JS by design (epics.md AC 2). Also read as a general
+  // "ignore this stale in-flight response" guard well beyond the scanner itself (removeItem,
+  // removeLot, openPaymentDialog, loadBasket) — named after the event, not just the input.
+  readonly basketCancelled = signal(false);
 
   // Serializes onScan() calls: without this, two scans fired before the first HTTP response
   // resolves could both be in flight against the same basket at once (Story 4.1 review finding,
@@ -60,6 +68,10 @@ export class PosPageComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadBasket();
+
+    this.sseService.basketCancelled().pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => this.onBasketCancelled());
   }
 
   async onScan(barcode: string): Promise<void> {
@@ -71,6 +83,11 @@ export class PosPageComponent implements OnInit {
     try {
       const previousItemIds = new Set(currentBasket.items.map(item => item.itemId));
       const updated = await firstValueFrom(this.posService.addItem(currentBasket.id, barcode));
+      if (this.basketCancelled()) {
+        // Story 4.6: a basket-cancelled event arrived while this scan was in flight — do not
+        // resurrect the basket or a scan message next to the persistent cancellation toast.
+        return;
+      }
       this.basket.set(updated);
       const addedItem = updated.items.find(item => !previousItemIds.has(item.itemId));
       if (addedItem?.incomplete) {
@@ -82,6 +99,9 @@ export class PosPageComponent implements OnInit {
         this.lastScanIssue.set(null);
       }
     } catch (err: unknown) {
+      if (this.basketCancelled()) {
+        return;
+      }
       this.handleScanError(err);
     } finally {
       this.scanInFlight = false;
@@ -96,8 +116,14 @@ export class PosPageComponent implements OnInit {
     this.removeInFlight = true;
     try {
       const updated = await firstValueFrom(this.posService.removeItem(currentBasket.id, itemId));
+      if (this.basketCancelled()) {
+        return;
+      }
       this.basket.set(updated);
     } catch {
+      if (this.basketCancelled()) {
+        return;
+      }
       this.toast.showError(this.translate.instant('volunteer.pos.error.generic'));
     } finally {
       this.removeInFlight = false;
@@ -112,12 +138,29 @@ export class PosPageComponent implements OnInit {
     this.removeInFlight = true;
     try {
       const updated = await firstValueFrom(this.posService.removeLot(currentBasket.id, lotId));
+      if (this.basketCancelled()) {
+        return;
+      }
       this.basket.set(updated);
     } catch {
+      if (this.basketCancelled()) {
+        return;
+      }
       this.toast.showError(this.translate.instant('volunteer.pos.error.generic'));
     } finally {
       this.removeInFlight = false;
     }
+  }
+
+  private onBasketCancelled(): void {
+    if (this.basket() === null) {
+      // AC 3 — theoretical case: the event arrives before loadBasket() has resolved.
+      return;
+    }
+    this.basket.set(null);
+    this.lastScanIssue.set(null);
+    this.basketCancelled.set(true);
+    this.toast.showError(this.translate.instant('volunteer.pos.error.phaseChanged'));
   }
 
   async openPaymentDialog(): Promise<void> {
@@ -140,6 +183,13 @@ export class PosPageComponent implements OnInit {
       // created for the next transaction (AC4), rather than just clearing items locally.
       await this.loadBasket();
     } catch (err: unknown) {
+      if (this.basketCancelled()) {
+        // Story 4.6 review: a basket-cancelled event arrived while validate() was in flight —
+        // the basket was already deleted server-side by that same transition (Story 2.8), so
+        // this request 404s harmlessly; don't let its generic error toast overwrite the
+        // persistent cancellation toast already shown by onBasketCancelled().
+        return;
+      }
       this.handleValidationError(err);
     } finally {
       this.validateInFlight = false;
@@ -175,8 +225,18 @@ export class PosPageComponent implements OnInit {
   private async loadBasket(): Promise<void> {
     try {
       const basket = await firstValueFrom(this.posService.getCurrentBasket());
+      if (this.basketCancelled()) {
+        // Story 4.6 review: a basket-cancelled event arrived while this reload was in flight —
+        // called both from ngOnInit() (harmless, basketCancelled() is always false there) and
+        // from openPaymentDialog() after a successful validate(); don't resurrect a basket or
+        // overwrite the persistent cancellation toast with a stale generic error.
+        return;
+      }
       this.basket.set(basket);
     } catch (err: unknown) {
+      if (this.basketCancelled()) {
+        return;
+      }
       this.handleScanError(err);
     }
   }
