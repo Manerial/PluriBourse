@@ -1,0 +1,33 @@
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--pb-space-md);
+  padding: var(--pb-space-lg);
+}
+
+// "Metric tile" pattern (EXPERIENCE.md § Component Patterns): read-only aggregate figure, no
+// action, no hover state.
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-space-xs);
+  padding: var(--pb-space-md);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--pb-rounded-lg);
+
+  &__value {
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0 var(--pb-space-lg);
+}

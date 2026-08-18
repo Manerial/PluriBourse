@@ -205,6 +205,13 @@ describe('AppLayoutComponent', () => {
       expect(links.some(l => l.getAttribute('href') === '/admin/editions')).toBe(true);
     });
 
+    it('contains nav link to /admin/reports', () => {
+      const links: HTMLAnchorElement[] = Array.from(
+        fixture.nativeElement.querySelectorAll('a.sidebar__item')
+      );
+      expect(links.some(l => l.getAttribute('href') === '/admin/reports')).toBe(true);
+    });
+
     it('renders admin role badge', () => {
       const badge = fixture.nativeElement.querySelector('.badge');
       expect(badge).toBeTruthy();

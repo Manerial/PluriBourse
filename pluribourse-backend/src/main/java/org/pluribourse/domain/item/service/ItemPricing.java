@@ -29,9 +29,17 @@ public final class ItemPricing {
         return total;
     }
 
+    /**
+     * {@code commissionRate} is a percentage (0-100, e.g. {@code 10.00} for 10%), not a fraction.
+     * Rounds to 4 decimal places as an intermediate result — callers needing a final display/storage
+     * value must call {@code setScale(2, ...)} themselves, same as {@link #computeNetPayout}.
+     */
+    public static BigDecimal computeCommission(BigDecimal total, BigDecimal commissionRate) {
+        return total.multiply(commissionRate).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+    }
+
     public static BigDecimal computeNetPayout(BigDecimal total, BigDecimal commissionRate) {
-        BigDecimal commission = total.multiply(commissionRate).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-        return total.subtract(commission).setScale(2, RoundingMode.HALF_UP);
+        return total.subtract(computeCommission(total, commissionRate)).setScale(2, RoundingMode.HALF_UP);
     }
 
     /**

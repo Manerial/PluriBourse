@@ -48,4 +48,9 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('../settlement/settlement-list.component').then((m) => m.SettlementListComponent),
   },
+  {
+    path: 'reports',
+    loadComponent: () =>
+      import('../report/report-page.component').then((m) => m.ReportPageComponent),
+  },
 ];

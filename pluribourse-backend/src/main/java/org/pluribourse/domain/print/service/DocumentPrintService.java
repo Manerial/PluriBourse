@@ -3,6 +3,7 @@ package org.pluribourse.domain.print.service;
 import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.print.entity.PrintContentType;
+import org.pluribourse.domain.report.dto.DailySalesReportDto;
 import org.pluribourse.domain.seller.entity.SellerProfile;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,7 @@ public class DocumentPrintService {
     private final DepositSlipRenderer depositSlipRenderer;
     private final InvoiceRenderer invoiceRenderer;
     private final SettlementReportRenderer settlementReportRenderer;
+    private final DailyReportRenderer dailyReportRenderer;
     private final PrinterBridgeClient printerBridgeClient;
 
     public PrintJob buildDepositSlipJob(SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate, Locale documentLocale) {
@@ -37,6 +39,10 @@ public class DocumentPrintService {
 
     public PrintJob buildSettlementReportJob(SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate, Locale documentLocale) {
         return printer -> printSettlementReport(printer.getPrinterBridgeId(), sellerProfile, items, commissionRate, documentLocale);
+    }
+
+    public PrintJob buildDailyReportJob(String editionName, DailySalesReportDto report, Locale documentLocale) {
+        return printer -> printDailyReport(printer.getPrinterBridgeId(), editionName, report, documentLocale);
     }
 
     private void printDepositSlip(String printerBridgeId, SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate,
@@ -54,6 +60,11 @@ public class DocumentPrintService {
     private void printSettlementReport(String printerBridgeId, SellerProfile sellerProfile, List<Item> items,
             BigDecimal commissionRate, Locale documentLocale) {
         byte[] pdf = settlementReportRenderer.renderReport(sellerProfile, items, commissionRate, documentLocale);
+        printPdf(printerBridgeId, pdf);
+    }
+
+    private void printDailyReport(String printerBridgeId, String editionName, DailySalesReportDto report, Locale documentLocale) {
+        byte[] pdf = dailyReportRenderer.renderDailyReport(editionName, report, documentLocale);
         printPdf(printerBridgeId, pdf);
     }
 

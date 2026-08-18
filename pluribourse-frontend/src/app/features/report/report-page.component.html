@@ -1,0 +1,70 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.reports.daily.title' | translate }}</h1>
+    @if (isSalePhase()) {
+      <div class="card__actions">
+        <button type="button" mat-button (click)="refresh()" [disabled]="isLoading()">
+          <mat-icon>refresh</mat-icon>
+          {{ 'admin.reports.daily.refresh' | translate }}
+        </button>
+        <button type="button" mat-button color="primary" (click)="printReport()" [disabled]="printing() || isLoading()">
+          <mat-icon>print</mat-icon>
+          {{ 'admin.reports.daily.print' | translate }}
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (!isSalePhase()) {
+    <app-empty-state icon="assessment" [message]="'admin.reports.emptyPhase' | translate" />
+  } @else if (isLoading()) {
+    <app-skeleton-row [rows]="3" />
+  } @else {
+    @if (error()) {
+      <app-notification-inline [message]="error()! | translate" variant="error" />
+    } @else if (report(); as dailyReport) {
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-tile__value">{{ dailyReport.soldItemCount }}</span>
+          <span class="stat-tile__label">{{ 'admin.reports.daily.soldCount' | translate }}</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile__value">{{ dailyReport.unsoldItemCount }}</span>
+          <span class="stat-tile__label">{{ 'admin.reports.daily.unsoldCount' | translate }}</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile__value">{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.grossRevenue.toFixed(2) } }}</span>
+          <span class="stat-tile__label">{{ 'admin.reports.daily.grossRevenue' | translate }}</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile__value">{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.commission.toFixed(2) } }}</span>
+          <span class="stat-tile__label">{{ 'admin.reports.daily.commission' | translate }}</span>
+        </div>
+      </div>
+
+      <h2 class="section-title">{{ 'admin.reports.daily.paymentBreakdown' | translate }}</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'admin.reports.daily.method' | translate }}</th>
+            <th>{{ 'admin.reports.daily.amount' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ 'admin.reports.daily.cash' | translate }}</td>
+            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.cashTotal.toFixed(2) } }}</td>
+          </tr>
+          <tr>
+            <td>{{ 'admin.reports.daily.check' | translate }}</td>
+            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.checkTotal.toFixed(2) } }}</td>
+          </tr>
+          <tr>
+            <td>{{ 'admin.reports.daily.card' | translate }}</td>
+            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.cardTotal.toFixed(2) } }}</td>
+          </tr>
+        </tbody>
+      </table>
+    }
+  }
+</div>

@@ -65,6 +65,8 @@ class InvoicePrintingIT extends IntegrationTest {
     @Autowired
     private SettlementReportRenderer settlementReportRenderer;
     @Autowired
+    private DailyReportRenderer dailyReportRenderer;
+    @Autowired
     private PrintQueueService printQueueService;
 
     private static PrinterBridgeDouble printerBridgeDouble;
@@ -295,7 +297,8 @@ class InvoicePrintingIT extends IntegrationTest {
         Sale sale = saleRepository.findById(saleId).orElseThrow();
 
         PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
-        DocumentPrintService documentPrintService = new DocumentPrintService(depositSlipRenderer, invoiceRenderer, settlementReportRenderer, mockClient);
+        DocumentPrintService documentPrintService =
+                new DocumentPrintService(depositSlipRenderer, invoiceRenderer, settlementReportRenderer, dailyReportRenderer, mockClient);
 
         Printer printer = new Printer();
         printer.setPrinterBridgeId("bridge-invoice-mock-target");

@@ -99,7 +99,8 @@
       "sellers": "Sellers",
       "printQueue": "Print queue",
       "printers": "Printers",
-      "settlement": "Settlements"
+      "settlement": "Settlements",
+      "reports": "Reports"
     }
   },
   "edition": {
@@ -594,6 +595,33 @@
         "refresh": "Failed to check printer statuses.",
         "resume": "Failed to resume the queue.",
         "discard": "Failed to discard the failed job."
+      }
+    },
+    "reports": {
+      "daily": {
+        "title": "Daily sales report",
+        "refresh": "Refresh",
+        "print": "Print",
+        "soldCount": "Items sold today",
+        "unsoldCount": "Items unsold",
+        "grossRevenue": "Gross revenue",
+        "commission": "Commission earned",
+        "paymentBreakdown": "Payment method breakdown",
+        "method": "Payment method",
+        "amount": "Amount",
+        "cash": "Cash",
+        "check": "Check",
+        "card": "Card",
+        "amountFormat": "{{ amount }} €"
+      },
+      "emptyPhase": "No report available in this phase.",
+      "success": {
+        "print": "Report sent to the printer."
+      },
+      "error": {
+        "load": "Could not load the daily report.",
+        "print": "Could not print the report.",
+        "printerUnavailable": "No A4 printer available. Select a printer."
       }
     },
     "printers": {

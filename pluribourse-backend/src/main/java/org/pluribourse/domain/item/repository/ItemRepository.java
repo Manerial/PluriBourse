@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -118,4 +119,26 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
      */
     @Query("SELECT i FROM Item i JOIN FETCH i.category LEFT JOIN FETCH i.lot WHERE i.sellerProfile.id = :sellerProfileId ORDER BY i.itemNumber ASC")
     List<Item> findAllBySellerProfileIdForSettlementReport(@Param("sellerProfileId") Long sellerProfileId);
+
+    /**
+     * Daily sales report (story 5.3, FR-054): unsold items in the active edition as of now — a
+     * snapshot, not scoped to any calendar day (an unsold item has no sale date to filter by; only
+     * the sold query below is day-scoped). JOIN FETCH lot for lot-aware counting via
+     * {@link org.pluribourse.domain.item.service.ItemPricing#distinctByLot} — a lot with any member
+     * still unsold counts once, same convention as every other lot-aware count in this codebase
+     * (decision confirmed with the user at create-story: 1 per lot, not per member, for both the
+     * sold and unsold counters).
+     */
+    @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.edition.id = :editionId AND i.sold = false")
+    List<Item> findAllUnsoldByEditionId(@Param("editionId") Long editionId);
+
+    /**
+     * Daily sales report (story 5.3, FR-054): items sold within the given calendar-day window.
+     * JOIN FETCH lot for lot-aware counting via {@link org.pluribourse.domain.item.service.ItemPricing#distinctByLot}
+     * — a lot with any member sold inside the window counts once, matching every other lot-aware
+     * count/total in this codebase.
+     */
+    @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.edition.id = :editionId AND i.sale.soldAt >= :dayStart AND i.sale.soldAt < :dayEnd")
+    List<Item> findAllSoldByEditionIdAndSoldAtBetween(@Param("editionId") Long editionId,
+            @Param("dayStart") LocalDateTime dayStart, @Param("dayEnd") LocalDateTime dayEnd);
 }
