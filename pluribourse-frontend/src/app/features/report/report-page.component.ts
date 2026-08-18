@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { DailySalesReportDto } from '../../models/daily-sales-report.model';
+import { EditionSummaryReportDto } from '../../models/edition-summary-report.model';
 import { ActivePhase } from '../../models/active-phase.enum';
 import { ReportService } from '../../services/report.service';
 import { CurrentEditionService } from '../../services/current-edition.service';
@@ -32,7 +33,23 @@ export class ReportPageComponent {
   readonly error = signal<string | null>(null);
   readonly printing = signal(false);
 
+  readonly editionReport = signal<EditionSummaryReportDto | null>(null);
+  readonly isLoadingEditionReport = signal(false);
+  readonly editionReportError = signal<string | null>(null);
+  readonly printingEditionReport = signal(false);
+
   readonly isSalePhase = computed(() => this.currentEditionService.currentEdition()?.phase === ActivePhase.SALE);
+  // 'CLOSED' is a plain PhaseType string literal, not an ActivePhase member — ActivePhase
+  // deliberately excludes CLOSED (see active-phase.enum.ts). The CLOSED branch below is not
+  // reachable today: CurrentEditionService.currentEdition() resets to null as soon as an edition
+  // reaches CLOSED, both on initial load (GET /editions/current excludes CLOSED, 404) and on the
+  // SSE phase-changed update (ACTIVE_PHASES check). It exists so this component is already correct
+  // once the Story 2.7 limitation on post-close navigation is resolved — the backend endpoint
+  // (resolved by explicit edition ID) is already correct and tested for CLOSED today.
+  readonly isEditionReportPhase = computed(() => {
+    const phase = this.currentEditionService.currentEdition()?.phase;
+    return phase === ActivePhase.POST_SALE || phase === 'CLOSED';
+  });
 
   constructor() {
     // effect() réactif, pas un ngOnInit ponctuel : AppLayoutComponent.loadEdition() (parent) résout
@@ -45,6 +62,12 @@ export class ReportPageComponent {
         void this.load();
       } else {
         this.report.set(null);
+      }
+
+      if (this.isEditionReportPhase()) {
+        void this.loadEditionReport();
+      } else {
+        this.editionReport.set(null);
       }
     });
   }
@@ -84,6 +107,48 @@ export class ReportPageComponent {
       }
     } finally {
       this.printing.set(false);
+    }
+  }
+
+  private async loadEditionReport(): Promise<void> {
+    if (this.isLoadingEditionReport()) {
+      return;
+    }
+    this.isLoadingEditionReport.set(true);
+    this.editionReportError.set(null);
+    try {
+      const editionId = this.currentEditionService.currentEdition()!.id;
+      this.editionReport.set(await firstValueFrom(this.reportService.getEditionReport(editionId)));
+    } catch {
+      this.editionReportError.set('admin.reports.error.loadEdition');
+    } finally {
+      this.isLoadingEditionReport.set(false);
+    }
+  }
+
+  async printEditionReport(): Promise<void> {
+    if (this.printingEditionReport()) {
+      return;
+    }
+    // currentEdition() can turn null between this button rendering and the click actually
+    // firing (an SSE phase-changed event lands in that window) — guard instead of asserting
+    // non-null, which would throw and surface a misleading "impossible d'imprimer" toast.
+    const edition = this.currentEditionService.currentEdition();
+    if (!edition) {
+      return;
+    }
+    this.printingEditionReport.set(true);
+    try {
+      await firstValueFrom(this.reportService.printEditionReport(edition.id));
+      this.toast.showSuccess(this.translate.instant('admin.reports.success.print'));
+    } catch (err: unknown) {
+      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+        this.toast.showError(this.translate.instant('admin.reports.error.printerUnavailable'));
+      } else {
+        this.toast.showError(this.translate.instant('admin.reports.error.print'));
+      }
+    } finally {
+      this.printingEditionReport.set(false);
     }
   }
 }

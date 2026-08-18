@@ -9,6 +9,7 @@ import org.pluribourse.domain.item.service.PhaseGuard;
 import org.pluribourse.domain.pos.entity.Sale;
 import org.pluribourse.domain.pos.repository.SaleRepository;
 import org.pluribourse.domain.report.dto.DailySalesReportDto;
+import org.pluribourse.domain.report.dto.EditionSummaryReportDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,6 +62,39 @@ public class ReportService {
         long unsoldItemCount = ItemPricing.distinctByLot(unsoldItems).size();
 
         return new DailySalesReportDto(today, soldItemCount, unsoldItemCount, grossRevenue, commission,
+                cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP));
+    }
+
+    /**
+     * Story 5.4 — computes the edition-wide summary report (FR-055, FR-094): same shape as
+     * {@link #getDailyReport}, but aggregated over the edition's whole lifetime instead of a
+     * single calendar day.
+     */
+    @Transactional(readOnly = true)
+    public EditionSummaryReportDto getEditionReport(Edition edition) {
+        PhaseGuard.requirePostSaleOrClosedPhase(edition);
+
+        List<Sale> allSales = saleRepository.findAllByEditionId(edition.getId());
+        List<Item> soldItems = itemRepository.findAllByEditionIdAndSoldTrue(edition.getId());
+        List<Item> unsoldItems = itemRepository.findAllUnsoldByEditionId(edition.getId());
+
+        BigDecimal cash = BigDecimal.ZERO;
+        BigDecimal check = BigDecimal.ZERO;
+        BigDecimal card = BigDecimal.ZERO;
+        for (Sale sale : allSales) {
+            switch (sale.getPaymentMethod()) {
+                case CASH -> cash = cash.add(sale.getTotal());
+                case CHECK -> check = check.add(sale.getTotal());
+                case CARD -> card = card.add(sale.getTotal());
+                default -> throw new IllegalStateException("Unhandled payment method: " + sale.getPaymentMethod());
+            }
+        }
+        BigDecimal grossRevenue = cash.add(check).add(card).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal commission = ItemPricing.computeCommission(grossRevenue, edition.getCommissionRate()).setScale(2, RoundingMode.HALF_UP);
+        long soldItemCount = ItemPricing.distinctByLot(soldItems).size();
+        long unsoldItemCount = ItemPricing.distinctByLot(unsoldItems).size();
+
+        return new EditionSummaryReportDto(soldItemCount, unsoldItemCount, grossRevenue, commission,
                 cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP));
     }
 }

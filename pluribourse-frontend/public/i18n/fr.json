@@ -614,12 +614,28 @@
         "card": "Carte",
         "amountFormat": "{{ amount }} €"
       },
+      "edition": {
+        "title": "Bilan d'édition",
+        "print": "Imprimer",
+        "soldCount": "Articles vendus",
+        "unsoldCount": "Articles invendus",
+        "grossRevenue": "Recettes brutes totales",
+        "commission": "Commission totale perçue",
+        "paymentBreakdown": "Ventilation par moyen de paiement",
+        "method": "Moyen de paiement",
+        "amount": "Montant",
+        "cash": "Espèces",
+        "check": "Chèque",
+        "card": "Carte",
+        "amountFormat": "{{ amount }} €"
+      },
       "emptyPhase": "Aucun rapport disponible dans cette phase.",
       "success": {
         "print": "Bilan envoyé à l'imprimante."
       },
       "error": {
         "load": "Impossible de charger le bilan journalier.",
+        "loadEdition": "Impossible de charger le bilan d'édition.",
         "print": "Impossible d'imprimer le bilan.",
         "printerUnavailable": "Aucune imprimante A4 disponible. Sélectionnez une imprimante."
       }

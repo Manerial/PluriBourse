@@ -33,7 +33,7 @@ import org.pluribourse.domain.print.service.InvoiceRenderer;
 import org.pluribourse.domain.print.service.PrintQueueService;
 import org.pluribourse.domain.print.service.PrinterBridgeClient;
 import org.pluribourse.domain.print.service.SettlementReportRenderer;
-import org.pluribourse.domain.report.dto.DailySalesReportDto;
+import org.pluribourse.domain.report.dto.EditionSummaryReportDto;
 import org.pluribourse.domain.seller.dto.SellerDto;
 import org.pluribourse.domain.user.enums.Language;
 import org.pluribourse.shared.IntegrationTest;
@@ -67,32 +67,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Story 5.3: the daily sales report (FR-054, FR-094) — screen view ({@code GET /admin/reports/daily})
- * and PDF ({@code POST /admin/reports/daily/print}), admin-only, phase-Vente-only. Same family as
- * {@code SettlementReportPrintingIT}/{@code InvoicePrintingIT} (see their Javadoc for why AC content
- * is verified with direct calls on the real, fully-wired {@link DailyReportRenderer}/
- * {@link DocumentPrintService} beans rather than through a controller that exposes no raw PDF
- * bytes). Bob sells today: Kapla (5.00€, CASH) and one member of a 2-item lot, Lot Duo (global price
- * 8.00€, CARD — proves a lot counts as one "sold" item even partially scanned). He also sells Livre
- * (3.00€, CHECK) — its {@code Sale.soldAt} is backdated to yesterday right after validation (no HTTP
- * mechanism can simulate "yesterday"; same targeted exception to the E2E-by-controller philosophy
- * already accepted for {@code SaleConcurrencyIT}, story 4.4) to prove the calendar-day boundary
- * excludes it from today's report. He keeps unsold: Peluche (7.00€, category "Jouets", table 7) and
- * Lot Duo's second, never-scanned member. Today's report: 2 sold items (Kapla + Lot Duo), 2 unsold
- * items (Peluche + Lot Duo's other member), gross revenue 13.00€ (5.00 CASH + 8.00 CARD, Livre's
- * 3.00 CHECK excluded), 10% commission = 1.30€.
+ * Story 5.4: the edition-wide summary report (FR-055, FR-094) — screen view
+ * ({@code GET /admin/reports/edition/{id}}) and PDF ({@code POST /admin/reports/edition/{id}/print}),
+ * admin-only, reachable in Post-vente and Clôturée alike (unlike the daily report, story 5.3, which
+ * is Vente-only). Same family as {@code DailyReportPrintingIT} — AC content is verified with direct
+ * calls on the real, fully-wired {@link EditionReportRenderer}/{@link DocumentPrintService} beans
+ * rather than through a controller that exposes no raw PDF bytes.
+ * <p>
+ * Bob sells: Kapla (5.00€, CASH) and one member of a 2-item lot, Lot Duo (global price 8.00€,
+ * CARD — proves a lot counts as one "sold" item even partially scanned). He also sells Livre
+ * (3.00€, CHECK) — its {@code Sale.soldAt} is backdated to yesterday right after validation (no
+ * HTTP mechanism can simulate "yesterday"; same targeted exception to the E2E-by-controller
+ * philosophy already accepted for {@code SaleConcurrencyIT}, story 4.4) specifically to prove the
+ * edition report, unlike the daily one, aggregates the edition's whole lifetime and does NOT
+ * exclude it. He keeps unsold: Peluche (7.00€, category "Jouets", table 7) and Lot Duo's second,
+ * never-scanned member. Edition report: 3 sold items (Kapla + Lot Duo + Livre), 2 unsold items
+ * (Peluche + Lot Duo's other member), gross revenue 16.00€ (5.00 CASH + 8.00 CARD + 3.00 CHECK),
+ * 10% commission = 1.60€.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class DailyReportPrintingIT extends IntegrationTest {
+class EditionReportPrintingIT extends IntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
     private SaleRepository saleRepository;
     @Autowired
-    private DailyReportRenderer dailyReportRenderer;
-    @Autowired
     private EditionReportRenderer editionReportRenderer;
+    @Autowired
+    private DailyReportRenderer dailyReportRenderer;
     @Autowired
     private DepositSlipRenderer depositSlipRenderer;
     @Autowired
@@ -104,10 +107,10 @@ class DailyReportPrintingIT extends IntegrationTest {
 
     private static PrinterBridgeDouble printerBridgeDouble;
 
-    private static final String EDITION_NAME = "Bourse Rapport 2026";
-    private static final String KAPLA_BARCODE = "00010001"; // 5.00€, sold today CASH
+    private static final String EDITION_NAME = "Bourse Bilan Edition 2026";
+    private static final String KAPLA_BARCODE = "00010001"; // 5.00€, sold CASH
     // Peluche (7.00€, barcode 00010002) stays unsold — its barcode is never scanned in this scenario.
-    private static final String LIVRE_BARCODE = "00010003"; // 3.00€, sold today CHECK, backdated to yesterday afterwards
+    private static final String LIVRE_BARCODE = "00010003"; // 3.00€, sold CHECK, backdated to yesterday afterwards
     private static final String LOT_DUO_MEMBER_A_BARCODE = "00010004"; // Lot Duo, only member scanned, CARD
     // Lot Duo's second member (barcode 00010005) is never scanned — proves a partially-sold lot
     // still counts as exactly one sold item (decision: 1 per lot, not per member).
@@ -185,7 +188,7 @@ class DailyReportPrintingIT extends IntegrationTest {
         MvcResult bobResult = mockMvc.perform(post("/api/sellers")
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new SellerDto(null, "Bob", "Vendeur", "bob.rapport@email.com", "0600000002"))))
+                        .content(objectMapper.writeValueAsString(new SellerDto(null, "Bob", "Vendeur", "bob.bilan@email.com", "0600000003"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         bobId = objectMapper.readValue(bobResult.getResponse().getContentAsString(), SellerDto.class).id();
@@ -217,25 +220,13 @@ class DailyReportPrintingIT extends IntegrationTest {
 
     @Test
     @Order(3)
-    void daily_report_is_rejected_outside_the_sale_phase() throws Exception {
-        mockMvc.perform(get("/api/admin/reports/daily").session(adminSession))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));
-        mockMvc.perform(post("/api/admin/reports/daily/print")
-                        .session(adminSession).with(csrf()))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));
-    }
-
-    @Test
-    @Order(4)
     void register_a4_printer_and_select_it_for_admin() throws Exception {
-        printerBridgeDouble.register("bridge-daily-report-a4", "A4 Rapport Test", "NETWORK", "ONLINE");
+        printerBridgeDouble.register("bridge-edition-report-a4", "A4 Bilan Test", "NETWORK", "ONLINE");
         MvcResult a4Result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "A4 Rapport Test", PrinterType.A4, null, "bridge-daily-report-a4"))))
+                                "A4 Bilan Test", PrinterType.A4, null, "bridge-edition-report-a4"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         a4PrinterId = objectMapper.readValue(a4Result.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -249,8 +240,9 @@ class DailyReportPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(4)
     void advance_edition_to_sale_phase() throws Exception {
+        // 2nd advance() call since creation (1st: PREPARATION -> DEPOSIT, Order 1).
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
@@ -258,7 +250,7 @@ class DailyReportPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(5)
     void sell_kapla_by_cash() throws Exception {
         Long basketId = currentBasketId();
         mockMvc.perform(post("/api/pos/baskets/" + basketId + "/items")
@@ -273,7 +265,7 @@ class DailyReportPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(7)
+    @Order(6)
     void sell_one_lot_member_by_card() throws Exception {
         Long basketId = currentBasketId();
         // Only one of Lot Duo's two members is scanned — the lot stays "incomplete" at POS
@@ -290,7 +282,7 @@ class DailyReportPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(7)
     void sell_livre_by_check_then_backdate_the_sale_to_yesterday() throws Exception {
         Long basketId = currentBasketId();
         mockMvc.perform(post("/api/pos/baskets/" + basketId + "/items")
@@ -308,111 +300,148 @@ class DailyReportPrintingIT extends IntegrationTest {
         // No HTTP mechanism can simulate "yesterday" — direct repository write, exception to the
         // E2E-by-controller philosophy already accepted for SaleConcurrencyIT (story 4.4). The sale
         // itself was created through the real POS flow above; only its date is adjusted after the
-        // fact. findById()/save() are each independently transactional via Spring Data's own
-        // repository proxy — no wrapping @Transactional needed on this helper.
+        // fact, specifically to prove the edition report (unlike the daily one) does NOT exclude it.
         Sale sale = saleRepository.findById(livreSaleId).orElseThrow();
         sale.setSoldAt(LocalDateTime.now().minusDays(1));
         saleRepository.save(sale);
     }
 
     @Test
-    @Order(9)
-    void daily_report_reflects_only_todays_sales_lot_aware_and_unsold_snapshot() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/admin/reports/daily").session(adminSession))
-                .andExpect(status().isOk())
-                .andReturn();
-        DailySalesReportDto report = objectMapper.readValue(result.getResponse().getContentAsString(), DailySalesReportDto.class);
+    @Order(8)
+    void edition_report_is_rejected_during_the_sale_phase() throws Exception {
+        mockMvc.perform(get("/api/admin/reports/edition/" + editionId).session(adminSession))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.type").value(endsWith("/edition-report-not-allowed")));
+        mockMvc.perform(post("/api/admin/reports/edition/" + editionId + "/print")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.type").value(endsWith("/edition-report-not-allowed")));
+    }
 
-        assertThat(report.reportDate()).isEqualTo(LocalDate.now());
-        // Kapla (CASH) + Lot Duo (CARD, one line despite two members) = 2. Livre (backdated) excluded.
-        assertThat(report.soldItemCount()).isEqualTo(2);
-        // Peluche + Lot Duo's second, never-scanned member = 2 — independent of the calendar day.
-        assertThat(report.unsoldItemCount()).isEqualTo(2);
-        assertThat(report.grossRevenue()).isEqualByComparingTo("13.00");
-        assertThat(report.commission()).isEqualByComparingTo("1.30");
-        assertThat(report.cashTotal()).isEqualByComparingTo("5.00");
-        assertThat(report.cardTotal()).isEqualByComparingTo("8.00");
-        // Livre's 3.00€ CHECK sale was backdated to yesterday — excluded from today's breakdown.
-        assertThat(report.checkTotal()).isEqualByComparingTo("0.00");
+    @Test
+    @Order(9)
+    void advance_edition_to_post_sale_phase() throws Exception {
+        // 3rd advance() call since creation: SALE -> POST_SALE.
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("POST_SALE"));
     }
 
     @Test
     @Order(10)
-    void volunteer_cannot_access_the_daily_report() throws Exception {
-        mockMvc.perform(get("/api/admin/reports/daily").session(volunteer1Session))
+    void edition_report_reflects_the_whole_edition_lifetime_lot_aware_and_unsold_snapshot() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/admin/reports/edition/" + editionId).session(adminSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        EditionSummaryReportDto report = objectMapper.readValue(result.getResponse().getContentAsString(), EditionSummaryReportDto.class);
+
+        assertEditionReport(report);
+    }
+
+    @Test
+    @Order(11)
+    void advancing_to_closed_leaves_the_edition_report_unchanged_and_still_resolvable_by_id() throws Exception {
+        // 4th advance() call since creation: POST_SALE -> CLOSED. Proves resolution by explicit
+        // edition ID (EditionService.requireEdition, not getActiveEdition()) keeps this endpoint
+        // correct in Clôturée — the central point of story 5.4's endpoint design.
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("CLOSED"));
+
+        MvcResult result = mockMvc.perform(get("/api/admin/reports/edition/" + editionId).session(adminSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        EditionSummaryReportDto report = objectMapper.readValue(result.getResponse().getContentAsString(), EditionSummaryReportDto.class);
+
+        // Nothing changes between Post-vente and Clôturée — no sale is possible in the interval.
+        assertEditionReport(report);
+    }
+
+    @Test
+    @Order(12)
+    void volunteer_cannot_access_the_edition_report() throws Exception {
+        mockMvc.perform(get("/api/admin/reports/edition/" + editionId).session(volunteer1Session))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/admin/reports/daily/print")
+        mockMvc.perform(post("/api/admin/reports/edition/" + editionId + "/print")
                         .session(volunteer1Session).with(csrf()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @Order(11)
-    void daily_report_renderer_includes_counts_totals_and_payment_breakdown() {
-        DailySalesReportDto report = new DailySalesReportDto(LocalDate.of(2026, 1, 2), 2, 2,
-                new BigDecimal("13.00"), new BigDecimal("1.30"),
-                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"));
-
-        byte[] pdf = dailyReportRenderer.renderDailyReport(EDITION_NAME, report, Locale.FRENCH);
-        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
-
-        assertThat(rendered).startsWith("%PDF");
-        assertThat(rendered).contains(EDITION_NAME);
-        assertThat(rendered).contains("2026-01-02");
-        assertThat(rendered).contains("13.00").contains("1.30");
-        assertThat(rendered).contains("Espèces").contains("Chèque").contains("Carte");
-        assertThat(rendered).contains("5.00").contains("8.00");
-    }
-
-    @Test
-    @Order(12)
-    void daily_report_renderer_resolves_labels_from_the_edition_document_language_not_user_preference() {
-        // AC 2: document language is resolved from Edition.documentLanguage — here forced to
-        // Locale.ENGLISH directly (same real MessageSource-backed renderer bean) to prove
-        // messages_en.properties is actually picked up, independently of the connected user's own
-        // language preference — same reasoning as SettlementReportPrintingIT Order 9.
-        DailySalesReportDto report = new DailySalesReportDto(LocalDate.of(2026, 1, 2), 2, 2,
-                new BigDecimal("13.00"), new BigDecimal("1.30"),
-                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"));
-
-        byte[] pdf = dailyReportRenderer.renderDailyReport(EDITION_NAME, report, Locale.ENGLISH);
-        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
-
-        assertThat(rendered).contains("Daily sales report").contains("Payment method breakdown").contains("Cash").contains("Check").contains("Card");
-        assertThat(rendered).doesNotContain("Bilan des ventes journalier").doesNotContain("Espèces").doesNotContain("Chèque");
-    }
-
-    @Test
     @Order(13)
-    void document_print_service_sends_the_rendered_daily_report_pdf_bytes_via_printer_bridge_client() {
-        DailySalesReportDto report = new DailySalesReportDto(LocalDate.of(2026, 1, 2), 2, 2,
-                new BigDecimal("13.00"), new BigDecimal("1.30"),
-                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"));
-
-        PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
-        DocumentPrintService isolatedDocumentPrintService =
-                new DocumentPrintService(depositSlipRenderer, invoiceRenderer, settlementReportRenderer, dailyReportRenderer,
-                        editionReportRenderer, mockClient);
-
-        Printer printer = new Printer();
-        printer.setPrinterBridgeId("bridge-daily-report-mock-target");
-        isolatedDocumentPrintService.buildDailyReportJob(EDITION_NAME, report, Locale.FRENCH).execute(printer);
-
-        ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(mockClient).print(eq("bridge-daily-report-mock-target"), eq(PrintContentType.PDF), payloadCaptor.capture());
-        assertThat(new String(payloadCaptor.getValue(), 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+    void edition_report_for_an_unknown_edition_id_returns_404() throws Exception {
+        mockMvc.perform(get("/api/admin/reports/edition/999999").session(adminSession))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(endsWith("/edition-not-found")));
     }
 
     @Test
     @Order(14)
-    void printing_the_daily_report_via_http_is_queued_and_reaches_printer_bridge_client() throws Exception {
-        mockMvc.perform(post("/api/admin/reports/daily/print")
+    void edition_report_renderer_includes_counts_totals_and_payment_breakdown() {
+        EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
+                new BigDecimal("16.00"), new BigDecimal("1.60"),
+                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"));
+
+        byte[] pdf = editionReportRenderer.renderEditionReport(EDITION_NAME, report, Locale.FRENCH);
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        assertThat(rendered).startsWith("%PDF");
+        assertThat(rendered).contains(EDITION_NAME);
+        assertThat(rendered).contains("16.00").contains("1.60");
+        assertThat(rendered).contains("Espèces").contains("Chèque").contains("Carte");
+        assertThat(rendered).contains("5.00").contains("3.00").contains("8.00");
+    }
+
+    @Test
+    @Order(15)
+    void edition_report_renderer_resolves_labels_from_the_edition_document_language_not_user_preference() {
+        // AC 1: document language is resolved from Edition.documentLanguage — here forced to
+        // Locale.ENGLISH directly (same real MessageSource-backed renderer bean) to prove
+        // messages_en.properties is actually picked up, independently of the connected user's own
+        // language preference — same reasoning as DailyReportPrintingIT Order 12.
+        EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
+                new BigDecimal("16.00"), new BigDecimal("1.60"),
+                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"));
+
+        byte[] pdf = editionReportRenderer.renderEditionReport(EDITION_NAME, report, Locale.ENGLISH);
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        assertThat(rendered).contains("Edition summary").contains("Payment method breakdown").contains("Cash").contains("Check").contains("Card");
+        assertThat(rendered).doesNotContain("Bilan d'édition").doesNotContain("Espèces").doesNotContain("Chèque");
+    }
+
+    @Test
+    @Order(16)
+    void document_print_service_sends_the_rendered_edition_report_pdf_bytes_via_printer_bridge_client() {
+        EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
+                new BigDecimal("16.00"), new BigDecimal("1.60"),
+                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"));
+
+        PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
+        DocumentPrintService isolatedDocumentPrintService = new DocumentPrintService(
+                depositSlipRenderer, invoiceRenderer, settlementReportRenderer, dailyReportRenderer, editionReportRenderer, mockClient);
+
+        Printer printer = new Printer();
+        printer.setPrinterBridgeId("bridge-edition-report-mock-target");
+        isolatedDocumentPrintService.buildEditionReportJob(EDITION_NAME, report, Locale.FRENCH).execute(printer);
+
+        ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(mockClient).print(eq("bridge-edition-report-mock-target"), eq(PrintContentType.PDF), payloadCaptor.capture());
+        assertThat(new String(payloadCaptor.getValue(), 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+    }
+
+    @Test
+    @Order(17)
+    void printing_the_edition_report_via_http_is_queued_and_reaches_printer_bridge_client() throws Exception {
+        mockMvc.perform(post("/api/admin/reports/edition/" + editionId + "/print")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isNoContent());
 
         // A 204 only proves the job was queued, not that it actually executed — the PDF render
         // happens later, on the queue's own consumer thread. This uses the REAL, Spring-wired
-        // PrinterBridgeClient (not mocked, unlike Order 13) — so the job genuinely attempts a
+        // PrinterBridgeClient (not mocked, unlike Order 16) — so the job genuinely attempts a
         // WebSocket connection to PrinterBridgeDouble, which is HTTP-only and cannot complete the
         // handshake. The job therefore fails and suspends this printer's queue — expected here,
         // proving the HTTP-triggered production path (controller -> service -> real
@@ -422,7 +451,7 @@ class DailyReportPrintingIT extends IntegrationTest {
     }
 
     @Test
-    @Order(15)
+    @Order(18)
     void printing_without_an_a4_printer_selected_returns_422() throws Exception {
         mockMvc.perform(post("/api/admin/print-queue/" + a4PrinterId + "/discard")
                         .session(adminSession).with(csrf()))
@@ -434,10 +463,23 @@ class DailyReportPrintingIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.a4PrinterId").isEmpty());
 
-        mockMvc.perform(post("/api/admin/reports/daily/print")
+        mockMvc.perform(post("/api/admin/reports/edition/" + editionId + "/print")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(endsWith("/invalid-printer-selection")));
+    }
+
+    private void assertEditionReport(EditionSummaryReportDto report) {
+        // Kapla (CASH) + Lot Duo (CARD, one line despite two members) + Livre (CHECK, backdated to
+        // yesterday) = 3 — unlike the daily report, the edition report is NOT bounded to today.
+        assertThat(report.soldItemCount()).isEqualTo(3);
+        // Peluche + Lot Duo's second, never-scanned member = 2.
+        assertThat(report.unsoldItemCount()).isEqualTo(2);
+        assertThat(report.grossRevenue()).isEqualByComparingTo("16.00");
+        assertThat(report.commission()).isEqualByComparingTo("1.60");
+        assertThat(report.cashTotal()).isEqualByComparingTo("5.00");
+        assertThat(report.cardTotal()).isEqualByComparingTo("8.00");
+        assertThat(report.checkTotal()).isEqualByComparingTo("3.00");
     }
 
     private Long currentBasketId() throws Exception {

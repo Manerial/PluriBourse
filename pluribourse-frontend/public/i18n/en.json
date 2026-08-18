@@ -614,12 +614,28 @@
         "card": "Card",
         "amountFormat": "{{ amount }} €"
       },
+      "edition": {
+        "title": "Edition summary",
+        "print": "Print",
+        "soldCount": "Items sold",
+        "unsoldCount": "Items unsold",
+        "grossRevenue": "Total gross revenue",
+        "commission": "Total commission earned",
+        "paymentBreakdown": "Payment method breakdown",
+        "method": "Payment method",
+        "amount": "Amount",
+        "cash": "Cash",
+        "check": "Check",
+        "card": "Card",
+        "amountFormat": "{{ amount }} €"
+      },
       "emptyPhase": "No report available in this phase.",
       "success": {
         "print": "Report sent to the printer."
       },
       "error": {
         "load": "Could not load the daily report.",
+        "loadEdition": "Could not load the edition summary report.",
         "print": "Could not print the report.",
         "printerUnavailable": "No A4 printer available. Select a printer."
       }

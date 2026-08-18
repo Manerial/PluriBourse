@@ -48,6 +48,17 @@ public class EditionService {
         return mapper.toDto(findById(id));
     }
 
+    /**
+     * Edition summary report (story 5.4, FR-055): resolves by explicit ID rather than
+     * {@link #getActiveEdition()}, whose {@code PhaseType.ACTIVE} filter excludes CLOSED — using
+     * it here would make the CLOSED branch of {@code PhaseGuard.requirePostSaleOrClosedPhase}
+     * unreachable, since the edition itself would no longer resolve once closed.
+     */
+    @Transactional(readOnly = true)
+    public Edition requireEdition(Long id) {
+        return findById(id);
+    }
+
     @Transactional(readOnly = true)
     public Edition getActiveEdition() {
         return repository.findFirstByPhaseIn(PhaseType.ACTIVE)

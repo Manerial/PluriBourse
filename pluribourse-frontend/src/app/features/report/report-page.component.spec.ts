@@ -8,6 +8,7 @@ import { ReportService } from '../../services/report.service';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { DailySalesReportDto } from '../../models/daily-sales-report.model';
+import { EditionSummaryReportDto } from '../../models/edition-summary-report.model';
 import { EditionDto } from '../../models/edition.model';
 import { Language } from '../../models/language.enum';
 
@@ -23,6 +24,10 @@ const SALE_EDITION: EditionDto = {
   endDate: '2026-01-03',
 };
 
+const POST_SALE_EDITION: EditionDto = { ...SALE_EDITION, phase: 'POST_SALE' };
+const CLOSED_EDITION: EditionDto = { ...SALE_EDITION, phase: 'CLOSED' };
+const PREPARATION_EDITION: EditionDto = { ...SALE_EDITION, phase: 'PREPARATION' };
+
 const DAILY_REPORT: DailySalesReportDto = {
   reportDate: '2026-08-18',
   soldItemCount: 2,
@@ -34,6 +39,16 @@ const DAILY_REPORT: DailySalesReportDto = {
   cardTotal: 8.0,
 };
 
+const EDITION_REPORT: EditionSummaryReportDto = {
+  soldItemCount: 3,
+  unsoldItemCount: 2,
+  grossRevenue: 16.0,
+  commission: 1.6,
+  cashTotal: 5.0,
+  checkTotal: 3.0,
+  cardTotal: 8.0,
+};
+
 describe('ReportPageComponent', () => {
   let fixture: ComponentFixture<ReportPageComponent>;
   let component: ReportPageComponent;
@@ -42,6 +57,8 @@ describe('ReportPageComponent', () => {
   const reportServiceMock = {
     getDailyReport: vi.fn().mockReturnValue(of(DAILY_REPORT)),
     printDailyReport: vi.fn().mockReturnValue(of(undefined)),
+    getEditionReport: vi.fn().mockReturnValue(of(EDITION_REPORT)),
+    printEditionReport: vi.fn().mockReturnValue(of(undefined)),
   };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
 
@@ -49,6 +66,8 @@ describe('ReportPageComponent', () => {
     vi.clearAllMocks();
     reportServiceMock.getDailyReport.mockReturnValue(of(DAILY_REPORT));
     reportServiceMock.printDailyReport.mockReturnValue(of(undefined));
+    reportServiceMock.getEditionReport.mockReturnValue(of(EDITION_REPORT));
+    reportServiceMock.printEditionReport.mockReturnValue(of(undefined));
 
     await TestBed.configureTestingModule({
       imports: [ReportPageComponent],
@@ -75,7 +94,7 @@ describe('ReportPageComponent', () => {
   });
 
   it('does not call the backend when the edition is not in Sale phase at mount', async () => {
-    await setup({ ...SALE_EDITION, phase: 'POST_SALE' });
+    await setup(PREPARATION_EDITION);
     expect(reportServiceMock.getDailyReport).not.toHaveBeenCalled();
     expect(component.report()).toBeNull();
   });
@@ -98,7 +117,7 @@ describe('ReportPageComponent', () => {
     await setup(SALE_EDITION);
     expect(component.report()).toEqual(DAILY_REPORT);
 
-    currentEditionService.currentEdition.set({ ...SALE_EDITION, phase: 'POST_SALE' });
+    currentEditionService.currentEdition.set(POST_SALE_EDITION);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -162,9 +181,104 @@ describe('ReportPageComponent', () => {
     expect(fixture.nativeElement.querySelector('app-skeleton-row')).not.toBeNull();
   });
 
-  it('shows an empty state outside the Sale phase', async () => {
-    await setup({ ...SALE_EDITION, phase: 'POST_SALE' });
+  it('shows an empty state outside the Sale and edition-report phases', async () => {
+    await setup(PREPARATION_EDITION);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-empty-state')).not.toBeNull();
+  });
+
+  it('loads the edition report when the edition is already in Post-vente phase at mount', async () => {
+    await setup(POST_SALE_EDITION);
+    expect(reportServiceMock.getEditionReport).toHaveBeenCalledOnce();
+    expect(reportServiceMock.getEditionReport).toHaveBeenCalledWith(POST_SALE_EDITION.id);
+    expect(component.editionReport()).toEqual(EDITION_REPORT);
+  });
+
+  it('loads the edition report when the edition is already in Clôturée phase at mount', async () => {
+    await setup(CLOSED_EDITION);
+    expect(reportServiceMock.getEditionReport).toHaveBeenCalledOnce();
+    expect(component.editionReport()).toEqual(EDITION_REPORT);
+  });
+
+  it('does not call the backend for the edition report while the edition is in Sale phase', async () => {
+    await setup(SALE_EDITION);
+    expect(reportServiceMock.getEditionReport).not.toHaveBeenCalled();
+    expect(component.editionReport()).toBeNull();
+  });
+
+  it('clears the edition report when the phase changes away from Post-vente/Clôturée while the page is open', async () => {
+    await setup(POST_SALE_EDITION);
+    expect(component.editionReport()).toEqual(EDITION_REPORT);
+
+    currentEditionService.currentEdition.set(SALE_EDITION);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.editionReport()).toBeNull();
+  });
+
+  it('sets a dedicated error key when the edition report fails to load', async () => {
+    await setup(POST_SALE_EDITION);
+    reportServiceMock.getEditionReport.mockReturnValue(throwError(() => new Error('network')));
+    currentEditionService.currentEdition.set(SALE_EDITION);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    currentEditionService.currentEdition.set(POST_SALE_EDITION);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.editionReportError()).toBe('admin.reports.error.loadEdition');
+  });
+
+  it('printEditionReport() shows a success toast', async () => {
+    await setup(POST_SALE_EDITION);
+    await component.printEditionReport();
+    expect(reportServiceMock.printEditionReport).toHaveBeenCalledWith(POST_SALE_EDITION.id);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+  });
+
+  it('a 422 invalid-printer-selection error on the edition report print shows the printer-unavailable toast', async () => {
+    await setup(POST_SALE_EDITION);
+    reportServiceMock.printEditionReport.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 422,
+            error: { type: 'https://pluribourse/errors/invalid-printer-selection' },
+          })
+      )
+    );
+    await component.printEditionReport();
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+  });
+
+  it('any other edition report print error shows the generic error toast', async () => {
+    await setup(POST_SALE_EDITION);
+    reportServiceMock.printEditionReport.mockReturnValue(throwError(() => new Error('server')));
+    await component.printEditionReport();
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+  });
+
+  it('printEditionReport() is a no-op while a print request is already in flight', async () => {
+    await setup(POST_SALE_EDITION);
+    component.printingEditionReport.set(true);
+    await component.printEditionReport();
+    expect(reportServiceMock.printEditionReport).not.toHaveBeenCalled();
+  });
+
+  it('printEditionReport() is a no-op if currentEdition() has turned null since the button was rendered', async () => {
+    await setup(POST_SALE_EDITION);
+    currentEditionService.currentEdition.set(null);
+    await component.printEditionReport();
+    expect(reportServiceMock.printEditionReport).not.toHaveBeenCalled();
+    expect(toastMock.showError).not.toHaveBeenCalled();
+    expect(component.printingEditionReport()).toBe(false);
+  });
+
+  it('shows the loading skeleton for the edition report while it is being fetched', async () => {
+    await setup(POST_SALE_EDITION);
+    component.isLoadingEditionReport.set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('app-skeleton-row').length).toBeGreaterThan(0);
   });
 });

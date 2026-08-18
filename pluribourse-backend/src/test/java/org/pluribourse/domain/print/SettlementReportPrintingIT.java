@@ -28,6 +28,7 @@ import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.service.DailyReportRenderer;
 import org.pluribourse.domain.print.service.DepositSlipRenderer;
 import org.pluribourse.domain.print.service.DocumentPrintService;
+import org.pluribourse.domain.print.service.EditionReportRenderer;
 import org.pluribourse.domain.print.service.InvoiceRenderer;
 import org.pluribourse.domain.print.service.PrintQueueService;
 import org.pluribourse.domain.print.service.PrinterBridgeClient;
@@ -95,6 +96,8 @@ class SettlementReportPrintingIT extends IntegrationTest {
     private InvoiceRenderer invoiceRenderer;
     @Autowired
     private DailyReportRenderer dailyReportRenderer;
+    @Autowired
+    private EditionReportRenderer editionReportRenderer;
     @Autowired
     private PrintQueueService printQueueService;
 
@@ -385,7 +388,8 @@ class SettlementReportPrintingIT extends IntegrationTest {
 
         PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
         DocumentPrintService isolatedDocumentPrintService =
-                new DocumentPrintService(depositSlipRenderer, invoiceRenderer, settlementReportRenderer, dailyReportRenderer, mockClient);
+                new DocumentPrintService(depositSlipRenderer, invoiceRenderer, settlementReportRenderer, dailyReportRenderer,
+                        editionReportRenderer, mockClient);
 
         Printer printer = new Printer();
         printer.setPrinterBridgeId("bridge-report-mock-target");

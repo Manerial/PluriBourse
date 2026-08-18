@@ -18,4 +18,11 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("SELECT s FROM Sale s WHERE s.edition.id = :editionId AND s.soldAt >= :dayStart AND s.soldAt < :dayEnd")
     List<Sale> findAllByEditionIdAndSoldAtBetween(@Param("editionId") Long editionId,
             @Param("dayStart") LocalDateTime dayStart, @Param("dayEnd") LocalDateTime dayEnd);
+
+    /**
+     * Edition summary report (story 5.4, FR-055): every Sale of the edition's whole lifetime,
+     * not bounded to a single day (contrast with findAllByEditionIdAndSoldAtBetween, story 5.3).
+     */
+    @Query("SELECT s FROM Sale s WHERE s.edition.id = :editionId")
+    List<Sale> findAllByEditionId(@Param("editionId") Long editionId);
 }

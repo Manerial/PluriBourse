@@ -50,4 +50,15 @@ public final class PhaseGuard {
             throw new SettlementNotAllowedException();
         }
     }
+
+    /**
+     * The edition-wide summary report (story 5.4, FR-055) is meaningful only once the Sale
+     * phase has ended — reachable in Post-vente and Clôturée alike (EXPERIENCE.md treats both
+     * as the same accessibility class for /admin/reports).
+     */
+    public static void requirePostSaleOrClosedPhase(Edition edition) {
+        if (edition.getPhase() != PhaseType.POST_SALE && edition.getPhase() != PhaseType.CLOSED) {
+            throw new EditionReportNotAllowedException();
+        }
+    }
 }
