@@ -22,7 +22,7 @@ so that les vendeurs puissent être associés à leurs articles sans ressaisir l
 4. La création d'un profil (nom, prénom, e-mail, téléphone) le rend immédiatement sélectionnable pour l'enregistrement d'articles (FR-019, FR-020).
 5. Un e-mail au format invalide retourne un 422 RFC 7807 avec un message d'erreur sur le champ e-mail.
 6. Un champ obligatoire vide (nom, prénom, e-mail ou téléphone) retourne un 422 RFC 7807 identifiant le champ manquant (FR-019).
-7. L'admin peut supprimer un vendeur uniquement en phase Dépôt ; la suppression efface définitivement le profil et tous ses articles de cette édition (FR-021). Hors phase Dépôt, la suppression est refusée explicitement.
+7. L'admin peut supprimer un vendeur uniquement en phase Dépôt et uniquement s'il n'a aucun article enregistré dans cette édition (FR-021) ; la suppression efface définitivement le profil vendeur, sans jamais supprimer d'articles en cascade — voir amendement 2026-08-19 ci-dessous. Hors phase Dépôt, ou avec des articles encore enregistrés, la suppression est refusée explicitement.
 8. Aucune donnée personnelle (nom, e-mail, téléphone) n'apparaît dans les logs applicatifs.
 
 ## Tasks / Subtasks
@@ -67,12 +67,16 @@ so that les vendeurs puissent être associés à leurs articles sans ressaisir l
 - [x] [Review][Patch] **(résolu : dismiss après ré-examen)** Régression de style : imports wildcard introduits dans les nouveaux fichiers et un fichier préexistant — Ré-examiné pendant l'application des patchs : les imports wildcard sont en réalité déjà le style dominant dans `pluribourse-backend` (52 fichiers sur 79, dont `EditionService.java` lui-même, référence explicitement citée par les Dev Notes de cette story). Les fichiers `EditionCategoryController`/`EditionCategoryRepository` cités par la revue comme "pattern de référence" sont l'exception, pas la norme. Revert non appliqué pour éviter d'introduire une incohérence par rapport à la convention majoritaire réelle du projet. Aucune action requise sauf si le projet adopte formellement une règle d'imports explicites.
 - [x] [Review][Patch] Paramètres de requête `SellerRepository` sans `@Param`, contrairement au pattern de référence cité — Corrigé en même temps que le fix d'échappement des wildcards (`@Param("editionId")`/`@Param("query")` ajoutés). [SellerRepository.java]
 - [x] [Review][Patch] Pas de trim des champs vendeur persistés — Corrigé : `SellerService.create` trim désormais `firstName`/`lastName`/`email`/`phone` avant persistance. [SellerService.java]
-- [x] [Review][Defer] AC7 « et tous ses articles » non vérifiable/implémentable pour l'instant — aucune entité `Item` n'existe encore [SellerService.java delete()] — deferred, pre-existing scope decision (Story 3.2)
+- [x] [Review][Defer] **(résolu par amendement 2026-08-19)** AC7 « et tous ses articles » non vérifiable/implémentable pour l'instant — aucune entité `Item` n'existe encore [SellerService.java delete()] — Story 3.2 a depuis tranché : blocage de la suppression si des articles restent enregistrés, pas de cascade. AC7 amendée en conséquence (voir ci-dessus et Dev Notes).
 - [x] [Review][Defer] Aucune validation d'entrée sur le binding `FilterDto` de `/admin/sellers` (page/size négatifs, tri malformé) — première utilisation de JPageFlow dans le code [AdminSellerController.java:21] — deferred, cross-cutting JPageFlow concern
 - [x] [Review][Defer] Pas de validation de format côté serveur sur `phone` (seulement `@NotBlank`/`@Size(max=30)`) [SellerDto.java] — deferred, conforme à la lettre du spec (AC6)
 - [x] [Review][Defer] Gestion d'erreur générique côté client masque le message d'erreur serveur spécifique [seller-form.component.ts, seller-list.component.ts] — deferred, pattern pré-existant (`user-form.component.ts`)
 
 ## Dev Notes
+
+### Amendement 2026-08-19 — AC7 : suppression bloquée, pas en cascade
+
+L'AC7 telle qu'écrite à l'origine (« la suppression efface définitivement le profil et tous ses articles ») décrivait une suppression en cascade, non implémentable au moment de cette story faute d'entité `Item`. La Story 3.2 (voir `epics.md`) a depuis tranché explicitement dans l'autre sens : `SellerProfile.canBeDeleted()` combine phase Dépôt **et** absence de tout article enregistré pour ce vendeur — la suppression est **refusée** (422 `seller-deletion-locked`) tant qu'il reste au moins un article, plutôt que de les supprimer avec lui. `SellerService.delete()` refuse aussi la suppression si un solde (`Settlement`, Story 5.1) existe déjà pour ce vendeur, pour ne jamais effacer un enregistrement financier. Ce texte AC7, ainsi que FR-021 et le Gherkin de cette story dans `epics.md`, ont été alignés sur ce comportement réel lors d'un audit de la dette différée du 2026-08-19 — aucun changement de code, uniquement de documentation.
 
 ### Contexte et périmètre
 
@@ -235,3 +239,4 @@ claude-sonnet-5
 |------|--------|
 | 2026-07-02 | Story file created (ready-for-dev) |
 | 2026-07-02 | Implementation complete — status → review |
+| 2026-08-19 | AC7 amendée (documentation seule) : suppression bloquée si articles restants, pas de cascade — aligne le texte sur le comportement réel livré (Story 3.2) |

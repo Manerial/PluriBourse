@@ -113,6 +113,7 @@ export class DepositPageComponent {
 
   startEdit(item: ItemDto): void {
     this.editingLot.set(null);
+    this.depositMode.set('individual');
     this.editingItem.set(item);
   }
 

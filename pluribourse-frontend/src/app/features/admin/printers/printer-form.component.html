@@ -3,41 +3,45 @@
     <app-notification-inline [message]="'admin.printers.error.discoveryUnavailable' | translate" variant="warning" />
   } @else {
     @if (!selectedPrinter()) {
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ 'admin.printers.columns.name' | translate }}</th>
-            <th>{{ 'admin.printers.columns.actions' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (printer of discoveredPrinters(); track printer.printerBridgeId) {
+      @if (discoveredPrinters().length === 0) {
+        <p>{{ 'admin.printers.create.empty' | translate }}</p>
+      } @else {
+        <table class="data-table">
+          <thead>
             <tr>
-              <td>{{ printer.name }} ({{ 'admin.printers.discoveryStatus.' + printer.status | translate }})</td>
-              <td>
-                <div class="actions-cell">
-                  <button
-                    type="button"
-                    mat-button
-                    [attr.aria-label]="'admin.printers.create.registerActionFor' | translate: { name: printer.name }"
-                    [disabled]="ignoringId() === printer.printerBridgeId"
-                    (click)="selectRow(printer)">
-                    {{ 'admin.printers.create.registerAction' | translate }}
-                  </button>
-                  <button
-                    type="button"
-                    mat-button
-                    [attr.aria-label]="'admin.printers.create.ignoreActionFor' | translate: { name: printer.name }"
-                    [disabled]="ignoringId() === printer.printerBridgeId"
-                    (click)="ignoreRow(printer)">
-                    {{ 'admin.printers.create.ignoreAction' | translate }}
-                  </button>
-                </div>
-              </td>
+              <th scope="col">{{ 'admin.printers.columns.name' | translate }}</th>
+              <th scope="col">{{ 'admin.printers.columns.actions' | translate }}</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (printer of discoveredPrinters(); track printer.printerBridgeId) {
+              <tr>
+                <td>{{ printer.name }} ({{ 'admin.printers.discoveryStatus.' + printer.status | translate }})</td>
+                <td>
+                  <div class="actions-cell">
+                    <button
+                      type="button"
+                      mat-button
+                      [attr.aria-label]="'admin.printers.create.registerActionFor' | translate: { name: printer.name }"
+                      [disabled]="ignoringId() === printer.printerBridgeId"
+                      (click)="selectRow(printer)">
+                      {{ 'admin.printers.create.registerAction' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      mat-button
+                      [attr.aria-label]="'admin.printers.create.ignoreActionFor' | translate: { name: printer.name }"
+                      [disabled]="ignoringId() === printer.printerBridgeId"
+                      (click)="ignoreRow(printer)">
+                      {{ 'admin.printers.create.ignoreAction' | translate }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
 
       <div class="dialog__actions">
         <button type="button" mat-button (click)="cancel()">

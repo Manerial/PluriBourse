@@ -552,6 +552,7 @@
         "FR": "French"
       },
       "save": "Save settings",
+      "retry": "Retry",
       "success": "Settings saved.",
       "error": {
         "load": "Failed to load settings.",
@@ -669,6 +670,7 @@
       "create": {
         "title": "Add a printer",
         "name": "Name",
+        "empty": "No printer detected on this machine.",
         "registerAction": "Register",
         "registerActionFor": "Register {{ name }}",
         "ignoreAction": "Ignore",

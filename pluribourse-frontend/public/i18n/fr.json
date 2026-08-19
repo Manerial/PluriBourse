@@ -552,6 +552,7 @@
         "FR": "Français"
       },
       "save": "Enregistrer les paramètres",
+      "retry": "Réessayer",
       "success": "Paramètres enregistrés.",
       "error": {
         "load": "Impossible de charger les paramètres.",
@@ -669,6 +670,7 @@
       "create": {
         "title": "Ajouter une imprimante",
         "name": "Nom",
+        "empty": "Aucune imprimante détectée sur ce poste.",
         "registerAction": "Enregistrer",
         "registerActionFor": "Enregistrer {{ name }}",
         "ignoreAction": "Ignorer",

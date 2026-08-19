@@ -60,9 +60,9 @@ public class EditionCategoryService {
         for (int i = 0; i < dtos.size(); i++) {
             EditionCategory entity = mapper.toEntity(dtos.get(i), i);
             entity.setEdition(edition);
-            categories.add(categoryRepository.save(entity));
+            categories.add(entity);
         }
-        return categories;
+        return categoryRepository.saveAll(categories);
     }
 
     /**

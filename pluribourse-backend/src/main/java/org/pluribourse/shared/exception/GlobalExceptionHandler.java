@@ -5,6 +5,7 @@ import jakarta.validation.*;
 import org.jspecify.annotations.*;
 import org.pluribourse.domain.pos.exception.BasketValidationConflictException;
 import org.springframework.http.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.*;
@@ -67,6 +68,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         pd.setType(URI.create("https://pluribourse/errors/internal-error"));
         pd.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.internalServerError().body(pd);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ProblemDetail> handleOptimisticLocking(
+            ObjectOptimisticLockingFailureException ex, HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "This resource was modified or deleted by another request. Reload and try again.");
+        pd.setType(URI.create("https://pluribourse/errors/concurrent-modification"));
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

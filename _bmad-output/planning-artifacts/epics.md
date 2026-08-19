@@ -52,7 +52,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 
 - FR-019 : Les profils vendeurs sont propres à chaque édition. Champs obligatoires : nom, prénom, adresse e-mail, numéro de téléphone.
 - FR-020 : Le bénévole recherche un vendeur existant par nom ou e-mail. Si aucun résultat, un nouveau profil est créé.
-- FR-021 : L'administrateur peut supprimer un vendeur en phase de Dépôt. La suppression efface définitivement le profil vendeur et tous ses articles dans cette édition (RGPD). Confirmation explicite requise.
+- FR-021 : L'administrateur peut supprimer un vendeur en phase de Dépôt (RGPD), à condition qu'aucun article ne soit enregistré pour lui dans cette édition — la suppression n'efface jamais ses articles en cascade, elle est refusée tant qu'il en reste (voir Story 3.2). Confirmation explicite requise.
 - FR-022 : Pour chaque article (individuel ou membre d'un lot), le bénévole saisit : nom/description, prix, catégorie, indicateur complet/incomplet, et un commentaire libre optionnel disponible en tout temps, qu'il s'agisse d'un article complet ou incomplet.
 - FR-023 : La table est automatiquement assignée selon la correspondance catégorie-table de l'édition. Algorithme : si le vendeur a déjà des articles dans cette catégorie pour cette édition, la même table lui est réassignée ; sinon, le système choisit la table la moins chargée parmi celles configurées pour la catégorie. La charge est calculée sur l'ensemble des articles assignés à la table, toutes catégories confondues.
 - FR-024 : Un article ne peut être corrigé ou supprimé que durant la phase Dépôt.
@@ -1061,10 +1061,12 @@ afin que les vendeurs puissent être associés à leurs articles sans ressaisir 
 **Quand** la requête est traitée
 **Alors** une réponse 422 est retournée avec un message d'erreur identifiant le champ manquant (FR-019)
 
-**Étant donné** que l'admin supprime un vendeur en phase de Dépôt et confirme
+**Étant donné** que l'admin supprime un vendeur en phase de Dépôt, qu'aucun article n'est enregistré pour lui dans cette édition, et qu'il confirme
 **Quand** la suppression se termine
-**Alors** le profil vendeur et tous ses articles sont définitivement supprimés de cette édition (FR-021)
+**Alors** le profil vendeur est définitivement supprimé de cette édition (FR-021)
 **Et** aucune donnée personnelle n'apparaît dans les logs applicatifs
+
+> **Amendement 2026-08-19** — Cette AC décrivait initialement une suppression en cascade (« le profil vendeur et tous ses articles sont définitivement supprimés »), impossible à implémenter tant que l'entité `Item` n'existait pas (Story 3.2). La Story 3.2 (voir plus bas) a tranché explicitement dans l'autre sens : la suppression est **refusée** tant qu'il reste au moins un article enregistré pour ce vendeur, plutôt que de les supprimer en cascade — cohérent avec le principe déjà appliqué à la suppression d'édition. Le comportement livré (`SellerProfile.canBeDeleted()` / `SellerService.delete()`) suit cette version ; le texte ci-dessus a été aligné en conséquence lors d'un audit de la dette différée. Le service refuse aussi la suppression si un solde (`Settlement`, Story 5.1) existe déjà pour ce vendeur, pour ne jamais effacer un enregistrement financier.
 
 ### Story 3.2 : Enregistrement d'articles & Assignation automatique de table
 

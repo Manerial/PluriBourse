@@ -10,6 +10,11 @@
 
     @if (loadError()) {
       <app-notification-inline [message]="loadError()! | translate" variant="error" />
+      <div class="card__actions">
+        <button type="button" mat-flat-button (click)="retry()">
+          {{ 'admin.settings.retry' | translate }}
+        </button>
+      </div>
     }
 
     @if (!isLoading() && !loadError()) {

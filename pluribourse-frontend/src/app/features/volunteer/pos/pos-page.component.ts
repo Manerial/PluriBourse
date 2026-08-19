@@ -57,8 +57,10 @@ export class PosPageComponent implements OnInit {
   // still relevant here since addItem() is now the network call being raced).
   private scanInFlight = false;
   // Same reentrancy concern as scanInFlight, for the remove/validate actions: a double-click
-  // before the first response resolves would otherwise fire a duplicate request.
-  private removeInFlight = false;
+  // before the first response resolves would otherwise fire a duplicate request. Exposed as a
+  // signal (not a plain field, unlike scanInFlight/validateInFlight) so the template can disable
+  // the remove buttons while a removal is in flight.
+  readonly removeInFlight = signal(false);
   private validateInFlight = false;
   private invoiceButtonTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -110,10 +112,10 @@ export class PosPageComponent implements OnInit {
 
   async removeItem(itemId: number): Promise<void> {
     const currentBasket = this.basket();
-    if (this.removeInFlight || !currentBasket) {
+    if (this.removeInFlight() || !currentBasket) {
       return;
     }
-    this.removeInFlight = true;
+    this.removeInFlight.set(true);
     try {
       const updated = await firstValueFrom(this.posService.removeItem(currentBasket.id, itemId));
       if (this.basketCancelled()) {
@@ -126,16 +128,16 @@ export class PosPageComponent implements OnInit {
       }
       this.toast.showError(this.translate.instant('volunteer.pos.error.generic'));
     } finally {
-      this.removeInFlight = false;
+      this.removeInFlight.set(false);
     }
   }
 
   async removeLot(lotId: number): Promise<void> {
     const currentBasket = this.basket();
-    if (this.removeInFlight || !currentBasket) {
+    if (this.removeInFlight() || !currentBasket) {
       return;
     }
-    this.removeInFlight = true;
+    this.removeInFlight.set(true);
     try {
       const updated = await firstValueFrom(this.posService.removeLot(currentBasket.id, lotId));
       if (this.basketCancelled()) {
@@ -148,7 +150,7 @@ export class PosPageComponent implements OnInit {
       }
       this.toast.showError(this.translate.instant('volunteer.pos.error.generic'));
     } finally {
-      this.removeInFlight = false;
+      this.removeInFlight.set(false);
     }
   }
 

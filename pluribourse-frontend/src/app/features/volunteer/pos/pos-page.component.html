@@ -40,7 +40,12 @@
                 {{ 'volunteer.pos.basket.lot.header' | translate: { name: group.lotName, scanned: group.scannedCount, total: group.totalCount } }}
               </span>
               <span class="lot-group__subtotal">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: group.globalPrice } }}</span>
-              <button type="button" mat-button class="lot-group__remove" (click)="removeLot(group.lotId)">
+              <button
+                type="button"
+                mat-button
+                class="lot-group__remove"
+                [disabled]="removeInFlight()"
+                (click)="removeLot(group.lotId)">
                 {{ 'volunteer.pos.basket.lot.remove' | translate }}
               </button>
             </div>

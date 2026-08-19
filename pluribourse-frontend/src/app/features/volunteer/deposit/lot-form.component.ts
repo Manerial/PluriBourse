@@ -11,7 +11,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import Big from 'big.js';
 import { EditionCategoryDto } from '../../../models/category.model';
-import { CreateLotRequest, LotDto, UpdateLotRequest } from '../../../models/lot.model';
+import { CreateLotItemRequest, CreateLotRequest, LotDto, UpdateLotRequest } from '../../../models/lot.model';
 import { LotService } from '../../../services/lot.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { extractErrorType } from '../../../shared/http-error.util';
@@ -82,8 +82,7 @@ export class LotFormComponent {
           }))
         );
       } else {
-        this.form.patchValue({ name: '', globalPrice: 0 });
-        this.setItemRows([this.emptyItemRow(), this.emptyItemRow()]);
+        this.resetForm();
       }
     });
   }
@@ -105,6 +104,7 @@ export class LotFormComponent {
     }
     const raw = this.form.getRawValue();
     const editingLot = this.editingLot();
+    const globalPrice = new Big(raw.globalPrice).round(2).toNumber();
 
     this.error.set(null);
     this.loading.set(true);
@@ -113,34 +113,22 @@ export class LotFormComponent {
       if (editingLot) {
         const dto: UpdateLotRequest = {
           name: raw.name.trim(),
-          globalPrice: new Big(raw.globalPrice).round(2).toNumber(),
-          items: raw.items.map(item => ({
-            id: item.id,
-            categoryId: item.categoryId!,
-            name: item.name.trim(),
-            incomplete: item.incomplete,
-            comment: item.comment.trim() ? item.comment.trim() : null,
-          })),
+          globalPrice,
+          items: raw.items.map(item => ({ id: item.id, ...this.toItemPayload(item) })),
         };
         result = await firstValueFrom(this.lotService.update(editingLot.id, dto));
       } else {
         const dto: CreateLotRequest = {
           sellerProfileId: this.sellerId(),
           name: raw.name.trim(),
-          globalPrice: new Big(raw.globalPrice).round(2).toNumber(),
-          items: raw.items.map(item => ({
-            categoryId: item.categoryId!,
-            name: item.name.trim(),
-            incomplete: item.incomplete,
-            comment: item.comment.trim() ? item.comment.trim() : null,
-          })),
+          globalPrice,
+          items: raw.items.map(item => this.toItemPayload(item)),
         };
         result = await firstValueFrom(this.lotService.create(dto));
       }
       this.saved.emit(result);
       if (!editingLot) {
-        this.form.patchValue({ name: '', globalPrice: 0 });
-        this.setItemRows([this.emptyItemRow(), this.emptyItemRow()]);
+        this.resetForm();
       }
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/item-modification-locked')) {
@@ -171,6 +159,20 @@ export class LotFormComponent {
 
   private emptyItemRow(): LotItemRow {
     return { id: null, name: '', categoryId: null, incomplete: false, comment: '' };
+  }
+
+  private resetForm(): void {
+    this.form.patchValue({ name: '', globalPrice: 0 });
+    this.setItemRows([this.emptyItemRow(), this.emptyItemRow()]);
+  }
+
+  private toItemPayload(item: LotItemRow): CreateLotItemRequest {
+    return {
+      categoryId: item.categoryId!,
+      name: item.name.trim(),
+      incomplete: item.incomplete,
+      comment: item.comment.trim() ? item.comment.trim() : null,
+    };
   }
 
   private setItemRows(rows: LotItemRow[]): void {

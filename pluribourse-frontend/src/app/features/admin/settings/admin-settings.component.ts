@@ -35,6 +35,14 @@ export class AdminSettingsComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    await this.loadConfig();
+  }
+
+  async retry(): Promise<void> {
+    await this.loadConfig();
+  }
+
+  private async loadConfig(): Promise<void> {
     this.isLoading.set(true);
     this.loadError.set(null);
     try {
