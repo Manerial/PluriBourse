@@ -105,6 +105,14 @@
           <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.commission.toFixed(2) } }}</span>
           <span class="stat-tile__label">{{ 'admin.reports.edition.commission' | translate }}</span>
         </div>
+        <div class="stat-tile">
+          <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.netPayoutTotal.toFixed(2) } }}</span>
+          <span class="stat-tile__label">{{ 'admin.reports.edition.netPayoutTotal' | translate }}</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.associationRevenueTotal.toFixed(2) } }}</span>
+          <span class="stat-tile__label">{{ 'admin.reports.edition.associationRevenueTotal' | translate }}</span>
+        </div>
       </div>
 
       <h2 class="section-title">{{ 'admin.reports.edition.paymentBreakdown' | translate }}</h2>
@@ -131,6 +139,25 @@
         </tbody>
       </table>
     }
+  </div>
+}
+
+@if (isEditionReportPhase()) {
+  <div class="card card--list">
+    <div class="card__header">
+      <h1 class="card__title">{{ 'admin.reports.export.title' | translate }}</h1>
+    </div>
+
+    <div class="card__actions">
+      <button type="button" mat-button color="primary" (click)="exportCatalog()" [disabled]="exportingCatalog()">
+        <mat-icon>download</mat-icon>
+        {{ 'admin.reports.export.catalog' | translate }}
+      </button>
+      <button type="button" mat-button color="primary" (click)="exportSettlements()" [disabled]="exportingSettlements()">
+        <mat-icon>download</mat-icon>
+        {{ 'admin.reports.export.settlements' | translate }}
+      </button>
+    </div>
   </div>
 }
 

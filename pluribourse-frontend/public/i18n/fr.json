@@ -622,6 +622,8 @@
         "unsoldCount": "Articles invendus",
         "grossRevenue": "Recettes brutes totales",
         "commission": "Commission totale perçue",
+        "netPayoutTotal": "Total reversements nets",
+        "associationRevenueTotal": "Total recettes association",
         "paymentBreakdown": "Ventilation par moyen de paiement",
         "method": "Moyen de paiement",
         "amount": "Montant",
@@ -629,6 +631,13 @@
         "check": "Chèque",
         "card": "Carte",
         "amountFormat": "{{ amount }} €"
+      },
+      "export": {
+        "title": "Exports",
+        "catalog": "Exporter le catalogue",
+        "settlements": "Exporter les reversements",
+        "success": "Export téléchargé.",
+        "error": "Impossible de générer l'export."
       },
       "emptyPhase": "Aucun rapport disponible dans cette phase.",
       "success": {

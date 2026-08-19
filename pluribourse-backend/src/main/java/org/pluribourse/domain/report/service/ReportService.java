@@ -6,6 +6,7 @@ import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.item.service.ItemPricing;
 import org.pluribourse.domain.item.service.PhaseGuard;
+import org.pluribourse.domain.payout.service.SettlementService;
 import org.pluribourse.domain.pos.entity.Sale;
 import org.pluribourse.domain.pos.repository.SaleRepository;
 import org.pluribourse.domain.report.dto.DailySalesReportDto;
@@ -32,6 +33,7 @@ public class ReportService {
 
     private final SaleRepository saleRepository;
     private final ItemRepository itemRepository;
+    private final SettlementService settlementService;
 
     @Transactional(readOnly = true)
     public DailySalesReportDto getDailyReport(Edition edition) {
@@ -94,7 +96,13 @@ public class ReportService {
         long soldItemCount = ItemPricing.distinctByLot(soldItems).size();
         long unsoldItemCount = ItemPricing.distinctByLot(unsoldItems).size();
 
+        // FR-016: a single, fixed commission rate per edition — the sum of per-seller net payouts
+        // always equals grossRevenue - commission, so no need to re-walk sellers one by one here.
+        BigDecimal netPayoutTotal = grossRevenue.subtract(commission).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal associationRevenueTotal = commission.add(settlementService.getAssociationRetainedTotal(edition, soldItems)).setScale(2, RoundingMode.HALF_UP);
+
         return new EditionSummaryReportDto(soldItemCount, unsoldItemCount, grossRevenue, commission,
-                cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP));
+                cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP),
+                netPayoutTotal, associationRevenueTotal);
     }
 }

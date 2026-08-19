@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DailySalesReportDto } from '../models/daily-sales-report.model';
 import { EditionSummaryReportDto } from '../models/edition-summary-report.model';
@@ -22,5 +22,13 @@ export class ReportService {
 
   printEditionReport(editionId: number): Observable<void> {
     return this.http.post<void>(`/api/admin/reports/edition/${editionId}/print`, null);
+  }
+
+  exportCatalog(editionId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`/api/admin/reports/edition/${editionId}/export/catalog`, { responseType: 'blob', observe: 'response' });
+  }
+
+  exportSettlements(editionId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`/api/admin/reports/edition/${editionId}/export/settlements`, { responseType: 'blob', observe: 'response' });
   }
 }

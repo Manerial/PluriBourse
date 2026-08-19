@@ -1,9 +1,9 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, WritableSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { DailySalesReportDto } from '../../models/daily-sales-report.model';
 import { EditionSummaryReportDto } from '../../models/edition-summary-report.model';
 import { ActivePhase } from '../../models/active-phase.enum';
@@ -37,6 +37,9 @@ export class ReportPageComponent {
   readonly isLoadingEditionReport = signal(false);
   readonly editionReportError = signal<string | null>(null);
   readonly printingEditionReport = signal(false);
+
+  readonly exportingCatalog = signal(false);
+  readonly exportingSettlements = signal(false);
 
   readonly isSalePhase = computed(() => this.currentEditionService.currentEdition()?.phase === ActivePhase.SALE);
   // 'CLOSED' is a plain PhaseType string literal, not an ActivePhase member — ActivePhase
@@ -150,5 +153,53 @@ export class ReportPageComponent {
     } finally {
       this.printingEditionReport.set(false);
     }
+  }
+
+  async exportCatalog(): Promise<void> {
+    await this.runExport(this.exportingCatalog, 'catalogue.csv', (editionId) => this.reportService.exportCatalog(editionId));
+  }
+
+  async exportSettlements(): Promise<void> {
+    await this.runExport(this.exportingSettlements, 'reversements.csv', (editionId) => this.reportService.exportSettlements(editionId));
+  }
+
+  private async runExport(
+    inFlight: WritableSignal<boolean>,
+    fileName: string,
+    exportCall: (editionId: number) => Observable<HttpResponse<Blob>>
+  ): Promise<void> {
+    if (inFlight()) {
+      return;
+    }
+    // Same SSE race window already guarded in printEditionReport(): currentEdition() can turn
+    // null between the button rendering and the click firing.
+    const edition = this.currentEditionService.currentEdition();
+    if (!edition) {
+      return;
+    }
+    inFlight.set(true);
+    try {
+      const response = await firstValueFrom(exportCall(edition.id));
+      this.downloadBlob(response.body!, fileName);
+      this.toast.showSuccess(this.translate.instant('admin.reports.export.success'));
+    } catch {
+      // responseType: 'blob' means a server error also arrives as a Blob in error.error, not
+      // parsed JSON — extractErrorType() would not work here. A single generic error toast is
+      // enough for this button, consistent with the rest of this component.
+      this.toast.showError(this.translate.instant('admin.reports.export.error'));
+    } finally {
+      inFlight.set(false);
+    }
+  }
+
+  private downloadBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }

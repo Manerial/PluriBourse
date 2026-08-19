@@ -622,6 +622,8 @@
         "unsoldCount": "Items unsold",
         "grossRevenue": "Total gross revenue",
         "commission": "Total commission earned",
+        "netPayoutTotal": "Total net payouts",
+        "associationRevenueTotal": "Total association revenue",
         "paymentBreakdown": "Payment method breakdown",
         "method": "Payment method",
         "amount": "Amount",
@@ -629,6 +631,13 @@
         "check": "Check",
         "card": "Card",
         "amountFormat": "{{ amount }} €"
+      },
+      "export": {
+        "title": "Exports",
+        "catalog": "Export catalog",
+        "settlements": "Export settlements",
+        "success": "Export downloaded.",
+        "error": "Could not generate the export."
       },
       "emptyPhase": "No report available in this phase.",
       "success": {

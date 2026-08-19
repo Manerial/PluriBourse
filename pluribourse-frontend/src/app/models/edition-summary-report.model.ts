@@ -6,4 +6,6 @@ export interface EditionSummaryReportDto {
   cashTotal: number;
   checkTotal: number;
   cardTotal: number;
+  netPayoutTotal: number;
+  associationRevenueTotal: number;
 }

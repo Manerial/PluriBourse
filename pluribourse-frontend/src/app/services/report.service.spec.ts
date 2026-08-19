@@ -43,4 +43,24 @@ describe('ReportService', () => {
     req.flush(null);
     await p;
   });
+
+  it('exportCatalog() sends a GET request for a blob response', async () => {
+    const p = firstValueFrom(service.exportCatalog(1));
+    const req = http.expectOne('/api/admin/reports/edition/1/export/catalog');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('blob');
+    req.flush(new Blob(['csv content']));
+    const response = await p;
+    expect(response.body).toBeInstanceOf(Blob);
+  });
+
+  it('exportSettlements() sends a GET request for a blob response', async () => {
+    const p = firstValueFrom(service.exportSettlements(1));
+    const req = http.expectOne('/api/admin/reports/edition/1/export/settlements');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('blob');
+    req.flush(new Blob(['csv content']));
+    const response = await p;
+    expect(response.body).toBeInstanceOf(Blob);
+  });
 });

@@ -382,7 +382,8 @@ class EditionReportPrintingIT extends IntegrationTest {
     void edition_report_renderer_includes_counts_totals_and_payment_breakdown() {
         EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
                 new BigDecimal("16.00"), new BigDecimal("1.60"),
-                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"));
+                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"),
+                BigDecimal.ZERO, BigDecimal.ZERO);
 
         byte[] pdf = editionReportRenderer.renderEditionReport(EDITION_NAME, report, Locale.FRENCH);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
@@ -403,7 +404,8 @@ class EditionReportPrintingIT extends IntegrationTest {
         // language preference — same reasoning as DailyReportPrintingIT Order 12.
         EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
                 new BigDecimal("16.00"), new BigDecimal("1.60"),
-                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"));
+                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"),
+                BigDecimal.ZERO, BigDecimal.ZERO);
 
         byte[] pdf = editionReportRenderer.renderEditionReport(EDITION_NAME, report, Locale.ENGLISH);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
@@ -417,7 +419,8 @@ class EditionReportPrintingIT extends IntegrationTest {
     void document_print_service_sends_the_rendered_edition_report_pdf_bytes_via_printer_bridge_client() {
         EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
                 new BigDecimal("16.00"), new BigDecimal("1.60"),
-                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"));
+                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"),
+                BigDecimal.ZERO, BigDecimal.ZERO);
 
         PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
         DocumentPrintService isolatedDocumentPrintService = new DocumentPrintService(

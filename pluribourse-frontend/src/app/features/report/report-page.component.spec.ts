@@ -1,6 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { ReportPageComponent } from './report-page.component';
@@ -47,6 +47,8 @@ const EDITION_REPORT: EditionSummaryReportDto = {
   cashTotal: 5.0,
   checkTotal: 3.0,
   cardTotal: 8.0,
+  netPayoutTotal: 14.4,
+  associationRevenueTotal: 1.6,
 };
 
 describe('ReportPageComponent', () => {
@@ -59,6 +61,8 @@ describe('ReportPageComponent', () => {
     printDailyReport: vi.fn().mockReturnValue(of(undefined)),
     getEditionReport: vi.fn().mockReturnValue(of(EDITION_REPORT)),
     printEditionReport: vi.fn().mockReturnValue(of(undefined)),
+    exportCatalog: vi.fn().mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) }))),
+    exportSettlements: vi.fn().mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) }))),
   };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
 
@@ -68,6 +72,11 @@ describe('ReportPageComponent', () => {
     reportServiceMock.printDailyReport.mockReturnValue(of(undefined));
     reportServiceMock.getEditionReport.mockReturnValue(of(EDITION_REPORT));
     reportServiceMock.printEditionReport.mockReturnValue(of(undefined));
+    reportServiceMock.exportCatalog.mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) })));
+    reportServiceMock.exportSettlements.mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) })));
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     await TestBed.configureTestingModule({
       imports: [ReportPageComponent],
@@ -280,5 +289,83 @@ describe('ReportPageComponent', () => {
     component.isLoadingEditionReport.set(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('app-skeleton-row').length).toBeGreaterThan(0);
+  });
+
+  it('includes the net payout and association revenue totals in the loaded edition report', async () => {
+    // report-page.component.html reads editionSummary.netPayoutTotal/associationRevenueTotal
+    // directly (plain interpolation, same stat-tile pattern as the 4 pre-existing fields) — the
+    // component-level assertion below is this suite's established pattern for verifying
+    // async-loaded report data (see "loads the edition report..." tests), since re-running
+    // fixture.detectChanges() after the data has resolved re-triggers the component's
+    // constructor effect() and its guarded reload, making a further DOM assertion here flaky.
+    await setup(POST_SALE_EDITION);
+    expect(component.editionReport()?.netPayoutTotal).toBe(EDITION_REPORT.netPayoutTotal);
+    expect(component.editionReport()?.associationRevenueTotal).toBe(EDITION_REPORT.associationRevenueTotal);
+  });
+
+  it('exportCatalog() downloads the CSV and shows a success toast', async () => {
+    await setup(POST_SALE_EDITION);
+    await component.exportCatalog();
+    expect(reportServiceMock.exportCatalog).toHaveBeenCalledWith(POST_SALE_EDITION.id);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(URL.createObjectURL).toHaveBeenCalledOnce();
+    expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
+  });
+
+  it('exportCatalog() shows a generic error toast on failure', async () => {
+    await setup(POST_SALE_EDITION);
+    reportServiceMock.exportCatalog.mockReturnValue(throwError(() => new Error('server')));
+    await component.exportCatalog();
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+  });
+
+  it('exportCatalog() is a no-op while an export is already in flight', async () => {
+    await setup(POST_SALE_EDITION);
+    component.exportingCatalog.set(true);
+    await component.exportCatalog();
+    expect(reportServiceMock.exportCatalog).not.toHaveBeenCalled();
+  });
+
+  it('exportCatalog() is a no-op if currentEdition() has turned null since the button was rendered', async () => {
+    await setup(POST_SALE_EDITION);
+    currentEditionService.currentEdition.set(null);
+    await component.exportCatalog();
+    expect(reportServiceMock.exportCatalog).not.toHaveBeenCalled();
+    expect(toastMock.showError).not.toHaveBeenCalled();
+  });
+
+  it('exportSettlements() downloads the CSV and shows a success toast', async () => {
+    await setup(POST_SALE_EDITION);
+    await component.exportSettlements();
+    expect(reportServiceMock.exportSettlements).toHaveBeenCalledWith(POST_SALE_EDITION.id);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+  });
+
+  it('exportSettlements() shows a generic error toast on failure', async () => {
+    await setup(POST_SALE_EDITION);
+    reportServiceMock.exportSettlements.mockReturnValue(throwError(() => new Error('server')));
+    await component.exportSettlements();
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+  });
+
+  it('exportSettlements() is a no-op while an export is already in flight', async () => {
+    await setup(POST_SALE_EDITION);
+    component.exportingSettlements.set(true);
+    await component.exportSettlements();
+    expect(reportServiceMock.exportSettlements).not.toHaveBeenCalled();
+  });
+
+  it('does not render the export section outside Post-vente/Clôturée', async () => {
+    await setup(SALE_EDITION);
+    const icons = Array.from(fixture.nativeElement.querySelectorAll('mat-icon')) as Element[];
+    const downloadIcons = icons.filter((el) => el.textContent === 'download');
+    expect(downloadIcons.length).toBe(0);
+  });
+
+  it('renders both export buttons in Post-vente/Clôturée', async () => {
+    await setup(POST_SALE_EDITION);
+    const icons = Array.from(fixture.nativeElement.querySelectorAll('mat-icon')) as Element[];
+    const downloadIcons = icons.filter((el) => el.textContent === 'download');
+    expect(downloadIcons.length).toBe(2);
   });
 });

@@ -7,7 +7,11 @@ import org.pluribourse.domain.report.dto.DailySalesReportDto;
 import org.pluribourse.domain.report.dto.EditionSummaryReportDto;
 import org.pluribourse.domain.report.service.DailySalesReportPrintService;
 import org.pluribourse.domain.report.service.EditionSummaryReportPrintService;
+import org.pluribourse.domain.report.service.ReportExportService;
 import org.pluribourse.domain.report.service.ReportService;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +30,7 @@ public class AdminReportController {
     private final ReportService reportService;
     private final DailySalesReportPrintService dailySalesReportPrintService;
     private final EditionSummaryReportPrintService editionSummaryReportPrintService;
+    private final ReportExportService reportExportService;
 
     @GetMapping("/daily")
     public ResponseEntity<DailySalesReportDto> getDailyReport() {
@@ -47,5 +52,24 @@ public class AdminReportController {
     public ResponseEntity<Void> printEditionReport(@PathVariable Long editionId, HttpSession session) {
         editionSummaryReportPrintService.printEditionReport(editionId, session);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/edition/{editionId}/export/catalog")
+    public ResponseEntity<byte[]> exportCatalog(@PathVariable Long editionId) {
+        byte[] csv = reportExportService.exportCatalogCsv(editionService.requireEdition(editionId));
+        return csvResponse(csv, "catalogue.csv");
+    }
+
+    @GetMapping("/edition/{editionId}/export/settlements")
+    public ResponseEntity<byte[]> exportSettlements(@PathVariable Long editionId) {
+        byte[] csv = reportExportService.exportSettlementsCsv(editionService.requireEdition(editionId));
+        return csvResponse(csv, "reversements.csv");
+    }
+
+    private ResponseEntity<byte[]> csvResponse(byte[] csv, String fileName) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(fileName).build().toString())
+                .body(csv);
     }
 }

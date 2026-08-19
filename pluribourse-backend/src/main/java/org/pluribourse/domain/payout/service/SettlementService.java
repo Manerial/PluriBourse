@@ -41,7 +41,18 @@ public class SettlementService {
     public List<SettlementDto> getSettlements() {
         Edition edition = editionService.getActiveEdition();
         PhaseGuard.requirePostSalePhase(edition);
+        return getSettlementsForEdition(edition);
+    }
 
+    /**
+     * Extracted from {@link #getSettlements()} (story 5.5) so {@code ReportExportService} can
+     * reuse the same batched computation for the settlements CSV export without duplicating it or
+     * reintroducing a per-seller N+1 scan. Does not itself apply any phase guard — callers are
+     * responsible for their own (this method stays reachable in Clôturée for the export, unlike
+     * {@code getSettlements()}/{@code /settlements}, which stays strictly Post-vente, FR-095).
+     */
+    @Transactional(readOnly = true)
+    public List<SettlementDto> getSettlementsForEdition(Edition edition) {
         List<SellerProfile> sellers = sellerRepository.findAllByEditionId(edition.getId());
         Map<Long, Settlement> settlementBySellerId = settlementRepository.findAllBySellerProfileEditionId(edition.getId()).stream()
                 .collect(Collectors.toMap(s -> s.getSellerProfile().getId(), s -> s));
@@ -56,6 +67,34 @@ public class SettlementService {
             return new SettlementDto(seller.getId(), seller.getFirstName(), seller.getLastName(),
                     seller.getPhone(), seller.getEmail(), amountDue, status);
         }).toList();
+    }
+
+    /**
+     * "Recettes de l'association" (story 5.5, edition summary report): the association retains,
+     * on top of the commission already tracked separately, (a) the full amount due for every
+     * "Non réclamé" seller (FR-052) and (b) the shortfall between the amount due and the amount
+     * actually paid out for any seller settled below what's due (FR-051, explicitly allowed).
+     * Reuses the same batched sold-items-by-seller pattern as {@link #getSettlementsForEdition}
+     * rather than the private per-seller {@code computeAmountDue} — that would reintroduce the
+     * N+1 scan already fixed in the story 5.1 review (NFR-001, ~100 sellers). Takes the edition's
+     * sold items as a parameter (story 5.5 review) rather than re-querying them: the only caller,
+     * {@code ReportService.getEditionReport}, has already loaded the identical list.
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getAssociationRetainedTotal(Edition edition, List<Item> soldItems) {
+        List<Settlement> settlements = settlementRepository.findAllBySellerProfileEditionId(edition.getId());
+        Map<Long, List<Item>> soldItemsBySellerId = soldItems.stream()
+                .collect(Collectors.groupingBy(i -> i.getSellerProfile().getId()));
+
+        BigDecimal retained = BigDecimal.ZERO;
+        for (Settlement settlement : settlements) {
+            SellerProfile seller = settlement.getSellerProfile();
+            BigDecimal total = ItemPricing.computeTotal(soldItemsBySellerId.getOrDefault(seller.getId(), List.of()));
+            BigDecimal amountDue = ItemPricing.computeNetPayout(total, edition.getCommissionRate());
+            BigDecimal paidToSeller = settlement.getStatus() == SettlementStatus.UNCLAIMED ? BigDecimal.ZERO : settlement.getAmount();
+            retained = retained.add(amountDue.subtract(paidToSeller));
+        }
+        return retained.setScale(2, RoundingMode.HALF_UP);
     }
 
     @Transactional

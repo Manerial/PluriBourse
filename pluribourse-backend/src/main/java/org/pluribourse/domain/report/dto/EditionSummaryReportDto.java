@@ -9,5 +9,7 @@ public record EditionSummaryReportDto(
         BigDecimal commission,
         BigDecimal cashTotal,
         BigDecimal checkTotal,
-        BigDecimal cardTotal) {
+        BigDecimal cardTotal,
+        BigDecimal netPayoutTotal,
+        BigDecimal associationRevenueTotal) {
 }
