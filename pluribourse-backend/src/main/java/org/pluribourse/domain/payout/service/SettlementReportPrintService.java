@@ -2,13 +2,17 @@ package org.pluribourse.domain.payout.service;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.pluribourse.domain.edition.entity.Edition;
 import org.pluribourse.domain.edition.service.EditionService;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.item.service.PhaseGuard;
+import org.pluribourse.domain.payout.dto.BulkSettlementReportPrintResultDto;
+import org.pluribourse.domain.payout.dto.SettlementFilter;
 import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.exception.InvalidPrinterSelectionException;
+import org.pluribourse.domain.print.exception.PrinterNotFoundException;
 import org.pluribourse.domain.print.service.DocumentPrintService;
 import org.pluribourse.domain.print.service.PrintQueueService;
 import org.pluribourse.domain.print.service.PrinterSelectionService;
@@ -20,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Story 5.2 — prints the per-seller sales report PDF ("bilan de vente", FR-050). Kept separate
@@ -29,6 +35,7 @@ import java.util.Locale;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SettlementReportPrintService {
 
     private final ItemRepository itemRepository;
@@ -45,18 +52,68 @@ public class SettlementReportPrintService {
         // client is never trusted alone (same rationale as the rest of SettlementService).
         PhaseGuard.requirePostSalePhase(edition);
         SellerProfile seller = settlementService.requireSellerOfEdition(sellerId, edition);
-        BigDecimal commissionRate = edition.getCommissionRate();
-        Locale documentLocale = edition.getDocumentLanguage() == Language.FR ? Locale.FRENCH : Locale.ENGLISH;
-
         List<Item> items = itemRepository.findAllBySellerProfileIdForSettlementReport(sellerId);
 
+        PrintContext context = resolvePrintContext(edition, session);
+
+        printQueueService.submit(context.a4PrinterId(),
+                documentPrintService.buildSettlementReportJob(seller, items, context.commissionRate(), context.documentLocale()));
+    }
+
+    /**
+     * Bulk settlement report printing (story 5.6, FR-097): queues one report per seller matching
+     * {@code filter}, resolved server-side (the client is never the source of truth for which
+     * sellers are targeted). The per-seller {@code try/catch} is what guarantees AC 5 ("jobs
+     * already queued successfully are not cancelled") — {@link PrintQueueService#submit} only
+     * ever fails on the narrow race where the printer is unregistered between the
+     * {@code isAvailable} check above and this iteration ({@code PrinterNotFoundException}), but a
+     * failure on one seller must never abort the loop for the rest. The seller id (never a name,
+     * email or phone number, per CLAUDE.md) is logged so a failure can be diagnosed after the
+     * fact — the client only ever sees {@code failedCount}.
+     */
+    @Transactional(readOnly = true)
+    public BulkSettlementReportPrintResultDto printAllReports(SettlementFilter filter, HttpSession session) {
+        Edition edition = editionService.getActiveEdition();
+        PhaseGuard.requirePostSalePhase(edition);
+
+        PrintContext context = resolvePrintContext(edition, session);
+
+        List<SellerProfile> sellers = settlementService.getSellersMatchingFilter(edition, filter);
+        Map<Long, List<Item>> itemsBySellerId = itemRepository.findAllByEditionIdForSettlementReport(edition.getId()).stream()
+                .collect(Collectors.groupingBy(i -> i.getSellerProfile().getId()));
+
+        int succeeded = 0;
+        int failed = 0;
+        for (SellerProfile seller : sellers) {
+            try {
+                List<Item> items = itemsBySellerId.getOrDefault(seller.getId(), List.of());
+                printQueueService.submit(context.a4PrinterId(),
+                        documentPrintService.buildSettlementReportJob(seller, items, context.commissionRate(), context.documentLocale()));
+                succeeded++;
+            } catch (PrinterNotFoundException e) {
+                log.warn("Failed to queue settlement report for seller {}: {}", seller.getId(), e.getMessage());
+                failed++;
+            }
+        }
+        return new BulkSettlementReportPrintResultDto(succeeded, failed);
+    }
+
+    /**
+     * Resolves and validates the session's selected A4 printer, plus the edition-derived
+     * commission rate and document locale — the fixed context every settlement report job needs,
+     * shared by {@link #printReport} and {@link #printAllReports}.
+     */
+    private PrintContext resolvePrintContext(Edition edition, HttpSession session) {
         Long a4PrinterId = printerSelectionService.getSelectedPrinterId(session, PrinterType.A4)
                 .orElseThrow(() -> new InvalidPrinterSelectionException("No A4 printer selected in session"));
         if (!printQueueService.isAvailable(a4PrinterId)) {
             throw new InvalidPrinterSelectionException("Selected A4 printer is not currently available");
         }
+        BigDecimal commissionRate = edition.getCommissionRate();
+        Locale documentLocale = edition.getDocumentLanguage() == Language.FR ? Locale.FRENCH : Locale.ENGLISH;
+        return new PrintContext(a4PrinterId, commissionRate, documentLocale);
+    }
 
-        printQueueService.submit(a4PrinterId,
-                documentPrintService.buildSettlementReportJob(seller, items, commissionRate, documentLocale));
+    private record PrintContext(Long a4PrinterId, BigDecimal commissionRate, Locale documentLocale) {
     }
 }

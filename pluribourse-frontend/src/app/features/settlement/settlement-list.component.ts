@@ -5,10 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import Big from 'big.js';
 import { firstValueFrom } from 'rxjs';
-import { SettlementDto } from '../../models/settlement.model';
+import { StatusFilter, SettlementDto } from '../../models/settlement.model';
 import { SettlementService } from '../../services/settlement.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
@@ -17,8 +18,6 @@ import { SkeletonRowComponent } from '../../shared/components/skeleton-row/skele
 import { NotificationInlineComponent } from '../../shared/components/notification-inline/notification-inline.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { extractErrorType } from '../../shared/http-error.util';
-
-type StatusFilter = 'all' | 'unsettled' | 'settled';
 
 @Component({
   selector: 'app-settlement-list',
@@ -29,6 +28,7 @@ type StatusFilter = 'all' | 'unsettled' | 'settled';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     TranslatePipe,
     SkeletonRowComponent,
     NotificationInlineComponent,
@@ -62,6 +62,13 @@ export class SettlementListComponent implements OnInit {
   readonly openSettleFormForSellerId = signal<number | null>(null);
   readonly settleAmount = signal<number | null>(null);
   readonly printingReportForSellerId = signal<number | null>(null);
+  readonly printingAll = signal(false);
+
+  // Both the per-row print buttons and the grouped button share this guard: the backend print
+  // queue is single-threaded per printer (PrintQueueService), so an individual send in flight
+  // blocks the grouped button and vice versa — same rationale already documented on
+  // printingReportForSellerId, applied consistently rather than as two independent guards.
+  readonly anyPrintInFlight = computed(() => this.printingReportForSellerId() !== null || this.printingAll());
 
   private readonly openSettlement = computed(() => {
     const id = this.openSettleFormForSellerId();
@@ -175,7 +182,7 @@ export class SettlementListComponent implements OnInit {
     // print job costs a physical sheet that can't be recalled, so a double-click must never queue
     // twice. Global (not per-row): the backend print queue is single-threaded per printer anyway
     // (PrintQueueService), so every print button is disabled while any one report is in flight.
-    if (this.printingReportForSellerId() !== null) {
+    if (this.anyPrintInFlight()) {
       return;
     }
     this.printingReportForSellerId.set(settlement.sellerId);
@@ -190,6 +197,32 @@ export class SettlementListComponent implements OnInit {
       }
     } finally {
       this.printingReportForSellerId.set(null);
+    }
+  }
+
+  async printAllReports(): Promise<void> {
+    if (this.anyPrintInFlight()) {
+      return;
+    }
+    this.printingAll.set(true);
+    try {
+      const result = await firstValueFrom(this.settlementService.printAllReports(this.statusFilter()));
+      if (result.failedCount > 0) {
+        this.toast.showError(this.translate.instant('settlement.error.printAllPartial', { count: result.failedCount }), {
+          path: '/admin/print-queue',
+          label: this.translate.instant('settlement.error.printAllPartialLink'),
+        });
+      } else {
+        this.toast.showSuccess(this.translate.instant('settlement.success.printAll', { count: result.succeededCount }));
+      }
+    } catch (err: unknown) {
+      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+        this.toast.showError(this.translate.instant('settlement.error.printerUnavailable'));
+      } else {
+        this.toast.showError(this.translate.instant('settlement.error.printAll'));
+      }
+    } finally {
+      this.printingAll.set(false);
     }
   }
 

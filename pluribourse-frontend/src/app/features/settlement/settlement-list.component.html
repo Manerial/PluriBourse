@@ -7,6 +7,24 @@
         {{ 'settlement.actions.reprintDepositSlip' | translate }}
       </a>
     }
+    @if (isAdmin()) {
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        class="print-all-btn"
+        [disabled]="anyPrintInFlight() || filteredSettlements().length === 0"
+        (click)="printAllReports()">
+        @if (printingAll()) {
+          <mat-progress-spinner diameter="18" mode="indeterminate" />
+        } @else {
+          <ng-container>
+            <mat-icon aria-hidden="true">print</mat-icon>
+            {{ 'settlement.actions.printAll' | translate }}
+          </ng-container>
+        }
+      </button>
+    }
   </div>
 
   <div class="filter-toggle" role="group" [attr.aria-label]="'settlement.title' | translate">
@@ -61,7 +79,7 @@
                   <button
                     type="button"
                     mat-button
-                    [disabled]="printingReportForSellerId() !== null"
+                    [disabled]="anyPrintInFlight()"
                     (click)="printReport(settlement)">
                     <mat-icon aria-hidden="true">print</mat-icon>
                     {{ 'settlement.actions.printReport' | translate }}

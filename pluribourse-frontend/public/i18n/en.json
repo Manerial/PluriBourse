@@ -787,7 +787,8 @@
       "confirm": "Confirm",
       "cancel": "Cancel",
       "reprintDepositSlip": "Reprint the deposit slip",
-      "printReport": "Print the report"
+      "printReport": "Print the report",
+      "printAll": "Print all reports"
     },
     "form": {
       "amountLabel": "Amount given in cash (€)",
@@ -801,7 +802,8 @@
     "success": {
       "settle": "Seller settled.",
       "unclaimed": "Amount transferred to the association's revenue.",
-      "printReport": "Report sent to the printer."
+      "printReport": "Report sent to the printer.",
+      "printAll": "{{ count }} reports queued for printing."
     },
     "error": {
       "load": "Failed to load the settlement list.",
@@ -810,7 +812,10 @@
       "alreadySettled": "This seller has already been settled.",
       "amountTooHigh": "The given amount exceeds the amount due.",
       "printReport": "Failed to print the report.",
-      "printerUnavailable": "No A4 printer available. Select a printer."
+      "printerUnavailable": "No A4 printer available. Select a printer.",
+      "printAll": "Failed to queue the reports for printing.",
+      "printAllPartial": "{{ count }} reports could not be queued for printing.",
+      "printAllPartialLink": "View the print queue"
     },
     "empty": "No sellers registered for this edition."
   }

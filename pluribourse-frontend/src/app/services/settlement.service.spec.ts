@@ -59,4 +59,14 @@ describe('SettlementService', () => {
     req.flush(null);
     await p;
   });
+
+  it('printAllReports() sends POST /api/admin/settlements/report/print-all with the uppercased filter', async () => {
+    const p = firstValueFrom(service.printAllReports('unsettled'));
+    const req = http.expectOne((r) => r.url === '/api/admin/settlements/report/print-all');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    expect(req.request.params.get('filter')).toBe('UNSETTLED');
+    req.flush({ succeededCount: 1, failedCount: 0 });
+    expect(await p).toEqual({ succeededCount: 1, failedCount: 0 });
+  });
 });

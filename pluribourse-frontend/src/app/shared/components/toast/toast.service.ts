@@ -1,8 +1,14 @@
 import { Injectable, signal } from '@angular/core';
 
+export interface ToastLink {
+  path: string;
+  label: string;
+}
+
 export interface Toast {
   message: string;
   type: 'success' | 'error';
+  link?: ToastLink;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -15,8 +21,8 @@ export class ToastService {
     this._show({ message, type: 'success' }, 4000);
   }
 
-  showError(message: string): void {
-    this._show({ message, type: 'error' });
+  showError(message: string, link?: ToastLink): void {
+    this._show({ message, type: 'error', link });
   }
 
   close(): void {

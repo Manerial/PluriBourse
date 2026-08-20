@@ -27,7 +27,18 @@ describe('ToastService', () => {
   it('showError sets toast with type error and does not auto-dismiss', () => {
     service.showError('Printer offline');
     vi.advanceTimersByTime(10000);
-    expect(service.toast()).toEqual({ message: 'Printer offline', type: 'error' });
+    expect(service.toast()).toEqual({ message: 'Printer offline', type: 'error', link: undefined });
+  });
+
+  it('showError(message, link) stores the link in the toast', () => {
+    const link = { path: '/admin/print-queue', label: 'See the print queue' };
+    service.showError('Some failed', link);
+    expect(service.toast()).toEqual({ message: 'Some failed', type: 'error', link });
+  });
+
+  it('showError(message) without a second argument leaves link undefined', () => {
+    service.showError('Printer offline');
+    expect(service.toast()?.link).toBeUndefined();
   });
 
   it('close() clears toast immediately', () => {

@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SettleRequest, SettlementDto } from '../models/settlement.model';
+import { BulkSettlementReportPrintResultDto, SettleRequest, SettlementDto, StatusFilter } from '../models/settlement.model';
 
 @Injectable({ providedIn: 'root' })
 export class SettlementService {
@@ -22,5 +22,10 @@ export class SettlementService {
 
   printReport(sellerId: number): Observable<void> {
     return this.http.post<void>(`/api/settlements/${sellerId}/report/print`, null);
+  }
+
+  printAllReports(filter: StatusFilter): Observable<BulkSettlementReportPrintResultDto> {
+    const params = new HttpParams().set('filter', filter.toUpperCase());
+    return this.http.post<BulkSettlementReportPrintResultDto>('/api/admin/settlements/report/print-all', null, { params });
   }
 }

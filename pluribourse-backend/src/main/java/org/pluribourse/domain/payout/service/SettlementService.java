@@ -9,6 +9,7 @@ import org.pluribourse.domain.item.service.ItemPricing;
 import org.pluribourse.domain.item.service.PhaseGuard;
 import org.pluribourse.domain.payout.dto.SettleDto;
 import org.pluribourse.domain.payout.dto.SettlementDto;
+import org.pluribourse.domain.payout.dto.SettlementFilter;
 import org.pluribourse.domain.payout.entity.Settlement;
 import org.pluribourse.domain.payout.entity.SettlementStatus;
 import org.pluribourse.domain.payout.exception.InvalidSettlementAmountException;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -95,6 +97,28 @@ public class SettlementService {
             retained = retained.add(amountDue.subtract(paidToSeller));
         }
         return retained.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Bulk settlement report printing (story 5.6, FR-097): resolves the sellers matching the
+     * server-side filter, batched (one seller query + one grouped settlement query) like
+     * {@link #getSettlementsForEdition} rather than a per-seller scan — but returns the entities
+     * themselves, needed to build the {@link org.pluribourse.domain.print.service.PrintJob}s, not
+     * DTOs. Does not itself apply any phase guard — same convention as
+     * {@link #getSettlementsForEdition}, callers are responsible for their own. Sorted by
+     * {@code sellerNumber}: {@code sellerRepository.findAllByEditionId} guarantees no order, and
+     * an arbitrary order would leave the physical stack of up to ~100 printed A4 reports
+     * (NFR-001) in an arbitrary order for the admin to sort through afterwards.
+     */
+    @Transactional(readOnly = true)
+    public List<SellerProfile> getSellersMatchingFilter(Edition edition, SettlementFilter filter) {
+        List<SellerProfile> sellers = sellerRepository.findAllByEditionId(edition.getId());
+        Map<Long, SettlementStatus> statusBySellerId = settlementRepository.findAllBySellerProfileEditionId(edition.getId()).stream()
+                .collect(Collectors.toMap(s -> s.getSellerProfile().getId(), Settlement::getStatus));
+        return sellers.stream()
+                .filter(seller -> filter.matches(statusBySellerId.getOrDefault(seller.getId(), SettlementStatus.UNSETTLED)))
+                .sorted(Comparator.comparing(SellerProfile::getSellerNumber))
+                .toList();
     }
 
     @Transactional

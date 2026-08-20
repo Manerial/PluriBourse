@@ -37,6 +37,12 @@
     flex: 1;
   }
 
+  &__link {
+    color: inherit;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
   &__close {
     background: transparent;
     border: none;

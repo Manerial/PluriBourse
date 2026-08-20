@@ -2,6 +2,8 @@
 // never persisted there either, it's the "no Settlement row" case.
 export type SettlementStatus = 'UNSETTLED' | 'SETTLED' | 'UNCLAIMED';
 
+export type StatusFilter = 'all' | 'unsettled' | 'settled';
+
 export interface SettlementDto {
   sellerId: number;
   firstName: string;
@@ -14,4 +16,9 @@ export interface SettlementDto {
 
 export interface SettleRequest {
   amount: number;
+}
+
+export interface BulkSettlementReportPrintResultDto {
+  succeededCount: number;
+  failedCount: number;
 }

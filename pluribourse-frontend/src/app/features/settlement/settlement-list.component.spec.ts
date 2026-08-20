@@ -1,6 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError, Subject } from 'rxjs';
 import { vi } from 'vitest';
@@ -40,6 +40,7 @@ describe('SettlementListComponent', () => {
     settle: vi.fn(),
     markUnclaimed: vi.fn(),
     printReport: vi.fn(),
+    printAllReports: vi.fn(),
   };
 
   const authMock = {
@@ -271,6 +272,7 @@ describe('SettlementListComponent', () => {
 
     const printPromise = component.printReport(ALICE);
     expect(component.printingReportForSellerId()).toBe(ALICE.sellerId);
+    expect(component.anyPrintInFlight()).toBe(true);
 
     // A click on a different row's button while the first is still in flight is ignored — the
     // backend print queue is single-threaded per printer anyway (PrintQueueService).
@@ -278,10 +280,15 @@ describe('SettlementListComponent', () => {
     expect(settlementServiceMock.printReport).toHaveBeenCalledOnce();
     expect(settlementServiceMock.printReport).not.toHaveBeenCalledWith(BOB.sellerId);
 
+    // The grouped button is blocked too, in the same direction.
+    await component.printAllReports();
+    expect(settlementServiceMock.printAllReports).not.toHaveBeenCalled();
+
     inFlight.next(undefined);
     inFlight.complete();
     await printPromise;
     expect(component.printingReportForSellerId()).toBeNull();
+    expect(component.anyPrintInFlight()).toBe(false);
   });
 
   it('a second click on the same row while a print is in flight is ignored', async () => {
@@ -296,5 +303,107 @@ describe('SettlementListComponent', () => {
     inFlight.next(undefined);
     inFlight.complete();
     await first;
+  });
+
+  it('the "Imprimer tous les bilans" button is present for ADMIN, absent for VOLUNTEER', async () => {
+    authMock.currentUser.mockReturnValue({ role: 'ADMIN' });
+    await setup();
+    expect(fixture.nativeElement.querySelector('.print-all-btn')).not.toBeNull();
+  });
+
+  it('the "Imprimer tous les bilans" button is absent for a non-admin role', async () => {
+    await setup();
+    expect(fixture.nativeElement.querySelector('.print-all-btn')).toBeNull();
+  });
+
+  it('printAllReports() calls the service with the current status filter', async () => {
+    await setup();
+    settlementServiceMock.printAllReports.mockReturnValue(of({ succeededCount: 1, failedCount: 0 }));
+
+    await component.printAllReports();
+    expect(settlementServiceMock.printAllReports).toHaveBeenCalledWith('unsettled');
+
+    component.setStatusFilter('all');
+    await component.printAllReports();
+    expect(settlementServiceMock.printAllReports).toHaveBeenCalledWith('all');
+  });
+
+  it('failedCount 0 shows a success toast with the succeeded count', async () => {
+    await setup();
+    settlementServiceMock.printAllReports.mockReturnValue(of({ succeededCount: 2, failedCount: 0 }));
+    const instantSpy = vi.spyOn(TestBed.inject(TranslateService), 'instant');
+
+    await component.printAllReports();
+
+    expect(toastMock.showSuccess).toHaveBeenCalledWith('settlement.success.printAll');
+    expect(toastMock.showError).not.toHaveBeenCalled();
+    // Guards against succeededCount/failedCount being swapped: the translated message itself
+    // ('settlement.success.printAll', an untranslated key in this test setup) would look
+    // identical either way, so the interpolation params passed to instant() are what actually
+    // proves the right count reached the toast.
+    expect(instantSpy).toHaveBeenCalledWith('settlement.success.printAll', { count: 2 });
+  });
+
+  it('failedCount > 0 shows an error toast with a link to the print queue', async () => {
+    await setup();
+    settlementServiceMock.printAllReports.mockReturnValue(of({ succeededCount: 1, failedCount: 1 }));
+    const instantSpy = vi.spyOn(TestBed.inject(TranslateService), 'instant');
+
+    await component.printAllReports();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printAllPartial', {
+      path: '/admin/print-queue',
+      label: 'settlement.error.printAllPartialLink',
+    });
+    expect(toastMock.showSuccess).not.toHaveBeenCalled();
+    expect(instantSpy).toHaveBeenCalledWith('settlement.error.printAllPartial', { count: 1 });
+  });
+
+  it('a 422 invalid-printer-selection error on the grouped print shows the printer-unavailable toast', async () => {
+    await setup();
+    settlementServiceMock.printAllReports.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 422,
+            error: { type: 'https://pluribourse/errors/invalid-printer-selection' },
+          })
+      )
+    );
+
+    await component.printAllReports();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printerUnavailable');
+  });
+
+  it('any other grouped print error shows the generic print-all toast', async () => {
+    await setup();
+    settlementServiceMock.printAllReports.mockReturnValue(throwError(() => new Error('server')));
+
+    await component.printAllReports();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printAll');
+  });
+
+  it('the grouped print button is disabled while it is itself in flight, blocking per-row prints too', async () => {
+    await setup();
+    const inFlight = new Subject<{ succeededCount: number; failedCount: number }>();
+    settlementServiceMock.printAllReports.mockReturnValueOnce(inFlight);
+
+    const groupedPromise = component.printAllReports();
+    expect(component.printingAll()).toBe(true);
+    expect(component.anyPrintInFlight()).toBe(true);
+
+    await component.printReport(ALICE);
+    expect(settlementServiceMock.printReport).not.toHaveBeenCalled();
+
+    // A second click on the grouped button itself while it is in flight is also ignored.
+    await component.printAllReports();
+    expect(settlementServiceMock.printAllReports).toHaveBeenCalledOnce();
+
+    inFlight.next({ succeededCount: 1, failedCount: 0 });
+    inFlight.complete();
+    await groupedPromise;
+    expect(component.printingAll()).toBe(false);
   });
 });

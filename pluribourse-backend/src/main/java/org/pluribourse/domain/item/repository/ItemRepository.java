@@ -141,4 +141,19 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("SELECT i FROM Item i LEFT JOIN FETCH i.lot WHERE i.edition.id = :editionId AND i.sale.soldAt >= :dayStart AND i.sale.soldAt < :dayEnd")
     List<Item> findAllSoldByEditionIdAndSoldAtBetween(@Param("editionId") Long editionId,
             @Param("dayStart") LocalDateTime dayStart, @Param("dayEnd") LocalDateTime dayEnd);
+
+    /**
+     * Bulk settlement report printing (story 5.6, FR-097): every item (sold and unsold) across
+     * the whole edition, grouped by seller in memory afterwards — same batched pattern as
+     * {@link #findAllByEditionIdAndSoldTrue}, avoiding a per-seller N+1 query in the print loop
+     * (NFR-001, ~100 sellers). JOIN FETCH category + lot, same as
+     * {@link #findAllBySellerProfileIdForSettlementReport} (the per-seller equivalent used by the
+     * single-report endpoint) — sellerProfile is read only via its already-cached id to key the
+     * grouping, never triggering a lazy load. The double-key ORDER BY matters: once items are
+     * regrouped by seller in memory ({@code Collectors.groupingBy}), the order inside each group
+     * would otherwise not be guaranteed {@code itemNumber ASC}, as expected by
+     * {@code SettlementReportRenderer} (same order as the per-seller query above).
+     */
+    @Query("SELECT i FROM Item i JOIN FETCH i.category LEFT JOIN FETCH i.lot WHERE i.edition.id = :editionId ORDER BY i.sellerProfile.id ASC, i.itemNumber ASC")
+    List<Item> findAllByEditionIdForSettlementReport(@Param("editionId") Long editionId);
 }

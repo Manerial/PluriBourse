@@ -11,6 +11,9 @@
     </span>
     <span class="toast__message">{{ toast.message }}</span>
     @if (toast.type === 'error') {
+      @if (toast.link) {
+        <a class="toast__link" [routerLink]="toast.link.path" (click)="closeUnlessNewTab($event)">{{ toast.link.label }}</a>
+      }
       <button
         type="button"
         class="toast__close"

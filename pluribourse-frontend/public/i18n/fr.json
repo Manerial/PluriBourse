@@ -787,7 +787,8 @@
       "confirm": "Valider",
       "cancel": "Annuler",
       "reprintDepositSlip": "Réimprimer le bordereau de dépôt",
-      "printReport": "Imprimer le bilan"
+      "printReport": "Imprimer le bilan",
+      "printAll": "Imprimer tous les bilans"
     },
     "form": {
       "amountLabel": "Montant remis en espèces (€)",
@@ -801,7 +802,8 @@
     "success": {
       "settle": "Vendeur réglé.",
       "unclaimed": "Montant transféré aux recettes de l'association.",
-      "printReport": "Bilan envoyé à l'imprimante."
+      "printReport": "Bilan envoyé à l'imprimante.",
+      "printAll": "{{ count }} bilans mis en file d'impression."
     },
     "error": {
       "load": "Impossible de charger la liste des reversements.",
@@ -810,7 +812,10 @@
       "alreadySettled": "Ce vendeur a déjà été soldé.",
       "amountTooHigh": "Le montant saisi dépasse le montant dû.",
       "printReport": "Impossible d'imprimer le bilan.",
-      "printerUnavailable": "Aucune imprimante A4 disponible. Sélectionnez une imprimante."
+      "printerUnavailable": "Aucune imprimante A4 disponible. Sélectionnez une imprimante.",
+      "printAll": "Impossible de mettre les bilans en file d'impression.",
+      "printAllPartial": "{{ count }} bilans n'ont pas pu être mis en file d'impression.",
+      "printAllPartialLink": "Voir la file d'impression"
     },
     "empty": "Aucun vendeur enregistré pour cette édition."
   }
