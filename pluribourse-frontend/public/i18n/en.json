@@ -212,9 +212,30 @@
         "description": {
           "PREPARATION": "The commission rate will be locked for this edition. Categories and table assignments will become read-only.",
           "DEPOSIT": "The deposit phase ends. No new sellers or items can be registered.",
-          "SALE": "The sale phase ends. No more sales can be processed.",
-          "POST_SALE": "The edition will be closed and become read-only."
+          "SALE": "The sale phase ends. No more sales can be processed."
         }
+      }
+    },
+    "close": {
+      "button": "Close edition",
+      "success": "Edition closed.",
+      "error": {
+        "generic": "Failed to close the edition.",
+        "printReport": "The closure succeeded, but printing the edition report failed."
+      },
+      "dialog": {
+        "title": "Close the edition?",
+        "description": "The edition will be closed and become read-only.",
+        "warningUnsettled": "{{count}} unsettled seller(s) will be automatically marked Unclaimed. Total amount transferred to the association's revenue: {{amount}} €."
+      }
+    },
+    "archive": {
+      "button": "Archive edition",
+      "success": "Edition archived.",
+      "error": "Failed to archive the edition.",
+      "dialog": {
+        "title": "Archive the edition?",
+        "description": "Archive and permanently delete every item of this edition. This action is irreversible."
       }
     },
     "rollback": {

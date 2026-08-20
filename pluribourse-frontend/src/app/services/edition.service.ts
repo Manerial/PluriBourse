@@ -43,4 +43,12 @@ export class EditionService {
   rollbackPhase(id: number): Observable<EditionDto> {
     return this.http.post<EditionDto>(`${this.BASE}/${id}/phase/rollback`, {});
   }
+
+  closeEdition(id: number): Observable<EditionDto> {
+    return this.http.post<EditionDto>(`${this.BASE}/${id}/close`, {});
+  }
+
+  archiveEdition(id: number): Observable<EditionDto> {
+    return this.http.post<EditionDto>(`${this.BASE}/${id}/archive`, {});
+  }
 }

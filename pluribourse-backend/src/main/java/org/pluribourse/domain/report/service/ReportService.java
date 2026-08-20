@@ -76,6 +76,10 @@ public class ReportService {
     public EditionSummaryReportDto getEditionReport(Edition edition) {
         PhaseGuard.requirePostSaleOrClosedPhase(edition);
 
+        if (edition.isArchived()) {
+            return buildFromArchivedSnapshot(edition);
+        }
+
         List<Sale> allSales = saleRepository.findAllByEditionId(edition.getId());
         List<Item> soldItems = itemRepository.findAllByEditionIdAndSoldTrue(edition.getId());
         List<Item> unsoldItems = itemRepository.findAllUnsoldByEditionId(edition.getId());
@@ -104,5 +108,17 @@ public class ReportService {
         return new EditionSummaryReportDto(soldItemCount, unsoldItemCount, grossRevenue, commission,
                 cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP),
                 netPayoutTotal, associationRevenueTotal);
+    }
+
+    /**
+     * Story 2.7, AC 7 — once archived, the underlying {@code Item}/{@code Settlement} rows no
+     * longer exist to recompute the report from, so it is served straight from the snapshot frozen
+     * onto {@code Edition} at archive time ({@code EditionArchivingService}), no queries needed.
+     */
+    private EditionSummaryReportDto buildFromArchivedSnapshot(Edition edition) {
+        return new EditionSummaryReportDto(edition.getArchivedSoldItemCount(), edition.getArchivedUnsoldItemCount(),
+                edition.getArchivedGrossRevenue(), edition.getArchivedCommission(),
+                edition.getArchivedCashTotal(), edition.getArchivedCheckTotal(), edition.getArchivedCardTotal(),
+                edition.getArchivedNetPayoutTotal(), edition.getArchivedAssociationRevenueTotal());
     }
 }

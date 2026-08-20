@@ -121,6 +121,23 @@ public class SettlementService {
                 .toList();
     }
 
+    /**
+     * Edition closure (story 2.7, FR-096): auto-marks every still-unsettled seller as Non réclamé,
+     * reusing {@link #getSellersMatchingFilter} (already batched, sorted by {@code sellerNumber})
+     * rather than re-deriving "unsettled" from scratch. No phase guard here — same convention as
+     * {@link #getSellersMatchingFilter}, the caller ({@code EditionClosingService}) is responsible
+     * for its own. The confirmation-dialog total (AC 1) is computed independently, client-side,
+     * from a fresh {@code GET /api/settlements} read — this method has no caller needing its own total.
+     */
+    @Transactional
+    public void closeAllUnsettledAsUnclaimed(Edition edition) {
+        List<SellerProfile> unsettledSellers = getSellersMatchingFilter(edition, SettlementFilter.UNSETTLED);
+        for (SellerProfile seller : unsettledSellers) {
+            BigDecimal amountDue = computeAmountDue(seller, edition);
+            persistSettlement(seller, SettlementStatus.UNCLAIMED, amountDue, amountDue);
+        }
+    }
+
     @Transactional
     public SettlementDto settle(Long sellerId, SettleDto dto) {
         Edition edition = editionService.getActiveEdition();

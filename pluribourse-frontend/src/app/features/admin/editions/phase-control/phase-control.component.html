@@ -30,7 +30,23 @@
             <mat-icon>arrow_forward</mat-icon>
           </button>
         }
+
+        @if (canClose()) {
+          <button type="button" mat-flat-button color="primary" [disabled]="isSubmitting()" (click)="confirmClose()">
+            {{ 'phase.close.button' | translate }}
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        }
       </div>
+
+      @if (canArchive()) {
+        <div class="phase-control__actions">
+          <button type="button" mat-button color="warn" [disabled]="isSubmitting()" (click)="confirmArchive()">
+            <mat-icon>archive</mat-icon>
+            {{ 'phase.archive.button' | translate }}
+          </button>
+        </div>
+      }
     </div>
   }
 </app-dialog-shell>

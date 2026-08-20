@@ -23,7 +23,8 @@ public record EditionDto(
         @NotNull
         LocalDate startDate,
         @NotNull
-        LocalDate endDate
+        LocalDate endDate,
+        Boolean hasItems
 ) {
     @AssertTrue(message = "startDate must not be after endDate")
     public boolean isDateRangeValid() {

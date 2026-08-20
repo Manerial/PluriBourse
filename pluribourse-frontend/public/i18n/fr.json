@@ -212,9 +212,30 @@
         "description": {
           "PREPARATION": "Le taux de commission sera gelé pour cette édition. Les catégories et la correspondance des tables passeront en lecture seule.",
           "DEPOSIT": "La phase de dépôt se termine. Aucun nouveau vendeur ni article ne peut être enregistré.",
-          "SALE": "La phase de vente se termine. Aucune nouvelle vente ne peut être traitée.",
-          "POST_SALE": "L'édition sera clôturée et passera en lecture seule."
+          "SALE": "La phase de vente se termine. Aucune nouvelle vente ne peut être traitée."
         }
+      }
+    },
+    "close": {
+      "button": "Clôturer l'édition",
+      "success": "Édition clôturée.",
+      "error": {
+        "generic": "Impossible de clôturer l'édition.",
+        "printReport": "La clôture a réussi, mais l'impression du bilan d'édition a échoué."
+      },
+      "dialog": {
+        "title": "Clôturer l'édition ?",
+        "description": "L'édition sera clôturée et passera en lecture seule.",
+        "warningUnsettled": "{{count}} vendeur(s) non soldé(s) seront automatiquement marqués Non réclamé. Montant total transféré aux recettes de l'association : {{amount}} €."
+      }
+    },
+    "archive": {
+      "button": "Archiver l'édition",
+      "success": "Édition archivée.",
+      "error": "Impossible d'archiver l'édition.",
+      "dialog": {
+        "title": "Archiver l'édition ?",
+        "description": "Archiver et supprimer tous les articles de cette édition. Cette action est irréversible."
       }
     },
     "rollback": {

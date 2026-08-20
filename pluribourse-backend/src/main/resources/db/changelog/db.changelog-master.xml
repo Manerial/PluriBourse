@@ -28,5 +28,7 @@
     <include file="db/changelog/022-items-sale-fk-set-null.xml"/>
     <include file="db/changelog/023-ignored-printer-name.xml"/>
     <include file="db/changelog/024-settlements.xml"/>
+    <include file="db/changelog/025-archived-items.xml"/>
+    <include file="db/changelog/026-edition-archive-snapshot.xml"/>
 
 </databaseChangeLog>

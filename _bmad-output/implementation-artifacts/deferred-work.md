@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of 2-7-cloture-de-ledition-archivage-de-ledition (2026-08-20)
+
+- **FR-096 bypass via the pre-existing `/phase/advance` endpoint** — `EditionService.java:137-145` (`advancePhase`/`computeNextPhase`) — a direct `POST_SALE → CLOSED` transition through the generic phase-advance endpoint completely bypasses `EditionClosingService`'s atomic auto-Non-réclamé logic (FR-096); confirmed live and demonstrated by this story's own `EditionArchivingIT.advance_to_closed()` (Order 7), which closes via the old endpoint leaving seller "Bob" permanently UNSETTLED with no `Settlement` row. Fixing this (blocking the direct transition, unconditionally or only when unsettled sellers remain) breaks 7 pre-existing IT files across 4 already-`done` stories that use `/phase/advance` as scaffolding to reach Clôturée without ever settling sellers: `PhaseTransitionIT` (Story 2.2, ×2), `ItemCatalogIT`, `SettlementIT` (Story 5.1), `SettlementReportPrintingIT`, `EditionReportPrintingIT` (Story 5.4), `ReportExportIT` — plus this story's own `EditionArchivingIT`. Needs a dedicated follow-up story, not a code-review patch.
+
 ## Résolutions constatées lors de l'audit du 2026-06-24
 
 Les items suivants ont été résolus dans des stories ultérieures et ne nécessitent plus d'action :

@@ -35,7 +35,81 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-20"  # Story 5-6 : revue de code terminée (bmad-code-review), statut → done
+last_updated: "2026-08-20"  # Story 2-7 (clôture & archivage de l'édition) : revue de code terminée
+# (bmad-code-review, Blind Hunter + Edge Case Hunter + Acceptance Auditor). Acceptance Auditor
+# confirme les 7 AC satisfaites par le code (pas seulement les tests). 1 decision-needed résolue
+# en defer (voir deferred-work.md) : l'endpoint générique `/phase/advance` autorise toujours une
+# transition directe POST_SALE→CLOSED contournant intégralement l'auto-Non-réclamé atomique
+# (FR-096) — bloquer ce contournement casse 7 fichiers IT préexistants dans 4 stories déjà `done`
+# (2.2, 5.1, 5.4 ×2, plus le propre EditionArchivingIT de cette story) qui utilisent cet endpoint
+# comme simple scaffolding sans jamais solder leurs vendeurs ; nécessite une story dédiée plutôt
+# qu'un patch de revue. 3 patchs appliqués : soumissions FR/EN découplées à l'impression de
+# clôture (une locale en échec n'efface plus la file de l'autre, patron aligné sur
+# `SettlementReportPrintService#printAllReports`), `hasItems` laissé `null` (au lieu de `false`)
+# dans la réponse d'archivage pour rester cohérent avec `advancePhase`/`rollbackPhase`/`closeEdition`,
+# retour `BigDecimal` mort de `closeAllUnsettledAsUnclaimed` supprimé (void). 10 findings rejetés
+# comme bruit après vérification directe du code (ex. contrainte de suppression `deleteEdition`
+# déjà bloquée hors PREPARATION, seules 3 FK réelles vers `seller_profiles` confirmées par grep).
+# 490+ tests backend et 623/623 tests frontend re-validés après les 3 patchs, aucune régression.
+# Statut → done.
+# Story 2-7 (clôture de l'édition & archivage de l'édition) créée : dépendance bloquante notée le
+# 2026-07-30 (Story 5.1 + génération du bilan d'édition PDF, Epic 5) désormais levée — 5.1 à 5.6
+# sont toutes done. Recherche exhaustive (3 agents en parallèle : planning epics/PRD/UX, backend
+# existant, frontend existant) ayant fait émerger 4 trous de conception non documentés dans
+# epics.md/PRD/UX, tranchés avant rédaction de la story : (1) FR-013 exige la génération des PDF
+# de bilan d'édition en EN+FR à la clôture, mais le seul pipeline PDF existant (`EditionSummaryReportPrintService`,
+# Story 5.4) imprime physiquement sur l'imprimante A4 sélectionnée en session admin, sans aucun mécanisme
+# de PDF stocké/téléchargeable — décision actée avec l'utilisateur : génération découplée de la
+# transaction atomique de clôture (qui ne couvre que phase + auto-Non-réclamé, FR-096), déclenchée
+# automatiquement par le frontend juste après le succès de la clôture, en best-effort avec sa propre
+# gestion d'erreur (patron déjà utilisé en 5.6 pour l'impression groupée) ; (2) FR-059 exige que les
+# métriques agrégées restent visibles après archivage, alors que FR-088 supprime les `Item`/`Settlement`
+# dont `ReportService.getEditionReport` dépend pour les calculer en direct — aucune alternative
+# réelle, décision actée sans besoin de valider avec l'utilisateur (lecture directe des AC) : gel
+# d'un instantané des 9 champs du rapport sur de nouvelles colonnes `Edition`, calculé juste avant
+# la suppression des articles à l'archivage ; (3) contrainte FK réelle découverte : `fk_settlements_seller_profile`
+# n'a pas de cascade (protection délibérée dans `SellerService.delete()` pour ne jamais supprimer
+# silencieusement un reversement soldé/non réclamé) — après clôture, tous les vendeurs ont une ligne
+# `Settlement`, donc le nouveau service d'archivage doit supprimer explicitement les `Settlement`
+# avant les `SellerProfile`, sans passer par `SellerService.delete()` ; (4) AC 6 d'epics.md décrit
+# aussi l'état vide catalogue "Édition archivée — aucun article." après archivage — décision actée
+# avec l'utilisateur : hors périmètre de cette story (le catalogue ne résout que l'édition active,
+# `getActiveEdition()` exclut déjà CLOSED bien avant l'archivage — la Story 6.2, backlog, dépend
+# déjà explicitement de 2.7 pour ce périmètre précis de consultation d'un catalogue archivé) ;
+# `ItemCatalogService`/`ItemCatalogComponent` restent intouchés par cette story. Conception retenue :
+# deux nouveaux services orchestrateurs (`EditionClosingService`, `EditionArchivingService`) plutôt
+# que d'étendre `EditionService` directement, pour éviter un cycle de dépendance Spring (`SettlementService`/`ReportService`
+# dépendent déjà de `EditionService`). Réutilisation maximale confirmée par lecture directe du code :
+# `SettlementService.getSellersMatchingFilter`/`markUnclaimed` (5.6/5.1), `ItemRepository.findAllByEditionIdForSettlementReport`
+# (5.6) pour la lecture des articles à archiver, `EditionService.advancePhase` inchangé pour la
+# transition POST_SALE→CLOSED (diffusion SSE `phase-changed` déjà gérée), et aucun nouvel endpoint
+# de prévisualisation de clôture — le frontend réutilise `GET /settlements` déjà consommé par
+# `SettlementListComponent`. Découverte de structure notable : la page de contrôle de phase (Story
+# 2.2) n'est pas une route `/admin/editions/{id}/phase` comme le laissait supposer EXPERIENCE.md/architecture.md,
+# mais une boîte de dialogue CDK (`PhaseControlComponent`) ouverte depuis `EditionListComponent` —
+# la story étend ce dialogue, aucune nouvelle route créée. `architecture.md` confirmé obsolète sur
+# les chemins de packages (`org.pluribourse.edition.*`/`item.*` documentés vs `org.pluribourse.domain.*`
+# réel). Statut → ready-for-dev.
+# Story 2-7 : validation qualité indépendante (agent en contexte frais, checklist create-story) confrontée
+# au code réel plutôt qu'aux seules affirmations de la story : 3 manques critiques corrigés — (1) T4
+# ajoutait `hasItems` comme 10e composant positionnel du record `EditionDto`, cassant la compilation de
+# 38 sites d'appel `new EditionDto(...)` répartis sur 20 classes de test (`EditionManagementIT` seul en
+# a 14) — la story liste désormais explicitement les 20 fichiers et prescrit un `null` en position finale,
+# piloté par les erreurs de compilation ; (2) même piège côté frontend, `hasItems: boolean` non optionnel
+# aurait cassé ~8 fichiers `*.spec.ts` construisant des littéraux `EditionDto` complets — passé en
+# `hasItems?: boolean` (optionnel), ce qui élimine le problème par typage structurel TS et est de toute
+# façon cohérent avec le comportement "unset" déjà documenté par T4 ; (3) T14 attendait `PhaseAlreadyClosedException`
+# via `advancePhase` pour la clôture d'une édition déjà Clôturée, mais `EditionClosingService` (T6) appelait
+# `PhaseGuard.requirePostSalePhase` en premier, qui lève `SettlementNotAllowedException` pour toute phase
+# hors Post-vente y compris Clôturée — le code n'atteignait donc jamais `advancePhase`. T6 corrigé avec une
+# garde explicite CLOSED en premier (réutilise `PhaseAlreadyClosedException` tel quel, aucune nouvelle
+# classe d'exception), documentée dans une nouvelle sous-section Dev Notes « Guard ordering ». 3 améliorations
+# apportées sans impact bloquant : T20 affirmait à tort qu'un pattern « danger zone » réutilisable existait
+# déjà dans le code (`grep` vide — concept UX jamais concrétisé, corrigé vers la convention réelle de bouton
+# `mat-button color="warn"` isolé) ; le scope decision sur l'état vide catalogue clarifié — Story 6.2 charter
+# un écran de consultation séparé, pas le même état vide que celui décrit littéralement par l'AC 6 d'epics.md ;
+# un 4e scope decision ajouté, jusqu'ici implicite, sur l'écart entre les 9 champs du snapshot AC 7 et les
+# listes plus courtes d'epics.md/EXPERIENCE.md. Statut → ready-for-dev (confirmé).
 # Story 5-6 : revue de code terminée (bmad-code-review, Blind Hunter + Edge Case Hunter + Acceptance
 # Auditor) : Acceptance Auditor confirme 0 violation d'AC. 0 decision-needed, 6 patch appliqués
 # (factorisation résolution imprimante A4/commission/locale dupliquée, catch resserré à
@@ -104,7 +178,7 @@ development_status:
   # « Non réclamé » (Story 5.1, backlog) ainsi que la génération du bilan
   # d'édition PDF EN/FR (FR-013, Epic 5). Ne peut pas démarrer avant 5.1
   # (et la story de génération du bilan d'édition).
-  2-7-cloture-de-ledition-archivage-de-ledition: backlog
+  2-7-cloture-de-ledition-archivage-de-ledition: done
   # Dépendance cachée identifiée le 2026-07-30 (non documentée à la création
   # initiale) : les CA de 2.8 supposent l'existence d'une entité panier POS
   # active, créée par la Story 4.2 (Epic 4, backlog, non démarré). Aucun lien

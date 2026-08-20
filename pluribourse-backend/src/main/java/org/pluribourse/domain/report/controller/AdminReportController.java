@@ -54,6 +54,12 @@ public class AdminReportController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/edition/{editionId}/print-closure")
+    public ResponseEntity<Void> printEditionReportClosure(@PathVariable Long editionId, HttpSession session) {
+        editionSummaryReportPrintService.printEditionReportBothLanguages(editionId, session);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/edition/{editionId}/export/catalog")
     public ResponseEntity<byte[]> exportCatalog(@PathVariable Long editionId) {
         byte[] csv = reportExportService.exportCatalogCsv(editionService.requireEdition(editionId));

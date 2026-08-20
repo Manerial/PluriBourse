@@ -2,6 +2,7 @@ package org.pluribourse.domain.edition.controller;
 
 import jakarta.validation.*;
 import lombok.*;
+import org.pluribourse.domain.archive.service.*;
 import org.pluribourse.domain.edition.dto.*;
 import org.pluribourse.domain.edition.service.*;
 import org.springframework.http.*;
@@ -17,6 +18,8 @@ import java.util.*;
 public class EditionController {
 
     private final EditionService service;
+    private final EditionClosingService closingService;
+    private final EditionArchivingService archivingService;
 
     @GetMapping
     public ResponseEntity<List<EditionDto>> getAllEditions() {
@@ -55,6 +58,18 @@ public class EditionController {
     public ResponseEntity<EditionDto> rollbackPhase(@PathVariable Long id) {
         EditionDto editionRolledback = service.rollbackPhase(id);
         return ResponseEntity.ok(editionRolledback);
+    }
+
+    @PostMapping("/{id}/close")
+    public ResponseEntity<EditionDto> closeEdition(@PathVariable Long id) {
+        EditionDto closedEdition = closingService.closeEdition(id);
+        return ResponseEntity.ok(closedEdition);
+    }
+
+    @PostMapping("/{id}/archive")
+    public ResponseEntity<EditionDto> archiveEdition(@PathVariable Long id) {
+        EditionDto archivedEdition = archivingService.archiveEdition(id);
+        return ResponseEntity.ok(archivedEdition);
     }
 
     @DeleteMapping("/{id}")

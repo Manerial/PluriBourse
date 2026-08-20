@@ -160,7 +160,7 @@ class SettlementReportPrintingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, EDITION_NAME,
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3)))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -474,7 +474,7 @@ class SettlementReportPrintingIT extends IntegrationTest {
         MvcResult edition2Result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Bilan 2027", null, null, null, null, false, LocalDate.of(2027, 1, 1), LocalDate.of(2027, 1, 3)))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Bilan 2027", null, null, null, null, false, LocalDate.of(2027, 1, 1), LocalDate.of(2027, 1, 3), null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long edition2Id = objectMapper.readValue(edition2Result.getResponse().getContentAsString(), EditionDto.class).id();

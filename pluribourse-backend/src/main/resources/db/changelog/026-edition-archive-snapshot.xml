@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="026-edition-archive-snapshot" author="pluribourse">
+        <addColumn tableName="editions">
+            <column name="archived_sold_item_count" type="BIGINT"/>
+            <column name="archived_unsold_item_count" type="BIGINT"/>
+            <column name="archived_gross_revenue" type="DECIMAL(10,2)"/>
+            <column name="archived_commission" type="DECIMAL(10,2)"/>
+            <column name="archived_cash_total" type="DECIMAL(10,2)"/>
+            <column name="archived_check_total" type="DECIMAL(10,2)"/>
+            <column name="archived_card_total" type="DECIMAL(10,2)"/>
+            <column name="archived_net_payout_total" type="DECIMAL(10,2)"/>
+            <column name="archived_association_revenue_total" type="DECIMAL(10,2)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

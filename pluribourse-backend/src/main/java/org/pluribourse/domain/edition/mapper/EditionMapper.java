@@ -10,6 +10,7 @@ import java.math.*;
 @Mapper(componentModel = "spring", imports = java.time.LocalDate.class)
 public interface EditionMapper {
 
+    @Mapping(target = "hasItems", ignore = true)
     EditionDto toDto(Edition edition);
 
     @Mapping(target = "id", ignore = true)

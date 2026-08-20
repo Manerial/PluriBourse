@@ -66,7 +66,7 @@ class LotManagementIT extends IntegrationTest {
         MvcResult editionResult = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Lots 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3)))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Lots 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -100,7 +100,7 @@ class LotManagementIT extends IntegrationTest {
         MvcResult editionResult = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Fermee 2025", null, null, null, null, false, LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 3)))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Fermee 2025", null, null, null, null, false, LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 3), null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long otherEditionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();

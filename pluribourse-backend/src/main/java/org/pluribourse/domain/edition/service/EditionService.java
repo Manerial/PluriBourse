@@ -43,9 +43,18 @@ public class EditionService {
                 .toList();
     }
 
+    /**
+     * {@code hasItems} (story 2.7, AC 5) is only populated here, not by {@link #advancePhase}/
+     * {@link #rollbackPhase}/the new closure/archiving endpoints — those keep returning it unset,
+     * the frontend re-fetches via this method when it needs a fresh read.
+     */
     @Transactional(readOnly = true)
     public EditionDto getEditionById(Long id) {
-        return mapper.toDto(findById(id));
+        Edition edition = findById(id);
+        EditionDto dto = mapper.toDto(edition);
+        boolean hasItems = itemRepository.existsByEditionId(id);
+        return new EditionDto(dto.id(), dto.name(), dto.phase(), dto.commissionRate(), dto.documentLanguage(),
+                dto.createdAt(), dto.archived(), dto.startDate(), dto.endDate(), hasItems);
     }
 
     /**

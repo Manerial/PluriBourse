@@ -24,6 +24,10 @@ export class ReportService {
     return this.http.post<void>(`/api/admin/reports/edition/${editionId}/print`, null);
   }
 
+  printEditionReportClosure(editionId: number): Observable<void> {
+    return this.http.post<void>(`/api/admin/reports/edition/${editionId}/print-closure`, null);
+  }
+
   exportCatalog(editionId: number): Observable<HttpResponse<Blob>> {
     return this.http.get(`/api/admin/reports/edition/${editionId}/export/catalog`, { responseType: 'blob', observe: 'response' });
   }

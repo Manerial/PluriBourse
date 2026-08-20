@@ -23,4 +23,5 @@ export interface EditionDto {
   archived: boolean;
   startDate: string;
   endDate: string;
+  hasItems?: boolean;
 }

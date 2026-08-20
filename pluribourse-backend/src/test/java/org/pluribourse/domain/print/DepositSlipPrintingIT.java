@@ -108,7 +108,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Bordereau 2026",
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3)))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();

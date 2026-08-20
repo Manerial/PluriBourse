@@ -6,8 +6,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { firstValueFrom } from 'rxjs';
+import Big from 'big.js';
 import { EditionDto, PhaseType } from '../../../../models/edition.model';
 import { EditionService } from '../../../../services/edition.service';
+import { SettlementService } from '../../../../services/settlement.service';
+import { ReportService } from '../../../../services/report.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../../../shared/components/skeleton-row/skeleton-row.component';
@@ -29,6 +32,8 @@ export interface PhaseControlDialogData {
 })
 export class PhaseControlComponent implements OnInit {
   private readonly editionService = inject(EditionService);
+  private readonly settlementService = inject(SettlementService);
+  private readonly reportService = inject(ReportService);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
@@ -63,7 +68,18 @@ export class PhaseControlComponent implements OnInit {
     if (!e) {
       return false;
     }
-    return e.phase !== 'CLOSED';
+    // POST_SALE now goes through the dedicated close flow below, not the generic advance button.
+    return e.phase !== 'CLOSED' && e.phase !== 'POST_SALE';
+  }
+
+  canClose(): boolean {
+    const e = this.edition();
+    return !!e && e.phase === 'POST_SALE';
+  }
+
+  canArchive(): boolean {
+    const e = this.edition();
+    return !!e && e.phase === 'CLOSED' && !e.archived && !!e.hasItems;
   }
 
   canRollback(): boolean {
@@ -149,6 +165,88 @@ export class PhaseControlComponent implements OnInit {
         this.dialogRef.close();
       } catch {
         this.toast.showError(this.translate.instant('phase.rollback.error'));
+      } finally {
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+
+  async confirmClose(): Promise<void> {
+    const e = this.edition();
+    if (!e || !this.canClose() || this.isSubmitting()) {
+      return;
+    }
+    this.isSubmitting.set(true);
+
+    let description: string;
+    try {
+      const settlements = await firstValueFrom(this.settlementService.getSettlements());
+      const unsettled = settlements.filter((s) => s.status === 'UNSETTLED');
+      if (unsettled.length > 0) {
+        const total = unsettled.reduce((sum, s) => sum.plus(s.amountDue), new Big(0));
+        description = this.translate.instant('phase.close.dialog.warningUnsettled', {
+          count: unsettled.length,
+          amount: total.toFixed(2),
+        });
+      } else {
+        description = this.translate.instant('phase.close.dialog.description');
+      }
+    } catch {
+      this.toast.showError(this.translate.instant('phase.close.error.generic'));
+      this.isSubmitting.set(false);
+      return;
+    }
+
+    this.confirmDialog.open({
+      title: this.translate.instant('phase.close.dialog.title'),
+      description,
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
+      if (!confirmed) {
+        this.isSubmitting.set(false);
+        return;
+      }
+      try {
+        this.edition.set(await firstValueFrom(this.editionService.closeEdition(e.id)));
+        this.toast.showSuccess(this.translate.instant('phase.close.success'));
+        this.dialogRef.close();
+      } catch {
+        this.toast.showError(this.translate.instant('phase.close.error.generic'));
+        this.isSubmitting.set(false);
+        return;
+      }
+      // Best-effort (AC 4): the closure above already succeeded and the dialog is already closed —
+      // a printing failure here is reported separately and never undoes the closure.
+      try {
+        await firstValueFrom(this.reportService.printEditionReportClosure(e.id));
+      } catch {
+        this.toast.showError(this.translate.instant('phase.close.error.printReport'));
+      } finally {
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+
+  confirmArchive(): void {
+    const e = this.edition();
+    if (!e || !this.canArchive() || this.isSubmitting()) {
+      return;
+    }
+    this.isSubmitting.set(true);
+    this.confirmDialog.open({
+      title: this.translate.instant('phase.archive.dialog.title'),
+      description: this.translate.instant('phase.archive.dialog.description'),
+      confirmVariant: 'error',
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
+      if (!confirmed) {
+        this.isSubmitting.set(false);
+        return;
+      }
+      try {
+        this.edition.set(await firstValueFrom(this.editionService.archiveEdition(e.id)));
+        this.toast.showSuccess(this.translate.instant('phase.archive.success'));
+        this.dialogRef.close();
+      } catch {
+        this.toast.showError(this.translate.instant('phase.archive.error'));
       } finally {
         this.isSubmitting.set(false);
       }
