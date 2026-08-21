@@ -100,7 +100,8 @@
       "printQueue": "Print queue",
       "printers": "Printers",
       "settlement": "Settlements",
-      "reports": "Reports"
+      "reports": "Reports",
+      "archivedCatalog": "Archived catalog"
     }
   },
   "edition": {
@@ -737,6 +738,41 @@
         "discoveryUnavailable": "The PrinterBridge service is not responding on this machine. Check that it is running.",
         "ignore": "Failed to ignore the printer.",
         "reactivate": "Failed to reactivate the printer."
+      }
+    },
+    "archivedCatalog": {
+      "title": "Archived catalog",
+      "editionSelector": {
+        "label": "Archived edition",
+        "placeholder": "No archived edition available",
+        "loading": "Loading archived editions…"
+      },
+      "filters": {
+        "name": "Name",
+        "category": "Category",
+        "categoryAll": "All",
+        "sold": "Sale status",
+        "soldOptions": {
+          "all": "All",
+          "sold": "Sold",
+          "unsold": "Unsold"
+        }
+      },
+      "columns": {
+        "name": "Name",
+        "category": "Category",
+        "sold": "Sold",
+        "soldValues": {
+          "sold": "Sold",
+          "unsold": "Unsold"
+        }
+      },
+      "empty": {
+        "noSelection": "Select an archived edition to browse its catalog.",
+        "noResults": "No item matches the current filters."
+      },
+      "error": {
+        "load": "Failed to load the archived catalog."
       }
     }
   },

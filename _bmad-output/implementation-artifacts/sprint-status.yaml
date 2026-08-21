@@ -35,7 +35,38 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-20"  # Story 2-7 (clôture & archivage de l'édition) : revue de code terminée
+last_updated: "2026-08-21"  # Story 6-2 : revue de code terminée (bmad-code-review, Blind Hunter +
+# Edge Case Hunter + Acceptance Auditor). 9 patchs appliqués (ordre requireEdition/validateSort,
+# filtre categoryName="" traité comme absence de filtre, dates dans le sélecteur d'édition (AC1),
+# gestion d'erreur ngOnInit/loadCategories, garde requestSequence sur loadCategories, reset error()
+# au changement d'édition, clés i18n dédiées pour la cellule "vendu", 4 tests IT ajoutés, changelog
+# sprint-status.yaml réorganisé). 4 items différés (voir deferred-work.md), tous hérités tels quels
+# de ItemCatalogService/ItemCatalogComponent. 509/509 tests backend, 635/635 tests frontend, build
+# frontend propre, aucune régression. Statut → done.
+#
+# Story 6-2 implémentée (dev-story) : nouveau package backend
+# domain.archive.{dto,mapper,controller} réutilisant ArchivedItemRepository (Story 2.7),
+# GET /admin/archive/editions/{editionId}/items admin-only ; frontend ArchivedCatalogComponent
+# + entrée sidebar /admin/archived-catalog. 505/505 tests backend, 635/635 tests frontend,
+# aucune régression. Statut → review.
+# (Contexte de création, 2026-07-29 : dépendance bloquante sur la Story 2.7 (table archived_items)
+# désormais levée — 2.7 est done et a même anticipé cette story (ArchivedItemRepository.findAllByEditionId
+# créé mais inutilisé par 2.7 elle-même). Recherche exhaustive du code existant (6.1 catalogue actif,
+# 2.7 archivage, sélecteurs d'édition déjà en place) confirmant que tout le nécessaire réutilisable existe
+# déjà : aucune migration Liquibase, aucun nouvel endpoint de liste d'éditions archivées (réutilise
+# `GET /admin/editions` filtré côté client sur `archived === true`, même patron que le filtre
+# `phase === 'CLOSED'` déjà utilisé par `edition-categories.component.ts`), filtre catégorie réutilisant
+# `GET /admin/editions/{id}/categories` (non restreint par phase, catégories jamais supprimées par
+# l'archivage). Nouveau service/contrôleur `domain.archive` séparé de `ItemCatalogService` (explicitement
+# hors périmètre pour les éditions passées selon son propre commentaire) plutôt qu'une extension — mêmes
+# raisons que la séparation `EditionArchivingService`/`EditionService` en 2.7. Écart non documenté ni dans
+# epics.md ni dans EXPERIENCE.md comblé : aucune entrée de sidebar n'existe pour `/admin/catalog` (6.1 l'a
+# explicitement laissée hors périmètre) ni, par construction, pour ce nouvel écran — tranché sans besoin
+# de valider avec l'utilisateur (ajout mécanique nécessaire à la découvrabilité d'une nouvelle route, sans
+# ambiguïté de conception) : la story ajoute une entrée de sidebar uniquement pour son propre écran
+# `/admin/archived-catalog`, sans rouvrir le périmètre de 6.1.)
+#
+# Story 2-7 (clôture & archivage de l'édition) : revue de code terminée
 # (bmad-code-review, Blind Hunter + Edge Case Hunter + Acceptance Auditor). Acceptance Auditor
 # confirme les 7 AC satisfaites par le code (pas seulement les tests). 1 decision-needed résolue
 # en defer (voir deferred-work.md) : l'endpoint générique `/phase/advance` autorise toujours une
@@ -235,5 +266,5 @@ development_status:
   # 6-2 ajoutée le 2026-07-29 suite à la revue de code de 6-1 (sprint change
   # proposal 2026-07-29) — dépend de la Story 2.7 (table d'archivage), qui
   # n'existe pas encore : ne peut pas démarrer avant que 2.7 soit done.
-  6-2-consultation-catalogue-edition-archivee: backlog
+  6-2-consultation-catalogue-edition-archivee: done
   epic-6-retrospective: optional

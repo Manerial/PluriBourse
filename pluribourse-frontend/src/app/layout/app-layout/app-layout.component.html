@@ -105,6 +105,18 @@
         </a>
 
         <a
+          routerLink="/admin/archived-catalog"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item"
+          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.archivedCatalog' | translate) : null"
+          [matTooltip]="sidebarCollapsed() ? ('nav.admin.archivedCatalog' | translate) : ''"
+          matTooltipPosition="right">
+          <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+          <span class="sidebar__item-label">{{ 'nav.admin.archivedCatalog' | translate }}</span>
+        </a>
+
+        <a
           routerLink="/admin/printers"
           routerLinkActive="sidebar__item--active"
           ariaCurrentWhenActive="page"

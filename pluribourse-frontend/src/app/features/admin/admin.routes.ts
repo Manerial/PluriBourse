@@ -43,6 +43,11 @@ export const adminRoutes: Routes = [
       import('../catalog/item-catalog.component').then((m) => m.ItemCatalogComponent),
   },
   {
+    path: 'archived-catalog',
+    loadComponent: () =>
+      import('./archived-catalog/archived-catalog.component').then((m) => m.ArchivedCatalogComponent),
+  },
+  {
     path: 'settlement',
     canActivate: [settlementPhaseGuard],
     loadComponent: () =>

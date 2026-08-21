@@ -100,7 +100,8 @@
       "printQueue": "File d'impression",
       "printers": "Imprimantes",
       "settlement": "Reversements",
-      "reports": "Rapports"
+      "reports": "Rapports",
+      "archivedCatalog": "Catalogue archivé"
     }
   },
   "edition": {
@@ -737,6 +738,41 @@
         "discoveryUnavailable": "Le service PrinterBridge ne répond pas sur ce poste. Vérifiez qu'il est lancé.",
         "ignore": "Impossible d'ignorer l'imprimante.",
         "reactivate": "Impossible de réactiver l'imprimante."
+      }
+    },
+    "archivedCatalog": {
+      "title": "Catalogue archivé",
+      "editionSelector": {
+        "label": "Édition archivée",
+        "placeholder": "Aucune édition archivée disponible",
+        "loading": "Chargement des éditions archivées…"
+      },
+      "filters": {
+        "name": "Nom",
+        "category": "Catégorie",
+        "categoryAll": "Toutes",
+        "sold": "Statut de vente",
+        "soldOptions": {
+          "all": "Tous",
+          "sold": "Vendu",
+          "unsold": "Non vendu"
+        }
+      },
+      "columns": {
+        "name": "Nom",
+        "category": "Catégorie",
+        "sold": "Vendu",
+        "soldValues": {
+          "sold": "Vendu",
+          "unsold": "Non vendu"
+        }
+      },
+      "empty": {
+        "noSelection": "Sélectionnez une édition archivée pour consulter son catalogue.",
+        "noResults": "Aucun article ne correspond aux filtres actuels."
+      },
+      "error": {
+        "load": "Impossible de charger le catalogue archivé."
       }
     }
   },

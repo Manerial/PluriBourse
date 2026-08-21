@@ -1,0 +1,99 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.archivedCatalog.title' | translate }}</h1>
+  </div>
+
+  <div class="filters-row">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'admin.archivedCatalog.editionSelector.label' | translate }}</mat-label>
+      <mat-select
+        [value]="selectedEditionId()"
+        [disabled]="archivedEditions().length === 0"
+        (selectionChange)="onEditionChange($event.value)">
+        @if (archivedEditions().length === 0) {
+          <mat-option [value]="null" disabled>
+            {{ (isLoadingEditions() ? 'admin.archivedCatalog.editionSelector.loading' : 'admin.archivedCatalog.editionSelector.placeholder') | translate }}
+          </mat-option>
+        }
+        @for (edition of archivedEditions(); track edition.id) {
+          <mat-option [value]="edition.id">{{ edition.name }} ({{ edition.startDate }} – {{ edition.endDate }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (selectedEditionId() !== null) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'admin.archivedCatalog.filters.name' | translate }}</mat-label>
+        <input matInput [value]="nameFilter()" [disabled]="isLoading()" (input)="onNameInput($any($event.target).value)" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'admin.archivedCatalog.filters.category' | translate }}</mat-label>
+        <mat-select [value]="categoryNameFilter()" [disabled]="isLoading()" (selectionChange)="onCategoryChange($event.value)">
+          <mat-option [value]="null">{{ 'admin.archivedCatalog.filters.categoryAll' | translate }}</mat-option>
+          @for (category of categories(); track category.id) {
+            <mat-option [value]="category.name">{{ category.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'admin.archivedCatalog.filters.sold' | translate }}</mat-label>
+        <mat-select [value]="soldFilter()" [disabled]="isLoading()" (selectionChange)="onSoldChange($event.value)">
+          <mat-option [value]="null">{{ 'admin.archivedCatalog.filters.soldOptions.all' | translate }}</mat-option>
+          <mat-option [value]="true">{{ 'admin.archivedCatalog.filters.soldOptions.sold' | translate }}</mat-option>
+          <mat-option [value]="false">{{ 'admin.archivedCatalog.filters.soldOptions.unsold' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+  </div>
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+  @if (categoryError()) {
+    <app-notification-inline [message]="categoryError()! | translate" variant="error" />
+  }
+
+  @if (selectedEditionId() === null) {
+    <app-empty-state icon="inventory_2" [message]="'admin.archivedCatalog.empty.noSelection' | translate" />
+  } @else {
+    @if (isLoading()) {
+      <app-skeleton-row [rows]="5" />
+    }
+
+    @if (!isLoading() && !error()) {
+      @if (totalElements() === 0) {
+        <app-empty-state icon="inventory_2" [message]="'admin.archivedCatalog.empty.noResults' | translate" />
+      } @else {
+        <table class="data-table" matSort matSortDisableClear [matSortActive]="sortField() ?? ''" [matSortDirection]="sortDirection()" (matSortChange)="onSortChange($event)">
+          <thead>
+            <tr>
+              <th mat-sort-header="name">{{ 'admin.archivedCatalog.columns.name' | translate }}</th>
+              <th mat-sort-header="categoryName">{{ 'admin.archivedCatalog.columns.category' | translate }}</th>
+              <th mat-sort-header="sold">{{ 'admin.archivedCatalog.columns.sold' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.categoryName }}</td>
+                <td>{{ (item.sold ? 'admin.archivedCatalog.columns.soldValues.sold' : 'admin.archivedCatalog.columns.soldValues.unsold') | translate }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <mat-paginator
+          [length]="totalElements()"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex()"
+          [hidePageSize]="true"
+          [disabled]="isLoading()"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      }
+    }
+  }
+</div>
