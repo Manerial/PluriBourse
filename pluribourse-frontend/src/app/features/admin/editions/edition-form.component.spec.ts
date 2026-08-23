@@ -178,5 +178,18 @@ describe('EditionFormComponent', () => {
       });
       expect(dialogRefMock.close).toHaveBeenCalledOnce();
     });
+
+    it('sets formError key on 422 response when the edition has moved past Preparation', async () => {
+      // Defensive case: the edit dialog is only opened from a Preparation-phase row in the list,
+      // but the phase can advance in another session/tab between that click and this submit.
+      editionServiceMock.update.mockReturnValue(throwError(() => new HttpErrorResponse({
+        status: 422,
+        error: { type: 'https://pluribourse/errors/edition-cannot-be-updated' }
+      })));
+      await component.onSubmit();
+      expect(component.formError()).toBe('edition.edit.error.cannotUpdate');
+      expect(toastMock.showError).not.toHaveBeenCalled();
+      expect(dialogRefMock.close).not.toHaveBeenCalled();
+    });
   });
 });

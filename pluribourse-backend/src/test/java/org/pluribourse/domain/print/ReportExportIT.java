@@ -271,8 +271,9 @@ class ReportExportIT extends IntegrationTest {
         // Same reasoning as EditionReportPrintingIT Order 11: resolution by explicit edition ID
         // (EditionService.requireEdition, not getActiveEdition()) must keep these two endpoints
         // correct in Clôturée — nothing changes between Post-vente and Clôturée, no sale is
-        // possible in the interval.
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+        // possible in the interval, and both sellers are already Soldé/Non réclamé so the
+        // dedicated /close endpoint (FR-096 follow-up fix) has nothing left to auto-settle.
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));

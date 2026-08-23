@@ -163,7 +163,7 @@
       "error": {
         "load": "Failed to load edition.",
         "save": "Failed to update edition.",
-        "commissionRateFrozen": "Commission rate cannot be changed once the deposit phase has started."
+        "cannotUpdate": "This edition can no longer be edited after the Preparation phase."
       },
       "success": "Edition updated."
     },
@@ -172,7 +172,8 @@
       "DEPOSIT": "Deposit",
       "SALE": "Sale",
       "POST_SALE": "Post-sale",
-      "CLOSED": "Closed"
+      "CLOSED": "Closed",
+      "ARCHIVED": "Archived"
     },
     "actions": {
       "managePhase": "Manage phase",
@@ -214,7 +215,8 @@
           "PREPARATION": "The commission rate will be locked for this edition. Categories and table assignments will become read-only.",
           "DEPOSIT": "The deposit phase ends. No new sellers or items can be registered.",
           "SALE": "The sale phase ends. No more sales can be processed."
-        }
+        },
+        "warningNoItems": "No items have been deposited for this edition. Do you really want to move to the Sale phase?"
       }
     },
     "close": {
@@ -560,7 +562,6 @@
       "empty": "No sellers registered yet.",
       "error": {
         "load": "Failed to load sellers.",
-        "noActiveEdition": "No edition is currently active. Sellers can only be viewed once an edition is active.",
         "delete": "Failed to delete seller."
       }
     },
@@ -621,6 +622,15 @@
       }
     },
     "reports": {
+      "tabs": {
+        "edition": "Edition summary",
+        "exports": "Exports"
+      },
+      "editionSelector": {
+        "label": "Edition",
+        "placeholder": "No edition available",
+        "loading": "Loading editions…"
+      },
       "daily": {
         "title": "Daily sales report",
         "refresh": "Refresh",
@@ -674,6 +684,10 @@
     },
     "printers": {
       "title": "Printer registry",
+      "tabs": {
+        "registry": "Registry",
+        "queue": "Print queue"
+      },
       "columns": {
         "name": "Name",
         "type": "Type",

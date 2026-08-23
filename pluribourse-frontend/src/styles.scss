@@ -245,6 +245,15 @@ html {
   --mat-icon-button-icon-color: var(--mat-sys-on-surface-variant);
 }
 
+// ── Material tab links override ─────────────────────────────────────────────
+// Router-driven tabs (mat-tab-nav-bar, printers-page.component.html) use a
+// different class set than the content-tab-group variant — matches the DM Sans
+// 600 convention already applied to buttons above.
+.mat-mdc-tab-link .mdc-tab__text-label {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+}
+
 // ── Accessibility baseline ────────────────────────────────────────────────────
 a:focus-visible,
 button:focus-visible,

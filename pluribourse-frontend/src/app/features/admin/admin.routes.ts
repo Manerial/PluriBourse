@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 import { settlementPhaseGuard } from '../../core/guards/settlement-phase.guard';
+import { activeEditionGuard } from '../../core/guards/active-edition.guard';
+import { ReportEditionScopeService } from '../report/report-edition-scope.service';
 
 export const adminRoutes: Routes = [
   {
     path: '',
-    redirectTo: 'users',
+    redirectTo: 'settings',
     pathMatch: 'full'
   },
   {
@@ -24,18 +26,31 @@ export const adminRoutes: Routes = [
   },
   {
     path: 'sellers',
+    canActivate: [activeEditionGuard],
     loadComponent: () =>
       import('./sellers/seller-list.component').then((m) => m.SellerListComponent),
   },
   {
-    path: 'print-queue',
-    loadComponent: () =>
-      import('./print-queue/print-queue-list.component').then((m) => m.PrintQueueListComponent),
-  },
-  {
     path: 'printers',
     loadComponent: () =>
-      import('./printers/printer-list.component').then((m) => m.PrinterListComponent),
+      import('./printers/printers-page.component').then((m) => m.PrintersPageComponent),
+    children: [
+      {
+        path: '',
+        redirectTo: 'registry',
+        pathMatch: 'full',
+      },
+      {
+        path: 'registry',
+        loadComponent: () =>
+          import('./printers/printer-list.component').then((m) => m.PrinterListComponent),
+      },
+      {
+        path: 'queue',
+        loadComponent: () =>
+          import('./print-queue/print-queue-list.component').then((m) => m.PrintQueueListComponent),
+      },
+    ],
   },
   {
     path: 'catalog',
@@ -55,7 +70,25 @@ export const adminRoutes: Routes = [
   },
   {
     path: 'reports',
+    providers: [ReportEditionScopeService],
     loadComponent: () =>
       import('../report/report-page.component').then((m) => m.ReportPageComponent),
+    children: [
+      {
+        path: '',
+        redirectTo: 'edition',
+        pathMatch: 'full',
+      },
+      {
+        path: 'edition',
+        loadComponent: () =>
+          import('../report/edition-report.component').then((m) => m.EditionReportComponent),
+      },
+      {
+        path: 'exports',
+        loadComponent: () =>
+          import('../report/report-exports.component').then((m) => m.ReportExportsComponent),
+      },
+    ],
   },
 ];

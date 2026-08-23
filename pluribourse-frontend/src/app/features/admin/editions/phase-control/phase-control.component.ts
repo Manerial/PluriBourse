@@ -77,9 +77,13 @@ export class PhaseControlComponent implements OnInit {
     return !!e && e.phase === 'POST_SALE';
   }
 
+  // hasItems no longer gates this button (follow-up fix, 2026-08-23): a Clôturée edition with zero
+  // deposited items must still be archivable, to purge any seller profiles registered without a
+  // deposit and freeze its (zero-valued) report snapshot. The 0-items signal now surfaces earlier,
+  // as a non-blocking warning on the DEPOSIT → SALE transition below.
   canArchive(): boolean {
     const e = this.edition();
-    return !!e && e.phase === 'CLOSED' && !e.archived && !!e.hasItems;
+    return !!e && e.phase === 'CLOSED' && !e.archived;
   }
 
   canRollback(): boolean {
@@ -118,10 +122,16 @@ export class PhaseControlComponent implements OnInit {
     }
     const next = this.nextPhase()!;
     const nextLabel = this.translate.instant('edition.phase.' + next);
+    // Non-blocking warning (follow-up fix, 2026-08-23): catches "0 articles" while the admin can
+    // still act on it (redeposit, fix a setup mistake) — unlike the old hard block at archive time,
+    // long after the edition is closed and nothing can be done about it anymore.
+    const description = e.phase === 'DEPOSIT' && !e.hasItems
+      ? this.translate.instant('phase.advance.dialog.warningNoItems')
+      : this.translate.instant('phase.advance.dialog.description.' + e.phase);
     this.isSubmitting.set(true);
     this.confirmDialog.open({
       title: this.translate.instant('phase.advance.dialog.title', { nextPhase: nextLabel }),
-      description: this.translate.instant('phase.advance.dialog.description.' + e.phase),
+      description,
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
       if (!confirmed) {
         this.isSubmitting.set(false);

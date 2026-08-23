@@ -1,0 +1,16 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'admin.reports.export.title' | translate }}</h1>
+  </div>
+
+  <div class="card__actions">
+    <button type="button" mat-button color="primary" (click)="exportCatalog()" [disabled]="exportingCatalog()">
+      <mat-icon>download</mat-icon>
+      {{ 'admin.reports.export.catalog' | translate }}
+    </button>
+    <button type="button" mat-button color="primary" (click)="exportSettlements()" [disabled]="exportingSettlements()">
+      <mat-icon>download</mat-icon>
+      {{ 'admin.reports.export.settlements' | translate }}
+    </button>
+  </div>
+</div>

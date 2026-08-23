@@ -39,49 +39,51 @@
           @for (edition of editions(); track edition.id) {
             <tr>
               <td>{{ edition.name }}</td>
-              <td>{{ ('edition.phase.' + edition.phase) | translate }}</td>
+              <td>{{ (edition.archived ? 'edition.phase.ARCHIVED' : 'edition.phase.' + edition.phase) | translate }}</td>
               <td>{{ edition.commissionRate | number:'1.0-2' }}</td>
               <td>{{ ('admin.settings.language.' + edition.documentLanguage) | translate }}</td>
               <td>{{ edition.startDate }}</td>
               <td>{{ edition.endDate }}</td>
               <td>
-                <div class="actions-cell">
-                  <button
-                    type="button"
-                    mat-button
-                    [matTooltip]="'edition.actions.managePhase' | translate"
-                    [attr.aria-label]="'edition.actions.managePhase' | translate"
-                    (click)="openPhaseDialog(edition)">
-                    <mat-icon>timeline</mat-icon>
-                    {{ 'edition.actions.phases' | translate }}
-                  </button>
-                  <button
-                    type="button"
-                    mat-button
-                    [matTooltip]="'edition.actions.manageCategories' | translate"
-                    [attr.aria-label]="'edition.actions.manageCategories' | translate"
-                    (click)="openCategoriesDialog(edition)">
-                    <mat-icon>category</mat-icon>
-                    {{ 'edition.actions.categories' | translate }}
-                  </button>
-                  <button
-                    type="button"
-                    mat-button
-                    (click)="openEditDialog(edition)">
-                    <mat-icon>edit</mat-icon>
-                    {{ 'edition.actions.edit' | translate }}
-                  </button>
-                  @if (isEditable(edition)) {
+                @if (!edition.archived) {
+                  <div class="actions-cell">
                     <button
                       type="button"
                       mat-button
-                      color="warn"
-                      (click)="confirmDelete(edition)">
-                      <mat-icon>delete</mat-icon>
-                      {{ 'edition.actions.delete' | translate }}
+                      [matTooltip]="'edition.actions.managePhase' | translate"
+                      [attr.aria-label]="'edition.actions.managePhase' | translate"
+                      (click)="openPhaseDialog(edition)">
+                      <mat-icon>timeline</mat-icon>
+                      {{ 'edition.actions.phases' | translate }}
                     </button>
-                  }
-                </div>
+                    <button
+                      type="button"
+                      mat-button
+                      [matTooltip]="'edition.actions.manageCategories' | translate"
+                      [attr.aria-label]="'edition.actions.manageCategories' | translate"
+                      (click)="openCategoriesDialog(edition)">
+                      <mat-icon>category</mat-icon>
+                      {{ 'edition.actions.categories' | translate }}
+                    </button>
+                    @if (isEditable(edition)) {
+                      <button
+                        type="button"
+                        mat-button
+                        (click)="openEditDialog(edition)">
+                        <mat-icon>edit</mat-icon>
+                        {{ 'edition.actions.edit' | translate }}
+                      </button>
+                      <button
+                        type="button"
+                        mat-button
+                        color="warn"
+                        (click)="confirmDelete(edition)">
+                        <mat-icon>delete</mat-icon>
+                        {{ 'edition.actions.delete' | translate }}
+                      </button>
+                    }
+                  </div>
+                }
               </td>
             </tr>
           }

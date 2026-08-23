@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Cosmetic only (no functional effect on MariaDB): groups foreign-key/reference columns
+         right after `id` for readability in a raw schema browser (e.g. DBeaver). MariaDB-only —
+         physical column order carries no meaning for the application (JPA maps by name), so this
+         is skipped entirely on the H2 test database rather than risk MODIFY COLUMN portability. -->
+    <changeSet id="028-reorder-fk-columns" author="pluribourse" dbms="mariadb">
+        <sql>
+            ALTER TABLE items
+                MODIFY COLUMN lot_id BIGINT NULL AFTER category_id,
+                MODIFY COLUMN sale_id BIGINT NULL AFTER lot_id,
+                MODIFY COLUMN sold BOOLEAN NOT NULL DEFAULT FALSE AFTER incomplete,
+                MODIFY COLUMN item_number INT NOT NULL AFTER table_number;
+        </sql>
+        <sql>
+            ALTER TABLE printers
+                MODIFY COLUMN printer_bridge_id VARCHAR(32) NOT NULL AFTER id;
+        </sql>
+        <rollback/>
+    </changeSet>
+
+</databaseChangeLog>

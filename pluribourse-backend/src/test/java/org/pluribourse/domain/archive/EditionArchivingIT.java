@@ -15,6 +15,8 @@ import org.pluribourse.domain.item.dto.CreateLotDto;
 import org.pluribourse.domain.item.dto.CreateLotItemDto;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.payout.dto.SettleDto;
+import org.pluribourse.domain.payout.entity.Settlement;
+import org.pluribourse.domain.payout.entity.SettlementStatus;
 import org.pluribourse.domain.payout.repository.SettlementRepository;
 import org.pluribourse.domain.pos.dto.BasketDto;
 import org.pluribourse.domain.pos.dto.ValidateBasketDto;
@@ -50,9 +52,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * report snapshot frozen beforehand so it stays readable afterwards. Alice sells one item and
  * keeps one unsold; Bob deposits a 2-member lot with only one member ever sold, proving the
  * per-item {@code sold} flag (not the lot-aware "1 per lot" count used elsewhere) is what gets
- * archived. Alice is settled before closing, specifically to exercise the
- * settlements-before-sellers deletion order (FK has no cascade, see the story's Dev Notes § FK
- * ordering).
+ * archived. Alice is settled before closing, Bob is left UNSETTLED so that closing (the
+ * dedicated {@code /close} endpoint, FR-096) auto-marks him Non réclamé — together they exercise
+ * the settlements-before-sellers deletion order (FK has no cascade, see the story's Dev Notes §
+ * FK ordering) for both a manually settled and an auto-settled seller.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class EditionArchivingIT extends IntegrationTest {
@@ -175,8 +178,8 @@ class EditionArchivingIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("POST_SALE"));
 
-        // Alice: 10.00 - 10% commission = 9.00€ due, settled in full — exercises the
-        // settlements-before-sellers deletion order at archive time (Bob stays UNSETTLED, no row).
+        // Alice: 10.00 - 10% commission = 9.00€ due, settled in full. Bob stays UNSETTLED here —
+        // closing the edition below (Order 7) auto-marks him Non réclamé (FR-096).
         mockMvc.perform(post("/api/settlements/" + aliceId + "/settle")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -194,18 +197,35 @@ class EditionArchivingIT extends IntegrationTest {
                 .andExpect(jsonPath("$.type").value(endsWith("/edition-not-closed")));
     }
 
+    /**
+     * Closes via the dedicated {@code /close} endpoint, not the generic {@code /phase/advance}
+     * (which now refuses POST_SALE → CLOSED — see {@code ClosingRequiresDedicatedEndpointException},
+     * the FR-096 follow-up fix) — this is what actually settles Bob, still UNSETTLED at this point.
+     */
     @Test
     @Order(7)
-    void advance_to_closed() throws Exception {
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+    void closing_the_edition_marks_bob_unclaimed() throws Exception {
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));
+
+        Settlement bobSettlement = settlementRepository.findAllBySellerProfileEditionId(editionId).stream()
+                .filter(s -> !s.getSellerProfile().getId().equals(aliceId))
+                .findFirst().orElseThrow();
+        assertThat(bobSettlement.getStatus()).isEqualTo(SettlementStatus.UNCLAIMED);
     }
 
+    /**
+     * Follow-up fix (2026-08-23): archiving a zero-item edition used to return 422
+     * no-items-to-archive (Story 2.7 AC5 / UX-DR18) — a Clôturée edition with no deposited items
+     * (e.g. sellers registered but never deposited) had no way to purge its seller profiles or
+     * freeze its report snapshot. The 0-items signal moved earlier, as a non-blocking warning on
+     * the DEPOSIT → SALE transition (PhaseControlComponent) instead of a hard block at archive time.
+     */
     @Test
     @Order(8)
-    void archive_an_edition_with_no_items_returns_422() throws Exception {
+    void archiving_an_edition_with_no_items_succeeds_and_archives_nothing() throws Exception {
         MvcResult editionResult = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -222,17 +242,23 @@ class EditionArchivingIT extends IntegrationTest {
                         .content(objectMapper.writeValueAsString(List.of(new EditionCategoryDto(null, "Jouets", List.of(1))))))
                 .andExpect(status().isOk());
 
-        // PREPARATION -> DEPOSIT -> SALE -> POST_SALE -> CLOSED, no seller/item ever created.
-        for (int i = 0; i < 4; i++) {
+        // PREPARATION -> DEPOSIT -> SALE -> POST_SALE, no seller/item ever created.
+        for (int i = 0; i < 3; i++) {
             mockMvc.perform(post("/api/admin/editions/" + emptyEditionId + "/phase/advance")
                             .session(adminSession).with(csrf()))
                     .andExpect(status().isOk());
         }
+        // POST_SALE -> CLOSED goes through the dedicated /close endpoint (no sellers to settle here).
+        mockMvc.perform(post("/api/admin/editions/" + emptyEditionId + "/close")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/admin/editions/" + emptyEditionId + "/archive")
                         .session(adminSession).with(csrf()))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.type").value(endsWith("/no-items-to-archive")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.archived").value(true));
+
+        assertThat(archivedItemRepository.findAllByEditionId(emptyEditionId)).isEmpty();
     }
 
     @Test

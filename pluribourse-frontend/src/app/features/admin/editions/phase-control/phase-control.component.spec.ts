@@ -165,6 +165,18 @@ describe('PhaseControlComponent', () => {
     expect(dialogRefMock.close).not.toHaveBeenCalled();
   });
 
+  it('confirmAdvance shows the no-items warning when advancing from DEPOSIT with hasItems false', () => {
+    component['edition'].set({ ...MOCK_EDITION, phase: 'DEPOSIT', hasItems: false });
+    component.confirmAdvance();
+    expect(confirmMock.open).toHaveBeenCalledWith(expect.objectContaining({ description: 'phase.advance.dialog.warningNoItems' }));
+  });
+
+  it('confirmAdvance shows the normal description when advancing from DEPOSIT with hasItems true', () => {
+    component['edition'].set({ ...MOCK_EDITION, phase: 'DEPOSIT', hasItems: true });
+    component.confirmAdvance();
+    expect(confirmMock.open).toHaveBeenCalledWith(expect.objectContaining({ description: 'phase.advance.dialog.description.DEPOSIT' }));
+  });
+
   it('canAdvance returns false when phase is POST_SALE (dedicated close flow takes over)', () => {
     component['edition'].set({ ...MOCK_EDITION, phase: 'POST_SALE' });
     expect(component.canAdvance()).toBe(false);
@@ -224,12 +236,12 @@ describe('PhaseControlComponent', () => {
     expect(component.canClose()).toBe(false);
   });
 
-  it('canArchive returns true only when CLOSED, not archived, and hasItems', () => {
+  it('canArchive returns true whenever CLOSED and not archived, regardless of hasItems', () => {
     component['edition'].set({ ...MOCK_EDITION, phase: 'CLOSED', archived: false, hasItems: true });
     expect(component.canArchive()).toBe(true);
-    component['edition'].set({ ...MOCK_EDITION, phase: 'CLOSED', archived: true, hasItems: true });
-    expect(component.canArchive()).toBe(false);
     component['edition'].set({ ...MOCK_EDITION, phase: 'CLOSED', archived: false, hasItems: false });
+    expect(component.canArchive()).toBe(true);
+    component['edition'].set({ ...MOCK_EDITION, phase: 'CLOSED', archived: true, hasItems: true });
     expect(component.canArchive()).toBe(false);
     component['edition'].set({ ...MOCK_EDITION, phase: 'POST_SALE', archived: false, hasItems: true });
     expect(component.canArchive()).toBe(false);

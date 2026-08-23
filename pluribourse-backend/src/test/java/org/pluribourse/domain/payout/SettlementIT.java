@@ -259,7 +259,8 @@ class SettlementIT extends IntegrationTest {
     @Test
     @Order(9)
     void settle_rejects_a_seller_from_a_different_edition_with_a_generic_not_found() throws Exception {
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+        // POST_SALE → CLOSED only via the dedicated /close endpoint (FR-096 follow-up fix).
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));

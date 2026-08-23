@@ -103,9 +103,6 @@ export class EditionFormComponent implements OnInit {
         startDate: fromIsoDate(edition.startDate),
         endDate: fromIsoDate(edition.endDate)
       });
-      if (edition.phase !== 'PREPARATION') {
-        this.form.controls.commissionRate.disable();
-      }
     } catch {
       this.formError.set('edition.edit.error.load');
     } finally {
@@ -138,7 +135,7 @@ export class EditionFormComponent implements OnInit {
       const { name, commissionRate, documentLanguage, startDate, endDate } = this.form.getRawValue();
       const payload = {
         name,
-        commissionRate: this.form.controls.commissionRate.disabled ? null : commissionRate,
+        commissionRate,
         documentLanguage,
         startDate: toIsoDate(startDate!),
         endDate: toIsoDate(endDate!)
@@ -154,8 +151,8 @@ export class EditionFormComponent implements OnInit {
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422) {
         const errorType: string = (err.error as { type?: string })?.type ?? '';
-        if (errorType.endsWith('/commission-rate-frozen')) {
-          this.formError.set('edition.edit.error.commissionRateFrozen');
+        if (errorType.endsWith('/edition-cannot-be-updated')) {
+          this.formError.set('edition.edit.error.cannotUpdate');
         } else if (errorType.endsWith('/edition-already-active')) {
           this.formError.set('edition.create.error.alreadyActive');
         } else {

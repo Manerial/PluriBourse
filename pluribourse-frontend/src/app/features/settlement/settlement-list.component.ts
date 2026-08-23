@@ -209,7 +209,7 @@ export class SettlementListComponent implements OnInit {
       const result = await firstValueFrom(this.settlementService.printAllReports(this.statusFilter()));
       if (result.failedCount > 0) {
         this.toast.showError(this.translate.instant('settlement.error.printAllPartial', { count: result.failedCount }), {
-          path: '/admin/print-queue',
+          path: '/admin/printers/queue',
           label: this.translate.instant('settlement.error.printAllPartialLink'),
         });
       } else {

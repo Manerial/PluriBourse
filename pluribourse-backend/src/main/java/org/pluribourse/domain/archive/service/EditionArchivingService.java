@@ -2,10 +2,11 @@ package org.pluribourse.domain.archive.service;
 
 import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.archive.entity.ArchivedItem;
+import org.pluribourse.domain.archive.entity.EditionArchiveSnapshot;
 import org.pluribourse.domain.archive.exception.EditionAlreadyArchivedException;
 import org.pluribourse.domain.archive.exception.EditionNotClosedException;
-import org.pluribourse.domain.archive.exception.NoItemsToArchiveException;
 import org.pluribourse.domain.archive.repository.ArchivedItemRepository;
+import org.pluribourse.domain.archive.repository.EditionArchiveSnapshotRepository;
 import org.pluribourse.domain.edition.dto.EditionDto;
 import org.pluribourse.domain.edition.entity.Edition;
 import org.pluribourse.domain.edition.entity.PhaseType;
@@ -38,6 +39,7 @@ public class EditionArchivingService {
     private final EditionRepository editionRepository;
     private final ItemRepository itemRepository;
     private final ArchivedItemRepository archivedItemRepository;
+    private final EditionArchiveSnapshotRepository editionArchiveSnapshotRepository;
     private final SettlementRepository settlementRepository;
     private final SellerRepository sellerRepository;
     private final ReportService reportService;
@@ -52,10 +54,12 @@ public class EditionArchivingService {
             throw new EditionAlreadyArchivedException();
         }
 
+        // Follow-up fix (2026-08-23): archiving is no longer gated on having any items — a Clôturée
+        // edition with zero deposited items (e.g. sellers registered but never deposited) still needs
+        // a way to purge its seller profiles and freeze its (zero-valued) report snapshot. The 0-items
+        // signal now surfaces earlier and non-blocking, as a warning on the DEPOSIT → SALE transition
+        // (PhaseControlComponent), where an admin can still act on it.
         List<Item> items = itemRepository.findAllByEditionIdForSettlementReport(id);
-        if (items.isEmpty()) {
-            throw new NoItemsToArchiveException();
-        }
 
         // Snapshot before deleting anything (AC 7) — nothing's deleted yet, so this still resolves live.
         EditionSummaryReportDto snapshot = reportService.getEditionReport(edition);
@@ -93,14 +97,17 @@ public class EditionArchivingService {
     }
 
     private void applySnapshot(Edition edition, EditionSummaryReportDto snapshot) {
-        edition.setArchivedSoldItemCount(snapshot.soldItemCount());
-        edition.setArchivedUnsoldItemCount(snapshot.unsoldItemCount());
-        edition.setArchivedGrossRevenue(snapshot.grossRevenue());
-        edition.setArchivedCommission(snapshot.commission());
-        edition.setArchivedCashTotal(snapshot.cashTotal());
-        edition.setArchivedCheckTotal(snapshot.checkTotal());
-        edition.setArchivedCardTotal(snapshot.cardTotal());
-        edition.setArchivedNetPayoutTotal(snapshot.netPayoutTotal());
-        edition.setArchivedAssociationRevenueTotal(snapshot.associationRevenueTotal());
+        EditionArchiveSnapshot entity = new EditionArchiveSnapshot();
+        entity.setEditionId(edition.getId());
+        entity.setSoldItemCount(snapshot.soldItemCount());
+        entity.setUnsoldItemCount(snapshot.unsoldItemCount());
+        entity.setGrossRevenue(snapshot.grossRevenue());
+        entity.setCommission(snapshot.commission());
+        entity.setCashTotal(snapshot.cashTotal());
+        entity.setCheckTotal(snapshot.checkTotal());
+        entity.setCardTotal(snapshot.cardTotal());
+        entity.setNetPayoutTotal(snapshot.netPayoutTotal());
+        entity.setAssociationRevenueTotal(snapshot.associationRevenueTotal());
+        editionArchiveSnapshotRepository.save(entity);
     }
 }

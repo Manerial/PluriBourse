@@ -92,8 +92,8 @@ public class EditionService {
     @Transactional
     public EditionDto updateEdition(Long id, EditionDto dto) {
         Edition edition = findById(id);
-        if (edition.getPhase() != PhaseType.PREPARATION && dto.commissionRate() != null) {
-            throw new CommissionRateFrozenException();
+        if (edition.getPhase() != PhaseType.PREPARATION) {
+            throw new EditionCannotBeUpdatedException();
         }
         mapper.updateEditionFromDto(dto, edition);
         return mapper.toDto(repository.save(edition));
@@ -131,15 +131,31 @@ public class EditionService {
     }
 
     /**
+     * Performs the POST_SALE → CLOSED transition directly, bypassing {@link #computeNextPhase}'s
+     * refusal of that exact step. Package-private: the only caller is
+     * {@link EditionClosingService#closeEdition}, which has already settled every remaining
+     * UNSETTLED seller (FR-096) and checked the phase before calling this — {@link #advancePhase}
+     * remains the only phase transition reachable from the generic /phase/advance endpoint.
+     */
+    @Transactional
+    EditionDto closePostSaleToClosed(Long id) {
+        Edition edition = findById(id);
+        return savePhaseThenSendEvent(id, edition, PhaseType.CLOSED, edition.getPhase());
+    }
+
+    /**
      * Advances the phase state machine by one step.
-     * CLOSED has no successor: closing is terminal and can only be undone via rollback.
+     * POST_SALE has no successor here: closing an edition atomically settles every remaining
+     * UNSETTLED seller as Non réclamé (FR-096), which only {@link EditionClosingService#closeEdition}
+     * does — the generic advance endpoint must never reach CLOSED directly, or that step is skipped.
+     * CLOSED itself has no successor either: closing is terminal and can only be undone via rollback.
      */
     private PhaseType computeNextPhase(PhaseType current) {
         return switch (current) {
             case PREPARATION -> PhaseType.DEPOSIT;
             case DEPOSIT -> PhaseType.SALE;
             case SALE -> PhaseType.POST_SALE;
-            case POST_SALE -> PhaseType.CLOSED;
+            case POST_SALE -> throw new ClosingRequiresDedicatedEndpointException();
             case CLOSED -> throw new PhaseAlreadyClosedException();
         };
     }

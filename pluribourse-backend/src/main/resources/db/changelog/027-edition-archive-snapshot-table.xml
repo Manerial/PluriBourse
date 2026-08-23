@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- FR-059 follow-up fix: the frozen edition-report snapshot (026-edition-archive-snapshot.xml)
+         moves off 9 always-null-until-archived columns on `editions` into its own 1:1 table —
+         edition_id is both primary key and foreign key, no separate identity column. -->
+    <changeSet id="027-edition-archive-snapshot-table" author="pluribourse">
+        <createTable tableName="edition_archive_snapshots">
+            <column name="edition_id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" foreignKeyName="fk_edition_archive_snapshots_edition"
+                             references="editions(id)"/>
+            </column>
+            <column name="sold_item_count" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unsold_item_count" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gross_revenue" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="commission" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cash_total" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="check_total" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="card_total" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="net_payout_total" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="association_revenue_total" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            INSERT INTO edition_archive_snapshots (edition_id, sold_item_count, unsold_item_count, gross_revenue,
+                commission, cash_total, check_total, card_total, net_payout_total, association_revenue_total)
+            SELECT id, archived_sold_item_count, archived_unsold_item_count, archived_gross_revenue,
+                archived_commission, archived_cash_total, archived_check_total, archived_card_total,
+                archived_net_payout_total, archived_association_revenue_total
+            FROM editions
+            WHERE is_archived = true;
+        </sql>
+
+        <dropColumn tableName="editions" columnName="archived_sold_item_count"/>
+        <dropColumn tableName="editions" columnName="archived_unsold_item_count"/>
+        <dropColumn tableName="editions" columnName="archived_gross_revenue"/>
+        <dropColumn tableName="editions" columnName="archived_commission"/>
+        <dropColumn tableName="editions" columnName="archived_cash_total"/>
+        <dropColumn tableName="editions" columnName="archived_check_total"/>
+        <dropColumn tableName="editions" columnName="archived_card_total"/>
+        <dropColumn tableName="editions" columnName="archived_net_payout_total"/>
+        <dropColumn tableName="editions" columnName="archived_association_revenue_total"/>
+
+        <!-- Explicit rollback required: Liquibase cannot auto-generate one for a changeSet mixing
+             createTable/sql/dropColumn — without this block, rolling back fails outright. -->
+        <rollback>
+            <addColumn tableName="editions">
+                <column name="archived_sold_item_count" type="BIGINT"/>
+                <column name="archived_unsold_item_count" type="BIGINT"/>
+                <column name="archived_gross_revenue" type="DECIMAL(10,2)"/>
+                <column name="archived_commission" type="DECIMAL(10,2)"/>
+                <column name="archived_cash_total" type="DECIMAL(10,2)"/>
+                <column name="archived_check_total" type="DECIMAL(10,2)"/>
+                <column name="archived_card_total" type="DECIMAL(10,2)"/>
+                <column name="archived_net_payout_total" type="DECIMAL(10,2)"/>
+                <column name="archived_association_revenue_total" type="DECIMAL(10,2)"/>
+            </addColumn>
+            <sql>
+                UPDATE editions e
+                SET e.archived_sold_item_count = (SELECT s.sold_item_count FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_unsold_item_count = (SELECT s.unsold_item_count FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_gross_revenue = (SELECT s.gross_revenue FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_commission = (SELECT s.commission FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_cash_total = (SELECT s.cash_total FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_check_total = (SELECT s.check_total FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_card_total = (SELECT s.card_total FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_net_payout_total = (SELECT s.net_payout_total FROM edition_archive_snapshots s WHERE s.edition_id = e.id),
+                    e.archived_association_revenue_total = (SELECT s.association_revenue_total FROM edition_archive_snapshots s WHERE s.edition_id = e.id)
+                WHERE e.is_archived = true;
+            </sql>
+            <dropTable tableName="edition_archive_snapshots"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

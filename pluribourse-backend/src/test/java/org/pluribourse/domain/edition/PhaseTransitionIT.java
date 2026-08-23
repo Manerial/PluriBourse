@@ -177,8 +177,14 @@ class PhaseTransitionIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("POST_SALE"));
 
-        // POST_SALE → CLOSED
+        // POST_SALE → CLOSED is refused by the generic endpoint on purpose (FR-096 follow-up fix)
+        // — only the dedicated /close endpoint may perform this exact transition.
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/closing-requires-dedicated-endpoint")));
+
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));
@@ -204,8 +210,8 @@ class PhaseTransitionIT extends IntegrationTest {
     @Test
     @Order(11)
     void rollback_from_closed_blocked_when_archived() throws Exception {
-        // Advance back to CLOSED
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+        // Close again (dedicated endpoint — see Order 8)
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));

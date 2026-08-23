@@ -163,7 +163,7 @@
       "error": {
         "load": "Impossible de charger l'édition.",
         "save": "Impossible de modifier l'édition.",
-        "commissionRateFrozen": "Le taux de commission ne peut plus être modifié une fois la phase de dépôt commencée."
+        "cannotUpdate": "Cette édition ne peut plus être modifiée après la phase de préparation."
       },
       "success": "Édition modifiée."
     },
@@ -172,7 +172,8 @@
       "DEPOSIT": "Dépôt",
       "SALE": "Vente",
       "POST_SALE": "Post-vente",
-      "CLOSED": "Clôturée"
+      "CLOSED": "Clôturée",
+      "ARCHIVED": "Archivée"
     },
     "actions": {
       "managePhase": "Gérer les phases",
@@ -214,7 +215,8 @@
           "PREPARATION": "Le taux de commission sera gelé pour cette édition. Les catégories et la correspondance des tables passeront en lecture seule.",
           "DEPOSIT": "La phase de dépôt se termine. Aucun nouveau vendeur ni article ne peut être enregistré.",
           "SALE": "La phase de vente se termine. Aucune nouvelle vente ne peut être traitée."
-        }
+        },
+        "warningNoItems": "Aucun article n'a été déposé pour cette édition. Voulez-vous vraiment passer en phase de vente ?"
       }
     },
     "close": {
@@ -560,7 +562,6 @@
       "empty": "Aucun vendeur enregistré pour le moment.",
       "error": {
         "load": "Impossible de charger les vendeurs.",
-        "noActiveEdition": "Aucune édition n'est actuellement active. Les vendeurs ne peuvent être consultés qu'une fois une édition active.",
         "delete": "Impossible de supprimer le vendeur."
       }
     },
@@ -621,6 +622,15 @@
       }
     },
     "reports": {
+      "tabs": {
+        "edition": "Bilan d'édition",
+        "exports": "Exports"
+      },
+      "editionSelector": {
+        "label": "Édition",
+        "placeholder": "Aucune édition disponible",
+        "loading": "Chargement des éditions…"
+      },
       "daily": {
         "title": "Bilan journalier",
         "refresh": "Actualiser",
@@ -674,6 +684,10 @@
     },
     "printers": {
       "title": "Registre des imprimantes",
+      "tabs": {
+        "registry": "Registre",
+        "queue": "File d'impression"
+      },
       "columns": {
         "name": "Nom",
         "type": "Type",

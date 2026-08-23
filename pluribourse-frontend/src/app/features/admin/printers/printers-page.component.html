@@ -1,0 +1,22 @@
+<nav mat-tab-nav-bar [tabPanel]="tabPanel">
+  <a
+    mat-tab-link
+    routerLink="registry"
+    routerLinkActive
+    #registryLink="routerLinkActive"
+    [active]="registryLink.isActive">
+    {{ 'admin.printers.tabs.registry' | translate }}
+  </a>
+  <a
+    mat-tab-link
+    routerLink="queue"
+    routerLinkActive
+    #queueLink="routerLinkActive"
+    [active]="queueLink.isActive">
+    {{ 'admin.printers.tabs.queue' | translate }}
+  </a>
+</nav>
+
+<mat-tab-nav-panel #tabPanel>
+  <router-outlet />
+</mat-tab-nav-panel>

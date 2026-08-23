@@ -54,36 +54,4 @@ public class Edition {
      */
     @Column(name = "next_seller_number", nullable = false)
     private Integer nextSellerNumber = 1;
-
-    /**
-     * Frozen edition-report snapshot (FR-059), populated only at archive time —
-     * {@code Item}/{@code Settlement} rows are deleted during archiving, so these columns are the
-     * only source left for {@code ReportService.getEditionReport} once {@link #archived} is true.
-     */
-    @Column(name = "archived_sold_item_count")
-    private Long archivedSoldItemCount;
-
-    @Column(name = "archived_unsold_item_count")
-    private Long archivedUnsoldItemCount;
-
-    @Column(name = "archived_gross_revenue", precision = 10, scale = 2)
-    private BigDecimal archivedGrossRevenue;
-
-    @Column(name = "archived_commission", precision = 10, scale = 2)
-    private BigDecimal archivedCommission;
-
-    @Column(name = "archived_cash_total", precision = 10, scale = 2)
-    private BigDecimal archivedCashTotal;
-
-    @Column(name = "archived_check_total", precision = 10, scale = 2)
-    private BigDecimal archivedCheckTotal;
-
-    @Column(name = "archived_card_total", precision = 10, scale = 2)
-    private BigDecimal archivedCardTotal;
-
-    @Column(name = "archived_net_payout_total", precision = 10, scale = 2)
-    private BigDecimal archivedNetPayoutTotal;
-
-    @Column(name = "archived_association_revenue_total", precision = 10, scale = 2)
-    private BigDecimal archivedAssociationRevenueTotal;
 }

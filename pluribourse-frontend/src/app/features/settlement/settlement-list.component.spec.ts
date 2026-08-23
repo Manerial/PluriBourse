@@ -352,7 +352,7 @@ describe('SettlementListComponent', () => {
     await component.printAllReports();
 
     expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printAllPartial', {
-      path: '/admin/print-queue',
+      path: '/admin/printers/queue',
       label: 'settlement.error.printAllPartialLink',
     });
     expect(toastMock.showSuccess).not.toHaveBeenCalled();

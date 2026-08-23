@@ -1,6 +1,8 @@
 package org.pluribourse.domain.report.service;
 
 import lombok.RequiredArgsConstructor;
+import org.pluribourse.domain.archive.entity.EditionArchiveSnapshot;
+import org.pluribourse.domain.archive.repository.EditionArchiveSnapshotRepository;
 import org.pluribourse.domain.edition.entity.Edition;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.repository.ItemRepository;
@@ -34,6 +36,7 @@ public class ReportService {
     private final SaleRepository saleRepository;
     private final ItemRepository itemRepository;
     private final SettlementService settlementService;
+    private final EditionArchiveSnapshotRepository editionArchiveSnapshotRepository;
 
     @Transactional(readOnly = true)
     public DailySalesReportDto getDailyReport(Edition edition) {
@@ -113,12 +116,15 @@ public class ReportService {
     /**
      * Story 2.7, AC 7 — once archived, the underlying {@code Item}/{@code Settlement} rows no
      * longer exist to recompute the report from, so it is served straight from the snapshot frozen
-     * onto {@code Edition} at archive time ({@code EditionArchivingService}), no queries needed.
+     * at archive time ({@code EditionArchivingService}) — {@code edition.isArchived()} being true
+     * guarantees this row exists, it is written in the same transaction that flips that flag.
      */
     private EditionSummaryReportDto buildFromArchivedSnapshot(Edition edition) {
-        return new EditionSummaryReportDto(edition.getArchivedSoldItemCount(), edition.getArchivedUnsoldItemCount(),
-                edition.getArchivedGrossRevenue(), edition.getArchivedCommission(),
-                edition.getArchivedCashTotal(), edition.getArchivedCheckTotal(), edition.getArchivedCardTotal(),
-                edition.getArchivedNetPayoutTotal(), edition.getArchivedAssociationRevenueTotal());
+        EditionArchiveSnapshot snapshot = editionArchiveSnapshotRepository.findById(edition.getId())
+                .orElseThrow(() -> new IllegalStateException("Edition " + edition.getId() + " is archived but has no archive snapshot"));
+        return new EditionSummaryReportDto(snapshot.getSoldItemCount(), snapshot.getUnsoldItemCount(),
+                snapshot.getGrossRevenue(), snapshot.getCommission(),
+                snapshot.getCashTotal(), snapshot.getCheckTotal(), snapshot.getCardTotal(),
+                snapshot.getNetPayoutTotal(), snapshot.getAssociationRevenueTotal());
     }
 }

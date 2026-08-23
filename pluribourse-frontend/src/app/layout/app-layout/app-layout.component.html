@@ -63,7 +63,8 @@
     <nav class="sidebar" [class.sidebar--collapsed]="sidebarCollapsed()" [attr.aria-label]="'nav.sidebar.label' | translate">
 
       <div class="sidebar__section">
-        <span class="sidebar__section-label">{{ 'nav.sections.activeEdition' | translate }}</span>
+        <span class="sidebar__section-label">{{ 'nav.sections.management' | translate }}</span>
+
         <a
           routerLink="/admin/editions"
           routerLinkActive="sidebar__item--active"
@@ -74,70 +75,6 @@
           matTooltipPosition="right">
           <span class="material-symbols-outlined" aria-hidden="true">event</span>
           <span class="sidebar__item-label">{{ 'nav.admin.editions' | translate }}</span>
-        </a>
-
-        <a
-          routerLink="/admin/sellers"
-          routerLinkActive="sidebar__item--active"
-          ariaCurrentWhenActive="page"
-          class="sidebar__item"
-          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.sellers' | translate) : null"
-          [matTooltip]="sidebarCollapsed() ? ('nav.admin.sellers' | translate) : ''"
-          matTooltipPosition="right">
-          <span class="material-symbols-outlined" aria-hidden="true">group</span>
-          <span class="sidebar__item-label">{{ 'nav.admin.sellers' | translate }}</span>
-        </a>
-      </div>
-
-      <div class="sidebar__section">
-        <span class="sidebar__section-label">{{ 'nav.sections.management' | translate }}</span>
-
-        <a
-          routerLink="/admin/reports"
-          routerLinkActive="sidebar__item--active"
-          ariaCurrentWhenActive="page"
-          class="sidebar__item"
-          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.reports' | translate) : null"
-          [matTooltip]="sidebarCollapsed() ? ('nav.admin.reports' | translate) : ''"
-          matTooltipPosition="right">
-          <span class="material-symbols-outlined" aria-hidden="true">assessment</span>
-          <span class="sidebar__item-label">{{ 'nav.admin.reports' | translate }}</span>
-        </a>
-
-        <a
-          routerLink="/admin/archived-catalog"
-          routerLinkActive="sidebar__item--active"
-          ariaCurrentWhenActive="page"
-          class="sidebar__item"
-          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.archivedCatalog' | translate) : null"
-          [matTooltip]="sidebarCollapsed() ? ('nav.admin.archivedCatalog' | translate) : ''"
-          matTooltipPosition="right">
-          <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
-          <span class="sidebar__item-label">{{ 'nav.admin.archivedCatalog' | translate }}</span>
-        </a>
-
-        <a
-          routerLink="/admin/printers"
-          routerLinkActive="sidebar__item--active"
-          ariaCurrentWhenActive="page"
-          class="sidebar__item"
-          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.printers' | translate) : null"
-          [matTooltip]="sidebarCollapsed() ? ('nav.admin.printers' | translate) : ''"
-          matTooltipPosition="right">
-          <span class="material-symbols-outlined" aria-hidden="true">print_connect</span>
-          <span class="sidebar__item-label">{{ 'nav.admin.printers' | translate }}</span>
-        </a>
-
-        <a
-          routerLink="/admin/users"
-          routerLinkActive="sidebar__item--active"
-          ariaCurrentWhenActive="page"
-          class="sidebar__item"
-          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.users' | translate) : null"
-          [matTooltip]="sidebarCollapsed() ? ('nav.admin.users' | translate) : ''"
-          matTooltipPosition="right">
-          <span class="material-symbols-outlined" aria-hidden="true">group</span>
-          <span class="sidebar__item-label">{{ 'nav.admin.users' | translate }}</span>
         </a>
 
         <a
@@ -153,30 +90,84 @@
         </a>
 
         <a
-          routerLink="/admin/print-queue"
+          routerLink="/admin/users"
           routerLinkActive="sidebar__item--active"
           ariaCurrentWhenActive="page"
           class="sidebar__item"
-          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.printQueue' | translate) : null"
-          [matTooltip]="sidebarCollapsed() ? ('nav.admin.printQueue' | translate) : ''"
+          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.users' | translate) : null"
+          [matTooltip]="sidebarCollapsed() ? ('nav.admin.users' | translate) : ''"
           matTooltipPosition="right">
-          <span class="material-symbols-outlined" aria-hidden="true">print</span>
-          <span class="sidebar__item-label">{{ 'nav.admin.printQueue' | translate }}</span>
+          <span class="material-symbols-outlined" aria-hidden="true">group</span>
+          <span class="sidebar__item-label">{{ 'nav.admin.users' | translate }}</span>
         </a>
 
         <a
-          routerLink="/admin/settlement"
+          routerLink="/admin/printers"
           routerLinkActive="sidebar__item--active"
           ariaCurrentWhenActive="page"
           class="sidebar__item"
-          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.settlement' | translate) : null"
-          [matTooltip]="sidebarCollapsed() ? ('nav.admin.settlement' | translate) : ''"
+          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.printers' | translate) : null"
+          [matTooltip]="sidebarCollapsed() ? ('nav.admin.printers' | translate) : ''"
           matTooltipPosition="right">
-          <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-          <span class="sidebar__item-label">{{ 'nav.admin.settlement' | translate }}</span>
+          <span class="material-symbols-outlined" aria-hidden="true">print_connect</span>
+          <span class="sidebar__item-label">{{ 'nav.admin.printers' | translate }}</span>
+        </a>
+
+        <a
+          routerLink="/admin/archived-catalog"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item"
+          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.archivedCatalog' | translate) : null"
+          [matTooltip]="sidebarCollapsed() ? ('nav.admin.archivedCatalog' | translate) : ''"
+          matTooltipPosition="right">
+          <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+          <span class="sidebar__item-label">{{ 'nav.admin.archivedCatalog' | translate }}</span>
+        </a>
+
+        <a
+          routerLink="/admin/reports"
+          routerLinkActive="sidebar__item--active"
+          ariaCurrentWhenActive="page"
+          class="sidebar__item"
+          [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.reports' | translate) : null"
+          [matTooltip]="sidebarCollapsed() ? ('nav.admin.reports' | translate) : ''"
+          matTooltipPosition="right">
+          <span class="material-symbols-outlined" aria-hidden="true">assessment</span>
+          <span class="sidebar__item-label">{{ 'nav.admin.reports' | translate }}</span>
         </a>
 
       </div>
+
+      @if (currentEdition()) {
+        <div class="sidebar__section">
+          <span class="sidebar__section-label">{{ 'nav.sections.activeEdition' | translate }}</span>
+
+          <a
+            routerLink="/admin/sellers"
+            routerLinkActive="sidebar__item--active"
+            ariaCurrentWhenActive="page"
+            class="sidebar__item"
+            [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.sellers' | translate) : null"
+            [matTooltip]="sidebarCollapsed() ? ('nav.admin.sellers' | translate) : ''"
+            matTooltipPosition="right">
+            <span class="material-symbols-outlined" aria-hidden="true">group</span>
+            <span class="sidebar__item-label">{{ 'nav.admin.sellers' | translate }}</span>
+          </a>
+
+          <a
+            routerLink="/admin/settlement"
+            routerLinkActive="sidebar__item--active"
+            ariaCurrentWhenActive="page"
+            class="sidebar__item"
+            [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.settlement' | translate) : null"
+            [matTooltip]="sidebarCollapsed() ? ('nav.admin.settlement' | translate) : ''"
+            matTooltipPosition="right">
+            <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+            <span class="sidebar__item-label">{{ 'nav.admin.settlement' | translate }}</span>
+          </a>
+        </div>
+      }
 
       <div class="sidebar__toggle-wrap">
         <button

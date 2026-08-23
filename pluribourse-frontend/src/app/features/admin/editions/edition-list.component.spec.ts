@@ -18,6 +18,10 @@ const MOCK_EDITIONS: EditionDto[] = [
   { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false, startDate: '2026-06-01', endDate: '2026-06-03' }
 ];
 
+const ARCHIVED_EDITION: EditionDto = {
+  id: 2, name: 'Bourse 2025', phase: 'CLOSED', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2025-01-01', archived: true, startDate: '2025-06-01', endDate: '2025-06-03',
+};
+
 describe('EditionListComponent', () => {
   let fixture: ComponentFixture<EditionListComponent>;
   let component: EditionListComponent;
@@ -160,5 +164,45 @@ describe('EditionListComponent', () => {
     component.confirmDelete(MOCK_EDITIONS[0]);
     await fixture.whenStable();
     expect(currentEditionServiceMock.loadEdition).not.toHaveBeenCalled();
+  });
+
+  it('displays the Archived phase label instead of the raw phase for an archived edition, and hides all row actions', async () => {
+    editionServiceMock.getAll.mockReturnValue(of([ARCHIVED_EDITION]));
+    await component.ngOnInit();
+    fixture.detectChanges();
+
+    const cells: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('tbody td'));
+    expect(cells[1].textContent?.trim()).toBe('edition.phase.ARCHIVED');
+    expect(fixture.nativeElement.querySelector('.actions-cell')).toBeNull();
+  });
+
+  it('still shows the row actions for a closed-but-not-archived edition', async () => {
+    editionServiceMock.getAll.mockReturnValue(of([{ ...ARCHIVED_EDITION, archived: false }]));
+    await component.ngOnInit();
+    fixture.detectChanges();
+
+    const cells: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('tbody td'));
+    expect(cells[1].textContent?.trim()).toBe('edition.phase.CLOSED');
+    expect(fixture.nativeElement.querySelector('.actions-cell')).not.toBeNull();
+  });
+
+  it('shows the edit button only in the Preparation phase', async () => {
+    editionServiceMock.getAll.mockReturnValue(of([{ ...MOCK_EDITIONS[0], phase: 'DEPOSIT' }]));
+    await component.ngOnInit();
+    fixture.detectChanges();
+
+    const buttons: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.actions-cell button'));
+    const labels = buttons.map(el => el.textContent?.trim());
+    expect(labels.some(l => l?.includes('edition.actions.edit'))).toBe(false);
+  });
+
+  it('shows the edit button in the Preparation phase', async () => {
+    editionServiceMock.getAll.mockReturnValue(of([MOCK_EDITIONS[0]]));
+    await component.ngOnInit();
+    fixture.detectChanges();
+
+    const buttons: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.actions-cell button'));
+    const labels = buttons.map(el => el.textContent?.trim());
+    expect(labels.some(l => l?.includes('edition.actions.edit'))).toBe(true);
   });
 });

@@ -35,6 +35,10 @@ public class Item {
     @JoinColumn(name = "lot_id")
     private Lot lot;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sale_id")
+    private Sale sale;
+
     @Column(nullable = false, length = 200)
     private String name;
 
@@ -47,10 +51,6 @@ public class Item {
     @Column(nullable = false)
     private boolean sold;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sale_id")
-    private Sale sale;
-
     @Column(length = 500)
     private String comment;
 
@@ -60,6 +60,7 @@ public class Item {
     @Column(name = "item_number", nullable = false)
     private Integer itemNumber;
 
+    // Optimistic locking (story 4.4): detects concurrent sale of the same item from two POS terminals.
     @Version
     private Long version;
 

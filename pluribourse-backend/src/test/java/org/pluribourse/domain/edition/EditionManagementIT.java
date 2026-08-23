@@ -152,7 +152,7 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test
     @Order(8)
-    void admin_update_commission_rate_frozen_in_deposit_phase_returns_422() throws Exception {
+    void admin_update_in_deposit_phase_returns_422() throws Exception {
         Edition edition = repository.findById(createdEditionId).orElseThrow();
         edition.setPhase(PhaseType.DEPOSIT);
         repository.save(edition);
@@ -163,22 +163,25 @@ class EditionManagementIT extends IntegrationTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isUnprocessableContent());
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/edition-cannot-be-updated")));
     }
 
     @Test
     @Order(9)
-    void admin_update_name_and_language_in_deposit_phase_succeeds() throws Exception {
-        // Edition is still in DEPOSIT from Order 8 — send null commissionRate to skip the frozen-rate check
+    void admin_update_name_only_in_deposit_phase_still_returns_422() throws Exception {
+        // Edition is still in DEPOSIT from Order 8 — omitting commissionRate must not bypass the
+        // lock: editing is blocked entirely outside Preparation, not just the commission rate.
         EditionDto dto = new EditionDto(null, "Bourse 2026 Finale", null, null, Language.EN, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Bourse 2026 Finale"))
-                .andExpect(jsonPath("$.documentLanguage").value("EN"));
+                .andExpect(status().isUnprocessableContent());
+
+        Edition edition = repository.findById(createdEditionId).orElseThrow();
+        assertThat(edition.getName()).isEqualTo("Bourse 2026 Modifiée");
     }
 
     @Test
@@ -341,7 +344,7 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test
     @Order(20)
-    void admin_update_commission_rate_frozen_in_sale_phase_returns_422() throws Exception {
+    void admin_update_in_sale_phase_returns_422() throws Exception {
         Edition edition = repository.findById(createdEditionId).orElseThrow();
         edition.setPhase(PhaseType.SALE);
         repository.save(edition);
@@ -364,7 +367,7 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test
     @Order(22)
-    void admin_update_commission_rate_frozen_in_post_sale_phase_returns_422() throws Exception {
+    void admin_update_in_post_sale_phase_returns_422() throws Exception {
         Edition edition = repository.findById(createdEditionId).orElseThrow();
         edition.setPhase(PhaseType.POST_SALE);
         repository.save(edition);
@@ -387,7 +390,7 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test
     @Order(24)
-    void admin_update_commission_rate_frozen_in_closed_phase_returns_422() throws Exception {
+    void admin_update_in_closed_phase_returns_422() throws Exception {
         Edition edition = repository.findById(createdEditionId).orElseThrow();
         edition.setPhase(PhaseType.CLOSED);
         repository.save(edition);

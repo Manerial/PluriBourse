@@ -65,103 +65,53 @@
   </div>
 }
 
-@if (isEditionReportPhase()) {
-  <div class="card card--list">
-    <div class="card__header">
-      <h1 class="card__title">{{ 'admin.reports.edition.title' | translate }}</h1>
-      <div class="card__actions">
-        <button
-          type="button"
-          mat-button
-          color="primary"
-          (click)="printEditionReport()"
-          [disabled]="printingEditionReport() || isLoadingEditionReport()"
-        >
-          <mat-icon>print</mat-icon>
-          {{ 'admin.reports.edition.print' | translate }}
-        </button>
-      </div>
-    </div>
-
-    @if (isLoadingEditionReport()) {
-      <app-skeleton-row [rows]="3" />
-    } @else if (editionReportError()) {
-      <app-notification-inline [message]="editionReportError()! | translate" variant="error" />
-    } @else if (editionReport(); as editionSummary) {
-      <div class="stat-grid">
-        <div class="stat-tile">
-          <span class="stat-tile__value">{{ editionSummary.soldItemCount }}</span>
-          <span class="stat-tile__label">{{ 'admin.reports.edition.soldCount' | translate }}</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-tile__value">{{ editionSummary.unsoldItemCount }}</span>
-          <span class="stat-tile__label">{{ 'admin.reports.edition.unsoldCount' | translate }}</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.grossRevenue.toFixed(2) } }}</span>
-          <span class="stat-tile__label">{{ 'admin.reports.edition.grossRevenue' | translate }}</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.commission.toFixed(2) } }}</span>
-          <span class="stat-tile__label">{{ 'admin.reports.edition.commission' | translate }}</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.netPayoutTotal.toFixed(2) } }}</span>
-          <span class="stat-tile__label">{{ 'admin.reports.edition.netPayoutTotal' | translate }}</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.associationRevenueTotal.toFixed(2) } }}</span>
-          <span class="stat-tile__label">{{ 'admin.reports.edition.associationRevenueTotal' | translate }}</span>
-        </div>
-      </div>
-
-      <h2 class="section-title">{{ 'admin.reports.edition.paymentBreakdown' | translate }}</h2>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ 'admin.reports.edition.method' | translate }}</th>
-            <th>{{ 'admin.reports.edition.amount' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{{ 'admin.reports.edition.cash' | translate }}</td>
-            <td>{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.cashTotal.toFixed(2) } }}</td>
-          </tr>
-          <tr>
-            <td>{{ 'admin.reports.edition.check' | translate }}</td>
-            <td>{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.checkTotal.toFixed(2) } }}</td>
-          </tr>
-          <tr>
-            <td>{{ 'admin.reports.edition.card' | translate }}</td>
-            <td>{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.cardTotal.toFixed(2) } }}</td>
-          </tr>
-        </tbody>
-      </table>
-    }
+@if (reportableEditions().length > 0 || isLoadingEditions()) {
+  <div class="filters-row">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'admin.reports.editionSelector.label' | translate }}</mat-label>
+      <mat-select
+        [value]="selectedEditionId()"
+        [disabled]="reportableEditions().length === 0"
+        (selectionChange)="onEditionChange($event)">
+        @if (reportableEditions().length === 0) {
+          <mat-option [value]="null" disabled>
+            {{ (isLoadingEditions() ? 'admin.reports.editionSelector.loading' : 'admin.reports.editionSelector.placeholder') | translate }}
+          </mat-option>
+        }
+        @for (edition of reportableEditions(); track edition.id) {
+          <mat-option [value]="edition.id">{{ edition.name }} ({{ edition.startDate }} – {{ edition.endDate }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
   </div>
+
+  @if (selectedEditionId() !== null) {
+    <nav mat-tab-nav-bar [tabPanel]="tabPanel">
+      <a
+        mat-tab-link
+        routerLink="edition"
+        routerLinkActive
+        #editionLink="routerLinkActive"
+        [active]="editionLink.isActive">
+        {{ 'admin.reports.tabs.edition' | translate }}
+      </a>
+      <a
+        mat-tab-link
+        routerLink="exports"
+        routerLinkActive
+        #exportsLink="routerLinkActive"
+        [active]="exportsLink.isActive">
+        {{ 'admin.reports.tabs.exports' | translate }}
+      </a>
+    </nav>
+
+    <mat-tab-nav-panel #tabPanel>
+      <router-outlet />
+    </mat-tab-nav-panel>
+  }
 }
 
-@if (isEditionReportPhase()) {
-  <div class="card card--list">
-    <div class="card__header">
-      <h1 class="card__title">{{ 'admin.reports.export.title' | translate }}</h1>
-    </div>
-
-    <div class="card__actions">
-      <button type="button" mat-button color="primary" (click)="exportCatalog()" [disabled]="exportingCatalog()">
-        <mat-icon>download</mat-icon>
-        {{ 'admin.reports.export.catalog' | translate }}
-      </button>
-      <button type="button" mat-button color="primary" (click)="exportSettlements()" [disabled]="exportingSettlements()">
-        <mat-icon>download</mat-icon>
-        {{ 'admin.reports.export.settlements' | translate }}
-      </button>
-    </div>
-  </div>
-}
-
-@if (!isSalePhase() && !isEditionReportPhase()) {
+@if (!isSalePhase() && reportableEditions().length === 0 && !isLoadingEditions()) {
   <div class="card card--list">
     <app-empty-state icon="assessment" [message]="'admin.reports.emptyPhase' | translate" />
   </div>

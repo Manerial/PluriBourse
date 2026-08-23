@@ -25,10 +25,13 @@ public class EditionClosingService {
     /**
      * Guard order matters: {@link PhaseGuard#requirePostSalePhase} throws for any phase other than
      * Post-vente, including Clôturée — checked alone, closing an already-closed edition would never
-     * reach {@link EditionService#advancePhase} and never surface {@link PhaseAlreadyClosedException}.
+     * reach {@link EditionService#closePostSaleToClosed} and never surface {@link PhaseAlreadyClosedException}.
      * The explicit CLOSED check runs first so that case stays correctly typed. Runs inside one
-     * transaction (default {@code REQUIRED} propagation joins {@code advancePhase}'s own
-     * {@code @Transactional}) — this is what makes AC 3 atomic.
+     * transaction (default {@code REQUIRED} propagation joins {@code closePostSaleToClosed}'s own
+     * {@code @Transactional}) — this is what makes AC 3 atomic. {@code closePostSaleToClosed} (not
+     * {@code advancePhase}) performs the actual phase change: the generic /phase/advance endpoint
+     * refuses the POST_SALE → CLOSED step on purpose (FR-096 follow-up fix), since it would skip
+     * the settlement above.
      */
     @Transactional
     public EditionDto closeEdition(Long id) {
@@ -38,6 +41,6 @@ public class EditionClosingService {
         }
         PhaseGuard.requirePostSalePhase(edition);
         settlementService.closeAllUnsettledAsUnclaimed(edition);
-        return editionService.advancePhase(id);
+        return editionService.closePostSaleToClosed(id);
     }
 }

@@ -4,18 +4,18 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "printers")
+@Table(name = "registered_printers")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Printer {
 
-    @Version
-    private Long version;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "printer_bridge_id", nullable = false, length = 32)
+    private String printerBridgeId;
 
     @Column(nullable = false, unique = true, length = 100)
     private String name;
@@ -27,6 +27,6 @@ public class Printer {
     @Column(name = "width_mm")
     private Integer widthMm;
 
-    @Column(name = "printer_bridge_id", nullable = false, length = 32)
-    private String printerBridgeId;
+    @Version
+    private Long version;
 }

@@ -115,11 +115,15 @@ class LotManagementIT extends IntegrationTest {
                 categoriesResult.getResponse().getContentAsString(), new TypeReference<List<EditionCategoryDto>>() {
                 }).getFirst().id();
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             mockMvc.perform(post("/api/admin/editions/" + otherEditionId + "/phase/advance")
                             .session(adminSession).with(csrf()))
                     .andExpect(status().isOk());
         }
+        // POST_SALE -> CLOSED only via the dedicated /close endpoint (FR-096 follow-up fix).
+        mockMvc.perform(post("/api/admin/editions/" + otherEditionId + "/close")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk());
         return otherCategoryId;
     }
 

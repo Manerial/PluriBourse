@@ -342,10 +342,10 @@ class EditionReportPrintingIT extends IntegrationTest {
     @Test
     @Order(11)
     void advancing_to_closed_leaves_the_edition_report_unchanged_and_still_resolvable_by_id() throws Exception {
-        // 4th advance() call since creation: POST_SALE -> CLOSED. Proves resolution by explicit
-        // edition ID (EditionService.requireEdition, not getActiveEdition()) keeps this endpoint
-        // correct in Clôturée — the central point of story 5.4's endpoint design.
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+        // POST_SALE -> CLOSED via the dedicated /close endpoint (FR-096 follow-up fix). Proves
+        // resolution by explicit edition ID (EditionService.requireEdition, not getActiveEdition())
+        // keeps this endpoint correct in Clôturée — the central point of story 5.4's endpoint design.
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));

@@ -466,7 +466,8 @@ class SettlementReportPrintingIT extends IntegrationTest {
     @Test
     @Order(14)
     void printing_a_sellers_report_from_a_different_edition_returns_404() throws Exception {
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+        // POST_SALE → CLOSED only via the dedicated /close endpoint (FR-096 follow-up fix).
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));

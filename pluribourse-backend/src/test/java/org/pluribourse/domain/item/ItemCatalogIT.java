@@ -277,7 +277,8 @@ class ItemCatalogIT extends IntegrationTest {
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("POST_SALE"));
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+        // POST_SALE → CLOSED only via the dedicated /close endpoint (FR-096 follow-up fix).
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("CLOSED"));

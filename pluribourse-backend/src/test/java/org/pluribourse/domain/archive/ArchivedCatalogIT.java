@@ -391,8 +391,11 @@ class ArchivedCatalogIT extends IntegrationTest {
         });
     }
 
+    // POST_SALE -> CLOSED only via the dedicated /close endpoint (FR-096 follow-up fix) —
+    // /phase/advance refuses that exact step on purpose.
     private void advancePhase(Long editionId, String expectedPhase) throws Exception {
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+        String endpoint = expectedPhase.equals("CLOSED") ? "/close" : "/phase/advance";
+        mockMvc.perform(post("/api/admin/editions/" + editionId + endpoint)
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value(expectedPhase));

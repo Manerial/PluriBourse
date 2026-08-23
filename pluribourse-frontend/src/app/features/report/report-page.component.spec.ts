@@ -1,14 +1,17 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideTranslateService } from '@ngx-translate/core';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { MatSelectChange } from '@angular/material/select';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { ReportPageComponent } from './report-page.component';
 import { ReportService } from '../../services/report.service';
+import { EditionService } from '../../services/edition.service';
 import { CurrentEditionService } from '../../services/current-edition.service';
+import { ReportEditionScopeService } from './report-edition-scope.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { DailySalesReportDto } from '../../models/daily-sales-report.model';
-import { EditionSummaryReportDto } from '../../models/edition-summary-report.model';
 import { EditionDto } from '../../models/edition.model';
 import { Language } from '../../models/language.enum';
 
@@ -25,8 +28,15 @@ const SALE_EDITION: EditionDto = {
 };
 
 const POST_SALE_EDITION: EditionDto = { ...SALE_EDITION, phase: 'POST_SALE' };
-const CLOSED_EDITION: EditionDto = { ...SALE_EDITION, phase: 'CLOSED' };
 const PREPARATION_EDITION: EditionDto = { ...SALE_EDITION, phase: 'PREPARATION' };
+const OLDER_CLOSED_EDITION: EditionDto = {
+  ...SALE_EDITION,
+  id: 2,
+  name: 'Bourse Précédente',
+  phase: 'CLOSED',
+  startDate: '2025-01-01',
+  endDate: '2025-01-03',
+};
 
 const DAILY_REPORT: DailySalesReportDto = {
   reportDate: '2026-08-18',
@@ -39,56 +49,46 @@ const DAILY_REPORT: DailySalesReportDto = {
   cardTotal: 8.0,
 };
 
-const EDITION_REPORT: EditionSummaryReportDto = {
-  soldItemCount: 3,
-  unsoldItemCount: 2,
-  grossRevenue: 16.0,
-  commission: 1.6,
-  cashTotal: 5.0,
-  checkTotal: 3.0,
-  cardTotal: 8.0,
-  netPayoutTotal: 14.4,
-  associationRevenueTotal: 1.6,
-};
-
 describe('ReportPageComponent', () => {
   let fixture: ComponentFixture<ReportPageComponent>;
   let component: ReportPageComponent;
   let currentEditionService: CurrentEditionService;
+  let scope: ReportEditionScopeService;
 
   const reportServiceMock = {
     getDailyReport: vi.fn().mockReturnValue(of(DAILY_REPORT)),
     printDailyReport: vi.fn().mockReturnValue(of(undefined)),
-    getEditionReport: vi.fn().mockReturnValue(of(EDITION_REPORT)),
-    printEditionReport: vi.fn().mockReturnValue(of(undefined)),
-    exportCatalog: vi.fn().mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) }))),
-    exportSettlements: vi.fn().mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) }))),
+  };
+  const editionServiceMock = {
+    getAll: vi.fn().mockReturnValue(of([])),
   };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
 
-  async function setup(initialEdition: EditionDto | null): Promise<void> {
+  async function setup(initialEdition: EditionDto | null, editions: EditionDto[] = []): Promise<void> {
     vi.clearAllMocks();
     reportServiceMock.getDailyReport.mockReturnValue(of(DAILY_REPORT));
     reportServiceMock.printDailyReport.mockReturnValue(of(undefined));
-    reportServiceMock.getEditionReport.mockReturnValue(of(EDITION_REPORT));
-    reportServiceMock.printEditionReport.mockReturnValue(of(undefined));
-    reportServiceMock.exportCatalog.mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) })));
-    reportServiceMock.exportSettlements.mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) })));
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    editionServiceMock.getAll.mockReturnValue(of(editions));
 
     await TestBed.configureTestingModule({
       imports: [ReportPageComponent],
       providers: [
+        provideRouter([]),
         provideTranslateService({ lang: 'en' }),
         { provide: ReportService, useValue: reportServiceMock },
+        { provide: EditionService, useValue: editionServiceMock },
+        ReportEditionScopeService,
         { provide: ToastService, useValue: toastMock },
       ],
     }).compileComponents();
 
+    TestBed.inject(TranslateService).setTranslation('en', {
+      admin: { reports: { tabs: { edition: 'Edition summary', exports: 'Exports' } } },
+    });
+
     currentEditionService = TestBed.inject(CurrentEditionService);
     currentEditionService.currentEdition.set(initialEdition);
+    scope = TestBed.inject(ReportEditionScopeService);
 
     fixture = TestBed.createComponent(ReportPageComponent);
     component = fixture.componentInstance;
@@ -131,6 +131,21 @@ describe('ReportPageComponent', () => {
     await fixture.whenStable();
 
     expect(component.report()).toBeNull();
+  });
+
+  it('does not keep refetching the daily report once settled (regression: effect must not depend on isLoading)', async () => {
+    // load() reads isLoading() synchronously before its first await, then its finally block flips
+    // that same signal back after settling — if that read were tracked as a dependency of the
+    // constructor effect(), the resulting write would re-trigger the effect and call the backend
+    // again, forever, paced only by how fast the mock/network resolves.
+    await setup(SALE_EDITION);
+    expect(reportServiceMock.getDailyReport).toHaveBeenCalledOnce();
+
+    await new Promise(resolve => setTimeout(resolve, 20));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(reportServiceMock.getDailyReport).toHaveBeenCalledOnce();
   });
 
   it('refresh() re-fetches the daily report', async () => {
@@ -190,182 +205,63 @@ describe('ReportPageComponent', () => {
     expect(fixture.nativeElement.querySelector('app-skeleton-row')).not.toBeNull();
   });
 
-  it('shows an empty state outside the Sale and edition-report phases', async () => {
-    await setup(PREPARATION_EDITION);
+  it('shows an empty state when no edition has ever reached Post-vente', async () => {
+    await setup(PREPARATION_EDITION, []);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-empty-state')).not.toBeNull();
   });
 
-  it('loads the edition report when the edition is already in Post-vente phase at mount', async () => {
-    await setup(POST_SALE_EDITION);
-    expect(reportServiceMock.getEditionReport).toHaveBeenCalledOnce();
-    expect(reportServiceMock.getEditionReport).toHaveBeenCalledWith(POST_SALE_EDITION.id);
-    expect(component.editionReport()).toEqual(EDITION_REPORT);
+  it('does not render the edition/exports tab bar when no edition is reportable', async () => {
+    await setup(SALE_EDITION, []);
+    expect(fixture.nativeElement.querySelector('[mat-tab-nav-bar]')).toBeNull();
   });
 
-  it('loads the edition report when the edition is already in Clôturée phase at mount', async () => {
-    await setup(CLOSED_EDITION);
-    expect(reportServiceMock.getEditionReport).toHaveBeenCalledOnce();
-    expect(component.editionReport()).toEqual(EDITION_REPORT);
+  it('renders the edition/exports tab bar as soon as an edition is reportable, current or past', async () => {
+    await setup(POST_SALE_EDITION, [POST_SALE_EDITION]);
+    // The default selection is applied inside the async loadEditions() chain (an effect(), not a
+    // one-shot ngOnInit) — whenStable() settles the underlying signal write, but rendering the
+    // @if block gated on it needs one more explicit detectChanges() pass, same as any other
+    // post-whenStable() signal write asserted against the DOM rather than the component itself.
+    fixture.detectChanges();
+    const links: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('a[mat-tab-link]'));
+    const labels = links.map(el => el.textContent?.trim());
+    expect(labels).toContain('Edition summary');
+    expect(labels).toContain('Exports');
   });
 
-  it('does not call the backend for the edition report while the edition is in Sale phase', async () => {
-    await setup(SALE_EDITION);
-    expect(reportServiceMock.getEditionReport).not.toHaveBeenCalled();
-    expect(component.editionReport()).toBeNull();
+  it('only lists Post-vente/Clôturée editions as reportable, excluding earlier phases', async () => {
+    await setup(SALE_EDITION, [SALE_EDITION, POST_SALE_EDITION, OLDER_CLOSED_EDITION, PREPARATION_EDITION]);
+    expect(component.reportableEditions().map(e => e.id)).toEqual([POST_SALE_EDITION.id, OLDER_CLOSED_EDITION.id]);
   });
 
-  it('clears the edition report when the phase changes away from Post-vente/Clôturée while the page is open', async () => {
-    await setup(POST_SALE_EDITION);
-    expect(component.editionReport()).toEqual(EDITION_REPORT);
+  it('defaults the selection to the current edition when it is itself reportable', async () => {
+    await setup(POST_SALE_EDITION, [OLDER_CLOSED_EDITION, POST_SALE_EDITION]);
+    expect(scope.selectedEditionId()).toBe(POST_SALE_EDITION.id);
+  });
 
-    currentEditionService.currentEdition.set(SALE_EDITION);
+  it('defaults the selection to the most recent reportable edition when the current one is not reportable', async () => {
+    await setup(SALE_EDITION, [OLDER_CLOSED_EDITION]);
+    expect(scope.selectedEditionId()).toBe(OLDER_CLOSED_EDITION.id);
+  });
+
+  it('does not override a selection the admin already made', async () => {
+    await setup(POST_SALE_EDITION, [OLDER_CLOSED_EDITION, POST_SALE_EDITION]);
+    component.onEditionChange({ value: OLDER_CLOSED_EDITION.id } as MatSelectChange);
+    expect(scope.selectedEditionId()).toBe(OLDER_CLOSED_EDITION.id);
+
+    // A new object (not the same reference as the initial POST_SALE_EDITION), so the currentEdition
+    // signal genuinely changes and the default-selection effect re-runs — it must still see a
+    // selection already made and leave it alone.
+    currentEditionService.currentEdition.set({ ...POST_SALE_EDITION });
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(component.editionReport()).toBeNull();
+    expect(scope.selectedEditionId()).toBe(OLDER_CLOSED_EDITION.id);
   });
 
-  it('sets a dedicated error key when the edition report fails to load', async () => {
-    await setup(POST_SALE_EDITION);
-    reportServiceMock.getEditionReport.mockReturnValue(throwError(() => new Error('network')));
-    currentEditionService.currentEdition.set(SALE_EDITION);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    currentEditionService.currentEdition.set(POST_SALE_EDITION);
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    expect(component.editionReportError()).toBe('admin.reports.error.loadEdition');
-  });
-
-  it('printEditionReport() shows a success toast', async () => {
-    await setup(POST_SALE_EDITION);
-    await component.printEditionReport();
-    expect(reportServiceMock.printEditionReport).toHaveBeenCalledWith(POST_SALE_EDITION.id);
-    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
-  });
-
-  it('a 422 invalid-printer-selection error on the edition report print shows the printer-unavailable toast', async () => {
-    await setup(POST_SALE_EDITION);
-    reportServiceMock.printEditionReport.mockReturnValue(
-      throwError(
-        () =>
-          new HttpErrorResponse({
-            status: 422,
-            error: { type: 'https://pluribourse/errors/invalid-printer-selection' },
-          })
-      )
-    );
-    await component.printEditionReport();
-    expect(toastMock.showError).toHaveBeenCalledOnce();
-  });
-
-  it('any other edition report print error shows the generic error toast', async () => {
-    await setup(POST_SALE_EDITION);
-    reportServiceMock.printEditionReport.mockReturnValue(throwError(() => new Error('server')));
-    await component.printEditionReport();
-    expect(toastMock.showError).toHaveBeenCalledOnce();
-  });
-
-  it('printEditionReport() is a no-op while a print request is already in flight', async () => {
-    await setup(POST_SALE_EDITION);
-    component.printingEditionReport.set(true);
-    await component.printEditionReport();
-    expect(reportServiceMock.printEditionReport).not.toHaveBeenCalled();
-  });
-
-  it('printEditionReport() is a no-op if currentEdition() has turned null since the button was rendered', async () => {
-    await setup(POST_SALE_EDITION);
-    currentEditionService.currentEdition.set(null);
-    await component.printEditionReport();
-    expect(reportServiceMock.printEditionReport).not.toHaveBeenCalled();
-    expect(toastMock.showError).not.toHaveBeenCalled();
-    expect(component.printingEditionReport()).toBe(false);
-  });
-
-  it('shows the loading skeleton for the edition report while it is being fetched', async () => {
-    await setup(POST_SALE_EDITION);
-    component.isLoadingEditionReport.set(true);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('app-skeleton-row').length).toBeGreaterThan(0);
-  });
-
-  it('includes the net payout and association revenue totals in the loaded edition report', async () => {
-    // report-page.component.html reads editionSummary.netPayoutTotal/associationRevenueTotal
-    // directly (plain interpolation, same stat-tile pattern as the 4 pre-existing fields) — the
-    // component-level assertion below is this suite's established pattern for verifying
-    // async-loaded report data (see "loads the edition report..." tests), since re-running
-    // fixture.detectChanges() after the data has resolved re-triggers the component's
-    // constructor effect() and its guarded reload, making a further DOM assertion here flaky.
-    await setup(POST_SALE_EDITION);
-    expect(component.editionReport()?.netPayoutTotal).toBe(EDITION_REPORT.netPayoutTotal);
-    expect(component.editionReport()?.associationRevenueTotal).toBe(EDITION_REPORT.associationRevenueTotal);
-  });
-
-  it('exportCatalog() downloads the CSV and shows a success toast', async () => {
-    await setup(POST_SALE_EDITION);
-    await component.exportCatalog();
-    expect(reportServiceMock.exportCatalog).toHaveBeenCalledWith(POST_SALE_EDITION.id);
-    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
-    expect(URL.createObjectURL).toHaveBeenCalledOnce();
-    expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
-  });
-
-  it('exportCatalog() shows a generic error toast on failure', async () => {
-    await setup(POST_SALE_EDITION);
-    reportServiceMock.exportCatalog.mockReturnValue(throwError(() => new Error('server')));
-    await component.exportCatalog();
-    expect(toastMock.showError).toHaveBeenCalledOnce();
-  });
-
-  it('exportCatalog() is a no-op while an export is already in flight', async () => {
-    await setup(POST_SALE_EDITION);
-    component.exportingCatalog.set(true);
-    await component.exportCatalog();
-    expect(reportServiceMock.exportCatalog).not.toHaveBeenCalled();
-  });
-
-  it('exportCatalog() is a no-op if currentEdition() has turned null since the button was rendered', async () => {
-    await setup(POST_SALE_EDITION);
-    currentEditionService.currentEdition.set(null);
-    await component.exportCatalog();
-    expect(reportServiceMock.exportCatalog).not.toHaveBeenCalled();
-    expect(toastMock.showError).not.toHaveBeenCalled();
-  });
-
-  it('exportSettlements() downloads the CSV and shows a success toast', async () => {
-    await setup(POST_SALE_EDITION);
-    await component.exportSettlements();
-    expect(reportServiceMock.exportSettlements).toHaveBeenCalledWith(POST_SALE_EDITION.id);
-    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
-  });
-
-  it('exportSettlements() shows a generic error toast on failure', async () => {
-    await setup(POST_SALE_EDITION);
-    reportServiceMock.exportSettlements.mockReturnValue(throwError(() => new Error('server')));
-    await component.exportSettlements();
-    expect(toastMock.showError).toHaveBeenCalledOnce();
-  });
-
-  it('exportSettlements() is a no-op while an export is already in flight', async () => {
-    await setup(POST_SALE_EDITION);
-    component.exportingSettlements.set(true);
-    await component.exportSettlements();
-    expect(reportServiceMock.exportSettlements).not.toHaveBeenCalled();
-  });
-
-  it('does not render the export section outside Post-vente/Clôturée', async () => {
-    await setup(SALE_EDITION);
-    const icons = Array.from(fixture.nativeElement.querySelectorAll('mat-icon')) as Element[];
-    const downloadIcons = icons.filter((el) => el.textContent === 'download');
-    expect(downloadIcons.length).toBe(0);
-  });
-
-  it('renders both export buttons in Post-vente/Clôturée', async () => {
-    await setup(POST_SALE_EDITION);
-    const icons = Array.from(fixture.nativeElement.querySelectorAll('mat-icon')) as Element[];
-    const downloadIcons = icons.filter((el) => el.textContent === 'download');
-    expect(downloadIcons.length).toBe(2);
+  it('onEditionChange() updates the shared selection', async () => {
+    await setup(POST_SALE_EDITION, [POST_SALE_EDITION, OLDER_CLOSED_EDITION]);
+    component.onEditionChange({ value: OLDER_CLOSED_EDITION.id } as MatSelectChange);
+    expect(scope.selectedEditionId()).toBe(OLDER_CLOSED_EDITION.id);
   });
 });

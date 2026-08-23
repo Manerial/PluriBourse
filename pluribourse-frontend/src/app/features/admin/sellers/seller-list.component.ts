@@ -1,5 +1,4 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -12,7 +11,6 @@ import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/sk
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
-import { extractErrorType } from '../../../shared/http-error.util';
 
 const DEFAULT_PAGE_SIZE = 50;
 
@@ -53,13 +51,8 @@ export class SellerListComponent implements OnInit {
       this.sellers.set(result.content);
       this.totalElements.set(result.totalElements);
       this.pageIndex.set(page);
-    } catch (err: unknown) {
-      const errorType = err instanceof HttpErrorResponse ? extractErrorType(err) : undefined;
-      if (errorType?.endsWith('/no-active-edition')) {
-        this.error.set('admin.sellers.error.noActiveEdition');
-      } else {
-        this.error.set('admin.sellers.error.load');
-      }
+    } catch {
+      this.error.set('admin.sellers.error.load');
     } finally {
       this.isLoading.set(false);
     }

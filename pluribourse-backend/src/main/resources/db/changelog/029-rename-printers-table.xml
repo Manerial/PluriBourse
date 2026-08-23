@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- `printers` only ever holds printers that went through the registration flow (PrinterService)
+         — a detected-but-dismissed device never gets a row here, it goes to `ignored_printers`
+         instead (019-ignored-printers.xml). Renamed for symmetry with that table. No FK anywhere
+         in the schema references printers(id), so this is a clean rename. -->
+    <changeSet id="029-rename-printers-table" author="pluribourse">
+        <renameTable oldTableName="printers" newTableName="registered_printers"/>
+    </changeSet>
+
+</databaseChangeLog>

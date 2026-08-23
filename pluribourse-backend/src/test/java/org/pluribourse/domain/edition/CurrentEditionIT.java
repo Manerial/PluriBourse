@@ -103,12 +103,16 @@ class CurrentEditionIT extends IntegrationTest {
                                 Map.of("name", "Jouets", "tableNumbers", List.of(1))))))
                 .andExpect(status().isOk());
 
-        // Advance PREPARATION → DEPOSIT → SALE → POST_SALE → CLOSED
-        for (int i = 0; i < 4; i++) {
+        // Advance PREPARATION → DEPOSIT → SALE → POST_SALE
+        for (int i = 0; i < 3; i++) {
             mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                             .session(adminSession).with(csrf()))
                     .andExpect(status().isOk());
         }
+        // POST_SALE → CLOSED only via the dedicated /close endpoint (FR-096 follow-up fix).
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/editions/current").session(adminSession))
                 .andExpect(status().isNotFound())

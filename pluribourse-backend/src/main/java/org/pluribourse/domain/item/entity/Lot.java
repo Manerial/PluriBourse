@@ -40,6 +40,8 @@ public class Lot {
     @OrderBy("id ASC")
     private List<Item> items = new ArrayList<>();
 
+    // Optimistic locking: guards against lost updates on concurrent lot edits (LotService.update).
+    // No dedicated conflict handling — relies on Hibernate's default behavior.
     @Version
     private Long version;
 }
