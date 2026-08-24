@@ -14,6 +14,11 @@ import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 
 const SIDEBAR_COLLAPSED_KEY_PREFIX = 'pluribourse.sidebarCollapsed.';
 
+// Volunteer pages the phase-change auto-redirect (below) is allowed to bounce the user away
+// from. Anything else under /volunteer (e.g. /volunteer/catalog, usable in every phase per
+// FR-083) must be left alone, exactly like /account already is.
+const PHASE_BOUND_VOLUNTEER_PATHS = ['/volunteer/deposit', '/volunteer/pos', '/volunteer/settlement'];
+
 // localStorage throws in private-browsing/storage-disabled contexts — must not break the layout.
 function readSidebarCollapsed(username: string): boolean {
   try {
@@ -65,7 +70,9 @@ export class AppLayoutComponent implements OnInit {
         return;
       }
       const currentUrl = this.router.url;
-      if (currentUrl !== '/404' && currentUrl !== '/printer-selection' && !currentUrl.startsWith('/volunteer')) {
+      const isPhaseBound = currentUrl === '/404' || currentUrl === '/printer-selection' ||
+        PHASE_BOUND_VOLUNTEER_PATHS.includes(currentUrl);
+      if (!isPhaseBound) {
         return;
       }
       const target = resolveVolunteerLandingPath(phase);

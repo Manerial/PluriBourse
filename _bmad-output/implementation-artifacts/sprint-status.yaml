@@ -35,7 +35,25 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-21"  # Story 6-2 : revue de code terminée (bmad-code-review, Blind Hunter +
+last_updated: "2026-08-24"  # Sprint change proposal 2026-08-24 (voir planning-artifacts/) : 5
+# nouvelles stories backlog ajoutées suite à la revue de 8 demandes d'évolution post-MVP
+# (tous les épics étaient déjà done) — 2-9 (devise par édition), 2-10 (Préparation non
+# exclusive), 3-14 (catégorie du lot), 4-7 (refonte impression facture + liste des ventes),
+# 5-7 (synchronisation des postes de soldage). Un correctif direct hors story a également été
+# identifié (bundle messages.properties du bordereau de dépôt, incohérent avec messages_fr/en
+# déjà à jour depuis "Code review 2") — voir sprint-change-proposal-2026-08-24.md § Point 4.
+#
+# 2026-08-24 — 2 correctifs directs appliqués suite à un signalement utilisateur sur
+# l'inaccessibilité du catalogue actif (Story 6.1, done, jamais reliée à la navigation) :
+# (1) lien « Catalogue » ajouté à la sidebar admin (section Édition active, avant Vendeurs) ;
+# (2) bug de redirection corrigé dans AppLayoutComponent — l'effet réactif de changement de
+# phase traitait /volunteer/catalog comme une page liée à une phase (test générique
+# startsWith('/volunteer')) et en bounçait systématiquement le bénévole vers /volunteer/deposit
+# dès le chargement. Remplacé par une liste explicite des pages réellement liées à une phase
+# (deposit/pos/settlement). 2 tests ajoutés (app-layout.component.spec.ts), 658/658 tests
+# frontend, aucune régression. L'accès bénévole persistant (carrousel) reste en backlog (1-13).
+#
+# 2026-08-21 — Story 6-2 : revue de code terminée (bmad-code-review, Blind Hunter +
 # Edge Case Hunter + Acceptance Auditor). 9 patchs appliqués (ordre requireEdition/validateSort,
 # filtre categoryName="" traité comme absence de filtre, dates dans le sélecteur d'édition (AC1),
 # gestion d'erreur ngOnInit/loadCategories, garde requestSequence sur loadCategories, reset error()
@@ -194,6 +212,13 @@ development_status:
   1-10-ameliorations-ux-mots-de-passe: done
   1-11-dialogs-mutualises-editions-benevoles: done
   1-12-deconnexion-automatique-des-benevoles-desactives-ou-supprimes: done
+  # Ajoutée le 2026-08-24 suite à un signalement utilisateur (hors sprint change proposal) :
+  # le bénévole n'a aucun menu de navigation persistant (UX-DR3 réserve la sidebar à l'admin) —
+  # /volunteer/catalog n'était atteignable par aucun clic dans l'UI (seul un lien croisé explicite
+  # existait, Solde→Dépôt, pour la réimpression du bordereau). L'utilisateur souhaite un
+  # composant carrousel/slider latéral permettant de changer d'écran bénévole en toute
+  # circonstance — nouveau pattern d'interaction, absent des UX-DR actuels, à concevoir.
+  1-13-navigation-carrousel-benevole: backlog
   epic-1-retrospective: optional
 
   # ─── Epic 2 : Gestion du cycle de vie des éditions ─────────────────────────
@@ -215,6 +240,15 @@ development_status:
   # active, créée par la Story 4.2 (Epic 4, backlog, non démarré). Aucun lien
   # avec 2.7 (mécanismes indépendants). Ne peut pas démarrer avant 4.1 → 4.2.
   2-8-annulation-du-panier-lors-dune-transition-de-phase-cote-serveur: done
+  # Sprint change proposal 2026-08-24, point 1 : devise configurable par édition (aucune
+  # notion de devise n'existait avant, € en dur dans tous les renderers). Même patron que le
+  # taux de commission (FR-016/Story 2.1) : valeur par défaut instance (Story 1.5), copiée à
+  # la création, figée au démarrage du Dépôt.
+  2-9-devise-par-edition: backlog
+  # Sprint change proposal 2026-08-24, point 2 : PREPARATION sort de PhaseType.ACTIVE —
+  # plusieurs éditions peuvent coexister en Préparation, une seule en Dépôt/Vente/Post-vente.
+  # Contrôle d'unicité déplacé de la création (2.1) vers la transition Préparation→Dépôt (2.2).
+  2-10-preparation-non-exclusive: backlog
   epic-2-retrospective: optional
 
   # ─── Epic 3 : Enregistrement des vendeurs & Dépôt ──────────────────────────
@@ -235,6 +269,11 @@ development_status:
   3-12-integration-printerbridge-envoi-des-jobs-dimpression: done
   # Sprint change proposal 2026-07-28 : ignorer une imprimante détectée non enregistrée.
   3-13-ignorer-une-imprimante-detectee: done
+  # Sprint change proposal 2026-08-24, point 3 : la catégorie passe de l'article (Item) au lot
+  # (Lot) — un lot n'a plus qu'une seule catégorie et une seule table pour tous ses membres.
+  # Retouche du verrouillage pessimiste par catégorie et de la réassignation de table dans
+  # LotService (Stories 3.3/3.10). Pas de donnée réelle à migrer (aucune édition en prod).
+  3-14-categorie-du-lot: backlog
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────
@@ -245,6 +284,12 @@ development_status:
   4-4-securite-de-la-concurrence-multi-postes: done
   4-5-impression-de-la-facture-acheteur: done
   4-6-gestion-du-changement-de-phase-dans-le-composant-pos-cote-client: done
+  # Sprint change proposal 2026-08-24, points 5+6 : impression facture repensée — case à
+  # cocher « Imprimer la facture » (cochée par défaut) dans le dialogue de validation du
+  # paiement (4.2) ; nouvel écran « Liste des ventes » filtrable avec réimpression ouverte à
+  # tout bénévole caissier (retrait de la restriction auteur-uniquement, 4.5) ; suppression du
+  # bouton temporaire à 30s (INVOICE_BUTTON_VISIBLE_MS), devenu redondant.
+  4-7-refonte-impression-facture-liste-des-ventes: backlog
   epic-4-retrospective: optional
 
   # ─── Epic 5 : Post-vente, Reversements & Rapports ──────────────────────────
@@ -255,6 +300,12 @@ development_status:
   5-4-bilan-dedition-rapports-des-vendeurs-non-soldes: done
   5-5-page-des-rapports-admin: done
   5-6-impression-groupee-des-bilans-de-vente-admin: done
+  # Sprint change proposal 2026-08-24, point 7 : SettlementService.settle() fait un contrôle
+  # vérifier-puis-agir sans verrou applicatif (seul filet de sécurité : contrainte UNIQUE en
+  # base). Ajout d'un verrouillage explicite avec 409 propre (même patron que NFR-002/ARCH-003
+  # pour Item) + canal SSE dédié pour synchroniser la liste de solde en temps réel entre postes
+  # (même patron que SseEmitterRegistry/ARCH-012 pour la phase).
+  5-7-synchronisation-des-postes-de-soldage: backlog
   epic-5-retrospective: optional
 
   # ─── Epic 6 : Catalogue articles ────────────────────────────────────────────

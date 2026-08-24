@@ -67,8 +67,10 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/settings', component: StubComponent },
           { path: 'admin/editions', component: StubComponent },
           { path: 'admin/settlement', component: StubComponent },
+          { path: 'admin/catalog', component: StubComponent },
           { path: 'volunteer/deposit', component: StubComponent },
           { path: 'volunteer/settlement', component: StubComponent },
+          { path: 'volunteer/catalog', component: StubComponent },
           { path: 'account', component: StubComponent },
           { path: 'printer-selection', component: StubComponent },
           { path: '404', component: StubComponent },
@@ -223,6 +225,15 @@ describe('AppLayoutComponent', () => {
         fixture.nativeElement.querySelectorAll('a.sidebar__item')
       );
       expect(links.some(l => l.getAttribute('href') === '/admin/reports')).toBe(true);
+    });
+
+    it('contains nav link to /admin/catalog once an edition is active', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      const links: HTMLAnchorElement[] = Array.from(
+        fixture.nativeElement.querySelectorAll('a.sidebar__item')
+      );
+      expect(links.some(l => l.getAttribute('href') === '/admin/catalog')).toBe(true);
     });
 
     it('renders admin role badge', () => {
@@ -393,6 +404,20 @@ describe('AppLayoutComponent', () => {
       await fixture.whenStable();
 
       expect(router.url).toBe('/account');
+    });
+
+    it('does not redirect away from /volunteer/catalog when the phase changes (FR-083: usable in every phase)', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/volunteer/catalog');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'PREPARATION' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/volunteer/catalog');
     });
   });
 

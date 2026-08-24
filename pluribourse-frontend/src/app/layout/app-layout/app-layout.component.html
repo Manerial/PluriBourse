@@ -144,6 +144,18 @@
           <span class="sidebar__section-label">{{ 'nav.sections.activeEdition' | translate }}</span>
 
           <a
+            routerLink="/admin/catalog"
+            routerLinkActive="sidebar__item--active"
+            ariaCurrentWhenActive="page"
+            class="sidebar__item"
+            [attr.aria-label]="sidebarCollapsed() ? ('nav.admin.catalog' | translate) : null"
+            [matTooltip]="sidebarCollapsed() ? ('nav.admin.catalog' | translate) : ''"
+            matTooltipPosition="right">
+            <span class="material-symbols-outlined" aria-hidden="true">inventory</span>
+            <span class="sidebar__item-label">{{ 'nav.admin.catalog' | translate }}</span>
+          </a>
+
+          <a
             routerLink="/admin/sellers"
             routerLinkActive="sidebar__item--active"
             ariaCurrentWhenActive="page"
