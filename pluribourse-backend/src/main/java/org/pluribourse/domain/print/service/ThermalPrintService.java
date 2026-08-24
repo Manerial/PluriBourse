@@ -52,6 +52,7 @@ public class ThermalPrintService {
                     baos.write(renderer.articleSeparator());
                 }
             }
+            baos.write(renderer.rollEnd());
         } catch (IOException e) {
             // ByteArrayOutputStream never actually throws — kept to satisfy OutputStream's checked
             // signature, mirrors the same pattern used everywhere else content is rendered in this module.

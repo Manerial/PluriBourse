@@ -22,12 +22,12 @@ const MOCK_EDITION: EditionDto = {
 
 const UNSETTLED_SETTLEMENT: SettlementDto = {
   sellerId: 1, firstName: 'Alice', lastName: 'Vendeuse', phone: '0600000001', email: 'alice@email.com',
-  amountDue: 18, status: 'UNSETTLED',
+  amountDue: 18, amountPaid: null, status: 'UNSETTLED',
 };
 
 const SETTLED_SETTLEMENT: SettlementDto = {
   sellerId: 2, firstName: 'Bob', lastName: 'Vendeur', phone: '0600000002', email: 'bob@email.com',
-  amountDue: 9, status: 'SETTLED',
+  amountDue: 9, amountPaid: 9, status: 'SETTLED',
 };
 
 describe('PhaseControlComponent', () => {
@@ -147,6 +147,17 @@ describe('PhaseControlComponent', () => {
     component.confirmAdvance();
     await fixture.whenStable();
     expect(toastMock.showError).toHaveBeenCalledWith('phase.advance.error.noCategoriesConfigured');
+  });
+
+  it('confirmAdvance — confirmed: shows specific error toast when no volunteer account exists', async () => {
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.advancePhase.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 422,
+      error: { type: 'https://pluribourse/errors/no-volunteer-configured' },
+    })));
+    component.confirmAdvance();
+    await fixture.whenStable();
+    expect(toastMock.showError).toHaveBeenCalledWith('phase.advance.error.noVolunteerConfigured');
   });
 
   it('confirmAdvance — confirmed: closes the dialog after a successful advance', async () => {

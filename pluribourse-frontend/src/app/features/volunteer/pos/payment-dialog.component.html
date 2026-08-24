@@ -42,6 +42,7 @@
               min="0"
               (input)="onAmountGivenChange($event)"
               (keydown.enter)="onAmountGivenEnter($event)" />
+            <span matTextSuffix>&euro;</span>
           </mat-form-field>
           <p class="cash-detail__note">{{ 'volunteer.pos.payment.amountGiven.note' | translate }}</p>
           @if (changeDue() !== null) {

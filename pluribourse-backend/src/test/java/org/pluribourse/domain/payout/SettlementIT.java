@@ -14,6 +14,7 @@ import org.pluribourse.domain.payout.dto.SettleDto;
 import org.pluribourse.domain.payout.dto.SettlementDto;
 import org.pluribourse.domain.pos.dto.ValidateBasketDto;
 import org.pluribourse.domain.pos.entity.PaymentMethod;
+import org.pluribourse.domain.report.dto.EditionSummaryReportDto;
 import org.pluribourse.domain.seller.dto.SellerDto;
 import org.pluribourse.shared.IntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -164,10 +166,12 @@ class SettlementIT extends IntegrationTest {
         assertThat(settlements).hasSize(2);
         SettlementDto alice = settlementOf(settlements, aliceId);
         assertThat(alice.amountDue()).isEqualByComparingTo("4.00");
+        assertThat(alice.amountPaid()).isNull();
         assertThat(alice.status().name()).isEqualTo("UNSETTLED");
 
         SettlementDto bob = settlementOf(settlements, bobId);
         assertThat(bob.amountDue()).isEqualByComparingTo("0.00");
+        assertThat(bob.amountPaid()).isNull();
         assertThat(bob.status().name()).isEqualTo("UNSETTLED");
     }
 
@@ -187,7 +191,10 @@ class SettlementIT extends IntegrationTest {
         List<SettlementDto> settlements = objectMapper.readValue(
                 result.getResponse().getContentAsString(), new TypeReference<List<SettlementDto>>() {
                 });
-        assertThat(settlementOf(settlements, aliceId).status().name()).isEqualTo("SETTLED");
+        SettlementDto alice = settlementOf(settlements, aliceId);
+        assertThat(alice.status().name()).isEqualTo("SETTLED");
+        // amountPaid mirrors what the volunteer actually entered (3.00), not the 4.00 due.
+        assertThat(alice.amountPaid()).isEqualByComparingTo("3.00");
     }
 
     @Test
@@ -219,7 +226,10 @@ class SettlementIT extends IntegrationTest {
                         .session(volunteer1Session).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UNCLAIMED"))
-                .andExpect(jsonPath("$.amountDue").value(0.00));
+                .andExpect(jsonPath("$.amountDue").value(0.00))
+                // Nothing physically handed to a "Non réclamé" seller — amountPaid stays null even
+                // though the amount is fully due (transferred to the association instead).
+                .andExpect(jsonPath("$.amountPaid").value(nullValue()));
     }
 
     @Test
@@ -309,6 +319,23 @@ class SettlementIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    /**
+     * Edition report's "total des reversements nets" must reflect what was actually handed to
+     * sellers, not the theoretical grossRevenue - commission (5.00 - 1.00 = 4.00 here): Alice was
+     * settled below her due amount (3.00 of 4.00, Order 3) and Bob was marked Non réclamé (Order
+     * 6, nothing physically paid to him, his due amount goes to the association instead).
+     */
+    @Test
+    @Order(11)
+    void edition_report_net_payout_total_reflects_actually_paid_amounts_not_amounts_due() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/admin/reports/edition/" + editionId).session(adminSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        EditionSummaryReportDto report = objectMapper.readValue(result.getResponse().getContentAsString(), EditionSummaryReportDto.class);
+
+        assertThat(report.netPayoutTotal()).isEqualByComparingTo("3.00");
     }
 
     private SettlementDto settlementOf(List<SettlementDto> settlements, Long sellerId) {

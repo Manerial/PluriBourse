@@ -1,12 +1,6 @@
 <div class="card card--list">
   <div class="card__header">
     <h1 class="card__title">{{ 'settlement.title' | translate }}</h1>
-    @if (!isAdmin()) {
-      <a routerLink="/volunteer/deposit" mat-button class="reprint-link">
-        <mat-icon aria-hidden="true">print</mat-icon>
-        {{ 'settlement.actions.reprintDepositSlip' | translate }}
-      </a>
-    }
     @if (isAdmin()) {
       <button
         type="button"
@@ -60,6 +54,7 @@
               <th>{{ 'settlement.columns.email' | translate }}</th>
             }
             <th>{{ 'settlement.columns.amountDue' | translate }}</th>
+            <th>{{ 'settlement.columns.amountPaid' | translate }}</th>
             <th>{{ 'settlement.columns.status' | translate }}</th>
             <th>{{ 'settlement.columns.actions' | translate }}</th>
           </tr>
@@ -73,21 +68,29 @@
                 <td>{{ settlement.email }}</td>
               }
               <td>{{ 'settlement.amountFormat' | translate: { amount: settlement.amountDue.toFixed(2) } }}</td>
+              <td>
+                @if (settlement.amountPaid !== null) {
+                  {{ 'settlement.amountFormat' | translate: { amount: settlement.amountPaid.toFixed(2) } }}
+                }
+              </td>
               <td>{{ ('settlement.status.' + settlement.status) | translate }}</td>
               <td>
                 <div class="actions-cell">
+                  @if (settlement.status === 'UNSETTLED') {
+                    <button type="button" mat-flat-button color="primary" [disabled]="submitting()" (click)="openSettleForm(settlement)">
+                      {{ 'settlement.actions.settle' | translate }}
+                    </button>
+                  }
                   <button
                     type="button"
                     mat-button
+                    color="primary"
                     [disabled]="anyPrintInFlight()"
                     (click)="printReport(settlement)">
                     <mat-icon aria-hidden="true">print</mat-icon>
                     {{ 'settlement.actions.printReport' | translate }}
                   </button>
                   @if (settlement.status === 'UNSETTLED') {
-                    <button type="button" mat-button color="primary" [disabled]="submitting()" (click)="openSettleForm(settlement)">
-                      {{ 'settlement.actions.settle' | translate }}
-                    </button>
                     <button type="button" mat-button [disabled]="submitting()" (click)="confirmUnclaimed(settlement)">
                       <mat-icon aria-hidden="true">block</mat-icon>
                       {{ 'settlement.actions.unclaimed' | translate }}
@@ -98,12 +101,12 @@
             </tr>
             @if (openSettleFormForSellerId() === settlement.sellerId) {
               <tr class="settlement-form-row">
-                <td [attr.colspan]="isAdmin() ? 6 : 4">
+                <td [attr.colspan]="isAdmin() ? 7 : 5">
                   <div class="settlement-form-inner">
                     <label class="form-label" [for]="'settle-amount-' + settlement.sellerId">
                       {{ 'settlement.form.amountLabel' | translate }}
                     </label>
-                    <mat-form-field appearance="outline" class="settlement-form-inner__field">
+                    <mat-form-field appearance="outline" class="settlement-form-inner__field" subscriptSizing="dynamic">
                       <input
                         matInput
                         type="number"
@@ -112,6 +115,7 @@
                         [id]="'settle-amount-' + settlement.sellerId"
                         [value]="settleAmount()"
                         (input)="onSettleAmountChange($event)" />
+                      <span matTextSuffix>&euro;</span>
                     </mat-form-field>
                     <button
                       type="button"

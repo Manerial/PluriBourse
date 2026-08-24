@@ -330,7 +330,7 @@ class SettlementReportPrintingIT extends IntegrationTest {
     void settlement_report_renderer_includes_sold_and_unsold_sections_with_totals() {
         List<Item> items = itemRepository.findAllBySellerProfileIdForSettlementReport(aliceId);
 
-        byte[] pdf = settlementReportRenderer.renderReport(items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.FRENCH);
+        byte[] pdf = settlementReportRenderer.renderReport(items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.FRENCH, null);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
 
         assertThat(rendered).startsWith("%PDF");
@@ -354,6 +354,12 @@ class SettlementReportPrintingIT extends IntegrationTest {
         // Total brut (5.00+2.00+8.00=15.00), commission (10%) and net (13.50) — all BigDecimal,
         // precise to the cent.
         assertThat(rendered).contains("15.00").contains("13.50");
+        // Commission amount (10% of 15.00 = 1.50€, distinct from the already-asserted 10% rate
+        // line) is now printed alongside the rate.
+        assertThat(rendered).contains("1.50");
+        // Alice has not been settled yet at this point in the scenario (Order 7 only reads
+        // amountDue) — no "montant remis" line should appear.
+        assertThat(rendered).doesNotContain("Montant remis");
     }
 
     @Test
@@ -370,7 +376,7 @@ class SettlementReportPrintingIT extends IntegrationTest {
         // resolution genuinely switches language, which this exercises directly.
         List<Item> items = itemRepository.findAllBySellerProfileIdForSettlementReport(aliceId);
 
-        byte[] pdf = settlementReportRenderer.renderReport(items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.ENGLISH);
+        byte[] pdf = settlementReportRenderer.renderReport(items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.ENGLISH, null);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
 
         assertThat(rendered).contains("Sales report").contains("Sold items").contains("Unsold items");
@@ -394,7 +400,7 @@ class SettlementReportPrintingIT extends IntegrationTest {
         Printer printer = new Printer();
         printer.setPrinterBridgeId("bridge-report-mock-target");
         isolatedDocumentPrintService.buildSettlementReportJob(
-                items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.FRENCH).execute(printer);
+                items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.FRENCH, null).execute(printer);
 
         ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(mockClient).print(eq("bridge-report-mock-target"), eq(PrintContentType.PDF), payloadCaptor.capture());

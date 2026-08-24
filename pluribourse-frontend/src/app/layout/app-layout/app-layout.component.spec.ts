@@ -66,6 +66,7 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/users', component: StubComponent },
           { path: 'admin/settings', component: StubComponent },
           { path: 'admin/editions', component: StubComponent },
+          { path: 'admin/settlement', component: StubComponent },
           { path: 'volunteer/deposit', component: StubComponent },
           { path: 'volunteer/settlement', component: StubComponent },
           { path: 'account', component: StubComponent },
@@ -97,6 +98,18 @@ describe('AppLayoutComponent', () => {
 
   it('renders the phase chip', () => {
     expect(fixture.nativeElement.querySelector('.phase-chip')).toBeTruthy();
+  });
+
+  it('hides the /admin/settlement sidebar link outside the Post-vente phase', () => {
+    mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('a[routerLink="/admin/settlement"]')).toBeFalsy();
+  });
+
+  it('shows the /admin/settlement sidebar link once the edition reaches Post-vente', () => {
+    mockEdition.set({ ...preparationEdition, phase: 'POST_SALE' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('a[routerLink="/admin/settlement"]')).toBeTruthy();
   });
 
   it('renders a link to /account in the user menu', () => {

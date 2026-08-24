@@ -11,5 +11,6 @@ public record SettlementDto(
         String phone,
         String email,
         BigDecimal amountDue,
+        BigDecimal amountPaid,
         SettlementStatus status) {
 }

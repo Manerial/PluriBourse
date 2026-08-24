@@ -214,10 +214,12 @@ class ThermalLabelPrintingIT extends IntegrationTest {
         String rendered = new String(rawBytes, LABEL_CHARSET);
 
         assertThat(rendered).contains(item1.getFormattedBarcode());
-        // "--- Categorie ---" is fixed heading text per AC4 (epics.md 1209) — the category's own
-        // name is deliberately not printed on the label, only on the edition/table context.
-        assertThat(rendered).contains("Bourse Etiquettes 2026").contains("Catégorie").contains("Peluche");
-        assertThat(rendered).doesNotContain("Alice").doesNotContain("Vendeuse");
+        // Follow-up fix (2026-08-24): the item's actual category name is now printed as the
+        // "--- {category} ---" heading, replacing the generic, uninformative word "Category".
+        assertThat(rendered).contains("--- Jouets ---").contains("Peluche");
+        // Follow-up fix (2026-08-24): the edition name no longer appears on individual article
+        // labels — only on the vendor separator (seller_separator_contains_seller_name_and_edition_name).
+        assertThat(rendered).doesNotContain("Alice").doesNotContain("Vendeuse").doesNotContain("Bourse Etiquettes 2026");
 
         // On real hardware, ESC/POS printers default to CP437/CP850, not ISO-8859-15 — the byte
         // ISO-8859-15 uses for € collides with CP437/CP850's ñ. Cp858 (PC858) has both the accented
@@ -345,6 +347,21 @@ class ThermalLabelPrintingIT extends IntegrationTest {
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/empty-deposit")));
+    }
+
+    @Test
+    @Order(17)
+    void roll_end_margin_is_separate_from_the_label_and_not_repeated_per_article() {
+        List<Item> sellerItems = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
+        Item item = sellerItems.getFirst();
+
+        String rendered = new String(renderer.renderLabel(item, 57, Locale.FRENCH), LABEL_CHARSET);
+        // renderLabel keeps a single blank line of baseline spacing after the formatted barcode
+        // (its own writeLine newline + one extra LINE_FEED) — the bigger tear margin lives only in
+        // rollEnd(), called once by ThermalPrintService after the whole roll, not per article.
+        assertThat(rendered).endsWith(item.getFormattedBarcode() + "\n\n");
+
+        assertThat(renderer.rollEnd()).containsExactly(0x0A, 0x0A);
     }
 
     private Long createSeller(String firstName, String lastName, String email) throws Exception {

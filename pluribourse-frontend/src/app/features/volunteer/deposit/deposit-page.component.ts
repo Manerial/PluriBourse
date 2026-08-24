@@ -12,6 +12,7 @@ import { EditionCategoryDto } from '../../../models/category.model';
 import { ItemDto } from '../../../models/item.model';
 import { LotDto } from '../../../models/lot.model';
 import { CategoryService } from '../../../services/category.service';
+import { CurrentEditionService } from '../../../services/current-edition.service';
 import { DepositService } from '../../../services/deposit.service';
 import { ItemService } from '../../../services/item.service';
 import { LotService } from '../../../services/lot.service';
@@ -26,6 +27,21 @@ import { LotFormComponent } from './lot-form.component';
 import { SellerSearchComponent } from './seller-search.component';
 
 type DepositMode = 'individual' | 'lot';
+
+interface StandaloneItemRow {
+  readonly kind: 'item';
+  readonly item: ItemDto;
+}
+
+interface LotGroupRow {
+  readonly kind: 'lot';
+  readonly lotId: number;
+  readonly lotName: string;
+  readonly lotPrice: number;
+  readonly members: ItemDto[];
+}
+
+type DepositListRow = StandaloneItemRow | LotGroupRow;
 
 @Component({
   selector: 'app-deposit-page',
@@ -53,6 +69,7 @@ export class DepositPageComponent {
   private readonly itemService = inject(ItemService);
   private readonly lotService = inject(LotService);
   private readonly depositService = inject(DepositService);
+  private readonly currentEditionService = inject(CurrentEditionService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly confirmDialog = inject(ConfirmDialogService);
@@ -72,20 +89,32 @@ export class DepositPageComponent {
   readonly reprintingSlip = signal(false);
   readonly reprintingLabels = signal(false);
 
+  // The deposit slip's "reversement net attendu" is computed from what was deposited, not what
+  // was actually sold — reprinting it stays Dépôt-only (backend: PhaseGuard.
+  // requireDepositPhaseForSlipReprint), unlike the thermal labels, still reprintable in Post-vente.
+  readonly isDepositPhase = computed(() => this.currentEditionService.currentEdition()?.phase === 'DEPOSIT');
+
   /**
-   * A lot's edit/delete actions must appear once per lot, not once per member row — this is the
-   * id of the first member row encountered (in list order) for each lotId.
+   * The deposited-items list shows one row per lot (not one row per member item, as the
+   * underlying flat item list would otherwise produce) — members are nested inside their lot's row.
    */
-  readonly firstLotItemIds = computed(() => {
-    const seenLotIds = new Set<number>();
-    const firstItemIds = new Set<number>();
+  readonly displayRows = computed<DepositListRow[]>(() => {
+    const rows: DepositListRow[] = [];
+    const lotRows = new Map<number, LotGroupRow>();
     for (const item of this.items()) {
-      if (item.lotId !== null && !seenLotIds.has(item.lotId)) {
-        seenLotIds.add(item.lotId);
-        firstItemIds.add(item.id);
+      if (item.lotId === null) {
+        rows.push({ kind: 'item', item });
+        continue;
       }
+      let lotRow = lotRows.get(item.lotId);
+      if (!lotRow) {
+        lotRow = { kind: 'lot', lotId: item.lotId, lotName: item.lotName!, lotPrice: item.lotPrice!, members: [] };
+        lotRows.set(item.lotId, lotRow);
+        rows.push(lotRow);
+      }
+      lotRow.members.push(item);
     }
-    return firstItemIds;
+    return rows;
   });
 
   constructor() {
@@ -119,10 +148,6 @@ export class DepositPageComponent {
 
   cancelEdit(): void {
     this.editingItem.set(null);
-  }
-
-  isFirstLotRow(item: ItemDto): boolean {
-    return this.firstLotItemIds().has(item.id);
   }
 
   startEditLot(lotId: number): void {

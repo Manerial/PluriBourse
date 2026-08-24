@@ -93,8 +93,9 @@ export class PosPageComponent implements OnInit {
       this.basket.set(updated);
       const addedItem = updated.items.find(item => !previousItemIds.has(item.itemId));
       if (addedItem?.incomplete) {
+        const comment = addedItem.comment || this.translate.instant('volunteer.deposit.item.list.noComment');
         this.lastScanIssue.set({
-          message: this.translate.instant('volunteer.pos.warning.incomplete', { comment: addedItem.comment }),
+          message: this.translate.instant('volunteer.pos.warning.incomplete', { comment }),
           variant: 'warning',
         });
       } else {
@@ -122,6 +123,9 @@ export class PosPageComponent implements OnInit {
         return;
       }
       this.basket.set(updated);
+      // The "Article incomplet" warning (onScan) refers to the item just removed — leaving it
+      // displayed after removal would be stale/misleading.
+      this.lastScanIssue.set(null);
     } catch {
       if (this.basketCancelled()) {
         return;
@@ -144,6 +148,7 @@ export class PosPageComponent implements OnInit {
         return;
       }
       this.basket.set(updated);
+      this.lastScanIssue.set(null);
     } catch {
       if (this.basketCancelled()) {
         return;

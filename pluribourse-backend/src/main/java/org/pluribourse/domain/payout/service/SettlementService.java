@@ -66,8 +66,9 @@ public class SettlementService {
             BigDecimal amountDue = ItemPricing.computeNetPayout(total, edition.getCommissionRate());
             Settlement settlement = settlementBySellerId.get(seller.getId());
             SettlementStatus status = settlement != null ? settlement.getStatus() : SettlementStatus.UNSETTLED;
+            BigDecimal amountPaid = status == SettlementStatus.SETTLED ? settlement.getAmount() : null;
             return new SettlementDto(seller.getId(), seller.getFirstName(), seller.getLastName(),
-                    seller.getPhone(), seller.getEmail(), amountDue, status);
+                    seller.getPhone(), seller.getEmail(), amountDue, amountPaid, status);
         }).toList();
     }
 
@@ -178,6 +179,33 @@ public class SettlementService {
         return seller;
     }
 
+    /**
+     * The actual amount handed to a seller (story 5.2, settlement report PDF): {@code null} unless
+     * the seller is {@code SETTLED} — same "nothing physically paid yet/instead" rule as
+     * {@link #getSettledPayoutTotal}, applied per seller rather than summed edition-wide. Reused by
+     * {@link SettlementReportPrintService} rather than duplicating the {@code Settlement} lookup.
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getAmountPaid(Long sellerId) {
+        return settlementRepository.findBySellerProfileId(sellerId)
+                .filter(settlement -> settlement.getStatus() == SettlementStatus.SETTLED)
+                .map(Settlement::getAmount)
+                .orElse(null);
+    }
+
+    /**
+     * Batched variant of {@link #getAmountPaid} for {@code printAllReports} (story 5.6, up to ~100
+     * sellers, NFR-001): one grouped query instead of one per seller. A seller absent from the
+     * returned map has no {@code SETTLED} settlement (never printed, per the same "no misleading
+     * 0€" rule as the single-seller path).
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> getAmountPaidBySellerId(Edition edition) {
+        return settlementRepository.findAllBySellerProfileEditionId(edition.getId()).stream()
+                .filter(settlement -> settlement.getStatus() == SettlementStatus.SETTLED)
+                .collect(Collectors.toMap(s -> s.getSellerProfile().getId(), Settlement::getAmount));
+    }
+
     private void requireNotAlreadySettled(SellerProfile seller) {
         if (settlementRepository.findBySellerProfileId(seller.getId()).isPresent()) {
             throw new SellerAlreadySettledException(seller.getId());
@@ -214,7 +242,29 @@ public class SettlementService {
         } catch (DataIntegrityViolationException e) {
             throw new SellerAlreadySettledException(seller.getId());
         }
+        BigDecimal amountPaid = status == SettlementStatus.SETTLED ? amount : null;
         return new SettlementDto(seller.getId(), seller.getFirstName(), seller.getLastName(),
-                seller.getPhone(), seller.getEmail(), amountDue, status);
+                seller.getPhone(), seller.getEmail(), amountDue, amountPaid, status);
+    }
+
+    /**
+     * "Total des reversements nets" (edition summary report, ReportService): the sum of what was
+     * actually handed to sellers, not the theoretical {@code grossRevenue - commission} — a
+     * "Non réclamé" seller's {@code Settlement.amount} equals the full amount due (kept for
+     * record-keeping, see {@link #closeAllUnsettledAsUnclaimed}) but nothing was physically paid
+     * out, so it contributes zero here, mirroring the {@code paidToSeller} rule already used by
+     * {@link #getAssociationRetainedTotal}. A still-{@code UNSETTLED} seller (no {@link Settlement}
+     * row yet) also contributes zero — nothing has been reversed to them yet.
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getSettledPayoutTotal(Edition edition) {
+        List<Settlement> settlements = settlementRepository.findAllBySellerProfileEditionId(edition.getId());
+        BigDecimal total = BigDecimal.ZERO;
+        for (Settlement settlement : settlements) {
+            if (settlement.getStatus() == SettlementStatus.SETTLED) {
+                total = total.add(settlement.getAmount());
+            }
+        }
+        return total.setScale(2, RoundingMode.HALF_UP);
     }
 }

@@ -5,6 +5,7 @@ export interface ArchivedItemDto {
   name: string;
   categoryName: string;
   sold: boolean;
+  price: number;
 }
 
 export interface ArchivedCatalogFilter {

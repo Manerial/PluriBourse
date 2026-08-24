@@ -25,7 +25,8 @@
       <div class="form-row">
         <mat-form-field appearance="outline">
           <mat-label>{{ 'volunteer.deposit.item.form.price' | translate }}</mat-label>
-          <input matInput formControlName="price" type="number" step="1" min="0.01" />
+          <input matInput formControlName="price" type="number" step="1" min="0" />
+          <span matTextSuffix>&euro;</span>
         </mat-form-field>
 
         <mat-form-field appearance="outline">

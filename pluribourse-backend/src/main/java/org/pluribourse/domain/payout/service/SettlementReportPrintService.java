@@ -53,11 +53,12 @@ public class SettlementReportPrintService {
         PhaseGuard.requirePostSalePhase(edition);
         SellerProfile seller = settlementService.requireSellerOfEdition(sellerId, edition);
         List<Item> items = itemRepository.findAllBySellerProfileIdForSettlementReport(sellerId);
+        BigDecimal amountPaid = settlementService.getAmountPaid(sellerId);
 
         PrintContext context = resolvePrintContext(edition, session);
 
         printQueueService.submit(context.a4PrinterId(),
-                documentPrintService.buildSettlementReportJob(seller, items, context.commissionRate(), context.documentLocale()));
+                documentPrintService.buildSettlementReportJob(seller, items, context.commissionRate(), context.documentLocale(), amountPaid));
     }
 
     /**
@@ -81,14 +82,16 @@ public class SettlementReportPrintService {
         List<SellerProfile> sellers = settlementService.getSellersMatchingFilter(edition, filter);
         Map<Long, List<Item>> itemsBySellerId = itemRepository.findAllByEditionIdForSettlementReport(edition.getId()).stream()
                 .collect(Collectors.groupingBy(i -> i.getSellerProfile().getId()));
+        Map<Long, BigDecimal> amountPaidBySellerId = settlementService.getAmountPaidBySellerId(edition);
 
         int succeeded = 0;
         int failed = 0;
         for (SellerProfile seller : sellers) {
             try {
                 List<Item> items = itemsBySellerId.getOrDefault(seller.getId(), List.of());
+                BigDecimal amountPaid = amountPaidBySellerId.get(seller.getId());
                 printQueueService.submit(context.a4PrinterId(),
-                        documentPrintService.buildSettlementReportJob(seller, items, context.commissionRate(), context.documentLocale()));
+                        documentPrintService.buildSettlementReportJob(seller, items, context.commissionRate(), context.documentLocale(), amountPaid));
                 succeeded++;
             } catch (PrinterNotFoundException e) {
                 log.warn("Failed to queue settlement report for seller {}: {}", seller.getId(), e.getMessage());

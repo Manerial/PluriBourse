@@ -73,9 +73,12 @@ class GlobalInstanceConfigIT extends IntegrationTest {
     @Test
     @Order(3)
     void admin_get_returns_defaults() throws Exception {
+        // associationName defaults to "" per migration 004, but test-data.sql sets it to a
+        // non-blank value for this whole suite (EditionService.createEdition now requires it,
+        // follow-up fix 2026-08-24) — this asserts that seeded value, not the raw migration default.
         mockMvc.perform(get("/api/admin/instance-config").session(adminSession))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.associationName").value(""))
+                .andExpect(jsonPath("$.associationName").value("Association Test"))
                 .andExpect(jsonPath("$.defaultCommissionRate").value(20.00))
                 .andExpect(jsonPath("$.defaultDocumentLanguage").value("EN"));
     }

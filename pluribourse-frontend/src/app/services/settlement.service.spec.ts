@@ -12,6 +12,7 @@ const MOCK_SETTLEMENT: SettlementDto = {
   phone: '0600000001',
   email: 'alice@email.com',
   amountDue: 4.0,
+  amountPaid: null,
   status: 'UNSETTLED',
 };
 

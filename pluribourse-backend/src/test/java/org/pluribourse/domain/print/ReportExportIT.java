@@ -213,8 +213,11 @@ class ReportExportIT extends IntegrationTest {
         assertThat(report.unsoldItemCount()).isEqualTo(1);
         assertThat(report.grossRevenue()).isEqualByComparingTo("30.00");
         assertThat(report.commission()).isEqualByComparingTo("3.00");
-        // Alice's due (9.00) + Bob's due (18.00), independent of what each was actually paid.
-        assertThat(report.netPayoutTotal()).isEqualByComparingTo("27.00");
+        // Follow-up fix (2026-08-24): the sum of what was actually handed to sellers, not the
+        // amounts due — Alice is Non réclamé (nothing physically paid, her due amount goes to the
+        // association instead) and Bob was settled for only 10.00 of his 18.00 due, so the total
+        // is his 10.00 alone.
+        assertThat(report.netPayoutTotal()).isEqualByComparingTo("10.00");
         // Commission (3.00) + Alice's full retained amount (9.00, Non réclamé) + Bob's shortfall (18.00 - 10.00 = 8.00).
         assertThat(report.associationRevenueTotal()).isEqualByComparingTo("20.00");
     }

@@ -72,6 +72,7 @@
               <th mat-sort-header="name">{{ 'admin.archivedCatalog.columns.name' | translate }}</th>
               <th mat-sort-header="categoryName">{{ 'admin.archivedCatalog.columns.category' | translate }}</th>
               <th mat-sort-header="sold">{{ 'admin.archivedCatalog.columns.sold' | translate }}</th>
+              <th mat-sort-header="price">{{ 'admin.archivedCatalog.columns.price' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -80,6 +81,7 @@
                 <td>{{ item.name }}</td>
                 <td>{{ item.categoryName }}</td>
                 <td>{{ (item.sold ? 'admin.archivedCatalog.columns.soldValues.sold' : 'admin.archivedCatalog.columns.soldValues.unsold') | translate }}</td>
+                <td>{{ 'admin.archivedCatalog.priceFormat' | translate: { price: item.price.toFixed(2) } }}</td>
               </tr>
             }
           </tbody>

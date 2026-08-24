@@ -103,9 +103,10 @@ public class ReportService {
         long soldItemCount = ItemPricing.distinctByLot(soldItems).size();
         long unsoldItemCount = ItemPricing.distinctByLot(unsoldItems).size();
 
-        // FR-016: a single, fixed commission rate per edition — the sum of per-seller net payouts
-        // always equals grossRevenue - commission, so no need to re-walk sellers one by one here.
-        BigDecimal netPayoutTotal = grossRevenue.subtract(commission).setScale(2, RoundingMode.HALF_UP);
+        // Sum of amounts actually handed to sellers (not the theoretical grossRevenue - commission,
+        // which assumes every seller is settled for exactly their due amount) — see
+        // SettlementService.getSettledPayoutTotal for the "Non réclamé"/still-unsettled rules.
+        BigDecimal netPayoutTotal = settlementService.getSettledPayoutTotal(edition);
         BigDecimal associationRevenueTotal = commission.add(settlementService.getAssociationRetainedTotal(edition, soldItems)).setScale(2, RoundingMode.HALF_UP);
 
         return new EditionSummaryReportDto(soldItemCount, unsoldItemCount, grossRevenue, commission,

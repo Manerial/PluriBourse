@@ -127,11 +127,30 @@ class ArchivedCatalogIT extends IntegrationTest {
                 .andExpect(jsonPath("$.page.content[0].name").exists())
                 .andExpect(jsonPath("$.page.content[0].categoryName").exists())
                 .andExpect(jsonPath("$.page.content[0].sold").exists())
+                .andExpect(jsonPath("$.page.content[0].price").exists())
                 .andExpect(jsonPath("$.page.content[0].barcode").doesNotExist())
                 .andExpect(jsonPath("$.page.content[0].tableNumber").doesNotExist())
-                .andExpect(jsonPath("$.page.content[0].price").doesNotExist())
                 .andExpect(jsonPath("$.page.content[0].sellerLastName").doesNotExist())
                 .andExpect(jsonPath("$.page.content[0].lotId").doesNotExist());
+    }
+
+    @Test
+    @Order(20)
+    void archived_items_carry_the_correct_sale_price_standalone_and_lot() throws Exception {
+        // Kapla/Robot: standalone items created at 10.00€ (createItem). Duo A/Duo B: members of
+        // "Lot Duo" (8.00€ global price) — both carry the lot's price, not their own (null on the
+        // live Item), same convention as SettlementReportRenderer/DepositSlipRenderer.
+        mockMvc.perform(get("/api/admin/archive/editions/" + editionId + "/items")
+                        .param("sort", "name,asc").session(adminSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.content[0].name").value("Duo A"))
+                .andExpect(jsonPath("$.page.content[0].price").value(8.00))
+                .andExpect(jsonPath("$.page.content[1].name").value("Duo B"))
+                .andExpect(jsonPath("$.page.content[1].price").value(8.00))
+                .andExpect(jsonPath("$.page.content[2].name").value("Kapla"))
+                .andExpect(jsonPath("$.page.content[2].price").value(10.00))
+                .andExpect(jsonPath("$.page.content[3].name").value("Robot"))
+                .andExpect(jsonPath("$.page.content[3].price").value(10.00));
     }
 
     @Test

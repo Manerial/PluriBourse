@@ -71,6 +71,9 @@ public class EditionArchivingService {
             archivedItem.setName(item.getName());
             archivedItem.setCategoryName(item.getCategory().getName());
             archivedItem.setSold(item.isSold());
+            // A lot member's own price is null — its price lives on the lot itself
+            // (ItemPricing's convention throughout, e.g. SettlementReportRenderer).
+            archivedItem.setPrice(item.getLot() != null ? item.getLot().getGlobalPrice() : item.getPrice());
             return archivedItem;
         }).toList();
         archivedItemRepository.saveAll(archivedItems);

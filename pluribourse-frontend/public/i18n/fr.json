@@ -152,6 +152,7 @@
       "cancel": "Annuler",
       "error": {
         "alreadyActive": "Une édition est déjà active. Clôturez-la avant d'en créer une nouvelle.",
+        "associationNameNotConfigured": "Le nom de l'association doit être renseigné dans les paramètres avant de créer une édition.",
         "save": "Impossible de créer l'édition."
       },
       "success": "Édition créée."
@@ -207,7 +208,8 @@
       "success": "Phase avancée.",
       "error": {
         "generic": "Impossible de faire avancer la phase.",
-        "noCategoriesConfigured": "Au moins une catégorie doit être configurée avant de passer en phase de dépôt."
+        "noCategoriesConfigured": "Au moins une catégorie doit être configurée avant de passer en phase de dépôt.",
+        "noVolunteerConfigured": "Au moins un compte bénévole doit exister avant de passer en phase de dépôt."
       },
       "dialog": {
         "title": "Avancer vers {{nextPhase}} ?",
@@ -350,7 +352,7 @@
           "createTitle": "Créer un lot",
           "editTitle": "Modifier le lot",
           "lotName": "Nom du lot",
-          "lotPrice": "Prix global du lot (€)",
+          "lotPrice": "Prix du lot",
           "itemsLabel": "Articles du lot — 2 minimum",
           "itemName": "Nom de l'article",
           "itemCategory": "Catégorie",
@@ -374,10 +376,12 @@
           "table": "Table {{ table }}",
           "complete": "Complet",
           "incomplete": "Incomplet",
+          "noComment": "Pas de commentaire",
           "edit": "Modifier l'article",
           "delete": "Supprimer l'article",
           "editComment": "Modifier le commentaire",
           "lotBadge": "Lot",
+          "lotMembersCount": "{{ count }} article(s)",
           "lotPriceFormat": "{{ price }} € (lot)",
           "editLot": "Modifier le lot",
           "deleteLot": "Supprimer le lot"
@@ -652,10 +656,9 @@
         "print": "Imprimer",
         "soldCount": "Articles vendus",
         "unsoldCount": "Articles invendus",
-        "grossRevenue": "Recettes brutes totales",
-        "commission": "Commission totale perçue",
-        "netPayoutTotal": "Total reversements nets",
-        "associationRevenueTotal": "Total recettes association",
+        "grossRevenue": "Recettes de l'édition",
+        "netPayoutTotal": "Reversements vendeurs",
+        "associationRevenueTotal": "Bénéfices association",
         "paymentBreakdown": "Ventilation par moyen de paiement",
         "method": "Moyen de paiement",
         "amount": "Montant",
@@ -776,11 +779,13 @@
         "name": "Nom",
         "category": "Catégorie",
         "sold": "Vendu",
+        "price": "Prix",
         "soldValues": {
           "sold": "Vendu",
           "unsold": "Non vendu"
         }
       },
+      "priceFormat": "{{ price }} €",
       "empty": {
         "noSelection": "Sélectionnez une édition archivée pour consulter son catalogue.",
         "noResults": "Aucun article ne correspond aux filtres actuels."
@@ -843,6 +848,7 @@
       "phone": "Téléphone",
       "email": "Email",
       "amountDue": "Montant dû",
+      "amountPaid": "Montant remis",
       "status": "Statut",
       "actions": "Actions"
     },
@@ -857,12 +863,11 @@
       "unclaimed": "Non réclamé",
       "confirm": "Valider",
       "cancel": "Annuler",
-      "reprintDepositSlip": "Réimprimer le bordereau de dépôt",
       "printReport": "Imprimer le bilan",
       "printAll": "Imprimer tous les bilans"
     },
     "form": {
-      "amountLabel": "Montant remis en espèces (€)",
+      "amountLabel": "Montant remis",
       "warningBelowDue": "Le montant saisi ({{ amount }} €) est inférieur au montant dû ({{ due }} €).",
       "errorAboveDue": "Le montant saisi ne peut pas dépasser le montant dû."
     },

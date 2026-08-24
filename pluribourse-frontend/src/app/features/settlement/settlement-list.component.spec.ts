@@ -18,6 +18,7 @@ const ALICE: SettlementDto = {
   phone: '0600000001',
   email: 'alice@email.com',
   amountDue: 4.0,
+  amountPaid: null,
   status: 'UNSETTLED',
 };
 
@@ -28,6 +29,7 @@ const BOB: SettlementDto = {
   phone: '0600000002',
   email: 'bob@email.com',
   amountDue: 10.0,
+  amountPaid: 9.5,
   status: 'SETTLED',
 };
 
@@ -94,13 +96,13 @@ describe('SettlementListComponent', () => {
     authMock.currentUser.mockReturnValue({ role: 'ADMIN' });
     await setup();
     const headerCount = fixture.nativeElement.querySelectorAll('th').length;
-    expect(headerCount).toBe(6); // name, phone, email, amountDue, status, actions
+    expect(headerCount).toBe(7); // name, phone, email, amountDue, amountPaid, status, actions
   });
 
   it('hides phone/email columns for a non-admin role', async () => {
     await setup();
     const headerCount = fixture.nativeElement.querySelectorAll('th').length;
-    expect(headerCount).toBe(4); // name, amountDue, status, actions
+    expect(headerCount).toBe(5); // name, amountDue, amountPaid, status, actions
   });
 
   it('the "unsettled" filter is selected by default and hides settled sellers', async () => {
@@ -203,17 +205,6 @@ describe('SettlementListComponent', () => {
     await component.confirmUnclaimed(ALICE);
 
     expect(settlementServiceMock.markUnclaimed).not.toHaveBeenCalled();
-  });
-
-  it('the deposit slip reprint link is absent when the role is ADMIN', async () => {
-    authMock.currentUser.mockReturnValue({ role: 'ADMIN' });
-    await setup();
-    expect(fixture.nativeElement.querySelector('.reprint-link')).toBeNull();
-  });
-
-  it('the deposit slip reprint link is present for a non-admin role', async () => {
-    await setup();
-    expect(fixture.nativeElement.querySelector('.reprint-link')).not.toBeNull();
   });
 
   it('the print report button is available on both an unsettled and a settled row', async () => {

@@ -365,7 +365,7 @@ class BulkSettlementReportPrintingIT extends IntegrationTest {
                 .containsExactly("Article Alice Vendu", "Article Alice Invendu");
 
         byte[] pdf = settlementReportRenderer.renderReport(
-                aliceItems.getFirst().getSellerProfile(), aliceItems, new BigDecimal("10.00"), Locale.FRENCH);
+                aliceItems.getFirst().getSellerProfile(), aliceItems, new BigDecimal("10.00"), Locale.FRENCH, null);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
 
         assertThat(rendered).startsWith("%PDF");

@@ -155,6 +155,8 @@ export class EditionFormComponent implements OnInit {
           this.formError.set('edition.edit.error.cannotUpdate');
         } else if (errorType.endsWith('/edition-already-active')) {
           this.formError.set('edition.create.error.alreadyActive');
+        } else if (errorType.endsWith('/association-name-not-configured')) {
+          this.formError.set('edition.create.error.associationNameNotConfigured');
         } else {
           const key422 = this.isEditMode() ? 'edition.edit.error.save' : 'edition.create.error.save';
           this.toast.showError(this.translate.instant(key422));

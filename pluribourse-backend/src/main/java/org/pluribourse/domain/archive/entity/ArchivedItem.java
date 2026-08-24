@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.pluribourse.domain.edition.entity.Edition;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "archived_items")
 @Getter
@@ -37,4 +39,7 @@ public class ArchivedItem {
 
     @Column(nullable = false)
     private boolean sold;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 }

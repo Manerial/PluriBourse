@@ -76,8 +76,10 @@ public class DepositSlipRenderer {
             document.add(buildItemsTable(items, documentLocale));
             document.add(new Paragraph(" "));
 
-            BigDecimal total = ItemPricing.computeTotal(items);
+            BigDecimal total = ItemPricing.computeTotal(items).setScale(2, RoundingMode.HALF_UP);
             BigDecimal net = ItemPricing.computeNetPayout(total, commissionRate);
+            document.add(new Paragraph(
+                    messageSource.getMessage("print.slip.totalGross", new Object[]{total.toPlainString()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
                     messageSource.getMessage("print.slip.commission", new Object[]{commissionRate.toPlainString()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(

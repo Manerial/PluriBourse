@@ -30,6 +30,20 @@ public final class PhaseGuard {
     }
 
     /**
+     * The deposit slip PDF specifically (story 3.6) — unlike the thermal labels above, which stay
+     * reprintable through Post-vente — is restricted to the Deposit phase only (follow-up
+     * decision, 2026-08-24): its "reversement net attendu" is computed from what was deposited,
+     * not what was actually sold, so showing it again in Post-vente risks contradicting the
+     * settlement report PDF (story 5.2), which already covers the seller's post-vente paper trail
+     * with the real sold/unsold breakdown and actual net payout.
+     */
+    public static void requireDepositPhaseForSlipReprint(Edition edition) {
+        if (edition.getPhase() != PhaseType.DEPOSIT) {
+            throw new DepositReprintNotAllowedException();
+        }
+    }
+
+    /**
      * POS scanning (story 4.1) is only allowed while the edition is in the Sale phase — a
      * server-side mirror of the frontend's sale-phase route guard, since the client is never
      * trusted alone.

@@ -70,7 +70,7 @@ public class SettlementReportRenderer {
 
     private final MessageSource messageSource;
 
-    public byte[] renderReport(SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate, Locale documentLocale) {
+    public byte[] renderReport(SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate, Locale documentLocale, BigDecimal amountPaid) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             Document document = new Document(PageSize.A4);
@@ -113,13 +113,23 @@ public class SettlementReportRenderer {
             document.add(new Paragraph(" "));
 
             BigDecimal total = ItemPricing.computeTotal(soldItems).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal commissionAmount = ItemPricing.computeCommission(total, commissionRate).setScale(2, RoundingMode.HALF_UP);
             BigDecimal net = ItemPricing.computeNetPayout(total, commissionRate);
             document.add(new Paragraph(
                     messageSource.getMessage("print.settlementReport.totalGross", new Object[]{total.toPlainString()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
                     messageSource.getMessage("print.settlementReport.commission", new Object[]{commissionRate.toPlainString()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
+                    messageSource.getMessage("print.settlementReport.commissionAmount", new Object[]{commissionAmount.toPlainString()}, documentLocale), BODY_FONT));
+            document.add(new Paragraph(
                     messageSource.getMessage("print.settlementReport.netAmount", new Object[]{net.toPlainString()}, documentLocale), TOTAL_FONT));
+            // amountPaid is only known once the seller has actually been settled (Settlement.amount,
+            // SETTLED status) — the report stays printable before that (AC4, story 5.2), so this line
+            // is simply omitted rather than printing a misleading 0€.
+            if (amountPaid != null) {
+                document.add(new Paragraph(
+                        messageSource.getMessage("print.settlementReport.amountPaid", new Object[]{amountPaid.setScale(2, RoundingMode.HALF_UP).toPlainString()}, documentLocale), TOTAL_FONT));
+            }
 
             document.close();
         } catch (DocumentException e) {

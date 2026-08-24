@@ -152,6 +152,7 @@
       "cancel": "Cancel",
       "error": {
         "alreadyActive": "An edition is already active. Close it before creating a new one.",
+        "associationNameNotConfigured": "The association name must be set in settings before creating an edition.",
         "save": "Failed to create edition."
       },
       "success": "Edition created."
@@ -207,7 +208,8 @@
       "success": "Phase advanced.",
       "error": {
         "generic": "Failed to advance phase.",
-        "noCategoriesConfigured": "At least one category must be configured before entering the Deposit phase."
+        "noCategoriesConfigured": "At least one category must be configured before entering the Deposit phase.",
+        "noVolunteerConfigured": "At least one volunteer account must exist before entering the Deposit phase."
       },
       "dialog": {
         "title": "Advance to {{nextPhase}}?",
@@ -350,7 +352,7 @@
           "createTitle": "Create a lot",
           "editTitle": "Edit lot",
           "lotName": "Lot name",
-          "lotPrice": "Lot global price (€)",
+          "lotPrice": "Lot price",
           "itemsLabel": "Lot items — 2 minimum",
           "itemName": "Item name",
           "itemCategory": "Category",
@@ -374,10 +376,12 @@
           "table": "Table {{ table }}",
           "complete": "Complete",
           "incomplete": "Incomplete",
+          "noComment": "No comment",
           "edit": "Edit item",
           "delete": "Delete item",
           "editComment": "Edit comment",
           "lotBadge": "Lot",
+          "lotMembersCount": "{{ count }} item(s)",
           "lotPriceFormat": "{{ price }} € (lot)",
           "editLot": "Edit lot",
           "deleteLot": "Delete lot"
@@ -652,10 +656,9 @@
         "print": "Print",
         "soldCount": "Items sold",
         "unsoldCount": "Items unsold",
-        "grossRevenue": "Total gross revenue",
-        "commission": "Total commission earned",
-        "netPayoutTotal": "Total net payouts",
-        "associationRevenueTotal": "Total association revenue",
+        "grossRevenue": "Edition revenue",
+        "netPayoutTotal": "Seller payouts",
+        "associationRevenueTotal": "Association profit",
         "paymentBreakdown": "Payment method breakdown",
         "method": "Payment method",
         "amount": "Amount",
@@ -776,11 +779,13 @@
         "name": "Name",
         "category": "Category",
         "sold": "Sold",
+        "price": "Price",
         "soldValues": {
           "sold": "Sold",
           "unsold": "Unsold"
         }
       },
+      "priceFormat": "{{ price }} €",
       "empty": {
         "noSelection": "Select an archived edition to browse its catalog.",
         "noResults": "No item matches the current filters."
@@ -843,6 +848,7 @@
       "phone": "Phone",
       "email": "Email",
       "amountDue": "Amount due",
+      "amountPaid": "Amount paid",
       "status": "Status",
       "actions": "Actions"
     },
@@ -857,12 +863,11 @@
       "unclaimed": "Unclaimed",
       "confirm": "Confirm",
       "cancel": "Cancel",
-      "reprintDepositSlip": "Reprint the deposit slip",
       "printReport": "Print the report",
       "printAll": "Print all reports"
     },
     "form": {
-      "amountLabel": "Amount given in cash (€)",
+      "amountLabel": "Amount given",
       "warningBelowDue": "The given amount ({{ amount }} €) is lower than the amount due ({{ due }} €).",
       "errorAboveDue": "The given amount cannot exceed the amount due."
     },

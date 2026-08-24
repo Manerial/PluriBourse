@@ -11,6 +11,7 @@ import org.pluribourse.domain.item.repository.*;
 import org.pluribourse.domain.pos.entity.*;
 import org.pluribourse.domain.pos.repository.*;
 import org.pluribourse.domain.user.enums.*;
+import org.pluribourse.domain.user.repositories.*;
 import org.pluribourse.shared.sse.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
@@ -30,6 +31,7 @@ public class EditionService {
     private final ItemRepository itemRepository;
     private final EditionCategoryRepository editionCategoryRepository;
     private final BasketRepository basketRepository;
+    private final UserRepository userRepository;
 
     private Edition findById(Long id) {
         return repository.findById(id)
@@ -84,6 +86,9 @@ public class EditionService {
         if (repository.existsByPhaseIn(PhaseType.ACTIVE)) {
             throw new EditionAlreadyActiveException();
         }
+        if (instanceConfigService.getAssociationName().isBlank()) {
+            throw new AssociationNameNotConfiguredException();
+        }
         BigDecimal commissionRate = dto.commissionRate() != null ? dto.commissionRate() : instanceConfigService.getDefaultCommissionRate();
         Language documentLanguage = dto.documentLanguage() != null ? dto.documentLanguage() : instanceConfigService.getDefaultDocumentLanguage();
         return mapper.toDto(repository.save(mapper.toEntity(dto, commissionRate, documentLanguage)));
@@ -118,6 +123,9 @@ public class EditionService {
         PhaseType newPhase = computeNextPhase(previousPhase);
         if (newPhase == PhaseType.DEPOSIT && !editionCategoryRepository.existsByEditionId(id)) {
             throw new NoCategoriesConfiguredException();
+        }
+        if (newPhase == PhaseType.DEPOSIT && !userRepository.existsByRole(Role.VOLUNTEER)) {
+            throw new NoVolunteerConfiguredException();
         }
         return savePhaseThenSendEvent(id, edition, newPhase, previousPhase);
     }

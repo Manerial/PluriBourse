@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import { DepositPageComponent } from './deposit-page.component';
 import { SellerSearchComponent } from './seller-search.component';
 import { CategoryService } from '../../../services/category.service';
+import { CurrentEditionService } from '../../../services/current-edition.service';
 import { DepositService } from '../../../services/deposit.service';
 import { ItemService } from '../../../services/item.service';
 import { LotService } from '../../../services/lot.service';
@@ -15,6 +16,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { ItemDto } from '../../../models/item.model';
+import { Language } from '../../../models/language.enum';
 import { LotDto } from '../../../models/lot.model';
 import { SellerDto } from '../../../models/seller.model';
 
@@ -114,6 +116,14 @@ describe('DepositPageComponent', () => {
         { provide: ConfirmDialogService, useValue: confirmDialogMock },
       ],
     }).compileComponents();
+
+    // Defaults to Dépôt phase — the reprint-slip button is Dépôt-only (backend:
+    // PhaseGuard.requireDepositPhaseForSlipReprint); a dedicated test below overrides this to
+    // prove it hides outside that phase.
+    TestBed.inject(CurrentEditionService).currentEdition.set({
+      id: 1, name: 'Bourse Test', phase: 'DEPOSIT', commissionRate: 10, documentLanguage: Language.FR,
+      createdAt: '2026-01-01', archived: false, startDate: '2026-01-01', endDate: '2026-01-03',
+    });
 
     fixture = TestBed.createComponent(DepositPageComponent);
     component = fixture.componentInstance;
@@ -291,7 +301,7 @@ describe('DepositPageComponent', () => {
     expect(itemServiceMock.getBySeller).toHaveBeenCalledWith(5);
   });
 
-  it('renders the lot badge and lot price for items belonging to a lot, with lot actions only on the first member row', async () => {
+  it('renders a single row for a lot regardless of its member count, with its members nested inside', async () => {
     itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
     selectMockSeller();
     fixture.detectChanges();
@@ -301,9 +311,9 @@ describe('DepositPageComponent', () => {
     const rowText = fixture.nativeElement.textContent as string;
     expect(rowText).toContain('Lot Jouets');
     const rows = fixture.debugElement.queryAll(By.css('.article-row'));
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(1);
     expect(rows[0].queryAll(By.css('.article-row__actions button'))).toHaveLength(2);
-    expect(rows[1].queryAll(By.css('.article-row__actions button'))).toHaveLength(0);
+    expect(rows[0].queryAll(By.css('.lot-member-row'))).toHaveLength(2);
   });
 
   it('clicking the rendered lot action buttons calls startEditLot()/confirmDeleteLot() with the lot id/name, not the row item id', async () => {
@@ -326,14 +336,17 @@ describe('DepositPageComponent', () => {
     expect(confirmDeleteLotSpy).toHaveBeenCalledWith(MOCK_LOT_ITEM.lotId, MOCK_LOT_ITEM.lotName);
   });
 
-  it('isFirstLotRow() is true only for the first member row of a given lot', async () => {
-    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
+  it('displayRows() groups every member of the same lot into a single lot row', async () => {
+    itemServiceMock.getBySeller.mockReturnValue(of([MOCK_ITEM, MOCK_LOT_ITEM, MOCK_LOT_ITEM_2]));
     selectMockSeller();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(component.isFirstLotRow(MOCK_LOT_ITEM)).toBe(true);
-    expect(component.isFirstLotRow(MOCK_LOT_ITEM_2)).toBe(false);
+    const rows = component.displayRows();
+    expect(rows).toEqual([
+      { kind: 'item', item: MOCK_ITEM },
+      { kind: 'lot', lotId: 20, lotName: 'Lot Jouets', lotPrice: 15, members: [MOCK_LOT_ITEM, MOCK_LOT_ITEM_2] },
+    ]);
   });
 
   it('startEditLot() rebuilds the LotDto from already-loaded items without a new HTTP call', async () => {
@@ -484,6 +497,17 @@ describe('DepositPageComponent', () => {
     fixture.detectChanges();
 
     expect(getReprintSlipButton().disabled).toBe(false);
+    expect(getReprintLabelsButton().disabled).toBe(false);
+  });
+
+  it('hides the reprint-slip button outside the Dépôt phase, but keeps reprint-labels visible', async () => {
+    TestBed.inject(CurrentEditionService).currentEdition.update(e => (e ? { ...e, phase: 'POST_SALE' } : e));
+    selectMockSeller();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.reprint-slip-btn'))).toBeFalsy();
     expect(getReprintLabelsButton().disabled).toBe(false);
   });
 

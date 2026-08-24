@@ -2,11 +2,14 @@
   justify-content: space-between;
 }
 
-.reprint-link {
+.print-all-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--pb-space-xs);
-  flex-shrink: 0;
+
+  .mat-icon {
+    margin: 0;
+  }
 }
 
 .filter-toggle {
@@ -14,7 +17,7 @@
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--pb-rounded-full);
   overflow: hidden;
-  margin: var(--pb-space-md) var(--pb-space-lg) 0;
+  margin: var(--pb-space-md) var(--pb-space-lg);
 }
 
 .filter-btn {

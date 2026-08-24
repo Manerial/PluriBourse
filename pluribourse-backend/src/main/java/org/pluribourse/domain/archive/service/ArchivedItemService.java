@@ -18,7 +18,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ArchivedItemService {
 
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("name", "categoryName", "sold");
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("name", "categoryName", "sold", "price");
 
     private final EditionService editionService;
     private final ArchivedItemRepository archivedItemRepository;

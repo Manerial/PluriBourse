@@ -21,12 +21,15 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     /**
      * Print order for the deposit roll (FR-030) — entry order, not the alphabetical UI listing
-     * above. Eagerly fetches {@code edition}/{@code lot} because the returned items are captured
-     * into a {@link PrintJob} closure and rendered later on the print
+     * above. Eagerly fetches {@code edition}/{@code lot}/{@code category} because the returned
+     * items are captured into a {@link PrintJob} closure and rendered later on the print
      * queue's consumer thread (story 3.4), long after this method's transaction/session has closed —
      * an uninitialized lazy proxy would throw LazyInitializationException at that point.
+     * {@code category} added so {@code ThermalLabelRenderer} can print the item's actual category
+     * name instead of the generic word "Category" (follow-up fix, 2026-08-24) — a to-one join like
+     * {@code lot}, no pagination/cartesian-product risk.
      */
-    @Query("SELECT i FROM Item i JOIN FETCH i.edition JOIN FETCH i.sellerProfile LEFT JOIN FETCH i.lot WHERE i.sellerProfile.id = :sellerProfileId ORDER BY i.itemNumber ASC")
+    @Query("SELECT i FROM Item i JOIN FETCH i.edition JOIN FETCH i.sellerProfile JOIN FETCH i.category LEFT JOIN FETCH i.lot WHERE i.sellerProfile.id = :sellerProfileId ORDER BY i.itemNumber ASC")
     List<Item> findAllBySellerProfileIdOrderByItemNumberAsc(@Param("sellerProfileId") Long sellerProfileId);
 
     /**

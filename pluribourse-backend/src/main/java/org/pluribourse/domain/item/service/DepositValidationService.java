@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Two independent print actions available from the seller's deposit page, reachable from the
- * Deposit and Post-sale phases (FR-031): (re)printing the thermal labels (FR-028, story 3.5) and
- * (re)printing the deposit slip PDF (story 3.6). Deliberately not persisting any "deposit
- * validated" state (see story 3.5 Dev Notes § Scope) — every call reprints every article
- * currently registered for the seller, and each action only checks the printer it actually needs.
+ * Two independent print actions available from the seller's deposit page: (re)printing the
+ * thermal labels (FR-028, story 3.5), reachable from the Deposit and Post-sale phases (FR-031),
+ * and (re)printing the deposit slip PDF (story 3.6), restricted to the Deposit phase only
+ * (follow-up decision, 2026-08-24 — see {@link PhaseGuard#requireDepositPhaseForSlipReprint}).
+ * Deliberately not persisting any "deposit validated" state (see story 3.5 Dev Notes § Scope) —
+ * every call reprints every article currently registered for the seller, and each action only
+ * checks the printer it actually needs.
  */
 @Service
 @RequiredArgsConstructor
@@ -59,6 +61,7 @@ public class DepositValidationService {
     @Transactional(readOnly = true)
     public void reprintDepositSlip(Long sellerProfileId, HttpSession session) {
         SellerDeposit deposit = resolveSellerDeposit(sellerProfileId);
+        PhaseGuard.requireDepositPhaseForSlipReprint(deposit.edition());
 
         Long a4PrinterId = printerSelectionService.getSelectedPrinterId(session, PrinterType.A4)
                 .orElseThrow(() -> new InvalidPrinterSelectionException("No A4 printer selected in session"));

@@ -1,18 +1,16 @@
 <div class="card card--list">
   <div class="card__header">
     <h1 class="card__title">{{ 'admin.reports.edition.title' | translate }}</h1>
-    <div class="card__actions">
-      <button
-        type="button"
-        mat-button
-        color="primary"
-        (click)="printEditionReport()"
-        [disabled]="printingEditionReport() || isLoadingEditionReport()"
-      >
-        <mat-icon>print</mat-icon>
-        {{ 'admin.reports.edition.print' | translate }}
-      </button>
-    </div>
+    <button
+      type="button"
+      mat-flat-button
+      color="primary"
+      (click)="printEditionReport()"
+      [disabled]="printingEditionReport() || isLoadingEditionReport()"
+    >
+      <mat-icon>print</mat-icon>
+      {{ 'admin.reports.edition.print' | translate }}
+    </button>
   </div>
 
   @if (isLoadingEditionReport()) {
@@ -32,10 +30,6 @@
       <div class="stat-tile">
         <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.grossRevenue.toFixed(2) } }}</span>
         <span class="stat-tile__label">{{ 'admin.reports.edition.grossRevenue' | translate }}</span>
-      </div>
-      <div class="stat-tile">
-        <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.commission.toFixed(2) } }}</span>
-        <span class="stat-tile__label">{{ 'admin.reports.edition.commission' | translate }}</span>
       </div>
       <div class="stat-tile">
         <span class="stat-tile__value">{{ 'admin.reports.edition.amountFormat' | translate: { amount: editionSummary.netPayoutTotal.toFixed(2) } }}</span>

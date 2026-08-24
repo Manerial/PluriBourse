@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -23,7 +22,6 @@ import { extractErrorType } from '../../shared/http-error.util';
   selector: 'app-settlement-list',
   standalone: true,
   imports: [
-    RouterLink,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,

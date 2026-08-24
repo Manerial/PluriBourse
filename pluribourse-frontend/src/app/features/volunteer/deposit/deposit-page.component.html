@@ -56,46 +56,39 @@
             <app-empty-state icon="inventory_2" [message]="'volunteer.deposit.item.list.empty' | translate" />
           } @else {
             <ul class="article-list">
-              @for (item of items(); track item.id) {
-                <li class="article-row">
-                  <div class="article-row__main">
-                    <span class="article-row__name">
-                      {{ item.name }}
-                      @if (item.lotId) {
-                        <span class="lot-badge">{{ 'volunteer.deposit.item.list.lotBadge' | translate }} · {{ item.lotName }}</span>
+              @for (row of displayRows(); track row.kind === 'item' ? row.item.id : row.lotId) {
+                @if (row.kind === 'item') {
+                  <li class="article-row">
+                    <div class="article-row__main">
+                      <span class="article-row__name">{{ row.item.name }}</span>
+                      <span class="article-row__meta">
+                        {{ row.item.categoryName }} ·
+                        {{ 'volunteer.deposit.item.list.priceFormat' | translate: { price: row.item.price } }}
+                        · {{ 'volunteer.deposit.item.list.table' | translate: { table: row.item.tableNumber } }}
+                      </span>
+                      @if (row.item.comment) {
+                        <span class="article-row__comment">{{ row.item.comment }}</span>
+                      } @else if (row.item.incomplete) {
+                        <span class="article-row__comment">{{ 'volunteer.deposit.item.list.noComment' | translate }}</span>
                       }
-                    </span>
-                    <span class="article-row__meta">
-                      {{ item.categoryName }} ·
-                      @if (item.lotId) {
-                        {{ 'volunteer.deposit.item.list.lotPriceFormat' | translate: { price: item.lotPrice } }}
-                      } @else {
-                        {{ 'volunteer.deposit.item.list.priceFormat' | translate: { price: item.price } }}
-                      }
-                      · {{ 'volunteer.deposit.item.list.table' | translate: { table: item.tableNumber } }}
-                    </span>
-                    @if (item.comment) {
-                      <span class="article-row__comment">{{ item.comment }}</span>
-                    }
-                  </div>
+                    </div>
 
-                  <mat-checkbox [checked]="!item.incomplete" (change)="toggleIncomplete(item)">
-                    {{ (item.incomplete ? 'volunteer.deposit.item.list.incomplete' : 'volunteer.deposit.item.list.complete') | translate }}
-                  </mat-checkbox>
+                    <mat-checkbox [checked]="!row.item.incomplete" (change)="toggleIncomplete(row.item)">
+                      {{ (row.item.incomplete ? 'volunteer.deposit.item.list.incomplete' : 'volunteer.deposit.item.list.complete') | translate }}
+                    </mat-checkbox>
 
-                  <div class="article-row__actions">
-                    @if (!item.lotId) {
+                    <div class="article-row__actions">
                       <button
                         type="button"
                         mat-icon-button
-                        (click)="openCommentEditor(item)"
+                        (click)="openCommentEditor(row.item)"
                         [attr.aria-label]="'volunteer.deposit.item.list.editComment' | translate">
                         <mat-icon>comment</mat-icon>
                       </button>
                       <button
                         type="button"
                         mat-icon-button
-                        (click)="startEdit(item)"
+                        (click)="startEdit(row.item)"
                         [attr.aria-label]="'volunteer.deposit.item.list.edit' | translate">
                         <mat-icon>edit</mat-icon>
                       </button>
@@ -103,15 +96,49 @@
                         type="button"
                         mat-icon-button
                         color="warn"
-                        (click)="confirmDelete(item)"
+                        (click)="confirmDelete(row.item)"
                         [attr.aria-label]="'volunteer.deposit.item.list.delete' | translate">
                         <mat-icon>delete</mat-icon>
                       </button>
-                    } @else if (isFirstLotRow(item)) {
+                    </div>
+
+                    @if (commentEditId() === row.item.id) {
+                      <div class="article-row__comment-editor">
+                        <mat-form-field appearance="outline">
+                          <mat-label>{{ 'volunteer.deposit.item.form.comment' | translate }}</mat-label>
+                          <textarea matInput rows="2" [ngModel]="commentDraft()" (ngModelChange)="commentDraft.set($event)"></textarea>
+                        </mat-form-field>
+                        <div class="article-row__comment-editor-actions">
+                          <button type="button" mat-button (click)="cancelCommentEdit()">
+                            {{ 'volunteer.deposit.item.form.cancel' | translate }}
+                          </button>
+                          <button type="button" mat-flat-button color="primary" (click)="saveComment(row.item)">
+                            {{ 'volunteer.deposit.item.form.save' | translate }}
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </li>
+                } @else {
+                  <li class="article-row article-row--lot">
+                    <div class="article-row__main">
+                      <span class="article-row__name">
+                        {{ row.lotName }}
+                        <span class="lot-badge">
+                          {{ 'volunteer.deposit.item.list.lotBadge' | translate }} ·
+                          {{ 'volunteer.deposit.item.list.lotMembersCount' | translate: { count: row.members.length } }}
+                        </span>
+                      </span>
+                      <span class="article-row__meta">
+                        {{ 'volunteer.deposit.item.list.lotPriceFormat' | translate: { price: row.lotPrice } }}
+                      </span>
+                    </div>
+
+                    <div class="article-row__actions">
                       <button
                         type="button"
                         mat-icon-button
-                        (click)="startEditLot(item.lotId)"
+                        (click)="startEditLot(row.lotId)"
                         [attr.aria-label]="'volunteer.deposit.item.list.editLot' | translate">
                         <mat-icon>edit</mat-icon>
                       </button>
@@ -119,30 +146,34 @@
                         type="button"
                         mat-icon-button
                         color="warn"
-                        (click)="confirmDeleteLot(item.lotId, item.lotName!)"
+                        (click)="confirmDeleteLot(row.lotId, row.lotName)"
                         [attr.aria-label]="'volunteer.deposit.item.list.deleteLot' | translate">
                         <mat-icon>delete</mat-icon>
                       </button>
-                    }
-                  </div>
-
-                  @if (commentEditId() === item.id) {
-                    <div class="article-row__comment-editor">
-                      <mat-form-field appearance="outline">
-                        <mat-label>{{ 'volunteer.deposit.item.form.comment' | translate }}</mat-label>
-                        <textarea matInput rows="2" [ngModel]="commentDraft()" (ngModelChange)="commentDraft.set($event)"></textarea>
-                      </mat-form-field>
-                      <div class="article-row__comment-editor-actions">
-                        <button type="button" mat-button (click)="cancelCommentEdit()">
-                          {{ 'volunteer.deposit.item.form.cancel' | translate }}
-                        </button>
-                        <button type="button" mat-flat-button color="primary" (click)="saveComment(item)">
-                          {{ 'volunteer.deposit.item.form.save' | translate }}
-                        </button>
-                      </div>
                     </div>
-                  }
-                </li>
+
+                    <ul class="lot-member-list">
+                      @for (member of row.members; track member.id) {
+                        <li class="lot-member-row">
+                          <div class="lot-member-row__main">
+                            <span class="lot-member-row__name">{{ member.name }}</span>
+                            <span class="lot-member-row__meta">
+                              {{ member.categoryName }} ·
+                              {{ 'volunteer.deposit.item.list.table' | translate: { table: member.tableNumber } }}
+                            </span>
+                            @if (member.comment) {
+                              <span class="lot-member-row__comment">{{ member.comment }}</span>
+                            }
+                          </div>
+
+                          <mat-checkbox [checked]="!member.incomplete" (change)="toggleIncomplete(member)">
+                            {{ (member.incomplete ? 'volunteer.deposit.item.list.incomplete' : 'volunteer.deposit.item.list.complete') | translate }}
+                          </mat-checkbox>
+                        </li>
+                      }
+                    </ul>
+                  </li>
+                }
               }
             </ul>
           }
@@ -152,16 +183,18 @@
 
     <div class="deposit-actions">
       @if (items().length > 0) {
-        <button
-          type="button"
-          mat-flat-button
-          color="primary"
-          class="reprint-slip-btn"
-          [disabled]="reprintingSlip() || reprintingLabels()"
-          (click)="reprintDepositSlip()">
-          <mat-icon>picture_as_pdf</mat-icon>
-          {{ 'volunteer.deposit.button.reprintSlip' | translate }}
-        </button>
+        @if (isDepositPhase()) {
+          <button
+            type="button"
+            mat-flat-button
+            color="primary"
+            class="reprint-slip-btn"
+            [disabled]="reprintingSlip() || reprintingLabels()"
+            (click)="reprintDepositSlip()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            {{ 'volunteer.deposit.button.reprintSlip' | translate }}
+          </button>
+        }
 
         <button
           type="button"

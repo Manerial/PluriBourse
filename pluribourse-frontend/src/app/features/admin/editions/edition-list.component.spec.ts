@@ -166,14 +166,20 @@ describe('EditionListComponent', () => {
     expect(currentEditionServiceMock.loadEdition).not.toHaveBeenCalled();
   });
 
-  it('displays the Archived phase label instead of the raw phase for an archived edition, and hides all row actions', async () => {
+  it('displays the Archived phase label instead of the raw phase for an archived edition, and only keeps the categories action', async () => {
     editionServiceMock.getAll.mockReturnValue(of([ARCHIVED_EDITION]));
     await component.ngOnInit();
     fixture.detectChanges();
 
     const cells: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('tbody td'));
     expect(cells[1].textContent?.trim()).toBe('edition.phase.ARCHIVED');
-    expect(fixture.nativeElement.querySelector('.actions-cell')).toBeNull();
+
+    const buttons: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.actions-cell button'));
+    const labels = buttons.map(el => el.textContent?.trim());
+    expect(labels.some(l => l?.includes('edition.actions.categories'))).toBe(true);
+    expect(labels.some(l => l?.includes('edition.actions.phases'))).toBe(false);
+    expect(labels.some(l => l?.includes('edition.actions.edit'))).toBe(false);
+    expect(labels.some(l => l?.includes('edition.actions.delete'))).toBe(false);
   });
 
   it('still shows the row actions for a closed-but-not-archived edition', async () => {

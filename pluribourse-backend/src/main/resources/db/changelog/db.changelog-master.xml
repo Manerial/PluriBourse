@@ -33,5 +33,6 @@
     <include file="db/changelog/027-edition-archive-snapshot-table.xml"/>
     <include file="db/changelog/028-reorder-fk-columns.xml"/>
     <include file="db/changelog/029-rename-printers-table.xml"/>
+    <include file="db/changelog/030-archived-items-price.xml"/>
 
 </databaseChangeLog>

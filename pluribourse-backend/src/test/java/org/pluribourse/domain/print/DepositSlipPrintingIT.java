@@ -211,7 +211,8 @@ class DepositSlipPrintingIT extends IntegrationTest {
         assertThat(countOccurrences(rendered, "Lot Duo")).isEqualTo(1);
         assertThat(countOccurrences(rendered, "12.00")).isEqualTo(1);
         // total = 7.00 + 12.00 = 19.00; commission 10% = 1.90; net = 17.10 (BigDecimal, HALF_UP)
-        assertThat(rendered).contains("17.10");
+        assertThat(rendered).contains("Total avant commission").contains("19.00");
+        assertThat(rendered).contains("Reversement max").contains("17.10");
     }
 
     @Test
@@ -267,34 +268,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
 
     @Test
     @Order(9)
-    void advance_edition_to_sale_phase() throws Exception {
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
-                        .session(adminSession).with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.phase").value("SALE"));
-    }
-
-    @Test
-    @Order(10)
-    void reprint_deposit_slip_outside_deposit_or_post_sale_phase_is_blocked() throws Exception {
-        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
-                        .session(volunteerSession).with(csrf()))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/deposit-reprint-not-allowed")));
-    }
-
-    @Test
-    @Order(11)
-    void advance_edition_to_post_sale_phase() throws Exception {
-        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
-                        .session(adminSession).with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.phase").value("POST_SALE"));
-    }
-
-    @Test
-    @Order(12)
-    void reprint_deposit_slip_in_post_sale_phase_with_a4_selected_is_queued_and_reaches_printer_bridge_client() throws Exception {
+    void reprint_deposit_slip_in_deposit_phase_with_a4_selected_is_queued_and_reaches_printer_bridge_client() throws Exception {
         // volunteerSession still holds the A4 selection from Order(4) — reprintDepositSlip() never
         // checks the thermal printer at all.
         mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
@@ -334,7 +308,47 @@ class DepositSlipPrintingIT extends IntegrationTest {
     }
 
     @Test
+    @Order(10)
+    void advance_edition_to_sale_phase() throws Exception {
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("SALE"));
+    }
+
+    @Test
+    @Order(11)
+    void reprint_deposit_slip_outside_deposit_phase_is_blocked_in_sale_phase() throws Exception {
+        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/deposit-reprint-not-allowed")));
+    }
+
+    @Test
+    @Order(12)
+    void advance_edition_to_post_sale_phase() throws Exception {
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("POST_SALE"));
+    }
+
+    @Test
     @Order(13)
+    void reprint_deposit_slip_is_blocked_in_post_sale_phase() throws Exception {
+        // Follow-up decision (2026-08-24): unlike the thermal labels (still reprintable through
+        // Post-vente, unchanged), the deposit slip stays Dépôt-only — the settlement report PDF
+        // (story 5.2) already covers the seller's post-vente paper trail with the real sold/unsold
+        // breakdown, and the slip's "reversement net attendu" would otherwise show a stale figure.
+        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/deposit-reprint-not-allowed")));
+    }
+
+    @Test
+    @Order(14)
     @Transactional(readOnly = true)
     void deposit_slip_renderer_rounds_net_amount_half_up_at_an_exact_tie() {
         // Independent of the shared sellerAId state above: total=10.00, rate=0.75% gives a raw net

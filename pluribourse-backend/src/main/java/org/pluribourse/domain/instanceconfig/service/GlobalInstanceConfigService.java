@@ -40,6 +40,11 @@ public class GlobalInstanceConfigService {
         return findConfig().getDefaultCommissionRate();
     }
 
+    @Transactional(readOnly = true)
+    public String getAssociationName() {
+        return findConfig().getAssociationName();
+    }
+
     private GlobalInstanceConfig findConfig() {
         return repository.findById(1L)
                 .orElseThrow(() -> new IllegalStateException("global_instance_config row missing — ensure migration 004 ran"));

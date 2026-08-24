@@ -20,8 +20,8 @@ const MOCK_EDITIONS: EditionDto[] = [
 ];
 
 const MOCK_ITEMS: ArchivedItemDto[] = [
-  { id: 1, name: 'Kapla', categoryName: 'Jouets', sold: true },
-  { id: 2, name: 'Robot', categoryName: 'Livres', sold: false },
+  { id: 1, name: 'Kapla', categoryName: 'Jouets', sold: true, price: 5 },
+  { id: 2, name: 'Robot', categoryName: 'Livres', sold: false, price: 12.5 },
 ];
 
 const MOCK_PAGE: ArchivedItemPageResponse = {

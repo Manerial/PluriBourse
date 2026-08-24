@@ -11,6 +11,7 @@ export interface SettlementDto {
   phone: string;
   email: string;
   amountDue: number;
+  amountPaid: number | null;
   status: SettlementStatus;
 }
 

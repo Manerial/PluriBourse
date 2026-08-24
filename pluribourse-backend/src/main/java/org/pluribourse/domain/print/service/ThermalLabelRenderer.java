@@ -57,9 +57,7 @@ public class ThermalLabelRenderer {
         writeBytes(out, SELECT_CODEPAGE_858);
         writeBytes(out, ALIGN_CENTER);
 
-        writeLine(out, item.getEdition().getName());
-        writeBytes(out, LINE_FEED);
-        writeLine(out, "--- " + messageSource.getMessage("print.label.category", null, locale) + " ---");
+        writeLine(out, "--- " + item.getCategory().getName() + " ---");
         Lot lot = item.getLot();
         if (lot != null) {
             writeLine(out, item.getName());
@@ -89,9 +87,24 @@ public class ThermalLabelRenderer {
 
     /**
      * Separator printed between two consecutive article labels (FR-030) — a tear/cut point only, no text is specified anywhere in the source artifacts.
+     * This is a printer-executed partial cut, precise by construction, so no extra blank-line
+     * margin is needed around it — unlike {@link #rollEnd()}.
      */
     public byte[] articleSeparator() {
         return PARTIAL_CUT.clone();
+    }
+
+    /**
+     * Blank-line margin appended once, after the very last label of the roll (follow-up fix,
+     * 2026-08-24): the printer never auto-cuts at the end of the job, so the volunteer tears the
+     * roll off by hand — this margin keeps that tear from landing on the last barcode/text. Must
+     * stay out of {@link #renderLabel}, otherwise it repeats after every article instead of once.
+     */
+    public byte[] rollEnd() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        writeBytes(out, LINE_FEED);
+        writeBytes(out, LINE_FEED);
+        return out.toByteArray();
     }
 
     private static int printAreaDots(int printerWidthMm) {
