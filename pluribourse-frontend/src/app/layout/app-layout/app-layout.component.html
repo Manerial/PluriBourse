@@ -1,4 +1,6 @@
-<div class="app-shell" [class.has-sidebar]="isAdmin()" [class.sidebar-collapsed]="isAdmin() && sidebarCollapsed()">
+<div class="app-shell"
+     [class.has-sidebar]="isAdmin() || isVolunteer()"
+     [class.sidebar-collapsed]="(isAdmin() || isVolunteer()) && sidebarCollapsed()">
 
   <!-- Topbar (56px fixed) -->
   <header class="topbar" role="banner">
@@ -58,10 +60,11 @@
     </div>
   </header>
 
-  <!-- Admin sidebar (200px, dark; collapsible to 56px icon rail) -->
-  @if (isAdmin()) {
+  <!-- Sidebar (200px, dark; collapsible to 56px icon rail) — shared shell for both roles, section content differs -->
+  @if (isAdmin() || isVolunteer()) {
     <nav class="sidebar" [class.sidebar--collapsed]="sidebarCollapsed()" [attr.aria-label]="'nav.sidebar.label' | translate">
 
+      @if (isAdmin()) {
       <div class="sidebar__section">
         <span class="sidebar__section-label">{{ 'nav.sections.management' | translate }}</span>
 
@@ -178,6 +181,67 @@
               matTooltipPosition="right">
               <span class="material-symbols-outlined" aria-hidden="true">payments</span>
               <span class="sidebar__item-label">{{ 'nav.admin.settlement' | translate }}</span>
+            </a>
+          }
+        </div>
+      }
+      }
+
+      @if (isVolunteer()) {
+        <div class="sidebar__section">
+          <span class="sidebar__section-label">{{ 'nav.sections.myScreens' | translate }}</span>
+
+          @if (currentEdition()?.phase === 'DEPOSIT' || currentEdition()?.phase === 'POST_SALE') {
+            <a
+              routerLink="/volunteer/deposit"
+              routerLinkActive="sidebar__item--active"
+              ariaCurrentWhenActive="page"
+              class="sidebar__item"
+              [attr.aria-label]="sidebarCollapsed() ? ('nav.volunteer.deposit' | translate) : null"
+              [matTooltip]="sidebarCollapsed() ? ('nav.volunteer.deposit' | translate) : ''"
+              matTooltipPosition="right">
+              <span class="material-symbols-outlined" aria-hidden="true">move_to_inbox</span>
+              <span class="sidebar__item-label">{{ 'nav.volunteer.deposit' | translate }}</span>
+            </a>
+          }
+
+          @if (currentEdition()?.phase === 'SALE') {
+            <a
+              routerLink="/volunteer/pos"
+              routerLinkActive="sidebar__item--active"
+              ariaCurrentWhenActive="page"
+              class="sidebar__item"
+              [attr.aria-label]="sidebarCollapsed() ? ('nav.volunteer.pos' | translate) : null"
+              [matTooltip]="sidebarCollapsed() ? ('nav.volunteer.pos' | translate) : ''"
+              matTooltipPosition="right">
+              <span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span>
+              <span class="sidebar__item-label">{{ 'nav.volunteer.pos' | translate }}</span>
+            </a>
+          }
+
+          <a
+            routerLink="/volunteer/catalog"
+            routerLinkActive="sidebar__item--active"
+            ariaCurrentWhenActive="page"
+            class="sidebar__item"
+            [attr.aria-label]="sidebarCollapsed() ? ('nav.volunteer.catalog' | translate) : null"
+            [matTooltip]="sidebarCollapsed() ? ('nav.volunteer.catalog' | translate) : ''"
+            matTooltipPosition="right">
+            <span class="material-symbols-outlined" aria-hidden="true">inventory</span>
+            <span class="sidebar__item-label">{{ 'nav.volunteer.catalog' | translate }}</span>
+          </a>
+
+          @if (currentEdition()?.phase === 'POST_SALE') {
+            <a
+              routerLink="/volunteer/settlement"
+              routerLinkActive="sidebar__item--active"
+              ariaCurrentWhenActive="page"
+              class="sidebar__item"
+              [attr.aria-label]="sidebarCollapsed() ? ('nav.volunteer.settlement' | translate) : null"
+              [matTooltip]="sidebarCollapsed() ? ('nav.volunteer.settlement' | translate) : ''"
+              matTooltipPosition="right">
+              <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+              <span class="sidebar__item-label">{{ 'nav.volunteer.settlement' | translate }}</span>
             </a>
           }
         </div>

@@ -69,6 +69,7 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/settlement', component: StubComponent },
           { path: 'admin/catalog', component: StubComponent },
           { path: 'volunteer/deposit', component: StubComponent },
+          { path: 'volunteer/pos', component: StubComponent },
           { path: 'volunteer/settlement', component: StubComponent },
           { path: 'volunteer/catalog', component: StubComponent },
           { path: 'account', component: StubComponent },
@@ -298,8 +299,15 @@ describe('AppLayoutComponent', () => {
       fixture.detectChanges();
     });
 
-    it('does not render the sidebar', () => {
-      expect(fixture.nativeElement.querySelector('.sidebar')).toBeFalsy();
+    it('renders the shared .sidebar element (same component/styling as admin)', () => {
+      expect(fixture.nativeElement.querySelector('.sidebar')).toBeTruthy();
+    });
+
+    it('does not render any admin-only links', () => {
+      const links: HTMLAnchorElement[] = Array.from(
+        fixture.nativeElement.querySelectorAll('a.sidebar__item')
+      );
+      expect(links.some(l => l.getAttribute('routerLink')?.startsWith('/admin'))).toBe(false);
     });
 
     it('does not apply admin class to role badge', () => {
@@ -309,6 +317,94 @@ describe('AppLayoutComponent', () => {
 
     it('shows the role badge', () => {
       expect(fixture.nativeElement.querySelector('.badge')).toBeTruthy();
+    });
+  });
+
+  describe('volunteer nav rail (shares the .sidebar shell/styling with admin)', () => {
+    beforeEach(() => {
+      mockCurrentUser.set(volunteerUser);
+      fixture.detectChanges();
+    });
+
+    it('renders the My screens section', () => {
+      const links: HTMLAnchorElement[] = Array.from(
+        fixture.nativeElement.querySelectorAll('a.sidebar__item')
+      );
+      expect(links.some(l => l.getAttribute('routerLink') === '/volunteer/catalog')).toBe(true);
+    });
+
+    it('always shows the Catalog link, even with no active edition', () => {
+      mockEdition.set(null);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/catalog"]')).toBeTruthy();
+    });
+
+    it('shows the Deposit link in the Deposit phase', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/deposit"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/pos"]')).toBeFalsy();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/settlement"]')).toBeFalsy();
+    });
+
+    it('shows the Deposit link in the Post-vente phase (deposit slip reprint)', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'POST_SALE' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/deposit"]')).toBeTruthy();
+    });
+
+    it('hides the Deposit link outside Deposit/Post-vente', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'PREPARATION' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/deposit"]')).toBeFalsy();
+    });
+
+    it('shows the Checkout link only in the Sale phase', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/pos"]')).toBeTruthy();
+
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/pos"]')).toBeFalsy();
+    });
+
+    it('shows the Settlement link only in the Post-vente phase', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'POST_SALE' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/settlement"]')).toBeTruthy();
+
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/settlement"]')).toBeFalsy();
+    });
+
+    it('applies active class to the rail entry matching the current route', async () => {
+      const router = TestBed.inject(Router);
+      await router.navigateByUrl('/volunteer/catalog');
+      fixture.detectChanges();
+      const catalogLink: HTMLAnchorElement = fixture.nativeElement.querySelector('a[routerLink="/volunteer/catalog"]');
+      expect(catalogLink.classList).toContain('sidebar__item--active');
+    });
+
+    it('updates rail entries reactively when the phase changes underneath the volunteer', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/pos"]')).toBeFalsy();
+
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/pos"]')).toBeTruthy();
+    });
+
+    it('collapses to the icon rail via the same toggle button as the admin sidebar', () => {
+      const toggle: HTMLButtonElement = fixture.nativeElement.querySelector('.sidebar__toggle');
+      toggle.click();
+      fixture.detectChanges();
+
+      expect(component.sidebarCollapsed()).toBe(true);
+      expect(fixture.nativeElement.querySelector('.sidebar').classList).toContain('sidebar--collapsed');
+      expect(localStorage.getItem('pluribourse.sidebarCollapsed.vol1')).toBe('true');
     });
   });
 

@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of 1-13-navigation-carrousel-benevole (2026-08-24)
+
+- **Pas de test pour la phase `CLOSED` dans la sidebar bénévole** — `app-layout.component.html:190-248` — retombe sur la seule entrée Catalogue, comme le cas `PREPARATION` déjà testé. Comportement présumé correct, juste non vérifié pour cette valeur d'enum précise. Risque faible : un bénévole n'atteint quasiment jamais les écrans d'une édition Clôturée.
+- **AC1 (liste complète des routes `/account`, `/printer-selection`, `/404`) non testée explicitement** — `app-layout.component.spec.ts` — vrai structurellement (le rail vit dans le wrapper `AppLayoutComponent` partagé, donc garanti présent), mais aucun test n'affirme explicitement sa présence sur chacune de ces routes.
+- **Test "does not render any admin-only links" ne vérifie que le préfixe `routerLink`** — `app-layout.component.spec.ts:305-310` — ne couvre pas d'autres affordances admin-only potentielles (boutons, contrôles d'édition). Théorique : rien d'autre n'existe actuellement dans le `.sidebar` partagé à part des liens.
+- **Pas de test d'exposition du tooltip au focus clavier (pas seulement au survol) sur les items du rail replié** — `app-layout.component.html` — lacune pré-existante, partagée avec les items déjà repliés de la sidebar admin, non introduite par cette story.
+
 ## Deferred from: code review of 6-2-consultation-catalogue-edition-archivee (2026-08-21)
 
 - **Jeton de direction du tri jamais validé** — `ArchivedItemService.java:406-413` (`validateSort`) — un `sort=name,sideways` (ou toute direction malformée) n'est pas rejeté, seul le nom de champ est vérifié contre la whitelist. Reproduit fidèlement `ItemCatalogService.validateSort`, copié tel quel selon les Dev Notes de la story — pré-existant, non introduit par cette story.

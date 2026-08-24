@@ -85,7 +85,8 @@
     },
     "sections": {
       "activeEdition": "Active Edition",
-      "management": "Management"
+      "management": "Management",
+      "myScreens": "My screens"
     },
     "sidebar": {
       "label": "Main navigation",
@@ -103,6 +104,12 @@
       "settlement": "Settlements",
       "reports": "Reports",
       "archivedCatalog": "Archived catalog"
+    },
+    "volunteer": {
+      "deposit": "Deposit",
+      "pos": "Checkout",
+      "catalog": "Catalog",
+      "settlement": "Settlements"
     }
   },
   "edition": {

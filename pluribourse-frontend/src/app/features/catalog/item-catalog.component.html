@@ -5,13 +5,13 @@
 
   <div class="filters-row">
     <mat-form-field appearance="outline">
-      <mat-label>{{ 'catalog.filters.name' | translate }}</mat-label>
-      <input matInput [value]="nameFilter()" [disabled]="isLoading()" (input)="onNameInput($any($event.target).value)" />
+      <mat-label>{{ 'catalog.filters.barcode' | translate }}</mat-label>
+      <input matInput [value]="barcodeFilter()" [disabled]="isLoading()" (input)="onBarcodeInput($any($event.target).value)" />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>{{ 'catalog.filters.barcode' | translate }}</mat-label>
-      <input matInput [value]="barcodeFilter()" [disabled]="isLoading()" (input)="onBarcodeInput($any($event.target).value)" />
+      <mat-label>{{ 'catalog.filters.name' | translate }}</mat-label>
+      <input matInput [value]="nameFilter()" [disabled]="isLoading()" (input)="onNameInput($any($event.target).value)" />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -35,12 +35,8 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>{{ 'catalog.filters.sold' | translate }}</mat-label>
-      <mat-select [value]="soldFilter()" [disabled]="isLoading()" (selectionChange)="onSoldChange($event.value)">
-        <mat-option [value]="null">{{ 'catalog.filters.soldOptions.all' | translate }}</mat-option>
-        <mat-option [value]="true">{{ 'catalog.filters.soldOptions.sold' | translate }}</mat-option>
-        <mat-option [value]="false">{{ 'catalog.filters.soldOptions.unsold' | translate }}</mat-option>
-      </mat-select>
+      <mat-label>{{ 'catalog.filters.seller' | translate }}</mat-label>
+      <input matInput [value]="sellerNameFilter()" [disabled]="isLoading()" (input)="onSellerNameInput($any($event.target).value)" />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -53,8 +49,12 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>{{ 'catalog.filters.seller' | translate }}</mat-label>
-      <input matInput [value]="sellerNameFilter()" [disabled]="isLoading()" (input)="onSellerNameInput($any($event.target).value)" />
+      <mat-label>{{ 'catalog.filters.sold' | translate }}</mat-label>
+      <mat-select [value]="soldFilter()" [disabled]="isLoading()" (selectionChange)="onSoldChange($event.value)">
+        <mat-option [value]="null">{{ 'catalog.filters.soldOptions.all' | translate }}</mat-option>
+        <mat-option [value]="true">{{ 'catalog.filters.soldOptions.sold' | translate }}</mat-option>
+        <mat-option [value]="false">{{ 'catalog.filters.soldOptions.unsold' | translate }}</mat-option>
+      </mat-select>
     </mat-form-field>
   </div>
 

@@ -85,7 +85,8 @@
     },
     "sections": {
       "activeEdition": "Édition active",
-      "management": "Gestion"
+      "management": "Gestion",
+      "myScreens": "Mes écrans"
     },
     "sidebar": {
       "label": "Navigation principale",
@@ -103,6 +104,12 @@
       "settlement": "Reversements",
       "reports": "Rapports",
       "archivedCatalog": "Catalogue archivé"
+    },
+    "volunteer": {
+      "deposit": "Dépôt",
+      "pos": "Caisse",
+      "catalog": "Catalogue",
+      "settlement": "Reversements"
     }
   },
   "edition": {

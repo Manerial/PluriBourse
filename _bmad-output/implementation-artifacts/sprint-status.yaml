@@ -35,7 +35,33 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-24"  # Sprint change proposal 2026-08-24 (voir planning-artifacts/) : 5
+last_updated: "2026-08-24"  # Correctif direct : filtres du catalogue (7 champs) et du catalogue
+# archivé passaient à la ligne au lieu de rester alignés sur une seule ligne (flex-wrap packait
+# selon la taille de base des champs, pas leur taille après rétrécissement) ; les filtres touchaient
+# aussi directement le séparateur du card__header (border-bottom), sans espace. Règle `.filters-row`
+# consolidée dans styles.scss (était dupliquée à l'identique dans item-catalog/archived-catalog/
+# report-page .scss). Également réordonné les 7 champs de item-catalog.component.html pour qu'ils
+# suivent l'ordre des colonnes du tableau de résultats (code-barres, nom, catégorie, table, vendeur,
+# complet, vendu — au lieu de l'ordre précédent qui ne correspondait pas aux colonnes).
+# Aucune régression (669/669 tests frontend).
+#
+# 2026-08-24 — Correctif suite à la revue de code de la story 1.13 (bmad-code-review) : le calcul de
+# flex-basis (140px) ne garantissait en réalité pas une seule ligne au plancher desktop 1024px avec la
+# sidebar bénévole désormais ouverte (7×140+48=1028px vs 776px disponibles) — `flex-wrap` passé à
+# `nowrap` (+ `min-width: 0` sur les champs) pour garantir une seule ligne par rétrécissement plutôt
+# que par un calcul de largeur de base toujours fragile. Icône « Dépôt » changée de `inventory_2`
+# (dupliquée avec Catalogue archivé côté admin) à `move_to_inbox`.
+#
+# Story 1.13 (navigation carrousel bénévole) créée via bmad-create-story :
+# rail de navigation persistant ajouté à AppLayoutComponent pour les bénévoles (bloc @if(isVolunteer())
+# miroir du bloc sidebar admin existant, 4 entrées Dépôt/Caisse/Catalogue/Solde phase-gated sur les
+# guards existants deposit/sale/settlement-phase.guard.ts, catalogue toujours visible FR-083). Statut →
+# ready-for-dev. Décisions de design tranchées faute de UX-DR existant (nouveau pattern, aucun mockup) :
+# rail icône fixe non-rétractable (pas de swipe/carrousel littéral), account/printer-selection exclus
+# (déjà dans le menu utilisateur), fond clair --mat-sys-surface-container (pas le fond sombre
+# --pb-sidebar-bg réservé à l'identité admin). Aucun changement backend.
+#
+# Sprint change proposal 2026-08-24 (voir planning-artifacts/) : 5
 # nouvelles stories backlog ajoutées suite à la revue de 8 demandes d'évolution post-MVP
 # (tous les épics étaient déjà done) — 2-9 (devise par édition), 2-10 (Préparation non
 # exclusive), 3-14 (catégorie du lot), 4-7 (refonte impression facture + liste des ventes),
@@ -218,7 +244,7 @@ development_status:
   # existait, Solde→Dépôt, pour la réimpression du bordereau). L'utilisateur souhaite un
   # composant carrousel/slider latéral permettant de changer d'écran bénévole en toute
   # circonstance — nouveau pattern d'interaction, absent des UX-DR actuels, à concevoir.
-  1-13-navigation-carrousel-benevole: backlog
+  1-13-navigation-carrousel-benevole: done
   epic-1-retrospective: optional
 
   # ─── Epic 2 : Gestion du cycle de vie des éditions ─────────────────────────

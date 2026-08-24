@@ -378,6 +378,28 @@ textarea:focus-visible,
   }
 }
 
+// ── Filters row (catalog/archived catalog/report edition selector) ─────────────
+.filters-row {
+  display: flex;
+  // nowrap + shrink (not wrap) guarantees every field stays on one line even at the
+  // project's 1024px floor width with the 200px sidebar open (a 7-field row, e.g. item
+  // catalog, only has ~776px available there — no flex-basis under "wrap" can fit that
+  // without also risking a wrap at slightly larger widths; shrinking never wraps).
+  flex-wrap: nowrap;
+  gap: var(--pb-space-sm);
+  margin-bottom: var(--pb-space-md);
+
+  mat-form-field {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+}
+
+// Detach the filters row from the card header's separator line (border-bottom).
+.card--list .filters-row {
+  margin-top: var(--pb-space-md);
+}
+
 // ── Actions cell ──────────────────────────────────────────────────────────────
 .actions-cell {
   display: flex;
