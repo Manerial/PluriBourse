@@ -10,6 +10,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { ItemDto } from '../../../models/item.model';
+import { CurrentEditionService } from '../../../services/current-edition.service';
 import { ItemService } from '../../../services/item.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { extractErrorType } from '../../../shared/http-error.util';
@@ -32,7 +33,10 @@ import { extractErrorType } from '../../../shared/http-error.util';
 })
 export class ItemFormComponent {
   private readonly itemService = inject(ItemService);
+  private readonly currentEditionService = inject(CurrentEditionService);
   private readonly fb = inject(FormBuilder);
+
+  readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
 
   readonly sellerId = input.required<number>();
   readonly categories = input.required<EditionCategoryDto[]>();

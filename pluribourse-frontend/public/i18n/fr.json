@@ -156,6 +156,12 @@
       "documentLanguage": {
         "label": "Langue des documents"
       },
+      "currency": {
+        "label": "Symbole monétaire",
+        "required": "Le symbole monétaire est obligatoire.",
+        "maxLength": "Le symbole monétaire ne doit pas dépasser 10 caractères.",
+        "pattern": "Le symbole monétaire ne peut contenir que des lettres, des chiffres, des espaces et les symboles €, $, £, ¥."
+      },
       "submit": "Créer",
       "cancel": "Annuler",
       "error": {
@@ -239,7 +245,7 @@
       "dialog": {
         "title": "Clôturer l'édition ?",
         "description": "L'édition sera clôturée et passera en lecture seule.",
-        "warningUnsettled": "{{count}} vendeur(s) non soldé(s) seront automatiquement marqués Non réclamé. Montant total transféré aux recettes de l'association : {{amount}} €."
+        "warningUnsettled": "{{count}} vendeur(s) non soldé(s) seront automatiquement marqués Non réclamé. Montant total transféré aux recettes de l'association : {{amount}} {{currency}}."
       }
     },
     "archive": {
@@ -380,7 +386,7 @@
         "list": {
           "title": "Articles déposés ({{ count }})",
           "empty": "Aucun article déposé pour ce vendeur.",
-          "priceFormat": "{{ price }} €",
+          "priceFormat": "{{ price }} {{ currency }}",
           "table": "Table {{ table }}",
           "complete": "Complet",
           "incomplete": "Incomplet",
@@ -390,7 +396,7 @@
           "editComment": "Modifier le commentaire",
           "lotBadge": "Lot",
           "lotMembersCount": "{{ count }} article(s)",
-          "lotPriceFormat": "{{ price }} € (lot)",
+          "lotPriceFormat": "{{ price }} {{ currency }} (lot)",
           "editLot": "Modifier le lot",
           "deleteLot": "Supprimer le lot"
         },
@@ -447,10 +453,10 @@
       "basket": {
         "title": "Panier",
         "empty": "Aucun article scanné.",
-        "priceFormat": "{{ price }} €",
+        "priceFormat": "{{ price }} {{ currency }}",
         "partOfLot": "Fait partie d'un lot",
         "remove": "Retirer {{ name }}",
-        "total": "Total : {{ total }} €",
+        "total": "Total : {{ total }} {{ currency }}",
         "validate": "Valider la transaction",
         "lot": {
           "header": "{{ name }} — {{ scanned }}/{{ total }} scannés",
@@ -474,7 +480,7 @@
           "label": "Somme remise (optionnel)",
           "note": "Si vous ne renseignez pas ce champ, le montant exact est supposé."
         },
-        "change": "Monnaie à rendre : {{ amount }} €"
+        "change": "Monnaie à rendre : {{ amount }} {{ currency }}"
       },
       "error": {
         "alreadySold": "Article déjà vendu sur un autre poste.",
@@ -582,6 +588,7 @@
       "associationName": "Nom de l'association",
       "defaultCommissionRate": "Taux de commission par défaut (%)",
       "defaultDocumentLanguage": "Langue des documents par défaut",
+      "defaultCurrency": "Symbole monétaire par défaut",
       "language": {
         "EN": "Anglais",
         "FR": "Français"
@@ -596,7 +603,10 @@
         "associationNameMaxLength": "Le nom de l'association ne doit pas dépasser 255 caractères.",
         "defaultCommissionRateRequired": "Le taux de commission par défaut est requis.",
         "defaultCommissionRateMin": "Le taux de commission par défaut ne peut pas être négatif.",
-        "defaultCommissionRateMax": "Le taux de commission par défaut ne peut pas dépasser 100%."
+        "defaultCommissionRateMax": "Le taux de commission par défaut ne peut pas dépasser 100%.",
+        "defaultCurrencyRequired": "Le symbole monétaire par défaut est requis.",
+        "defaultCurrencyMaxLength": "Le symbole monétaire par défaut ne doit pas dépasser 10 caractères.",
+        "defaultCurrencyPattern": "Le symbole monétaire par défaut ne peut contenir que des lettres, des chiffres, des espaces et les symboles €, $, £, ¥."
       }
     },
     "printQueue": {
@@ -657,7 +667,7 @@
         "cash": "Espèces",
         "check": "Chèque",
         "card": "Carte",
-        "amountFormat": "{{ amount }} €"
+        "amountFormat": "{{ amount }} {{ currency }}"
       },
       "edition": {
         "title": "Bilan d'édition",
@@ -673,7 +683,7 @@
         "cash": "Espèces",
         "check": "Chèque",
         "card": "Carte",
-        "amountFormat": "{{ amount }} €"
+        "amountFormat": "{{ amount }} {{ currency }}"
       },
       "export": {
         "title": "Exports",
@@ -793,7 +803,7 @@
           "unsold": "Non vendu"
         }
       },
-      "priceFormat": "{{ price }} €",
+      "priceFormat": "{{ price }} {{ currency }}",
       "empty": {
         "noSelection": "Sélectionnez une édition archivée pour consulter son catalogue.",
         "noResults": "Aucun article ne correspond aux filtres actuels."
@@ -812,7 +822,7 @@
       "table": "Table",
       "seller": "Vendeur",
       "price": "Prix",
-      "priceFormat": "{{ price }} €",
+      "priceFormat": "{{ price }} {{ currency }}",
       "complete": "État",
       "sold": "Vendu"
     },
@@ -860,7 +870,7 @@
       "status": "Statut",
       "actions": "Actions"
     },
-    "amountFormat": "{{ amount }} €",
+    "amountFormat": "{{ amount }} {{ currency }}",
     "status": {
       "UNSETTLED": "Non soldé",
       "SETTLED": "Soldé",
@@ -876,12 +886,12 @@
     },
     "form": {
       "amountLabel": "Montant remis",
-      "warningBelowDue": "Le montant saisi ({{ amount }} €) est inférieur au montant dû ({{ due }} €).",
+      "warningBelowDue": "Le montant saisi ({{ amount }} {{ currency }}) est inférieur au montant dû ({{ due }} {{ currency }}).",
       "errorAboveDue": "Le montant saisi ne peut pas dépasser le montant dû."
     },
     "unclaimedDialog": {
       "title": "Confirmer « Non réclamé »",
-      "description": "Le montant de {{ amount }} € sera transféré aux recettes de l'association. Cette action est irréversible."
+      "description": "Le montant de {{ amount }} {{ currency }} sera transféré aux recettes de l'association. Cette action est irréversible."
     },
     "success": {
       "settle": "Vendeur réglé.",

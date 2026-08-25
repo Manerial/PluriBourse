@@ -80,13 +80,14 @@ class GlobalInstanceConfigIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.associationName").value("Association Test"))
                 .andExpect(jsonPath("$.defaultCommissionRate").value(20.00))
-                .andExpect(jsonPath("$.defaultDocumentLanguage").value("EN"));
+                .andExpect(jsonPath("$.defaultDocumentLanguage").value("EN"))
+                .andExpect(jsonPath("$.defaultCurrency").value("€"));
     }
 
     @Test
     @Order(4)
     void admin_put_updates_association_name_and_persists() throws Exception {
-        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("20.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("20.00"), Language.EN, "€");
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -102,7 +103,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
     @Test
     @Order(5)
     void admin_put_commission_rate_stored_as_bigdecimal() throws Exception {
-        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.EN, "€");
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -118,7 +119,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
     @Test
     @Order(6)
     void admin_put_document_language_fr_persists() throws Exception {
-        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.FR);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.FR, "€");
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -133,20 +134,36 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test
     @Order(7)
-    void admin_put_commission_over_100_returns_400() throws Exception {
-        String body = "{\"associationName\":\"Mon Association\",\"defaultCommissionRate\":101,\"defaultDocumentLanguage\":\"EN\"}";
+    void admin_put_currency_persists() throws Exception {
+        // FR-103 (Story 2.9): defaultCurrency is a free-text symbol, not an ISO code — "$" proves
+        // it round-trips as-is, same pattern as admin_put_document_language_fr_persists (Order 6).
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.FR, "$");
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isBadRequest());
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.defaultCurrency").value("$"));
+
+        GlobalInstanceConfig config = repository.findById(1L).orElseThrow();
+        assertThat(config.getDefaultCurrency()).isEqualTo("$");
+
+        // Reset to "€" so later tests in this storyboard (which assume the migration default) are
+        // unaffected — same reset convention as the rest of this class relying on shared state.
+        GlobalInstanceConfigDto resetDto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("15.00"), Language.FR, "€");
+        mockMvc.perform(put("/api/admin/instance-config")
+                        .session(adminSession)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetDto)))
+                .andExpect(status().isOk());
     }
 
     @Test
     @Order(8)
-    void admin_put_invalid_language_returns_400() throws Exception {
-        String body = "{\"associationName\":\"Mon Association\",\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"DE\"}";
+    void admin_put_commission_over_100_returns_400() throws Exception {
+        String body = "{\"associationName\":\"Mon Association\",\"defaultCommissionRate\":101,\"defaultDocumentLanguage\":\"EN\",\"defaultCurrency\":\"€\"}";
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -157,6 +174,18 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test
     @Order(9)
+    void admin_put_invalid_language_returns_400() throws Exception {
+        String body = "{\"associationName\":\"Mon Association\",\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"DE\",\"defaultCurrency\":\"€\"}";
+        mockMvc.perform(put("/api/admin/instance-config")
+                        .session(adminSession)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Order(10)
     void volunteer_put_returns_403() throws Exception {
         String body = "{\"associationName\":\"test\",\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"EN\"}";
         mockMvc.perform(put("/api/admin/instance-config")
@@ -168,7 +197,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void unauthenticated_put_returns_401() throws Exception {
         String body = "{\"associationName\":\"test\",\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"EN\"}";
         mockMvc.perform(put("/api/admin/instance-config")
@@ -179,21 +208,9 @@ class GlobalInstanceConfigIT extends IntegrationTest {
     }
 
     @Test
-    @Order(11)
-    void admin_put_negative_commission_returns_400() throws Exception {
-        String body = "{\"associationName\":\"Mon Association\",\"defaultCommissionRate\":-1,\"defaultDocumentLanguage\":\"EN\"}";
-        mockMvc.perform(put("/api/admin/instance-config")
-                        .session(adminSession)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     @Order(12)
-    void admin_put_null_association_name_returns_400() throws Exception {
-        String body = "{\"associationName\":null,\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"EN\"}";
+    void admin_put_negative_commission_returns_400() throws Exception {
+        String body = "{\"associationName\":\"Mon Association\",\"defaultCommissionRate\":-1,\"defaultDocumentLanguage\":\"EN\",\"defaultCurrency\":\"€\"}";
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -204,8 +221,8 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test
     @Order(13)
-    void admin_put_blank_association_name_returns_400() throws Exception {
-        String body = "{\"associationName\":\"   \",\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"EN\"}";
+    void admin_put_null_association_name_returns_400() throws Exception {
+        String body = "{\"associationName\":null,\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"EN\",\"defaultCurrency\":\"€\"}";
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -216,8 +233,20 @@ class GlobalInstanceConfigIT extends IntegrationTest {
 
     @Test
     @Order(14)
+    void admin_put_blank_association_name_returns_400() throws Exception {
+        String body = "{\"associationName\":\"   \",\"defaultCommissionRate\":20,\"defaultDocumentLanguage\":\"EN\",\"defaultCurrency\":\"€\"}";
+        mockMvc.perform(put("/api/admin/instance-config")
+                        .session(adminSession)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Order(15)
     void admin_put_association_name_too_long_returns_400() throws Exception {
-        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("A".repeat(256), new BigDecimal("20.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("A".repeat(256), new BigDecimal("20.00"), Language.EN, "€");
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -227,9 +256,9 @@ class GlobalInstanceConfigIT extends IntegrationTest {
     }
 
     @Test
-    @Order(15)
+    @Order(16)
     void admin_put_commission_rate_100_accepted() throws Exception {
-        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("100.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("100.00"), Language.EN, "€");
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())
@@ -239,9 +268,9 @@ class GlobalInstanceConfigIT extends IntegrationTest {
     }
 
     @Test
-    @Order(16)
+    @Order(17)
     void admin_put_commission_rate_0_accepted() throws Exception {
-        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("0.00"), Language.EN);
+        GlobalInstanceConfigDto dto = new GlobalInstanceConfigDto("Mon Association", new BigDecimal("0.00"), Language.EN, "€");
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession)
                         .with(csrf())

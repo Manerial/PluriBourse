@@ -91,7 +91,7 @@
               <td>{{ item.categoryName }}</td>
               <td>{{ item.tableNumber }}</td>
               <td>{{ item.sellerFirstName }} {{ item.sellerLastName }}</td>
-              <td>{{ 'catalog.columns.priceFormat' | translate: { price: item.price } }}</td>
+              <td>{{ 'catalog.columns.priceFormat' | translate: { price: item.price, currency: currency() } }}</td>
               <td>{{ (item.incomplete ? 'catalog.filters.completeOptions.incomplete' : 'catalog.filters.completeOptions.complete') | translate }}</td>
               <td>{{ (item.sold ? 'catalog.filters.soldOptions.sold' : 'catalog.filters.soldOptions.unsold') | translate }}</td>
             </tr>

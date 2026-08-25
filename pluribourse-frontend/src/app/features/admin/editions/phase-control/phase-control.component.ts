@@ -201,6 +201,7 @@ export class PhaseControlComponent implements OnInit {
         description = this.translate.instant('phase.close.dialog.warningUnsettled', {
           count: unsettled.length,
           amount: total.toFixed(2),
+          currency: this.edition()?.currency,
         });
       } else {
         description = this.translate.instant('phase.close.dialog.description');

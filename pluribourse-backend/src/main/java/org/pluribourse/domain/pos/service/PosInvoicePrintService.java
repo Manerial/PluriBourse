@@ -57,6 +57,7 @@ public class PosInvoicePrintService {
         String editionName = sale.getEdition().getName();
         Locale documentLocale = sale.getEdition().getDocumentLanguage() == Language.FR ? Locale.FRENCH : Locale.ENGLISH;
         String associationName = globalInstanceConfigService.getConfig().associationName();
+        String currency = sale.getEdition().getCurrency();
         LocalDateTime soldAt = sale.getSoldAt();
 
         List<Item> items = itemRepository.findAllBySaleIdOrderById(saleId);
@@ -68,6 +69,6 @@ public class PosInvoicePrintService {
         }
 
         printQueueService.submit(a4PrinterId,
-                documentPrintService.buildInvoiceJob(associationName, editionName, soldAt, items, documentLocale));
+                documentPrintService.buildInvoiceJob(associationName, editionName, soldAt, items, documentLocale, currency));
     }
 }

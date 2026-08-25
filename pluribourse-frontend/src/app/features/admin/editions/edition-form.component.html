@@ -33,6 +33,20 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
+      <mat-label>{{ 'edition.create.currency.label' | translate }}</mat-label>
+      <input matInput formControlName="currency" type="text" maxlength="10" />
+      @if (form.controls.currency.errors?.['required'] && form.controls.currency.touched) {
+        <mat-error>{{ 'edition.create.currency.required' | translate }}</mat-error>
+      }
+      @if (form.controls.currency.errors?.['maxlength'] && form.controls.currency.touched) {
+        <mat-error>{{ 'edition.create.currency.maxLength' | translate }}</mat-error>
+      }
+      @if (form.controls.currency.errors?.['pattern'] && form.controls.currency.touched) {
+        <mat-error>{{ 'edition.create.currency.pattern' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
       <mat-label>{{ 'edition.create.documentLanguage.label' | translate }}</mat-label>
       <mat-select formControlName="documentLanguage">
         <mat-option value="EN">{{ 'admin.settings.language.EN' | translate }}</mat-option>

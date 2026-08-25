@@ -158,7 +158,7 @@ class DailyReportPrintingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, EDITION_NAME,
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -351,7 +351,7 @@ class DailyReportPrintingIT extends IntegrationTest {
     void daily_report_renderer_includes_counts_totals_and_payment_breakdown() {
         DailySalesReportDto report = new DailySalesReportDto(LocalDate.of(2026, 1, 2), 2, 2,
                 new BigDecimal("13.00"), new BigDecimal("1.30"),
-                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"));
+                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"), "€");
 
         byte[] pdf = dailyReportRenderer.renderDailyReport(EDITION_NAME, report, Locale.FRENCH);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
@@ -373,7 +373,7 @@ class DailyReportPrintingIT extends IntegrationTest {
         // language preference — same reasoning as SettlementReportPrintingIT Order 9.
         DailySalesReportDto report = new DailySalesReportDto(LocalDate.of(2026, 1, 2), 2, 2,
                 new BigDecimal("13.00"), new BigDecimal("1.30"),
-                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"));
+                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"), "€");
 
         byte[] pdf = dailyReportRenderer.renderDailyReport(EDITION_NAME, report, Locale.ENGLISH);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
@@ -387,7 +387,7 @@ class DailyReportPrintingIT extends IntegrationTest {
     void document_print_service_sends_the_rendered_daily_report_pdf_bytes_via_printer_bridge_client() {
         DailySalesReportDto report = new DailySalesReportDto(LocalDate.of(2026, 1, 2), 2, 2,
                 new BigDecimal("13.00"), new BigDecimal("1.30"),
-                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"));
+                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"), "€");
 
         PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
         DocumentPrintService isolatedDocumentPrintService =
@@ -438,6 +438,22 @@ class DailyReportPrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(endsWith("/invalid-printer-selection")));
+    }
+
+    @Test
+    @Order(16)
+    void daily_report_renderer_uses_the_passed_currency_not_a_hardcoded_symbol() {
+        DailySalesReportDto report = new DailySalesReportDto(LocalDate.of(2026, 1, 2), 2, 2,
+                new BigDecimal("13.00"), new BigDecimal("1.30"),
+                new BigDecimal("5.00"), new BigDecimal("0.00"), new BigDecimal("8.00"), "$");
+
+        byte[] pdf = dailyReportRenderer.renderDailyReport(EDITION_NAME, report, Locale.FRENCH);
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        // "$" is plain ASCII (unlike "€", never assertable as a literal character here) — its
+        // presence proves the passed currency reached the rendered text, not a symbol baked into
+        // the template.
+        assertThat(rendered).contains("13.00$").contains("1.30$");
     }
 
     private Long currentBasketId() throws Exception {

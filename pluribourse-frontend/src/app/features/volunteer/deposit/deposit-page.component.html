@@ -63,7 +63,7 @@
                       <span class="article-row__name">{{ row.item.name }}</span>
                       <span class="article-row__meta">
                         {{ row.item.categoryName }} ·
-                        {{ 'volunteer.deposit.item.list.priceFormat' | translate: { price: row.item.price } }}
+                        {{ 'volunteer.deposit.item.list.priceFormat' | translate: { price: row.item.price, currency: currency() } }}
                         · {{ 'volunteer.deposit.item.list.table' | translate: { table: row.item.tableNumber } }}
                       </span>
                       @if (row.item.comment) {
@@ -130,7 +130,7 @@
                         </span>
                       </span>
                       <span class="article-row__meta">
-                        {{ 'volunteer.deposit.item.list.lotPriceFormat' | translate: { price: row.lotPrice } }}
+                        {{ 'volunteer.deposit.item.list.lotPriceFormat' | translate: { price: row.lotPrice, currency: currency() } }}
                       </span>
                     </div>
 

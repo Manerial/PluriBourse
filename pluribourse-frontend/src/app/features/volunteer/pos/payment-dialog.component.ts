@@ -13,6 +13,7 @@ import { DialogShellComponent } from '../../../shared/components/dialog-shell/di
 export interface PaymentDialogData {
   items: ScanResult[];
   total: number;
+  currency: string | undefined;
 }
 
 @Component({

@@ -108,7 +108,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Bordereau 2026",
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -211,6 +211,10 @@ class DepositSlipPrintingIT extends IntegrationTest {
         assertThat(countOccurrences(rendered, "Lot Duo")).isEqualTo(1);
         assertThat(countOccurrences(rendered, "12.00")).isEqualTo(1);
         // total = 7.00 + 12.00 = 19.00; commission 10% = 1.90; net = 17.10 (BigDecimal, HALF_UP)
+        // € is encoded as CP1252 byte 0x80 in the PDF stream (see class-level font comment) but
+        // this test decodes bytes as ISO-8859-1, where 0x80 is a different code point — the € sign
+        // itself is therefore never assertable as a literal character here (pre-existing
+        // constraint, not new to Story 2.9); only the numeric amount is checked, as before.
         assertThat(rendered).contains("Total avant commission").contains("19.00");
         assertThat(rendered).contains("Reversement max").contains("17.10");
     }
@@ -365,6 +369,28 @@ class DepositSlipPrintingIT extends IntegrationTest {
 
         assertThat(rendered).contains("9.93");
         assertThat(rendered).doesNotContain("9.92");
+    }
+
+    @Test
+    @Order(15)
+    @Transactional(readOnly = true)
+        // Independent of the shared sellerAId state above, same reasoning as Order(14) — mutates
+        // the in-memory Edition only (readOnly transaction, never flushed) rather than persisting a
+        // currency change through the shared storyboard edition.
+    void deposit_slip_renderer_uses_the_edition_currency_not_a_hardcoded_symbol() {
+        SellerProfile seller = sellerRepository.findById(sellerAId).orElseThrow();
+        seller.getEdition().setCurrency("$");
+        Item item = new Item();
+        item.setName("Article Devise");
+        item.setPrice(new BigDecimal("10.00"));
+
+        byte[] pdf = depositSlipRenderer.renderSlip(seller, List.of(item), new BigDecimal("10.00"), Locale.FRENCH);
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        // "$" is plain ASCII (unlike "€", never assertable as a literal character here — see
+        // Order(5)'s comment) — its presence right after each amount proves the renderer used the
+        // edition's currency, not a symbol baked into the template.
+        assertThat(rendered).contains("10.00$").contains("9.00$");
     }
 
     private void waitUntil(BooleanSupplier condition) throws InterruptedException {

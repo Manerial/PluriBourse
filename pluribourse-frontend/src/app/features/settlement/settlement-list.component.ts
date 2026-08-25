@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 import { StatusFilter, SettlementDto } from '../../models/settlement.model';
 import { SettlementService } from '../../services/settlement.service';
 import { AuthService } from '../../services/auth.service';
+import { CurrentEditionService } from '../../services/current-edition.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 import { SkeletonRowComponent } from '../../shared/components/skeleton-row/skeleton-row.component';
@@ -41,8 +42,10 @@ export class SettlementListComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly currentEditionService = inject(CurrentEditionService);
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
+  readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
 
   readonly settlements = signal<SettlementDto[]>([]);
   readonly isLoading = signal(false);
@@ -101,6 +104,7 @@ export class SettlementListComponent implements OnInit {
     return this.translate.instant('settlement.form.warningBelowDue', {
       amount: amount.toFixed(2),
       due: settlement.amountDue.toFixed(2),
+      currency: this.currency(),
     });
   });
 
@@ -153,6 +157,7 @@ export class SettlementListComponent implements OnInit {
         title: this.translate.instant('settlement.unclaimedDialog.title'),
         description: this.translate.instant('settlement.unclaimedDialog.description', {
           amount: settlement.amountDue.toFixed(2),
+          currency: this.currency(),
         }),
         confirmVariant: 'error',
       })

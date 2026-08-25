@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -48,6 +48,7 @@ export class ArchivedCatalogComponent implements OnInit {
   readonly archivedEditions = signal<EditionDto[]>([]);
   readonly isLoadingEditions = signal(false);
   readonly selectedEditionId = signal<number | null>(null);
+  readonly currency = computed(() => this.archivedEditions().find((e) => e.id === this.selectedEditionId())?.currency);
 
   readonly items = signal<ArchivedItemDto[]>([]);
   readonly totalElements = signal(0);

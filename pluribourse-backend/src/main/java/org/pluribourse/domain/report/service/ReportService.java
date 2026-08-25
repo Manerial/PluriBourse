@@ -67,7 +67,8 @@ public class ReportService {
         long unsoldItemCount = ItemPricing.distinctByLot(unsoldItems).size();
 
         return new DailySalesReportDto(today, soldItemCount, unsoldItemCount, grossRevenue, commission,
-                cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP));
+                cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP),
+                edition.getCurrency());
     }
 
     /**
@@ -111,7 +112,7 @@ public class ReportService {
 
         return new EditionSummaryReportDto(soldItemCount, unsoldItemCount, grossRevenue, commission,
                 cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP),
-                netPayoutTotal, associationRevenueTotal);
+                netPayoutTotal, associationRevenueTotal, edition.getCurrency());
     }
 
     /**
@@ -126,6 +127,6 @@ public class ReportService {
         return new EditionSummaryReportDto(snapshot.getSoldItemCount(), snapshot.getUnsoldItemCount(),
                 snapshot.getGrossRevenue(), snapshot.getCommission(),
                 snapshot.getCashTotal(), snapshot.getCheckTotal(), snapshot.getCardTotal(),
-                snapshot.getNetPayoutTotal(), snapshot.getAssociationRevenueTotal());
+                snapshot.getNetPayoutTotal(), snapshot.getAssociationRevenueTotal(), edition.getCurrency());
     }
 }

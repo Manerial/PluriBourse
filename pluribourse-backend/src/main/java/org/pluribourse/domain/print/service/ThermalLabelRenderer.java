@@ -57,17 +57,18 @@ public class ThermalLabelRenderer {
         writeBytes(out, SELECT_CODEPAGE_858);
         writeBytes(out, ALIGN_CENTER);
 
+        String currency = item.getEdition().getCurrency();
         writeLine(out, "--- " + item.getCategory().getName() + " ---");
         Lot lot = item.getLot();
         if (lot != null) {
             writeLine(out, item.getName());
             List<Item> lotItems = lot.getItems();
             String globalPrice = String.format(Locale.ROOT, "%.2f", lot.getGlobalPrice());
-            writeLine(out, messageSource.getMessage("print.label.lotPrice", new Object[]{globalPrice}, locale));
+            writeLine(out, messageSource.getMessage("print.label.lotPrice", new Object[]{globalPrice, currency}, locale));
             writeLine(out, messageSource.getMessage("print.label.lotIndivisible", new Object[]{String.valueOf(lotItems.indexOf(item) + 1), String.valueOf(lotItems.size())}, locale));
         } else {
             String price = String.format(Locale.ROOT, "%.2f", item.getPrice());
-            writeLine(out, messageSource.getMessage("print.label.itemPrice", new Object[]{item.getName(), price}, locale));
+            writeLine(out, messageSource.getMessage("print.label.itemPrice", new Object[]{item.getName(), price, currency}, locale));
         }
 
         if (item.isIncomplete()) {

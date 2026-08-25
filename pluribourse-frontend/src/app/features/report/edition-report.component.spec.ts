@@ -22,6 +22,7 @@ const EDITION_REPORT: EditionSummaryReportDto = {
   cardTotal: 8.0,
   netPayoutTotal: 14.4,
   associationRevenueTotal: 1.6,
+  currency: '$',
 };
 
 describe('EditionReportComponent', () => {

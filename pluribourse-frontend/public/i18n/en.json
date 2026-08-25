@@ -156,6 +156,12 @@
       "documentLanguage": {
         "label": "Document language"
       },
+      "currency": {
+        "label": "Currency symbol",
+        "required": "Currency symbol is required.",
+        "maxLength": "Currency symbol must not exceed 10 characters.",
+        "pattern": "Currency symbol can only contain letters, digits, spaces, and the symbols €, $, £, ¥."
+      },
       "submit": "Create",
       "cancel": "Cancel",
       "error": {
@@ -239,7 +245,7 @@
       "dialog": {
         "title": "Close the edition?",
         "description": "The edition will be closed and become read-only.",
-        "warningUnsettled": "{{count}} unsettled seller(s) will be automatically marked Unclaimed. Total amount transferred to the association's revenue: {{amount}} €."
+        "warningUnsettled": "{{count}} unsettled seller(s) will be automatically marked Unclaimed. Total amount transferred to the association's revenue: {{amount}} {{currency}}."
       }
     },
     "archive": {
@@ -380,7 +386,7 @@
         "list": {
           "title": "Deposited items ({{ count }})",
           "empty": "No items deposited for this seller yet.",
-          "priceFormat": "{{ price }} €",
+          "priceFormat": "{{ price }} {{ currency }}",
           "table": "Table {{ table }}",
           "complete": "Complete",
           "incomplete": "Incomplete",
@@ -390,7 +396,7 @@
           "editComment": "Edit comment",
           "lotBadge": "Lot",
           "lotMembersCount": "{{ count }} item(s)",
-          "lotPriceFormat": "{{ price }} € (lot)",
+          "lotPriceFormat": "{{ price }} {{ currency }} (lot)",
           "editLot": "Edit lot",
           "deleteLot": "Delete lot"
         },
@@ -447,10 +453,10 @@
       "basket": {
         "title": "Basket",
         "empty": "No item scanned yet.",
-        "priceFormat": "€{{ price }}",
+        "priceFormat": "{{ currency }}{{ price }}",
         "partOfLot": "Part of a lot",
         "remove": "Remove {{ name }}",
-        "total": "Total: €{{ total }}",
+        "total": "Total: {{ currency }}{{ total }}",
         "validate": "Validate transaction",
         "lot": {
           "header": "{{ name }} — {{ scanned }}/{{ total }} scanned",
@@ -474,7 +480,7 @@
           "label": "Amount given (optional)",
           "note": "If you leave this field empty, the exact amount is assumed."
         },
-        "change": "Change due: €{{ amount }}"
+        "change": "Change due: {{ currency }}{{ amount }}"
       },
       "error": {
         "alreadySold": "Item already sold at another checkout.",
@@ -582,6 +588,7 @@
       "associationName": "Association name",
       "defaultCommissionRate": "Default commission rate (%)",
       "defaultDocumentLanguage": "Default document language",
+      "defaultCurrency": "Default currency symbol",
       "language": {
         "EN": "English",
         "FR": "French"
@@ -596,7 +603,10 @@
         "associationNameMaxLength": "Association name must not exceed 255 characters.",
         "defaultCommissionRateRequired": "Default commission rate is required.",
         "defaultCommissionRateMin": "Default commission rate cannot be negative.",
-        "defaultCommissionRateMax": "Default commission rate cannot exceed 100%."
+        "defaultCommissionRateMax": "Default commission rate cannot exceed 100%.",
+        "defaultCurrencyRequired": "Default currency symbol is required.",
+        "defaultCurrencyMaxLength": "Default currency symbol must not exceed 10 characters.",
+        "defaultCurrencyPattern": "Default currency symbol can only contain letters, digits, spaces, and the symbols €, $, £, ¥."
       }
     },
     "printQueue": {
@@ -657,7 +667,7 @@
         "cash": "Cash",
         "check": "Check",
         "card": "Card",
-        "amountFormat": "{{ amount }} €"
+        "amountFormat": "{{ amount }} {{ currency }}"
       },
       "edition": {
         "title": "Edition summary",
@@ -673,7 +683,7 @@
         "cash": "Cash",
         "check": "Check",
         "card": "Card",
-        "amountFormat": "{{ amount }} €"
+        "amountFormat": "{{ amount }} {{ currency }}"
       },
       "export": {
         "title": "Exports",
@@ -793,7 +803,7 @@
           "unsold": "Unsold"
         }
       },
-      "priceFormat": "{{ price }} €",
+      "priceFormat": "{{ price }} {{ currency }}",
       "empty": {
         "noSelection": "Select an archived edition to browse its catalog.",
         "noResults": "No item matches the current filters."
@@ -812,7 +822,7 @@
       "table": "Table",
       "seller": "Seller",
       "price": "Price",
-      "priceFormat": "{{ price }} €",
+      "priceFormat": "{{ price }} {{ currency }}",
       "complete": "Completeness",
       "sold": "Sold"
     },
@@ -860,7 +870,7 @@
       "status": "Status",
       "actions": "Actions"
     },
-    "amountFormat": "{{ amount }} €",
+    "amountFormat": "{{ amount }} {{ currency }}",
     "status": {
       "UNSETTLED": "Unsettled",
       "SETTLED": "Settled",
@@ -876,12 +886,12 @@
     },
     "form": {
       "amountLabel": "Amount given",
-      "warningBelowDue": "The given amount ({{ amount }} €) is lower than the amount due ({{ due }} €).",
+      "warningBelowDue": "The given amount ({{ amount }} {{ currency }}) is lower than the amount due ({{ due }} {{ currency }}).",
       "errorAboveDue": "The given amount cannot exceed the amount due."
     },
     "unclaimedDialog": {
       "title": "Confirm \"Unclaimed\"",
-      "description": "The amount of {{ amount }} € will be transferred to the association's revenue. This action is irreversible."
+      "description": "The amount of {{ amount }} {{ currency }} will be transferred to the association's revenue. This action is irreversible."
     },
     "success": {
       "settle": "Seller settled.",

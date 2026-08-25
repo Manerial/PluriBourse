@@ -72,7 +72,7 @@ class PhaseTransitionIT extends IntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Test 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Test 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.phase").value("PREPARATION"))
                 .andExpect(jsonPath("$.archived").value(false))
@@ -138,7 +138,7 @@ class PhaseTransitionIT extends IntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Suivante", null, null, null, null, false, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Suivante", null, null, null, null, false, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.phase").value("PREPARATION"))
                 .andReturn();
@@ -235,7 +235,7 @@ class PhaseTransitionIT extends IntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Après Clôture", null, null, null, null, false, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Après Clôture", null, null, null, null, false, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long thirdEditionId = objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();

@@ -25,4 +25,7 @@ public class GlobalInstanceConfig {
     @Enumerated(EnumType.STRING)
     @Column(name = "default_document_language", nullable = false, length = 2)
     private Language defaultDocumentLanguage;
+
+    @Column(name = "default_currency", nullable = false, length = 10)
+    private String defaultCurrency;
 }

@@ -93,6 +93,7 @@ export class DepositPageComponent {
   // was actually sold — reprinting it stays Dépôt-only (backend: PhaseGuard.
   // requireDepositPhaseForSlipReprint), unlike the thermal labels, still reprintable in Post-vente.
   readonly isDepositPhase = computed(() => this.currentEditionService.currentEdition()?.phase === 'DEPOSIT');
+  readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
 
   /**
    * The deposited-items list shows one row per lot (not one row per member item, as the

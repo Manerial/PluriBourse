@@ -11,6 +11,7 @@ const MOCK_ITEM: ScanResult = { itemId: 1, name: 'Kapla', price: 5, incomplete: 
 const testData: PaymentDialogData = {
   items: [MOCK_ITEM],
   total: 5,
+  currency: '€',
 };
 
 describe('PaymentDialogComponent', () => {

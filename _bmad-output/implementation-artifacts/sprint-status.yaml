@@ -35,7 +35,45 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-25"  # Story 2-10 (préparation non exclusive) : revue de code terminée (bmad-code-review), statut → done, voir entrée détaillée
+last_updated: "2026-08-25"  # Story 2-9 (devise par édition) : revue de code terminée (bmad-code-review), statut → done,
+# voir entrée détaillée ci-dessous. 3 revues parallèles (Blind Hunter, Edge Case Hunter, Acceptance
+# Auditor) : aucune violation d'AC, 5 patchs appliqués (panier POS oubliait la devise dans 3 clés i18n
+# malgré la même clé déjà corrigée dans le dialogue de paiement ; chaîne de devise vide/blanche non-null
+# contournait l'héritage du défaut à la création et le gel en Préparation à la mise à jour ; 5 tests de
+# GlobalInstanceConfigIT passaient pour la mauvaise raison depuis l'ajout de @NotBlank sur
+# defaultCurrency ; 4 des 6 renderers PDF/étiquette n'avaient aucun test prouvant que la devise était
+# réellement dynamique — seule "€" leur avait été passée par le balayage compilateur ; symbole
+# monétaire libre restreint à un charset sûr pour Cp858/CP1252, décision utilisateur explicite plutôt
+# que d'accepter le risque). 1 différé (concaténation prix+devise sans séparateur dans les 6 renderers
+# — pré-existant, déjà présent pour € avant cette story). 7 findings rejetés après vérification directe
+# dans le code (faux positifs : défaut Java absent sur Edition.currency — aligné sur ses vrais pairs
+# commissionRate/documentLanguage ; incohérence préfixe/suffixe frontend — toutes les clés i18n
+# utilisent en réalité le même patron suffixe ; risque de compilation sur un import `computed` déjà
+# présent ; devise `undefined` avant chargement — non atteignable, sale-phase.guard attend la résolution
+# complète avant d'activer la route ; etc.). Suite backend intégrale verte (0 échec), suite frontend
+# 670/670.
+# 4 écarts découverts pendant l'implémentation par rapport à la story (voir Dev Agent Record de
+# 2-9-devise-par-edition.md pour le détail) : (1) 6 renderers PDF touchés par €, pas 4 (déjà anticipé
+# par la story elle-même) ; (2) € aussi codé en dur en entité HTML &euro; dans 3 champs matTextSuffix
+# hors périmètre initial (item-form/lot-form de dépôt, montant de settlement-list), corrigés ; (3)
+# settlement-list.component.ts n'injectait en réalité pas CurrentEditionService malgré ce qu'affirmait
+# la story, injection ajoutée ; (4) assertion doesNotContain("€") prévue pour les tests de renderer
+# techniquement impossible (flux PDF encodé CP1252, décodé ISO-8859-1 par les tests — € littéral
+# jamais assertable, préexistant) — remplacée par une assertion de présence du nouveau symbole.
+# Suite backend 526/526, suite frontend 670/670, build production frontend réussi. Aucune régression.
+# Story 2-9 (devise par édition) créée via bmad-create-story, statut → ready-for-dev.
+# Analyse exhaustive du code réel ayant révélé un écart non anticipé par le sprint-change-proposal
+# du 2026-08-24 (qui ne listait que 4 renderers) : 6 renderers PDF/étiquette codent en dur le symbole
+# € (les 4 déjà identifiés + DailyReportRenderer/EditionReportRenderer, rapports admin 5.3/5.4, oubliés
+# par l'analyse d'impact d'origine). EditionDto (record Java, 27 sites de construction positionnelle
+# dans le code — 2 en main, 25 en tests) : le nouveau champ `currency` est ajouté en DERNIÈRE position,
+# jamais à côté de commissionRate/documentLanguage, pour transformer la correction en balayage piloté
+# par le compilateur (arité stricte d'un record) plutôt qu'un grep + relecture manuelle sujette à
+# décalage silencieux. Vérifié également hors périmètre, sans besoin de validation utilisateur : export
+# CSV (nombres bruts, jamais suffixés), EditionArchiveSnapshot (Edition.currency gelé au Dépôt et jamais
+# supprimé par l'archivage — aucun champ dupliqué nécessaire), commentaire d'encodage code page 858 de
+# ThermalLabelRenderer (mentionne € mais concerne l'encodage bas niveau, pas le symbole affiché).
+# Story 2-10 (préparation non exclusive) : revue de code terminée (bmad-code-review), statut → done, voir entrée détaillée
 # ci-dessous. Correctif direct : filtres du catalogue (7 champs) et du catalogue
 # archivé passaient à la ligne au lieu de rester alignés sur une seule ligne (flex-wrap packait
 # selon la taille de base des champs, pas leur taille après rétrécissement) ; les filtres touchaient
@@ -271,7 +309,7 @@ development_status:
   # notion de devise n'existait avant, € en dur dans tous les renderers). Même patron que le
   # taux de commission (FR-016/Story 2.1) : valeur par défaut instance (Story 1.5), copiée à
   # la création, figée au démarrage du Dépôt.
-  2-9-devise-par-edition: backlog
+  2-9-devise-par-edition: done
   # Sprint change proposal 2026-08-24, point 2 : PREPARATION sort de PhaseType.ACTIVE —
   # plusieurs éditions peuvent coexister en Préparation, une seule en Dépôt/Vente/Post-vente.
   # Contrôle d'unicité déplacé de la création (2.1) vers la transition Préparation→Dépôt (2.2).

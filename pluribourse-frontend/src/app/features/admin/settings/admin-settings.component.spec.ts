@@ -12,7 +12,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 const MOCK_CONFIG: GlobalInstanceConfigDto = {
   associationName: 'Mon Asso',
   defaultCommissionRate: 20,
-  defaultDocumentLanguage: Language.EN
+  defaultDocumentLanguage: Language.EN,
+  defaultCurrency: '€'
 };
 
 describe('AdminSettingsComponent', () => {
@@ -54,6 +55,7 @@ describe('AdminSettingsComponent', () => {
     expect(component.form.getRawValue().associationName).toBe('Mon Asso');
     expect(component.form.getRawValue().defaultCommissionRate).toBe(20);
     expect(component.form.getRawValue().defaultDocumentLanguage).toBe(Language.EN);
+    expect(component.form.getRawValue().defaultCurrency).toBe('€');
     expect(component.isLoading()).toBe(false);
     expect(component.loadError()).toBeNull();
   });
@@ -69,17 +71,19 @@ describe('AdminSettingsComponent', () => {
     const updated: GlobalInstanceConfigDto = {
       associationName: 'Nouvelle Asso',
       defaultCommissionRate: 15,
-      defaultDocumentLanguage: Language.FR
+      defaultDocumentLanguage: Language.FR,
+      defaultCurrency: '$'
     };
     instanceConfigServiceMock.updateConfig.mockReturnValue(of(updated));
-    component.form.setValue({ associationName: 'Nouvelle Asso', defaultCommissionRate: 15, defaultDocumentLanguage: Language.FR });
+    component.form.setValue({ associationName: 'Nouvelle Asso', defaultCommissionRate: 15, defaultDocumentLanguage: Language.FR, defaultCurrency: '$' });
 
     await component.onSubmit();
 
     expect(instanceConfigServiceMock.updateConfig).toHaveBeenCalledWith({
       associationName: 'Nouvelle Asso',
       defaultCommissionRate: 15,
-      defaultDocumentLanguage: Language.FR
+      defaultDocumentLanguage: Language.FR,
+      defaultCurrency: '$'
     });
     expect(toastMock.showSuccess).toHaveBeenCalledOnce();
     expect(toastMock.showError).not.toHaveBeenCalled();
@@ -87,6 +91,7 @@ describe('AdminSettingsComponent', () => {
     expect(component.form.getRawValue().associationName).toBe('Nouvelle Asso');
     expect(component.form.getRawValue().defaultCommissionRate).toBe(15);
     expect(component.form.getRawValue().defaultDocumentLanguage).toBe(Language.FR);
+    expect(component.form.getRawValue().defaultCurrency).toBe('$');
   });
 
   it('shows error toast and clears saving when updateConfig fails', async () => {

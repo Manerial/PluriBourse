@@ -4,5 +4,6 @@ export interface GlobalInstanceConfigDto {
   associationName: string;
   defaultCommissionRate: number;
   defaultDocumentLanguage: Language;
+  defaultCurrency: string;
 }
 

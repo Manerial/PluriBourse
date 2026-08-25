@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { Basket, Sale } from '../../../models/pos.model';
+import { CurrentEditionService } from '../../../services/current-edition.service';
 import { PosService } from '../../../services/pos.service';
 import { SseService } from '../../../services/sse.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
@@ -34,9 +35,12 @@ export class PosPageComponent implements OnInit {
   private readonly posService = inject(PosService);
   private readonly sseService = inject(SseService);
   private readonly paymentDialogService = inject(PaymentDialogService);
+  private readonly currentEditionService = inject(CurrentEditionService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
 
   // Story 4.2: the basket is now persisted server-side (NFR-006) — no longer a client-only signal.
   readonly basket = signal<Basket | null>(null);
@@ -176,7 +180,7 @@ export class PosPageComponent implements OnInit {
       return;
     }
     const result = await firstValueFrom(
-      this.paymentDialogService.open({ items: currentBasket.items, total: currentBasket.total })
+      this.paymentDialogService.open({ items: currentBasket.items, total: currentBasket.total, currency: this.currency() })
     );
     if (!result) {
       return;

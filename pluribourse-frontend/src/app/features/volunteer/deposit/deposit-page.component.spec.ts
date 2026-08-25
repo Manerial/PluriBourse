@@ -122,7 +122,7 @@ describe('DepositPageComponent', () => {
     // prove it hides outside that phase.
     TestBed.inject(CurrentEditionService).currentEdition.set({
       id: 1, name: 'Bourse Test', phase: 'DEPOSIT', commissionRate: 10, documentLanguage: Language.FR,
-      createdAt: '2026-01-01', archived: false, startDate: '2026-01-01', endDate: '2026-01-03',
+      createdAt: '2026-01-01', archived: false, startDate: '2026-01-01', endDate: '2026-01-03', currency: '€',
     });
 
     fixture = TestBed.createComponent(DepositPageComponent);

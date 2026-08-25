@@ -20,7 +20,8 @@ public interface EditionMapper {
     @Mapping(target = "createdAt", expression = "java(LocalDate.now())")
     @Mapping(target = "commissionRate", source = "commissionRate")
     @Mapping(target = "documentLanguage", source = "documentLanguage")
-    Edition toEntity(EditionDto dto, BigDecimal commissionRate, Language documentLanguage);
+    @Mapping(target = "currency", source = "currency")
+    Edition toEntity(EditionDto dto, BigDecimal commissionRate, Language documentLanguage, String currency);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "phase", ignore = true)
@@ -29,5 +30,6 @@ public interface EditionMapper {
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "commissionRate", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "documentLanguage", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "currency", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEditionFromDto(EditionDto dto, @MappingTarget Edition edition);
 }

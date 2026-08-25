@@ -9,7 +9,8 @@ import { Language } from '../models/language.enum';
 const MOCK_CONFIG: GlobalInstanceConfigDto = {
   associationName: 'Mon Asso',
   defaultCommissionRate: 20,
-  defaultDocumentLanguage: Language.EN
+  defaultDocumentLanguage: Language.EN,
+  defaultCurrency: '€'
 };
 
 describe('GlobalInstanceConfigService', () => {
@@ -43,7 +44,8 @@ describe('GlobalInstanceConfigService', () => {
       const update: GlobalInstanceConfigDto = {
         associationName: 'Nouvelle Asso',
         defaultCommissionRate: 15,
-        defaultDocumentLanguage: Language.FR
+        defaultDocumentLanguage: Language.FR,
+        defaultCurrency: '$'
       };
       const updated: GlobalInstanceConfigDto = { ...update };
 

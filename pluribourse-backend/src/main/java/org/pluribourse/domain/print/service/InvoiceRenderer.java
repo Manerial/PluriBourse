@@ -69,7 +69,7 @@ public class InvoiceRenderer {
     private final MessageSource messageSource;
 
     public byte[] renderInvoice(String associationName, String editionName, LocalDateTime soldAt,
-            List<Item> items, Locale documentLocale) {
+            List<Item> items, Locale documentLocale, String currency) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             Document document = new Document(PageSize.A4);
@@ -84,12 +84,12 @@ public class InvoiceRenderer {
             document.add(new Paragraph(editionName, BODY_FONT));
             document.add(new Paragraph(soldAt.format(SOLD_AT_FORMATTER), BODY_FONT));
             document.add(new Paragraph(" "));
-            document.add(buildItemsTable(items, documentLocale));
+            document.add(buildItemsTable(items, documentLocale, currency));
             document.add(new Paragraph(" "));
 
             BigDecimal total = ItemPricing.computeTotal(items).setScale(2, RoundingMode.HALF_UP);
             document.add(new Paragraph(
-                    messageSource.getMessage("print.invoice.total", new Object[]{total.toPlainString()}, documentLocale), TOTAL_FONT));
+                    messageSource.getMessage("print.invoice.total", new Object[]{total.toPlainString(), currency}, documentLocale), TOTAL_FONT));
 
             document.close();
         } catch (DocumentException e) {
@@ -98,7 +98,7 @@ public class InvoiceRenderer {
         return out.toByteArray();
     }
 
-    private PdfPTable buildItemsTable(List<Item> items, Locale documentLocale) {
+    private PdfPTable buildItemsTable(List<Item> items, Locale documentLocale, String currency) {
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
         table.addCell(headerCell(messageSource.getMessage("print.invoice.column.item", null, documentLocale)));
@@ -106,9 +106,9 @@ public class InvoiceRenderer {
 
         for (Item item : ItemPricing.distinctByLot(items)) {
             if (item.getLot() != null) {
-                addRow(table, item.getLot().getName(), item.getLot().getGlobalPrice());
+                addRow(table, item.getLot().getName(), item.getLot().getGlobalPrice(), currency);
             } else {
-                addRow(table, item.getName(), item.getPrice());
+                addRow(table, item.getName(), item.getPrice(), currency);
             }
         }
         return table;
@@ -118,8 +118,8 @@ public class InvoiceRenderer {
         return new PdfPCell(new Phrase(text, HEADER_FONT));
     }
 
-    private void addRow(PdfPTable table, String name, BigDecimal price) {
+    private void addRow(PdfPTable table, String name, BigDecimal price, String currency) {
         table.addCell(new PdfPCell(new Phrase(name, BODY_FONT)));
-        table.addCell(new PdfPCell(new Phrase(price.setScale(2, RoundingMode.HALF_UP) + "€", BODY_FONT)));
+        table.addCell(new PdfPCell(new Phrase(price.setScale(2, RoundingMode.HALF_UP) + currency, BODY_FONT)));
     }
 }

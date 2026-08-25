@@ -79,6 +79,7 @@ export class EditionFormComponent implements OnInit {
     name: ['', [Validators.required, Validators.maxLength(255)]],
     commissionRate: [0, [Validators.required, Validators.min(0), Validators.max(100), maxDecimalsValidator(2)]],
     documentLanguage: ['EN' as 'EN' | 'FR', [Validators.required]],
+    currency: ['', [Validators.required, Validators.maxLength(10), Validators.pattern(/^[A-Za-z0-9 €$£¥]*$/)]],
     startDate: [null as Date | null, [Validators.required]],
     endDate: [null as Date | null, [Validators.required]]
   }, { validators: [dateRangeValidator('startDate', 'endDate')] });
@@ -100,6 +101,7 @@ export class EditionFormComponent implements OnInit {
         name: edition.name,
         commissionRate: edition.commissionRate,
         documentLanguage: edition.documentLanguage,
+        currency: edition.currency,
         startDate: fromIsoDate(edition.startDate),
         endDate: fromIsoDate(edition.endDate)
       });
@@ -116,7 +118,8 @@ export class EditionFormComponent implements OnInit {
       const config = await firstValueFrom(this.instanceConfigService.getConfig());
       this.form.patchValue({
         commissionRate: config.defaultCommissionRate,
-        documentLanguage: config.defaultDocumentLanguage as 'EN' | 'FR'
+        documentLanguage: config.defaultDocumentLanguage as 'EN' | 'FR',
+        currency: config.defaultCurrency
       });
     } catch {
       // Non-critical: form defaults remain (0 / EN)
@@ -132,11 +135,12 @@ export class EditionFormComponent implements OnInit {
     this.isSaving.set(true);
     this.formError.set(null);
     try {
-      const { name, commissionRate, documentLanguage, startDate, endDate } = this.form.getRawValue();
+      const { name, commissionRate, documentLanguage, currency, startDate, endDate } = this.form.getRawValue();
       const payload = {
         name,
         commissionRate,
         documentLanguage,
+        currency,
         startDate: toIsoDate(startDate!),
         endDate: toIsoDate(endDate!)
       };

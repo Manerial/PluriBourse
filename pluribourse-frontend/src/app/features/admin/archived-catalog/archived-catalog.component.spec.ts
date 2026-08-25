@@ -14,9 +14,9 @@ import { EditionDto } from '../../../models/edition.model';
 import { Language } from '../../../models/language.enum';
 
 const MOCK_EDITIONS: EditionDto[] = [
-  { id: 1, name: 'Bourse 2025', phase: 'CLOSED', commissionRate: 10, documentLanguage: Language.FR, createdAt: '2025-01-01', archived: true, startDate: '2025-03-01', endDate: '2025-03-03' },
-  { id: 2, name: 'Bourse 2024', phase: 'CLOSED', commissionRate: 10, documentLanguage: Language.FR, createdAt: '2024-01-01', archived: true, startDate: '2024-03-01', endDate: '2024-03-03' },
-  { id: 3, name: 'Bourse Active', phase: 'DEPOSIT', commissionRate: 10, documentLanguage: Language.FR, createdAt: '2026-01-01', archived: false, startDate: '2026-03-01', endDate: '2026-03-03' },
+  { id: 1, name: 'Bourse 2025', phase: 'CLOSED', commissionRate: 10, documentLanguage: Language.FR, createdAt: '2025-01-01', archived: true, startDate: '2025-03-01', endDate: '2025-03-03', currency: '$' },
+  { id: 2, name: 'Bourse 2024', phase: 'CLOSED', commissionRate: 10, documentLanguage: Language.FR, createdAt: '2024-01-01', archived: true, startDate: '2024-03-01', endDate: '2024-03-03', currency: '€' },
+  { id: 3, name: 'Bourse Active', phase: 'DEPOSIT', commissionRate: 10, documentLanguage: Language.FR, createdAt: '2026-01-01', archived: false, startDate: '2026-03-01', endDate: '2026-03-03', currency: '€' },
 ];
 
 const MOCK_ITEMS: ArchivedItemDto[] = [
@@ -91,6 +91,8 @@ describe('ArchivedCatalogComponent', () => {
     expect(archivedItemServiceMock.getArchivedCatalog).toHaveBeenCalledWith(1, expect.objectContaining({ page: 0, size: 50 }));
     expect(component.items().length).toBe(2);
     expect(component.totalElements()).toBe(2);
+    // Story 2.9: currency is resolved from the selected edition, not hardcoded.
+    expect(component.currency()).toBe('$');
   });
 
   it('name filter reloads at page 0 after debounce', async () => {

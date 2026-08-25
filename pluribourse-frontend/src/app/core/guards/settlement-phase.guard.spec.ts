@@ -22,6 +22,7 @@ describe('settlementPhaseGuard', () => {
     archived: false,
     startDate: '2026-01-01',
     endDate: '2026-01-03',
+    currency: '€',
   });
 
   beforeEach(() => {

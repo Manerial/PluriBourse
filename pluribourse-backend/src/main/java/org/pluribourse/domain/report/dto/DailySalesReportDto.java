@@ -11,5 +11,6 @@ public record DailySalesReportDto(
         BigDecimal commission,
         BigDecimal cashTotal,
         BigDecimal checkTotal,
-        BigDecimal cardTotal) {
+        BigDecimal cardTotal,
+        String currency) {
 }

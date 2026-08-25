@@ -16,6 +16,7 @@ const mockEdition: EditionDto = {
   archived: false,
   startDate: '2026-06-01',
   endDate: '2026-06-03',
+  currency: '€',
 };
 
 describe('CurrentEditionService', () => {

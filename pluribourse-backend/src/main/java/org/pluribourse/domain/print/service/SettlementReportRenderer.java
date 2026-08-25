@@ -80,6 +80,7 @@ public class SettlementReportRenderer {
             writer.setCompressionLevel(PdfStream.NO_COMPRESSION);
             document.open();
 
+            String currency = sellerProfile.getEdition().getCurrency();
             document.add(new Paragraph(messageSource.getMessage("print.settlementReport.title", null, documentLocale), TITLE_FONT));
             document.add(new Paragraph(sellerProfile.getFirstName() + " " + sellerProfile.getLastName(), BODY_FONT));
             document.add(new Paragraph(sellerProfile.getEdition().getName(), BODY_FONT));
@@ -105,30 +106,30 @@ public class SettlementReportRenderer {
                     .toList();
 
             document.add(new Paragraph(messageSource.getMessage("print.settlementReport.soldSection", null, documentLocale), SECTION_FONT));
-            document.add(buildSoldItemsTable(soldItems, documentLocale));
+            document.add(buildSoldItemsTable(soldItems, documentLocale, currency));
             document.add(new Paragraph(" "));
 
             document.add(new Paragraph(messageSource.getMessage("print.settlementReport.unsoldSection", null, documentLocale), SECTION_FONT));
-            document.add(buildUnsoldItemsTable(unsoldItems, documentLocale));
+            document.add(buildUnsoldItemsTable(unsoldItems, documentLocale, currency));
             document.add(new Paragraph(" "));
 
             BigDecimal total = ItemPricing.computeTotal(soldItems).setScale(2, RoundingMode.HALF_UP);
             BigDecimal commissionAmount = ItemPricing.computeCommission(total, commissionRate).setScale(2, RoundingMode.HALF_UP);
             BigDecimal net = ItemPricing.computeNetPayout(total, commissionRate);
             document.add(new Paragraph(
-                    messageSource.getMessage("print.settlementReport.totalGross", new Object[]{total.toPlainString()}, documentLocale), BODY_FONT));
+                    messageSource.getMessage("print.settlementReport.totalGross", new Object[]{total.toPlainString(), currency}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
                     messageSource.getMessage("print.settlementReport.commission", new Object[]{commissionRate.toPlainString()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
-                    messageSource.getMessage("print.settlementReport.commissionAmount", new Object[]{commissionAmount.toPlainString()}, documentLocale), BODY_FONT));
+                    messageSource.getMessage("print.settlementReport.commissionAmount", new Object[]{commissionAmount.toPlainString(), currency}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
-                    messageSource.getMessage("print.settlementReport.netAmount", new Object[]{net.toPlainString()}, documentLocale), TOTAL_FONT));
+                    messageSource.getMessage("print.settlementReport.netAmount", new Object[]{net.toPlainString(), currency}, documentLocale), TOTAL_FONT));
             // amountPaid is only known once the seller has actually been settled (Settlement.amount,
             // SETTLED status) — the report stays printable before that (AC4, story 5.2), so this line
             // is simply omitted rather than printing a misleading 0€.
             if (amountPaid != null) {
                 document.add(new Paragraph(
-                        messageSource.getMessage("print.settlementReport.amountPaid", new Object[]{amountPaid.setScale(2, RoundingMode.HALF_UP).toPlainString()}, documentLocale), TOTAL_FONT));
+                        messageSource.getMessage("print.settlementReport.amountPaid", new Object[]{amountPaid.setScale(2, RoundingMode.HALF_UP).toPlainString(), currency}, documentLocale), TOTAL_FONT));
             }
 
             document.close();
@@ -138,7 +139,7 @@ public class SettlementReportRenderer {
         return out.toByteArray();
     }
 
-    private PdfPTable buildSoldItemsTable(List<Item> soldItems, Locale documentLocale) {
+    private PdfPTable buildSoldItemsTable(List<Item> soldItems, Locale documentLocale, String currency) {
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
         table.addCell(headerCell(messageSource.getMessage("print.settlementReport.column.item", null, documentLocale)));
@@ -148,12 +149,12 @@ public class SettlementReportRenderer {
             String name = item.getLot() != null ? item.getLot().getName() : item.getName();
             BigDecimal price = item.getLot() != null ? item.getLot().getGlobalPrice() : item.getPrice();
             table.addCell(new PdfPCell(new Phrase(name, BODY_FONT)));
-            table.addCell(new PdfPCell(new Phrase(price.setScale(2, RoundingMode.HALF_UP) + "€", BODY_FONT)));
+            table.addCell(new PdfPCell(new Phrase(price.setScale(2, RoundingMode.HALF_UP) + currency, BODY_FONT)));
         }
         return table;
     }
 
-    private PdfPTable buildUnsoldItemsTable(List<Item> unsoldItems, Locale documentLocale) {
+    private PdfPTable buildUnsoldItemsTable(List<Item> unsoldItems, Locale documentLocale, String currency) {
         PdfPTable table = new PdfPTable(4);
         table.setWidthPercentage(100);
         table.addCell(headerCell(messageSource.getMessage("print.settlementReport.column.item", null, documentLocale)));
@@ -165,7 +166,7 @@ public class SettlementReportRenderer {
             String name = item.getLot() != null ? item.getLot().getName() : item.getName();
             // A lot must show its price in this section too (AC 1), unlike a standalone unsold
             // item, which never has a price cell here.
-            String price = item.getLot() != null ? item.getLot().getGlobalPrice().setScale(2, RoundingMode.HALF_UP) + "€" : "";
+            String price = item.getLot() != null ? item.getLot().getGlobalPrice().setScale(2, RoundingMode.HALF_UP) + currency : "";
             table.addCell(new PdfPCell(new Phrase(name, BODY_FONT)));
             table.addCell(new PdfPCell(new Phrase(item.getCategory().getName(), BODY_FONT)));
             table.addCell(new PdfPCell(new Phrase(String.valueOf(item.getTableNumber()), BODY_FONT)));

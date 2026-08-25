@@ -115,6 +115,7 @@ class SaleConcurrencyIT {
         edition.setPhase(PhaseType.SALE);
         edition.setCommissionRate(new BigDecimal("10.00"));
         edition.setDocumentLanguage(Language.FR);
+        edition.setCurrency("€");
         edition.setCreatedAt(LocalDate.now());
         edition.setStartDate(LocalDate.now());
         edition.setEndDate(LocalDate.now().plusDays(1));

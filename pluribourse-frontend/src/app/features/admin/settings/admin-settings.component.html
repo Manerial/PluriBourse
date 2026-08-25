@@ -53,6 +53,20 @@
           </mat-select>
         </mat-form-field>
 
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'admin.settings.defaultCurrency' | translate }}</mat-label>
+          <input matInput formControlName="defaultCurrency" type="text" maxlength="10" />
+          @if (form.controls.defaultCurrency.errors?.['required'] && form.controls.defaultCurrency.touched) {
+            <mat-error>{{ 'admin.settings.error.defaultCurrencyRequired' | translate }}</mat-error>
+          }
+          @if (form.controls.defaultCurrency.errors?.['maxlength'] && form.controls.defaultCurrency.touched) {
+            <mat-error>{{ 'admin.settings.error.defaultCurrencyMaxLength' | translate }}</mat-error>
+          }
+          @if (form.controls.defaultCurrency.errors?.['pattern'] && form.controls.defaultCurrency.touched) {
+            <mat-error>{{ 'admin.settings.error.defaultCurrencyPattern' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
         <div class="card__actions">
           <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid || isSaving()">
             {{ 'admin.settings.save' | translate }}

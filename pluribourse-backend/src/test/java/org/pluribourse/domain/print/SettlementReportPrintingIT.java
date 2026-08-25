@@ -160,7 +160,7 @@ class SettlementReportPrintingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, EDITION_NAME,
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -481,7 +481,7 @@ class SettlementReportPrintingIT extends IntegrationTest {
         MvcResult edition2Result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Bilan 2027", null, null, null, null, false, LocalDate.of(2027, 1, 1), LocalDate.of(2027, 1, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Bilan 2027", null, null, null, null, false, LocalDate.of(2027, 1, 1), LocalDate.of(2027, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long edition2Id = objectMapper.readValue(edition2Result.getResponse().getContentAsString(), EditionDto.class).id();
@@ -503,6 +503,24 @@ class SettlementReportPrintingIT extends IntegrationTest {
                         .session(volunteer1Session).with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.type").value(endsWith("/seller-not-found")));
+    }
+
+    @Test
+    @Order(15)
+    @Transactional(readOnly = true)
+        // read-only, no HTTP writes below: mutates the in-memory Edition only (never flushed),
+        // same reasoning as DepositSlipPrintingIT's Order(15) currency test.
+    void settlement_report_renderer_uses_the_edition_currency_not_a_hardcoded_symbol() {
+        List<Item> items = itemRepository.findAllBySellerProfileIdForSettlementReport(aliceId);
+        items.getFirst().getSellerProfile().getEdition().setCurrency("$");
+
+        byte[] pdf = settlementReportRenderer.renderReport(items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.FRENCH, null);
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        // "$" is plain ASCII (unlike "€", never assertable as a literal character here) — its
+        // presence proves the renderer used the edition's currency, not a symbol baked into the
+        // template.
+        assertThat(rendered).contains("15.00$").contains("13.50$");
     }
 
     private void waitUntil(BooleanSupplier condition) throws InterruptedException {

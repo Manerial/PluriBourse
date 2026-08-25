@@ -77,10 +77,10 @@ public class DailyReportRenderer {
                     messageSource.getMessage("print.dailyReport.unsoldCount", new Object[]{String.valueOf(report.unsoldItemCount())}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
                     messageSource.getMessage("print.dailyReport.grossRevenue",
-                            new Object[]{report.grossRevenue().setScale(2, RoundingMode.HALF_UP).toPlainString()}, documentLocale), BODY_FONT));
+                            new Object[]{report.grossRevenue().setScale(2, RoundingMode.HALF_UP).toPlainString(), report.currency()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(
                     messageSource.getMessage("print.dailyReport.commission",
-                            new Object[]{report.commission().setScale(2, RoundingMode.HALF_UP).toPlainString()}, documentLocale), BODY_FONT));
+                            new Object[]{report.commission().setScale(2, RoundingMode.HALF_UP).toPlainString(), report.currency()}, documentLocale), BODY_FONT));
             document.add(new Paragraph(" "));
 
             document.add(new Paragraph(messageSource.getMessage("print.dailyReport.paymentBreakdown", null, documentLocale), HEADER_FONT));
@@ -99,16 +99,16 @@ public class DailyReportRenderer {
         table.addCell(headerCell(messageSource.getMessage("print.dailyReport.column.method", null, documentLocale)));
         table.addCell(headerCell(messageSource.getMessage("print.dailyReport.column.amount", null, documentLocale)));
 
-        addPaymentRow(table, messageSource.getMessage("print.dailyReport.method.cash", null, documentLocale), report.cashTotal(), documentLocale);
-        addPaymentRow(table, messageSource.getMessage("print.dailyReport.method.check", null, documentLocale), report.checkTotal(), documentLocale);
-        addPaymentRow(table, messageSource.getMessage("print.dailyReport.method.card", null, documentLocale), report.cardTotal(), documentLocale);
+        addPaymentRow(table, messageSource.getMessage("print.dailyReport.method.cash", null, documentLocale), report.cashTotal(), documentLocale, report.currency());
+        addPaymentRow(table, messageSource.getMessage("print.dailyReport.method.check", null, documentLocale), report.checkTotal(), documentLocale, report.currency());
+        addPaymentRow(table, messageSource.getMessage("print.dailyReport.method.card", null, documentLocale), report.cardTotal(), documentLocale, report.currency());
         return table;
     }
 
-    private void addPaymentRow(PdfPTable table, String label, BigDecimal amount, Locale documentLocale) {
+    private void addPaymentRow(PdfPTable table, String label, BigDecimal amount, Locale documentLocale, String currency) {
         table.addCell(new PdfPCell(new Phrase(label, BODY_FONT)));
         String formattedAmount = messageSource.getMessage("print.dailyReport.amountFormat",
-                new Object[]{amount.setScale(2, RoundingMode.HALF_UP).toPlainString()}, documentLocale);
+                new Object[]{amount.setScale(2, RoundingMode.HALF_UP).toPlainString(), currency}, documentLocale);
         table.addCell(new PdfPCell(new Phrase(formattedAmount, BODY_FONT)));
     }
 

@@ -94,7 +94,7 @@ class EditionManagementIT extends IntegrationTest {
     @Test
     @Order(4)
     void admin_create_edition_without_rate_and_language_uses_instance_defaults() throws Exception {
-        EditionDto dto = new EditionDto(null, "Bourse 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Bourse 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession)
                         .with(csrf())
@@ -109,6 +109,9 @@ class EditionManagementIT extends IntegrationTest {
         assertThat(created.phase()).isEqualTo(PhaseType.PREPARATION);
         assertThat(created.commissionRate()).isEqualByComparingTo(new BigDecimal("20.00"));
         assertThat(created.documentLanguage()).isEqualTo(Language.EN);
+        // FR-103 (Story 2.9): currency null in the request falls back to the instance default,
+        // same mechanism as commissionRate/documentLanguage above.
+        assertThat(created.currency()).isEqualTo("€");
     }
 
     @Test
@@ -119,7 +122,7 @@ class EditionManagementIT extends IntegrationTest {
         // pour que la suite du storyboard (Order 6 attend exactement une édition) reste inchangée ;
         // l'exclusivité Dépôt/Vente/Post-vente (FR-105) elle-même est couverte par PhaseTransitionIT,
         // pas ici.
-        EditionDto dto = new EditionDto(null, "Bourse 2027", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Bourse 2027", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession)
                         .with(csrf())
@@ -147,7 +150,9 @@ class EditionManagementIT extends IntegrationTest {
     @Test
     @Order(7)
     void admin_update_edition_in_preparation_succeeds() throws Exception {
-        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("15.00"), Language.FR, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        // FR-104 (Story 2.9): currency is explicitly changed here (not null) to prove it's
+        // modifiable while still in Preparation — same pattern as commissionRate/documentLanguage.
+        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("15.00"), Language.FR, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, "$");
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())
@@ -156,10 +161,12 @@ class EditionManagementIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Bourse 2026 Modifiée"))
                 .andExpect(jsonPath("$.commissionRate").value(15.00))
-                .andExpect(jsonPath("$.documentLanguage").value("FR"));
+                .andExpect(jsonPath("$.documentLanguage").value("FR"))
+                .andExpect(jsonPath("$.currency").value("$"));
 
         Edition edition = repository.findById(createdEditionId).orElseThrow();
         assertThat(edition.getCommissionRate()).isEqualByComparingTo(new BigDecimal("15.00"));
+        assertThat(edition.getCurrency()).isEqualTo("$");
     }
 
     @Test
@@ -169,7 +176,9 @@ class EditionManagementIT extends IntegrationTest {
         edition.setPhase(PhaseType.DEPOSIT);
         repository.save(edition);
 
-        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("30.00"), Language.FR, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        // FR-104 (Story 2.9): also attempts to change currency (was "$" from Order 7) — must be
+        // blocked exactly like commissionRate, not a silent exception to the PREPARATION-only rule.
+        EditionDto dto = new EditionDto(null, "Bourse 2026 Modifiée", null, new BigDecimal("30.00"), Language.FR, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, "£");
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())
@@ -177,6 +186,9 @@ class EditionManagementIT extends IntegrationTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/edition-cannot-be-updated")));
+
+        Edition unchanged = repository.findById(createdEditionId).orElseThrow();
+        assertThat(unchanged.getCurrency()).isEqualTo("$");
     }
 
     @Test
@@ -184,7 +196,7 @@ class EditionManagementIT extends IntegrationTest {
     void admin_update_name_only_in_deposit_phase_still_returns_422() throws Exception {
         // Edition is still in DEPOSIT from Order 8 — omitting commissionRate must not bypass the
         // lock: editing is blocked entirely outside Preparation, not just the commission rate.
-        EditionDto dto = new EditionDto(null, "Bourse 2026 Finale", null, null, Language.EN, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Bourse 2026 Finale", null, null, Language.EN, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession)
                         .with(csrf())
@@ -262,7 +274,7 @@ class EditionManagementIT extends IntegrationTest {
     @Order(15)
     void create_edition_after_closed_edition_succeeds_with_explicit_rate_and_language() throws Exception {
         // CLOSED phase is not active — creating after a CLOSED edition is allowed (FR-010)
-        EditionDto dto1 = new EditionDto(null, "Bourse Clôturée", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto1 = new EditionDto(null, "Bourse Clôturée", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         MvcResult r1 = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -275,7 +287,7 @@ class EditionManagementIT extends IntegrationTest {
         repository.save(edition);
 
         // Create new edition with explicit rate and language
-        EditionDto dto2 = new EditionDto(null, "Bourse Suivante", null, new BigDecimal("12.50"), Language.FR, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto2 = new EditionDto(null, "Bourse Suivante", null, new BigDecimal("12.50"), Language.FR, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         MvcResult r2 = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -313,7 +325,7 @@ class EditionManagementIT extends IntegrationTest {
         repository.save(existing);
 
         EditionDto dto = new EditionDto(null, "Bourse Datée", null, null, null, null, false,
-                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 3), null);
+                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 3), null, null);
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -337,7 +349,7 @@ class EditionManagementIT extends IntegrationTest {
                 null,
                 false,
                 null,
-                LocalDate.of(2026, 10, 3), null);
+                LocalDate.of(2026, 10, 3), null, null);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -361,7 +373,7 @@ class EditionManagementIT extends IntegrationTest {
         edition.setPhase(PhaseType.SALE);
         repository.save(edition);
 
-        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -384,7 +396,7 @@ class EditionManagementIT extends IntegrationTest {
         edition.setPhase(PhaseType.POST_SALE);
         repository.save(edition);
 
-        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -407,7 +419,7 @@ class EditionManagementIT extends IntegrationTest {
         edition.setPhase(PhaseType.CLOSED);
         repository.save(edition);
 
-        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Bourse Datée", null, new BigDecimal("30.00"), null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -430,7 +442,7 @@ class EditionManagementIT extends IntegrationTest {
     @Test
     @Order(26)
     void volunteer_post_returns_403() throws Exception {
-        EditionDto dto = new EditionDto(null, "Volunteer Attempt", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Volunteer Attempt", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         mockMvc.perform(post("/api/admin/editions")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -441,7 +453,7 @@ class EditionManagementIT extends IntegrationTest {
     @Test
     @Order(27)
     void volunteer_put_returns_403() throws Exception {
-        EditionDto dto = new EditionDto(null, "Volunteer Attempt", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
+        EditionDto dto = new EditionDto(null, "Volunteer Attempt", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null);
         mockMvc.perform(put("/api/admin/editions/" + createdEditionId)
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

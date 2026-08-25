@@ -111,7 +111,7 @@ class EditionArchivingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, EDITION_NAME,
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, "€"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -231,7 +231,7 @@ class EditionArchivingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Archive Vide 2026",
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 3), null))))
+                                LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 3), null, "€"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         emptyEditionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();

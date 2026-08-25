@@ -25,6 +25,7 @@ const SALE_EDITION: EditionDto = {
   archived: false,
   startDate: '2026-01-01',
   endDate: '2026-01-03',
+  currency: '€',
 };
 
 const POST_SALE_EDITION: EditionDto = { ...SALE_EDITION, phase: 'POST_SALE' };
@@ -47,6 +48,7 @@ const DAILY_REPORT: DailySalesReportDto = {
   cashTotal: 5.0,
   checkTotal: 0.0,
   cardTotal: 8.0,
+  currency: '€',
 };
 
 describe('ReportPageComponent', () => {

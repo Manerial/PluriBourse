@@ -81,7 +81,7 @@
                 <td>{{ item.name }}</td>
                 <td>{{ item.categoryName }}</td>
                 <td>{{ (item.sold ? 'admin.archivedCatalog.columns.soldValues.sold' : 'admin.archivedCatalog.columns.soldValues.unsold') | translate }}</td>
-                <td>{{ 'admin.archivedCatalog.priceFormat' | translate: { price: item.price.toFixed(2) } }}</td>
+                <td>{{ 'admin.archivedCatalog.priceFormat' | translate: { price: item.price.toFixed(2), currency: currency() } }}</td>
               </tr>
             }
           </tbody>

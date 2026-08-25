@@ -7,4 +7,5 @@ export interface DailySalesReportDto {
   cashTotal: number;
   checkTotal: number;
   cardTotal: number;
+  currency: string;
 }

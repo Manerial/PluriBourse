@@ -161,7 +161,7 @@ class EditionReportPrintingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, EDITION_NAME,
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -383,7 +383,7 @@ class EditionReportPrintingIT extends IntegrationTest {
         EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
                 new BigDecimal("16.00"), new BigDecimal("1.60"),
                 new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"),
-                BigDecimal.ZERO, BigDecimal.ZERO);
+                BigDecimal.ZERO, BigDecimal.ZERO, "€");
 
         byte[] pdf = editionReportRenderer.renderEditionReport(EDITION_NAME, report, Locale.FRENCH);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
@@ -405,7 +405,7 @@ class EditionReportPrintingIT extends IntegrationTest {
         EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
                 new BigDecimal("16.00"), new BigDecimal("1.60"),
                 new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"),
-                BigDecimal.ZERO, BigDecimal.ZERO);
+                BigDecimal.ZERO, BigDecimal.ZERO, "€");
 
         byte[] pdf = editionReportRenderer.renderEditionReport(EDITION_NAME, report, Locale.ENGLISH);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
@@ -420,7 +420,7 @@ class EditionReportPrintingIT extends IntegrationTest {
         EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
                 new BigDecimal("16.00"), new BigDecimal("1.60"),
                 new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"),
-                BigDecimal.ZERO, BigDecimal.ZERO);
+                BigDecimal.ZERO, BigDecimal.ZERO, "€");
 
         PrinterBridgeClient mockClient = mock(PrinterBridgeClient.class);
         DocumentPrintService isolatedDocumentPrintService = new DocumentPrintService(
@@ -470,6 +470,23 @@ class EditionReportPrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(endsWith("/invalid-printer-selection")));
+    }
+
+    @Test
+    @Order(19)
+    void edition_report_renderer_uses_the_passed_currency_not_a_hardcoded_symbol() {
+        EditionSummaryReportDto report = new EditionSummaryReportDto(3, 2,
+                new BigDecimal("16.00"), new BigDecimal("1.60"),
+                new BigDecimal("5.00"), new BigDecimal("3.00"), new BigDecimal("8.00"),
+                BigDecimal.ZERO, BigDecimal.ZERO, "$");
+
+        byte[] pdf = editionReportRenderer.renderEditionReport(EDITION_NAME, report, Locale.FRENCH);
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        // "$" is plain ASCII (unlike "€", never assertable as a literal character here) — its
+        // presence proves the passed currency reached the rendered text, not a symbol baked into
+        // the template.
+        assertThat(rendered).contains("16.00$").contains("1.60$");
     }
 
     private void assertEditionReport(EditionSummaryReportDto report) {

@@ -14,6 +14,7 @@ const MOCK_REPORT: DailySalesReportDto = {
   cashTotal: 5.0,
   checkTotal: 0.0,
   cardTotal: 8.0,
+  currency: '€',
 };
 
 describe('ReportService', () => {

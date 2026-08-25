@@ -96,7 +96,7 @@ public class EditionArchivingService {
         // EditionService.getEditionById populates it (story 2.7, T4).
         return new EditionDto(saved.getId(), saved.getName(), saved.getPhase(), saved.getCommissionRate(),
                 saved.getDocumentLanguage(), saved.getCreatedAt(), saved.isArchived(),
-                saved.getStartDate(), saved.getEndDate(), null);
+                saved.getStartDate(), saved.getEndDate(), null, saved.getCurrency());
     }
 
     private void applySnapshot(Edition edition, EditionSummaryReportDto snapshot) {

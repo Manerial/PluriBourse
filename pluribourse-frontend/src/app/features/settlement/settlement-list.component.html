@@ -67,10 +67,10 @@
                 <td>{{ settlement.phone }}</td>
                 <td>{{ settlement.email }}</td>
               }
-              <td>{{ 'settlement.amountFormat' | translate: { amount: settlement.amountDue.toFixed(2) } }}</td>
+              <td>{{ 'settlement.amountFormat' | translate: { amount: settlement.amountDue.toFixed(2), currency: currency() } }}</td>
               <td>
                 @if (settlement.amountPaid !== null) {
-                  {{ 'settlement.amountFormat' | translate: { amount: settlement.amountPaid.toFixed(2) } }}
+                  {{ 'settlement.amountFormat' | translate: { amount: settlement.amountPaid.toFixed(2), currency: currency() } }}
                 }
               </td>
               <td>{{ ('settlement.status.' + settlement.status) | translate }}</td>
@@ -115,7 +115,7 @@
                         [id]="'settle-amount-' + settlement.sellerId"
                         [value]="settleAmount()"
                         (input)="onSettleAmountChange($event)" />
-                      <span matTextSuffix>&euro;</span>
+                      <span matTextSuffix>{{ currency() }}</span>
                     </mat-form-field>
                     <button
                       type="button"

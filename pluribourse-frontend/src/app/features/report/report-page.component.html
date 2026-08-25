@@ -29,11 +29,11 @@
           <span class="stat-tile__label">{{ 'admin.reports.daily.unsoldCount' | translate }}</span>
         </div>
         <div class="stat-tile">
-          <span class="stat-tile__value">{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.grossRevenue.toFixed(2) } }}</span>
+          <span class="stat-tile__value">{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.grossRevenue.toFixed(2), currency: dailyReport.currency } }}</span>
           <span class="stat-tile__label">{{ 'admin.reports.daily.grossRevenue' | translate }}</span>
         </div>
         <div class="stat-tile">
-          <span class="stat-tile__value">{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.commission.toFixed(2) } }}</span>
+          <span class="stat-tile__value">{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.commission.toFixed(2), currency: dailyReport.currency } }}</span>
           <span class="stat-tile__label">{{ 'admin.reports.daily.commission' | translate }}</span>
         </div>
       </div>
@@ -49,15 +49,15 @@
         <tbody>
           <tr>
             <td>{{ 'admin.reports.daily.cash' | translate }}</td>
-            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.cashTotal.toFixed(2) } }}</td>
+            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.cashTotal.toFixed(2), currency: dailyReport.currency } }}</td>
           </tr>
           <tr>
             <td>{{ 'admin.reports.daily.check' | translate }}</td>
-            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.checkTotal.toFixed(2) } }}</td>
+            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.checkTotal.toFixed(2), currency: dailyReport.currency } }}</td>
           </tr>
           <tr>
             <td>{{ 'admin.reports.daily.card' | translate }}</td>
-            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.cardTotal.toFixed(2) } }}</td>
+            <td>{{ 'admin.reports.daily.amountFormat' | translate: { amount: dailyReport.cardTotal.toFixed(2), currency: dailyReport.currency } }}</td>
           </tr>
         </tbody>
       </table>

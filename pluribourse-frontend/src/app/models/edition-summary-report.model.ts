@@ -8,4 +8,5 @@ export interface EditionSummaryReportDto {
   cardTotal: number;
   netPayoutTotal: number;
   associationRevenueTotal: number;
+  currency: string;
 }

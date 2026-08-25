@@ -10,13 +10,14 @@ import { EditionService } from '../../../services/edition.service';
 import { GlobalInstanceConfigService } from '../../../services/global-instance-config.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 
-const MOCK_CONFIG = { associationName: 'Test', defaultCommissionRate: 20, defaultDocumentLanguage: 'EN' };
+const MOCK_CONFIG = { associationName: 'Test', defaultCommissionRate: 20, defaultDocumentLanguage: 'EN', defaultCurrency: '€' };
 
 const MOCK_EDITION = {
   id: 1,
   name: 'Bourse Printemps',
   commissionRate: 15,
   documentLanguage: 'FR' as const,
+  currency: '$',
   startDate: '2026-10-01',
   endDate: '2026-10-03',
   phase: 'PREPARATION' as const,
@@ -65,6 +66,7 @@ describe('EditionFormComponent', () => {
     it('pre-fills commissionRate and documentLanguage from instance config', () => {
       expect(component.form.controls.commissionRate.value).toBe(20);
       expect(component.form.controls.documentLanguage.value).toBe('EN');
+      expect(component.form.controls.currency.value).toBe('€');
     });
 
     function fillRequiredDates(): void {
@@ -85,6 +87,7 @@ describe('EditionFormComponent', () => {
         name: 'Bourse 2026',
         commissionRate: 20,
         documentLanguage: 'EN',
+        currency: '€',
         startDate: '2026-10-01',
         endDate: '2026-10-03',
       });
@@ -159,6 +162,7 @@ describe('EditionFormComponent', () => {
       expect(component.form.controls.name.value).toBe('Bourse Printemps');
       expect(component.form.controls.commissionRate.value).toBe(15);
       expect(component.form.controls.documentLanguage.value).toBe('FR');
+      expect(component.form.controls.currency.value).toBe('$');
       expect(component.form.controls.startDate.value).toEqual(new Date(2026, 9, 1));
       expect(component.form.controls.endDate.value).toEqual(new Date(2026, 9, 3));
     });
@@ -173,6 +177,7 @@ describe('EditionFormComponent', () => {
         name: 'Bourse Printemps',
         commissionRate: 15,
         documentLanguage: 'FR',
+        currency: '$',
         startDate: '2026-10-01',
         endDate: '2026-10-03',
       });

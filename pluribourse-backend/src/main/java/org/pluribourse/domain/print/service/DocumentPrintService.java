@@ -35,8 +35,8 @@ public class DocumentPrintService {
     }
 
     public PrintJob buildInvoiceJob(String associationName, String editionName, LocalDateTime soldAt, List<Item> items,
-            Locale documentLocale) {
-        return printer -> printInvoice(printer.getPrinterBridgeId(), associationName, editionName, soldAt, items, documentLocale);
+            Locale documentLocale, String currency) {
+        return printer -> printInvoice(printer.getPrinterBridgeId(), associationName, editionName, soldAt, items, documentLocale, currency);
     }
 
     public PrintJob buildSettlementReportJob(SellerProfile sellerProfile, List<Item> items, BigDecimal commissionRate, Locale documentLocale, BigDecimal amountPaid) {
@@ -58,8 +58,8 @@ public class DocumentPrintService {
     }
 
     private void printInvoice(String printerBridgeId, String associationName, String editionName, LocalDateTime soldAt,
-            List<Item> items, Locale documentLocale) {
-        byte[] pdf = invoiceRenderer.renderInvoice(associationName, editionName, soldAt, items, documentLocale);
+            List<Item> items, Locale documentLocale, String currency) {
+        byte[] pdf = invoiceRenderer.renderInvoice(associationName, editionName, soldAt, items, documentLocale, currency);
         printPdf(printerBridgeId, pdf);
     }
 

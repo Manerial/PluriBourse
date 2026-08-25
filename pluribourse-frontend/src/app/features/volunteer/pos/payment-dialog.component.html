@@ -5,7 +5,7 @@
       <div class="recap__row">
         <span class="recap__row-name">{{ item.name }}</span>
         @if (item.price != null) {
-          <span class="recap__row-price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price } }}</span>
+          <span class="recap__row-price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price, currency: data.currency } }}</span>
         } @else {
           <span class="recap__row-price">{{ 'volunteer.pos.basket.partOfLot' | translate }}</span>
         }
@@ -14,7 +14,7 @@
     <div class="recap__divider"></div>
     <div class="recap__total-row">
       <span class="recap__total-label">{{ 'volunteer.pos.payment.recap.total' | translate }}</span>
-      <span class="recap__total-amount">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: data.total } }}</span>
+      <span class="recap__total-amount">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: data.total, currency: data.currency } }}</span>
     </div>
   </div>
 
@@ -42,11 +42,11 @@
               min="0"
               (input)="onAmountGivenChange($event)"
               (keydown.enter)="onAmountGivenEnter($event)" />
-            <span matTextSuffix>&euro;</span>
+            <span matTextSuffix>{{ data.currency }}</span>
           </mat-form-field>
           <p class="cash-detail__note">{{ 'volunteer.pos.payment.amountGiven.note' | translate }}</p>
           @if (changeDue() !== null) {
-            <p class="cash-detail__change">{{ 'volunteer.pos.payment.change' | translate: { amount: changeDue() } }}</p>
+            <p class="cash-detail__change">{{ 'volunteer.pos.payment.change' | translate: { amount: changeDue(), currency: data.currency } }}</p>
           }
         </div>
       }

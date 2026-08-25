@@ -11,5 +11,6 @@ public record EditionSummaryReportDto(
         BigDecimal checkTotal,
         BigDecimal cardTotal,
         BigDecimal netPayoutTotal,
-        BigDecimal associationRevenueTotal) {
+        BigDecimal associationRevenueTotal,
+        String currency) {
 }

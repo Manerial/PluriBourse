@@ -18,7 +18,7 @@
             @if (item.lotId === null) {
               <li class="basket-item">
                 <span class="basket-item__name">{{ item.name }}</span>
-                <span class="basket-item__price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price } }}</span>
+                <span class="basket-item__price">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: item.price, currency: currency() } }}</span>
                 <button
                   type="button"
                   mat-icon-button
@@ -39,7 +39,7 @@
               <span class="lot-group__label">
                 {{ 'volunteer.pos.basket.lot.header' | translate: { name: group.lotName, scanned: group.scannedCount, total: group.totalCount } }}
               </span>
-              <span class="lot-group__subtotal">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: group.globalPrice } }}</span>
+              <span class="lot-group__subtotal">{{ 'volunteer.pos.basket.priceFormat' | translate: { price: group.globalPrice, currency: currency() } }}</span>
               <button
                 type="button"
                 mat-button
@@ -74,7 +74,7 @@
           </div>
         }
       }
-      <div class="basket-total">{{ 'volunteer.pos.basket.total' | translate: { total: basket()?.total ?? 0 } }}</div>
+      <div class="basket-total">{{ 'volunteer.pos.basket.total' | translate: { total: basket()?.total ?? 0, currency: currency() } }}</div>
       <button
         type="button"
         mat-flat-button

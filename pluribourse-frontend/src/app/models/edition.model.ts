@@ -24,4 +24,5 @@ export interface EditionDto {
   startDate: string;
   endDate: string;
   hasItems?: boolean;
+  currency: string;
 }

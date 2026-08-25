@@ -393,7 +393,7 @@ class ArchivedCatalogIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, name,
-                                null, new BigDecimal("10.00"), Language.FR, null, false, startDate, endDate, null))))
+                                null, new BigDecimal("10.00"), Language.FR, null, false, startDate, endDate, null, "€"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         return objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();

@@ -17,7 +17,7 @@ import { SettlementDto } from '../../../../models/settlement.model';
 const MOCK_EDITION: EditionDto = {
   id: 1, name: 'Bourse 2026', phase: 'PREPARATION',
   commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false,
-  startDate: '2026-06-01', endDate: '2026-06-03'
+  startDate: '2026-06-01', endDate: '2026-06-03', currency: '$'
 };
 
 const UNSETTLED_SETTLEMENT: SettlementDto = {
@@ -281,7 +281,7 @@ describe('PhaseControlComponent', () => {
     settlementServiceMock.getSettlements.mockReturnValue(of([UNSETTLED_SETTLEMENT, SETTLED_SETTLEMENT]));
     const instantSpy = vi.spyOn(component['translate'], 'instant');
     await component.confirmClose();
-    expect(instantSpy).toHaveBeenCalledWith('phase.close.dialog.warningUnsettled', { count: 1, amount: '18.00' });
+    expect(instantSpy).toHaveBeenCalledWith('phase.close.dialog.warningUnsettled', { count: 1, amount: '18.00', currency: '$' });
   });
 
   it('confirmClose — confirmed: closes the edition, closes the dialog, and triggers the closure print', async () => {

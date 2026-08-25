@@ -24,7 +24,10 @@ public record EditionDto(
         LocalDate startDate,
         @NotNull
         LocalDate endDate,
-        Boolean hasItems
+        Boolean hasItems,
+        @Size(max = 10)
+        @Pattern(regexp = "^[A-Za-z0-9 €$£¥]*$")
+        String currency
 ) {
     @AssertTrue(message = "startDate must not be after endDate")
     public boolean isDateRangeValid() {

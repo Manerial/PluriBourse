@@ -49,7 +49,7 @@ class EditionCategoryIT extends IntegrationTest {
         MvcResult sourceResult = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Source Edition", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Source Edition", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         sourceEditionId = objectMapper.readValue(sourceResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -73,7 +73,7 @@ class EditionCategoryIT extends IntegrationTest {
         MvcResult tempResult = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Temp Edition", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Temp Edition", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long tempEditionId = objectMapper.readValue(tempResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -97,7 +97,7 @@ class EditionCategoryIT extends IntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Categories 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Categories 2026", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();

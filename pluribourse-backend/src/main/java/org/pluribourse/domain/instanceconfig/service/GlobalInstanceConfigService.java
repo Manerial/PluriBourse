@@ -45,6 +45,11 @@ public class GlobalInstanceConfigService {
         return findConfig().getAssociationName();
     }
 
+    @Transactional(readOnly = true)
+    public String getDefaultCurrency() {
+        return findConfig().getDefaultCurrency();
+    }
+
     private GlobalInstanceConfig findConfig() {
         return repository.findById(1L)
                 .orElseThrow(() -> new IllegalStateException("global_instance_config row missing — ensure migration 004 ran"));

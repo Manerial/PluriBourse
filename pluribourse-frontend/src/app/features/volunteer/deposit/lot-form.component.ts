@@ -12,6 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import Big from 'big.js';
 import { EditionCategoryDto } from '../../../models/category.model';
 import { CreateLotItemRequest, CreateLotRequest, LotDto, UpdateLotRequest } from '../../../models/lot.model';
+import { CurrentEditionService } from '../../../services/current-edition.service';
 import { LotService } from '../../../services/lot.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { extractErrorType } from '../../../shared/http-error.util';
@@ -43,7 +44,10 @@ interface LotItemRow {
 })
 export class LotFormComponent {
   private readonly lotService = inject(LotService);
+  private readonly currentEditionService = inject(CurrentEditionService);
   private readonly fb = inject(FormBuilder);
+
+  readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
 
   readonly sellerId = input.required<number>();
   readonly categories = input.required<EditionCategoryDto[]>();

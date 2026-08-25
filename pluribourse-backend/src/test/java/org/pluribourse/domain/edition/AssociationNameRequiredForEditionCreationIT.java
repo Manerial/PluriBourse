@@ -61,7 +61,7 @@ class AssociationNameRequiredForEditionCreationIT extends IntegrationTest {
         mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Sans Association", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Sans Association", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(endsWith("/association-name-not-configured")));
     }
@@ -72,14 +72,14 @@ class AssociationNameRequiredForEditionCreationIT extends IntegrationTest {
         mockMvc.perform(put("/api/admin/instance-config")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"associationName\":\"Les Amis de l'École\",\"defaultCommissionRate\":10.00,\"defaultDocumentLanguage\":\"FR\"}"))
+                        .content("{\"associationName\":\"Les Amis de l'École\",\"defaultCommissionRate\":10.00,\"defaultDocumentLanguage\":\"FR\",\"defaultCurrency\":\"€\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.associationName").value("Les Amis de l'École"));
 
         mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Avec Association", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Avec Association", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.phase").value("PREPARATION"));
     }

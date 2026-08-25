@@ -31,7 +31,8 @@ export class AdminSettingsComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     associationName: ['', [Validators.required, Validators.maxLength(255)]],
     defaultCommissionRate: [20, [Validators.required, Validators.min(0), Validators.max(100)]],
-    defaultDocumentLanguage: [Language.EN, [Validators.required]]
+    defaultDocumentLanguage: [Language.EN, [Validators.required]],
+    defaultCurrency: ['', [Validators.required, Validators.maxLength(10), Validators.pattern(/^[A-Za-z0-9 €$£¥]*$/)]]
   });
 
   async ngOnInit(): Promise<void> {

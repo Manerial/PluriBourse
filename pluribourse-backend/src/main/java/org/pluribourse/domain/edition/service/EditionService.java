@@ -56,7 +56,7 @@ public class EditionService {
         EditionDto dto = mapper.toDto(edition);
         boolean hasItems = itemRepository.existsByEditionId(id);
         return new EditionDto(dto.id(), dto.name(), dto.phase(), dto.commissionRate(), dto.documentLanguage(),
-                dto.createdAt(), dto.archived(), dto.startDate(), dto.endDate(), hasItems);
+                dto.createdAt(), dto.archived(), dto.startDate(), dto.endDate(), hasItems, dto.currency());
     }
 
     /**
@@ -88,7 +88,8 @@ public class EditionService {
         }
         BigDecimal commissionRate = dto.commissionRate() != null ? dto.commissionRate() : instanceConfigService.getDefaultCommissionRate();
         Language documentLanguage = dto.documentLanguage() != null ? dto.documentLanguage() : instanceConfigService.getDefaultDocumentLanguage();
-        return mapper.toDto(repository.save(mapper.toEntity(dto, commissionRate, documentLanguage)));
+        String currency = blankToNull(dto.currency()) != null ? dto.currency() : instanceConfigService.getDefaultCurrency();
+        return mapper.toDto(repository.save(mapper.toEntity(dto, commissionRate, documentLanguage, currency)));
     }
 
     @Transactional
@@ -97,8 +98,19 @@ public class EditionService {
         if (edition.getPhase() != PhaseType.PREPARATION) {
             throw new EditionCannotBeUpdatedException();
         }
-        mapper.updateEditionFromDto(dto, edition);
+        // A blank (non-null) currency must be treated the same as an absent one — the mapper's
+        // NullValuePropertyMappingStrategy.IGNORE only skips null, not blank strings, which would
+        // otherwise silently wipe out a valid currency (see code review of story 2.9).
+        EditionDto normalizedDto = dto.currency() != null && dto.currency().isBlank()
+                ? new EditionDto(dto.id(), dto.name(), dto.phase(), dto.commissionRate(), dto.documentLanguage(),
+                        dto.createdAt(), dto.archived(), dto.startDate(), dto.endDate(), dto.hasItems(), null)
+                : dto;
+        mapper.updateEditionFromDto(normalizedDto, edition);
         return mapper.toDto(repository.save(edition));
+    }
+
+    private static String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 
     @Transactional

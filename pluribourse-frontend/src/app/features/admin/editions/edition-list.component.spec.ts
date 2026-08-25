@@ -15,11 +15,11 @@ import { EditionDto } from '../../../models/edition.model';
 import { Language } from '../../../models/language.enum';
 
 const MOCK_EDITIONS: EditionDto[] = [
-  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false, startDate: '2026-06-01', endDate: '2026-06-03' }
+  { id: 1, name: 'Bourse 2026', phase: 'PREPARATION', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2026-01-01', archived: false, startDate: '2026-06-01', endDate: '2026-06-03', currency: '€' }
 ];
 
 const ARCHIVED_EDITION: EditionDto = {
-  id: 2, name: 'Bourse 2025', phase: 'CLOSED', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2025-01-01', archived: true, startDate: '2025-06-01', endDate: '2025-06-03',
+  id: 2, name: 'Bourse 2025', phase: 'CLOSED', commissionRate: 20, documentLanguage: Language.EN, createdAt: '2025-01-01', archived: true, startDate: '2025-06-01', endDate: '2025-06-03', currency: '€',
 };
 
 describe('EditionListComponent', () => {

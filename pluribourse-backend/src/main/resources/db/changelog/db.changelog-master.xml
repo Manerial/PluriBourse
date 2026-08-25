@@ -34,5 +34,7 @@
     <include file="db/changelog/028-reorder-fk-columns.xml"/>
     <include file="db/changelog/029-rename-printers-table.xml"/>
     <include file="db/changelog/030-archived-items-price.xml"/>
+    <include file="db/changelog/031-default-currency.xml"/>
+    <include file="db/changelog/032-edition-currency.xml"/>
 
 </databaseChangeLog>

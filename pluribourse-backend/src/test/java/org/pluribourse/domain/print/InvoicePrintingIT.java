@@ -116,7 +116,7 @@ class InvoicePrintingIT extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new EditionDto(null, EDITION_NAME,
                                 null, new BigDecimal("10.00"), Language.FR, null, false,
-                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null))))
+                                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null, null))))
                 .andExpect(status().isCreated())
                 .andReturn();
         editionId = objectMapper.readValue(editionResult.getResponse().getContentAsString(), EditionDto.class).id();
@@ -220,7 +220,7 @@ class InvoicePrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new GlobalInstanceConfigDto(ASSOCIATION_NAME, new BigDecimal("10.00"), Language.FR))))
+                                new GlobalInstanceConfigDto(ASSOCIATION_NAME, new BigDecimal("10.00"), Language.FR, "€"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.associationName").value(ASSOCIATION_NAME));
     }
@@ -273,7 +273,7 @@ class InvoicePrintingIT extends IntegrationTest {
         List<Item> items = itemRepository.findAllBySaleIdOrderById(saleId);
         Sale sale = saleRepository.findById(saleId).orElseThrow();
 
-        byte[] pdf = invoiceRenderer.renderInvoice(ASSOCIATION_NAME, EDITION_NAME, sale.getSoldAt(), items, Locale.FRENCH);
+        byte[] pdf = invoiceRenderer.renderInvoice(ASSOCIATION_NAME, EDITION_NAME, sale.getSoldAt(), items, Locale.FRENCH, "€");
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
 
         assertThat(rendered).startsWith("%PDF");
@@ -305,7 +305,7 @@ class InvoicePrintingIT extends IntegrationTest {
 
         Printer printer = new Printer();
         printer.setPrinterBridgeId("bridge-invoice-mock-target");
-        documentPrintService.buildInvoiceJob(ASSOCIATION_NAME, EDITION_NAME, sale.getSoldAt(), items, Locale.FRENCH).execute(printer);
+        documentPrintService.buildInvoiceJob(ASSOCIATION_NAME, EDITION_NAME, sale.getSoldAt(), items, Locale.FRENCH, "€").execute(printer);
 
         ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(mockClient).print(eq("bridge-invoice-mock-target"), eq(PrintContentType.PDF), payloadCaptor.capture());
@@ -377,6 +377,25 @@ class InvoicePrintingIT extends IntegrationTest {
                         .session(volunteer1Session).with(csrf()))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/invalid-printer-selection")));
+    }
+
+    @Test
+    @Order(13)
+    @Transactional(readOnly = true)
+        // Reuses saleId's items directly — independent of the A4-printer-selection state left by
+        // Order(12): `currency` is a plain method parameter here (InvoiceRenderer has no entity
+        // access of its own), so no edition mutation is needed to exercise a non-default value.
+    void invoice_renderer_uses_the_passed_currency_not_a_hardcoded_symbol() {
+        List<Item> items = itemRepository.findAllBySaleIdOrderById(saleId);
+        Sale sale = saleRepository.findById(saleId).orElseThrow();
+
+        byte[] pdf = invoiceRenderer.renderInvoice(ASSOCIATION_NAME, EDITION_NAME, sale.getSoldAt(), items, Locale.FRENCH, "$");
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        // "$" is plain ASCII (unlike "€", never assertable as a literal character in this
+        // ISO-8859-1-decoded view of a CP1252-encoded PDF stream) — its presence proves the passed
+        // currency parameter reached the rendered text, not a symbol baked into the template.
+        assertThat(rendered).contains("19.00$");
     }
 
     private void waitUntil(BooleanSupplier condition) throws InterruptedException {

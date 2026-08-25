@@ -54,4 +54,7 @@ public class Edition {
      */
     @Column(name = "next_seller_number", nullable = false)
     private Integer nextSellerNumber = 1;
+
+    @Column(nullable = false, length = 10)
+    private String currency;
 }

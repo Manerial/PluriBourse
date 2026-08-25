@@ -11,6 +11,7 @@ import { Subject, debounceTime, firstValueFrom } from 'rxjs';
 import { EditionCategoryDto } from '../../models/category.model';
 import { CatalogFilter, ItemCatalogDto } from '../../models/item.model';
 import { CategoryService } from '../../services/category.service';
+import { CurrentEditionService } from '../../services/current-edition.service';
 import { ItemService } from '../../services/item.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { NotificationInlineComponent } from '../../shared/components/notification-inline/notification-inline.component';
@@ -42,7 +43,10 @@ type TriState = boolean | null;
 export class ItemCatalogComponent implements OnInit {
   private readonly itemService = inject(ItemService);
   private readonly categoryService = inject(CategoryService);
+  private readonly currentEditionService = inject(CurrentEditionService);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
 
   readonly items = signal<ItemCatalogDto[]>([]);
   readonly totalElements = signal(0);
