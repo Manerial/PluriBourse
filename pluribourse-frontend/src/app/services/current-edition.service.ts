@@ -2,9 +2,11 @@ import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, EMPTY, map, Observable, tap } from 'rxjs';
 import { EditionDto, PhaseChangedEvent } from '../models/edition.model';
-import { ActivePhase } from '../models/active-phase.enum';
 
-const ACTIVE_PHASES = new Set<string>(Object.values(ActivePhase));
+// Mirrors backend PhaseType.ACTIVE (Story 2.10) : PREPARATION n'est plus "active". Ce set n'est
+// volontairement PAS dérivé de l'enum ActivePhase ci-dessous — celui-ci garde PREPARATION pour
+// ALL_PHASES (ordre du dialogue de contrôle de phase, active-phase.enum.ts), un usage distinct.
+const ACTIVE_PHASES = new Set<string>(['DEPOSIT', 'SALE', 'POST_SALE']);
 
 @Injectable({ providedIn: 'root' })
 export class CurrentEditionService {

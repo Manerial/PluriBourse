@@ -160,6 +160,17 @@ describe('PhaseControlComponent', () => {
     expect(toastMock.showError).toHaveBeenCalledWith('phase.advance.error.noVolunteerConfigured');
   });
 
+  it('confirmAdvance — confirmed: shows specific error toast when another edition is already active', async () => {
+    confirmMock.open.mockReturnValue(of(true));
+    editionServiceMock.advancePhase.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 422,
+      error: { type: 'https://pluribourse/errors/edition-already-active' },
+    })));
+    component.confirmAdvance();
+    await fixture.whenStable();
+    expect(toastMock.showError).toHaveBeenCalledWith('phase.advance.error.editionAlreadyActive');
+  });
+
   it('confirmAdvance — confirmed: closes the dialog after a successful advance', async () => {
     confirmMock.open.mockReturnValue(of(true));
     editionServiceMock.advancePhase.mockReturnValue(of({ ...MOCK_EDITION, phase: 'DEPOSIT' }));

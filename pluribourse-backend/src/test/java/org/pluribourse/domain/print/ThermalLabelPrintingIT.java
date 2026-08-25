@@ -128,13 +128,16 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     @Test
     @Order(1)
     void reprint_labels_outside_deposit_or_post_sale_phase_is_blocked() throws Exception {
-        // No seller can exist yet (SellerService also requires DEPOSIT phase) — same reasoning as
-        // LotManagementIT Order(1): PhaseGuard runs before seller resolution, so a made-up id
-        // still reaches the phase check first.
+        // No seller can exist yet (SellerService also requires DEPOSIT phase).
+        // Story 2.10 : editionId est encore en PREPARATION ici — PhaseType.ACTIVE ne la couvre plus
+        // (AC 4), donc SellerService échoue désormais dès editionService.getActiveEdition() (404
+        // no-active-edition), avant même d'atteindre la résolution du vendeur ou le contrôle de phase
+        // (l'ancien 422 deposit-reprint-not-allowed). Le résultat métier reste identique (réimpression
+        // bloquée).
         mockMvc.perform(post("/api/sellers/1/deposit/labels/reprint")
                         .session(volunteerSession).with(csrf()))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/deposit-reprint-not-allowed")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 
     @Test

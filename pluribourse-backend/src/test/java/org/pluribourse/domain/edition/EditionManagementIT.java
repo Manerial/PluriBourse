@@ -113,14 +113,26 @@ class EditionManagementIT extends IntegrationTest {
 
     @Test
     @Order(5)
-    void admin_create_second_edition_while_active_returns_422() throws Exception {
+    void admin_create_second_edition_while_first_in_preparation_succeeds() throws Exception {
+        // FR-010 amendé (Story 2.10) : la Préparation n'est plus exclusive — une deuxième édition
+        // peut être créée pendant que la première existe encore en Préparation. Supprimée aussitôt
+        // pour que la suite du storyboard (Order 6 attend exactement une édition) reste inchangée ;
+        // l'exclusivité Dépôt/Vente/Post-vente (FR-105) elle-même est couverte par PhaseTransitionIT,
+        // pas ici.
         EditionDto dto = new EditionDto(null, "Bourse 2027", null, null, null, null, false, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3), null);
-        mockMvc.perform(post("/api/admin/editions")
+        MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isUnprocessableContent());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.phase").value("PREPARATION"))
+                .andReturn();
+        Long secondEditionId = objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();
+
+        mockMvc.perform(delete("/api/admin/editions/" + secondEditionId)
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isNoContent());
     }
 
     @Test

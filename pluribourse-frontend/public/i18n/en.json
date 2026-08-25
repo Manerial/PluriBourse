@@ -159,7 +159,6 @@
       "submit": "Create",
       "cancel": "Cancel",
       "error": {
-        "alreadyActive": "An edition is already active. Close it before creating a new one.",
         "associationNameNotConfigured": "The association name must be set in settings before creating an edition.",
         "save": "Failed to create edition."
       },
@@ -217,7 +216,8 @@
       "error": {
         "generic": "Failed to advance phase.",
         "noCategoriesConfigured": "At least one category must be configured before entering the Deposit phase.",
-        "noVolunteerConfigured": "At least one volunteer account must exist before entering the Deposit phase."
+        "noVolunteerConfigured": "At least one volunteer account must exist before entering the Deposit phase.",
+        "editionAlreadyActive": "Another edition is already in Deposit, Sale or Post-sale phase. It must reach Closed before this one can start Deposit."
       },
       "dialog": {
         "title": "Advance to {{nextPhase}}?",

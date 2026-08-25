@@ -1,6 +1,8 @@
 import { PhaseType } from './edition.model';
 
-// Mirrors PhaseType.ACTIVE on the backend (org.pluribourse.edition.entity.PhaseType).
+// Every non-terminal phase, in state-machine order — CLOSED is appended separately below for
+// ALL_PHASES. Despite the name, this no longer mirrors the backend's PhaseType.ACTIVE since
+// Story 2.10 (which excludes PREPARATION) — see CurrentEditionService.ACTIVE_PHASES for that.
 export enum ActivePhase {
   PREPARATION = 'PREPARATION',
   DEPOSIT = 'DEPOSIT',

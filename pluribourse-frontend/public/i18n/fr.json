@@ -159,7 +159,6 @@
       "submit": "Créer",
       "cancel": "Annuler",
       "error": {
-        "alreadyActive": "Une édition est déjà active. Clôturez-la avant d'en créer une nouvelle.",
         "associationNameNotConfigured": "Le nom de l'association doit être renseigné dans les paramètres avant de créer une édition.",
         "save": "Impossible de créer l'édition."
       },
@@ -217,7 +216,8 @@
       "error": {
         "generic": "Impossible de faire avancer la phase.",
         "noCategoriesConfigured": "Au moins une catégorie doit être configurée avant de passer en phase de dépôt.",
-        "noVolunteerConfigured": "Au moins un compte bénévole doit exister avant de passer en phase de dépôt."
+        "noVolunteerConfigured": "Au moins un compte bénévole doit exister avant de passer en phase de dépôt.",
+        "editionAlreadyActive": "Une autre édition est déjà en Dépôt, Vente ou Post-vente. Elle doit être Clôturée avant que celle-ci puisse démarrer le Dépôt."
       },
       "dialog": {
         "title": "Avancer vers {{nextPhase}} ?",

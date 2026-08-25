@@ -69,7 +69,9 @@ class CurrentEditionIT extends IntegrationTest {
 
     @Test
     @Order(2)
-    void current_edition_returns_200_with_preparation_phase() throws Exception {
+    void current_edition_returns_404_while_edition_is_in_preparation() throws Exception {
+        // FR-010 amendé (Story 2.10) : PREPARATION n'est plus une phase "active" —
+        // /editions/current ne résout rien tant que l'édition n'a pas atteint le Dépôt.
         MvcResult result = mockMvc.perform(post("/api/admin/editions")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -79,23 +81,13 @@ class CurrentEditionIT extends IntegrationTest {
         editionId = objectMapper.readValue(result.getResponse().getContentAsString(), EditionDto.class).id();
 
         mockMvc.perform(get("/api/editions/current").session(adminSession))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(editionId))
-                .andExpect(jsonPath("$.phase").value("PREPARATION"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 
     @Test
     @Order(3)
-    void current_edition_accessible_by_volunteer() throws Exception {
-        mockMvc.perform(get("/api/editions/current").session(volunteerSession))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(editionId))
-                .andExpect(jsonPath("$.phase").value("PREPARATION"));
-    }
-
-    @Test
-    @Order(4)
-    void current_edition_returns_404_after_edition_closed() throws Exception {
+    void current_edition_returns_200_once_deposit_starts() throws Exception {
         mockMvc.perform(put("/api/admin/editions/" + editionId + "/categories")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,13 +95,35 @@ class CurrentEditionIT extends IntegrationTest {
                                 Map.of("name", "Jouets", "tableNumbers", List.of(1))))))
                 .andExpect(status().isOk());
 
-        // Advance PREPARATION → DEPOSIT → SALE → POST_SALE
-        for (int i = 0; i < 3; i++) {
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/editions/current").session(adminSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(editionId))
+                .andExpect(jsonPath("$.phase").value("DEPOSIT"));
+    }
+
+    @Test
+    @Order(4)
+    void current_edition_accessible_by_volunteer() throws Exception {
+        mockMvc.perform(get("/api/editions/current").session(volunteerSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(editionId))
+                .andExpect(jsonPath("$.phase").value("DEPOSIT"));
+    }
+
+    @Test
+    @Order(5)
+    void current_edition_returns_404_after_edition_closed() throws Exception {
+        // editionId est déjà en DEPOSIT depuis Order 3 — 2 avancées suffisent pour atteindre POST_SALE
+        // (au lieu des 3 avant restructuration, qui partaient de PREPARATION).
+        for (int i = 0; i < 2; i++) {
             mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                             .session(adminSession).with(csrf()))
                     .andExpect(status().isOk());
         }
-        // POST_SALE → CLOSED only via the dedicated /close endpoint (FR-096 follow-up fix).
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isOk());

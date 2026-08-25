@@ -1,5 +1,11 @@
 # Deferred Work
 
+## Deferred from: code review of 2-10-preparation-non-exclusive (2026-08-25)
+
+- **Race condition possible sur la garde d'exclusivité Préparation→Dépôt** — `EditionService.java:121` (`advancePhase`) — `existsByPhaseIn(PhaseType.ACTIVE)` (lecture) suivi d'un `save` (écriture) sans verrou explicite ni contrainte d'unicité en base ; deux avancements de phase concurrents sur deux éditions différentes en Préparation pourraient tous deux passer le contrôle avant que l'un ne committe, aboutissant à 2 éditions simultanément en Dépôt. Décision utilisateur (revue du 2026-08-25) : différé — un seul admin actif à la fois en pratique, l'avancement de phase est une action manuelle rare et délibérée (pas un flux à haute concurrence comme le scan de caisse) ; risque théorique très faible, à corriger si un incident réel survient.
+- **Rollback Clôturé→Post-vente non gardé par l'exclusivité FR-105** — `EditionService.java:133` (`rollbackPhase`) — un admin pourrait faire revenir une édition Clôturée vers Post-vente pendant qu'une autre édition occupe déjà Dépôt/Vente/Post-vente, recréant la situation à deux éditions actives que FR-105 vise à empêcher. Déjà documenté et sciemment exclu du périmètre de la story 2.10 (Dev Notes) ; confirmé indépendamment par Blind Hunter et Edge Case Hunter en revue de code. À couvrir par une story dédiée si jugé nécessaire.
+- **Commentaire obsolète dans `ItemCatalogIT.java`** — `ItemCatalogIT.java:269` — décrit encore le catalogue comme limité à « l'édition ACTIVE (PREPARATION/DEPOSIT/SALE/POST_SALE) », inexact depuis que PREPARATION est sortie de `PhaseType.ACTIVE` (story 2.10). Fichier non touché par la story, n'affecte pas la justesse du test — nettoyage cosmétique à faire à l'occasion.
+
 ## Deferred from: code review of 1-13-navigation-carrousel-benevole (2026-08-24)
 
 - **Pas de test pour la phase `CLOSED` dans la sidebar bénévole** — `app-layout.component.html:190-248` — retombe sur la seule entrée Catalogue, comme le cas `PREPARATION` déjà testé. Comportement présumé correct, juste non vérifié pour cette valeur d'enum précise. Risque faible : un bénévole n'atteint quasiment jamais les écrans d'une édition Clôturée.

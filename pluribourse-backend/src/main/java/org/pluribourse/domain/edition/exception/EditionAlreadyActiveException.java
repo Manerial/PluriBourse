@@ -7,6 +7,6 @@ public class EditionAlreadyActiveException extends BusinessException {
 
     public EditionAlreadyActiveException() {
         super(HttpStatus.UNPROCESSABLE_ENTITY, "edition-already-active",
-                "An edition is already active. Close the current edition before creating a new one.");
+                "Another edition is already in Deposit, Sale or Post-sale phase. It must reach Closed before this one can start Deposit.");
     }
 }

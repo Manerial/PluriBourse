@@ -35,7 +35,8 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-24"  # Correctif direct : filtres du catalogue (7 champs) et du catalogue
+last_updated: "2026-08-25"  # Story 2-10 (préparation non exclusive) : revue de code terminée (bmad-code-review), statut → done, voir entrée détaillée
+# ci-dessous. Correctif direct : filtres du catalogue (7 champs) et du catalogue
 # archivé passaient à la ligne au lieu de rester alignés sur une seule ligne (flex-wrap packait
 # selon la taille de base des champs, pas leur taille après rétrécissement) ; les filtres touchaient
 # aussi directement le séparateur du card__header (border-bottom), sans espace. Règle `.filters-row`
@@ -274,7 +275,33 @@ development_status:
   # Sprint change proposal 2026-08-24, point 2 : PREPARATION sort de PhaseType.ACTIVE —
   # plusieurs éditions peuvent coexister en Préparation, une seule en Dépôt/Vente/Post-vente.
   # Contrôle d'unicité déplacé de la création (2.1) vers la transition Préparation→Dépôt (2.2).
-  2-10-preparation-non-exclusive: backlog
+  # Story 2-10 créée le 2026-08-24 via bmad-create-story : point d'entrée choisi après clarification
+  # explicite avec l'utilisateur — sprint-status.yaml listait 2-9 (devise) avant 2-10 par ordre
+  # d'ajout au backlog, mais le sprint-change-proposal du même jour recommande l'ordre inverse
+  # (2-10 avant 2-9, même zone Edition, 2-10 modifie la machine d'état de base) ; l'utilisateur a
+  # confirmé suivre cette recommandation. PhaseType.ACTIVE passe de [PREPARATION, DEPOSIT, SALE,
+  # POST_SALE] à [DEPOSIT, SALE, POST_SALE] ; le contrôle d'exclusivité migre de
+  # EditionService.createEdition() vers advancePhase() (transition vers DEPOSIT uniquement).
+  # 2 impacts non anticipés par le sprint-change-proposal (qui ne vérifiait que les appelants
+  # backend de getActiveEdition()) découverts en analysant le code réel : (1) GET /editions/current
+  # — et donc toute la notion frontend d'« édition courante » (bannière topbar, section sidebar
+  # admin, CurrentEditionService) — cesse de résoudre une édition en Préparation, avec un test
+  # existant (CurrentEditionIT) qui affirmait explicitement le contraire ; (2) l'enum frontend
+  # ActivePhase ne peut pas simplement perdre PREPARATION en miroir du backend car ALL_PHASES (ordre
+  # du dialogue de contrôle de phase) en a besoin pour un usage distinct — d'où la dissociation
+  # explicite de CurrentEditionService.ACTIVE_PHASES plutôt qu'un retrait dans l'enum partagé.
+  # Portée de FR-105 volontairement limitée à la transition Préparation→Dépôt (rollback
+  # Clôturé→Post-vente non gardé), documentée en Dev Notes comme décision actée sans validation
+  # utilisateur nécessaire (lecture directe du FR, cas marginal hors du problème motivant ce point).
+  # 3 tests d'intégration/unitaires existants identifiés comme régressions légitimes à corriger
+  # explicitement (EditionManagementIT Order 5, CurrentEditionIT Order 2-4,
+  # current-edition.service.spec.ts) plutôt que de les laisser échouer en aveugle pendant dev-story.
+  # Validation indépendante en contexte frais (agent général) : tous les extraits de code cités
+  # vérifiés exacts contre le code réel, renumérotation des tests cohérente ; 1 appelant de
+  # getActiveEdition() (SettlementReportPrintService) manquant dans la justification "pourquoi
+  # c'est sûr" et 1 test manquant côté frontend (rollback Dépôt→Préparation doit vider
+  # currentEdition()) — les deux corrigés dans la story avant finalisation. Statut → ready-for-dev.
+  2-10-preparation-non-exclusive: done
   epic-2-retrospective: optional
 
   # ─── Epic 3 : Enregistrement des vendeurs & Dépôt ──────────────────────────

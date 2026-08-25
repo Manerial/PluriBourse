@@ -146,6 +146,8 @@ export class PhaseControlComponent implements OnInit {
           this.toast.showError(this.translate.instant('phase.advance.error.noCategoriesConfigured'));
         } else if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/no-volunteer-configured')) {
           this.toast.showError(this.translate.instant('phase.advance.error.noVolunteerConfigured'));
+        } else if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/edition-already-active')) {
+          this.toast.showError(this.translate.instant('phase.advance.error.editionAlreadyActive'));
         } else {
           this.toast.showError(this.translate.instant('phase.advance.error.generic'));
         }

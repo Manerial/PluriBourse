@@ -131,9 +131,12 @@ class LotManagementIT extends IntegrationTest {
     @Order(1)
     void create_lot_outside_deposit_phase_is_blocked() throws Exception {
         // No seller can exist yet at this point (SellerService also requires the DEPOSIT phase),
-        // so sellerProfileId is necessarily a made-up id. This test relies on LotService checking
-        // the phase before resolving the seller (same order as ItemService) — if that ordering ever
-        // flips, this would 404 (seller not found) instead of 422 (phase locked) and fail loudly.
+        // so sellerProfileId is necessarily a made-up id.
+        // Story 2.10 : editionId est encore en PREPARATION ici — PhaseType.ACTIVE ne la couvre plus
+        // (AC 4), donc LotService.create() échoue désormais dès editionService.getActiveEdition()
+        // (404 no-active-edition), avant même d'atteindre la résolution du vendeur ou le contrôle de
+        // phase (l'ancien 422 item-modification-locked). Le résultat métier reste identique (création
+        // bloquée).
         CreateLotDto payload = new CreateLotDto(1L, "Lot Legos", new BigDecimal("15.00"), List.of(
                 new CreateLotItemDto(jouetsCategoryId, "Piece A", false, null),
                 new CreateLotItemDto(jouetsCategoryId, "Piece B", false, null)
@@ -142,8 +145,8 @@ class LotManagementIT extends IntegrationTest {
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-modification-locked")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 
     @Test

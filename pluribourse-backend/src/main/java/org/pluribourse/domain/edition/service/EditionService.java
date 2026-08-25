@@ -83,9 +83,6 @@ public class EditionService {
 
     @Transactional
     public EditionDto createEdition(EditionDto dto) {
-        if (repository.existsByPhaseIn(PhaseType.ACTIVE)) {
-            throw new EditionAlreadyActiveException();
-        }
         if (instanceConfigService.getAssociationName().isBlank()) {
             throw new AssociationNameNotConfiguredException();
         }
@@ -121,6 +118,9 @@ public class EditionService {
         Edition edition = findById(id);
         PhaseType previousPhase = edition.getPhase();
         PhaseType newPhase = computeNextPhase(previousPhase);
+        if (newPhase == PhaseType.DEPOSIT && repository.existsByPhaseIn(PhaseType.ACTIVE)) {
+            throw new EditionAlreadyActiveException();
+        }
         if (newPhase == PhaseType.DEPOSIT && !editionCategoryRepository.existsByEditionId(id)) {
             throw new NoCategoriesConfiguredException();
         }

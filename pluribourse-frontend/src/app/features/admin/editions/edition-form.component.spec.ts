@@ -91,18 +91,6 @@ describe('EditionFormComponent', () => {
       expect(toastMock.showSuccess).toHaveBeenCalledOnce();
     });
 
-    it('sets formError key on 422 response (active edition already exists)', async () => {
-      editionServiceMock.create.mockReturnValue(throwError(() => new HttpErrorResponse({
-        status: 422,
-        error: { type: 'https://pluribourse/errors/edition-already-active' }
-      })));
-      component.form.controls.name.setValue('Bourse 2027');
-      fillRequiredDates();
-      await component.onSubmit();
-      expect(component.formError()).toBe('edition.create.error.alreadyActive');
-      expect(toastMock.showError).not.toHaveBeenCalled();
-    });
-
     it('sets formError key on 422 response (association name not configured)', async () => {
       editionServiceMock.create.mockReturnValue(throwError(() => new HttpErrorResponse({
         status: 422,

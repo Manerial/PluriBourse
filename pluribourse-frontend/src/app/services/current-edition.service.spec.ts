@@ -92,6 +92,12 @@ describe('CurrentEditionService', () => {
       expect(service.currentEdition()).toBeNull();
     });
 
+    it('sets currentEdition to null when newPhase is PREPARATION (Story 2.10 — rollback out of the active bucket)', () => {
+      service.currentEdition.set(mockEdition);
+      service.updateFromEvent({ editionId: 1, newPhase: 'PREPARATION', previousPhase: 'DEPOSIT' });
+      expect(service.currentEdition()).toBeNull();
+    });
+
     it('calls load() (subscribed internally) when editionId does not match current (resync)', () => {
       service.currentEdition.set(mockEdition);
       service.updateFromEvent({ editionId: 99, newPhase: 'DEPOSIT', previousPhase: 'PREPARATION' });

@@ -9,5 +9,5 @@ public enum PhaseType {
     POST_SALE,
     CLOSED;
 
-    public static final List<PhaseType> ACTIVE = List.of(PREPARATION, DEPOSIT, SALE, POST_SALE);
+    public static final List<PhaseType> ACTIVE = List.of(DEPOSIT, SALE, POST_SALE);
 }

@@ -69,21 +69,26 @@ class SellerManagementIT extends IntegrationTest {
     @Test
     @Order(1)
     void search_during_preparation_phase_is_blocked() throws Exception {
+        // Story 2.10 : editionId est encore en PREPARATION ici — PhaseType.ACTIVE ne la couvre plus
+        // (AC 4), donc SellerService.search() échoue désormais dès editionService.getActiveEdition()
+        // (404 no-active-edition), avant même d'atteindre le contrôle de phase (l'ancien 422
+        // seller-management-locked). Le résultat métier reste identique (recherche bloquée).
         mockMvc.perform(get("/api/sellers/search").param("query", "Martin").session(volunteerSession))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/seller-management-locked")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 
     @Test
     @Order(2)
     void create_during_preparation_phase_is_blocked() throws Exception {
+        // Story 2.10 : même raisonnement que search_during_preparation_phase_is_blocked ci-dessus.
         SellerDto payload = new SellerDto(null, "Pierre", "Martin", "martin.pierre@email.com", "0612345678");
         mockMvc.perform(post("/api/sellers")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/seller-management-locked")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 
     @Test

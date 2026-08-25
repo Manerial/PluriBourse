@@ -100,13 +100,17 @@ class ItemManagementIT extends IntegrationTest {
     @Test
     @Order(1)
     void create_item_outside_deposit_phase_is_blocked() throws Exception {
+        // Story 2.10 : editionId est encore en PREPARATION ici — PhaseType.ACTIVE ne la couvre plus
+        // (AC 4), donc ItemService.create() échoue désormais dès editionService.getActiveEdition()
+        // (404 no-active-edition), avant même d'atteindre PhaseGuard.requireDepositPhase (l'ancien
+        // 422 item-modification-locked). Le résultat métier reste identique (création bloquée).
         CreateItemDto payload = new CreateItemDto(1L, jouetsCategoryId, "Kapla", new BigDecimal("5.00"), false, null);
         mockMvc.perform(post("/api/items")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-modification-locked")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/no-active-edition")));
     }
 
     @Test

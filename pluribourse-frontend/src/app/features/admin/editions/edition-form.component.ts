@@ -153,8 +153,6 @@ export class EditionFormComponent implements OnInit {
         const errorType: string = (err.error as { type?: string })?.type ?? '';
         if (errorType.endsWith('/edition-cannot-be-updated')) {
           this.formError.set('edition.edit.error.cannotUpdate');
-        } else if (errorType.endsWith('/edition-already-active')) {
-          this.formError.set('edition.create.error.alreadyActive');
         } else if (errorType.endsWith('/association-name-not-configured')) {
           this.formError.set('edition.create.error.associationNameNotConfigured');
         } else {
