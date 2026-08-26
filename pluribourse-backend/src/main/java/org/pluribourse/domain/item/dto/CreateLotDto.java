@@ -9,6 +9,8 @@ import java.util.*;
 public record CreateLotDto(
         @NotNull
         Long sellerProfileId,
+        @NotNull
+        Long categoryId,
         @NotBlank
         @Size(max = 200)
         String name,

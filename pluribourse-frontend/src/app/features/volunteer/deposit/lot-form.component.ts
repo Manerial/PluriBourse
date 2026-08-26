@@ -20,7 +20,6 @@ import { extractErrorType } from '../../../shared/http-error.util';
 interface LotItemRow {
   id: number | null;
   name: string;
-  categoryId: number | null;
   incomplete: boolean;
   comment: string;
 }
@@ -63,6 +62,7 @@ export class LotFormComponent {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(200)]],
     globalPrice: [0, [Validators.required, Validators.min(0.01)]],
+    categoryId: [null as number | null, [Validators.required]],
     items: this.itemsFormArray,
   });
 
@@ -75,12 +75,11 @@ export class LotFormComponent {
       this.sellerId(); // re-run this effect on seller change too, even if editingLot() stays null
       this.error.set(null);
       if (lot) {
-        this.form.patchValue({ name: lot.name, globalPrice: lot.globalPrice });
+        this.form.patchValue({ name: lot.name, globalPrice: lot.globalPrice, categoryId: lot.categoryId });
         this.setItemRows(
           lot.items.map(item => ({
             id: item.id,
             name: item.name,
-            categoryId: item.categoryId,
             incomplete: item.incomplete,
             comment: item.comment ?? '',
           }))
@@ -116,6 +115,7 @@ export class LotFormComponent {
       let result: LotDto;
       if (editingLot) {
         const dto: UpdateLotRequest = {
+          categoryId: raw.categoryId!,
           name: raw.name.trim(),
           globalPrice,
           items: raw.items.map(item => ({ id: item.id, ...this.toItemPayload(item) })),
@@ -124,6 +124,7 @@ export class LotFormComponent {
       } else {
         const dto: CreateLotRequest = {
           sellerProfileId: this.sellerId(),
+          categoryId: raw.categoryId!,
           name: raw.name.trim(),
           globalPrice,
           items: raw.items.map(item => this.toItemPayload(item)),
@@ -155,24 +156,22 @@ export class LotFormComponent {
     return this.fb.nonNullable.group({
       id: [initial.id as number | null],
       name: [initial.name, [Validators.required, Validators.maxLength(200)]],
-      categoryId: [initial.categoryId, [Validators.required]],
       incomplete: [initial.incomplete],
       comment: [initial.comment, [Validators.maxLength(500)]],
     });
   }
 
   private emptyItemRow(): LotItemRow {
-    return { id: null, name: '', categoryId: null, incomplete: false, comment: '' };
+    return { id: null, name: '', incomplete: false, comment: '' };
   }
 
   private resetForm(): void {
-    this.form.patchValue({ name: '', globalPrice: 0 });
+    this.form.patchValue({ name: '', globalPrice: 0, categoryId: null });
     this.setItemRows([this.emptyItemRow(), this.emptyItemRow()]);
   }
 
   private toItemPayload(item: LotItemRow): CreateLotItemRequest {
     return {
-      categoryId: item.categoryId!,
       name: item.name.trim(),
       incomplete: item.incomplete,
       comment: item.comment.trim() ? item.comment.trim() : null,

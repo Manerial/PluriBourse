@@ -369,7 +369,7 @@
           "lotPrice": "Prix du lot",
           "itemsLabel": "Articles du lot — 2 minimum",
           "itemName": "Nom de l'article",
-          "itemCategory": "Catégorie",
+          "lotCategory": "Catégorie du lot",
           "itemIncomplete": "Incomplet",
           "itemComment": "Commentaire",
           "addItem": "Ajouter un article au lot",

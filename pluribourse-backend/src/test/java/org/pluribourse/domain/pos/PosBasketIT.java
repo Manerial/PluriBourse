@@ -161,9 +161,9 @@ class PosBasketIT extends IntegrationTest {
         createItem(aliceId, "Puzzle", "3.00");
         createItem(aliceId, "Extra", "2.00");
 
-        CreateLotDto lotPayload = new CreateLotDto(aliceId, "Lot Jouets", new BigDecimal("10.00"),
-                List.of(new CreateLotItemDto(categoryId, "Lot item A", false, null),
-                        new CreateLotItemDto(categoryId, "Lot item B", false, null)));
+        CreateLotDto lotPayload = new CreateLotDto(aliceId, categoryId, "Lot Jouets", new BigDecimal("10.00"),
+                List.of(new CreateLotItemDto("Lot item A", false, null),
+                        new CreateLotItemDto("Lot item B", false, null)));
         mockMvc.perform(post("/api/lots")
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,9 +174,9 @@ class PosBasketIT extends IntegrationTest {
         createItem(aliceId, "Backup", "1.50");
         createItem(aliceId, "Insuffisant", "4.00");
 
-        CreateLotDto lot2Payload = new CreateLotDto(aliceId, "Lot Retrait", new BigDecimal("6.00"),
-                List.of(new CreateLotItemDto(categoryId, "Lot retrait item A", false, null),
-                        new CreateLotItemDto(categoryId, "Lot retrait item B", false, null)));
+        CreateLotDto lot2Payload = new CreateLotDto(aliceId, categoryId, "Lot Retrait", new BigDecimal("6.00"),
+                List.of(new CreateLotItemDto("Lot retrait item A", false, null),
+                        new CreateLotItemDto("Lot retrait item B", false, null)));
         mockMvc.perform(post("/api/lots")
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

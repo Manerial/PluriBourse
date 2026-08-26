@@ -27,6 +27,10 @@ public class Lot {
     @JoinColumn(name = "seller_profile_id", nullable = false)
     private SellerProfile sellerProfile;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private EditionCategory category;
+
     @Column(nullable = false, length = 200)
     private String name;
 

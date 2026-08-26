@@ -68,6 +68,9 @@ public class ItemService {
     public ItemDto update(Long id, CreateItemDto dto) {
         Item item = findById(id);
         PhaseGuard.requireDepositPhase(item.getEdition());
+        if (item.getLot() != null) {
+            throw new ItemBelongsToLotException(id);
+        }
         mapper.updateEntityFromDto(dto, item);
         if (!item.getCategory().getId().equals(dto.categoryId())) {
             EditionCategory category = editionScopedLookup.findCategoryInEdition(dto.categoryId(), item.getEdition());
@@ -90,6 +93,10 @@ public class ItemService {
     public void delete(Long id) {
         Item item = findById(id);
         PhaseGuard.requireDepositPhase(item.getEdition());
+        Lot lot = item.getLot();
+        if (lot != null && lot.getItems().size() <= 2) {
+            throw new LotBelowMinimumMembersException(lot.getId());
+        }
         repository.delete(item);
     }
 

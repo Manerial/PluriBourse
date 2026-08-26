@@ -4,8 +4,6 @@ import jakarta.validation.constraints.*;
 
 public record UpdateLotItemDto(
         Long id,
-        @NotNull
-        Long categoryId,
         @NotBlank
         @Size(max = 200)
         String name,

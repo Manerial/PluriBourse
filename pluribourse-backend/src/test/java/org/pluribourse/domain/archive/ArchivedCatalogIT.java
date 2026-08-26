@@ -97,9 +97,9 @@ class ArchivedCatalogIT extends IntegrationTest {
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateLotDto(bobId, "Lot Duo", new BigDecimal("8.00"),
-                                List.of(new CreateLotItemDto(jouetsId, "Duo A", false, null),
-                                        new CreateLotItemDto(jouetsId, "Duo B", false, null))))))
+                        .content(objectMapper.writeValueAsString(new CreateLotDto(bobId, jouetsId, "Lot Duo", new BigDecimal("8.00"),
+                                List.of(new CreateLotItemDto("Duo A", false, null),
+                                        new CreateLotItemDto("Duo B", false, null))))))
                 .andExpect(status().isCreated());
 
         advancePhase(editionId, "SALE");

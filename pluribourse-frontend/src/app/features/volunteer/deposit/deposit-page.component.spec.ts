@@ -69,7 +69,14 @@ const MOCK_LOT_ITEM_2: ItemDto = {
   lotPrice: 15,
 };
 
-const MOCK_LOT: LotDto = { id: 20, name: 'Lot Jouets', globalPrice: 15, items: [MOCK_LOT_ITEM, MOCK_LOT_ITEM_2] };
+const MOCK_LOT: LotDto = {
+  id: 20,
+  name: 'Lot Jouets',
+  globalPrice: 15,
+  categoryId: 1,
+  categoryName: 'Jouets',
+  items: [MOCK_LOT_ITEM, MOCK_LOT_ITEM_2],
+};
 
 describe('DepositPageComponent', () => {
   let fixture: ComponentFixture<DepositPageComponent>;
@@ -362,6 +369,8 @@ describe('DepositPageComponent', () => {
       id: 20,
       name: 'Lot Jouets',
       globalPrice: 15,
+      categoryId: 1,
+      categoryName: 'Jouets',
       items: [MOCK_LOT_ITEM, MOCK_LOT_ITEM_2],
     });
     expect(component.depositMode()).toBe('lot');

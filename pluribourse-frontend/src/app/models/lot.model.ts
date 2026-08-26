@@ -1,7 +1,6 @@
 import { ItemDto } from './item.model';
 
 export interface CreateLotItemRequest {
-  categoryId: number;
   name: string;
   incomplete: boolean;
   comment: string | null;
@@ -9,6 +8,7 @@ export interface CreateLotItemRequest {
 
 export interface CreateLotRequest {
   sellerProfileId: number;
+  categoryId: number;
   name: string;
   globalPrice: number;
   items: CreateLotItemRequest[];
@@ -16,13 +16,13 @@ export interface CreateLotRequest {
 
 export interface UpdateLotItemRequest {
   id: number | null;
-  categoryId: number;
   name: string;
   incomplete: boolean;
   comment: string | null;
 }
 
 export interface UpdateLotRequest {
+  categoryId: number;
   name: string;
   globalPrice: number;
   items: UpdateLotItemRequest[];
@@ -32,5 +32,7 @@ export interface LotDto {
   id: number;
   name: string;
   globalPrice: number;
+  categoryId: number;
+  categoryName: string;
   items: ItemDto[];
 }

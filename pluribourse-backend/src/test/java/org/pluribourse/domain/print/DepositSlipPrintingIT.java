@@ -152,9 +152,9 @@ class DepositSlipPrintingIT extends IntegrationTest {
         sellerAId = createSeller("Alice", "Vendeuse", "alice.slip@email.com");
         createItem(sellerAId, "Peluche", "7.00");
 
-        CreateLotDto lotPayload = new CreateLotDto(sellerAId, "Lot Duo", new BigDecimal("12.00"), List.of(
-                new CreateLotItemDto(categoryId, "Piece A", false, null),
-                new CreateLotItemDto(categoryId, "Piece B", false, null)
+        CreateLotDto lotPayload = new CreateLotDto(sellerAId, categoryId, "Lot Duo", new BigDecimal("12.00"), List.of(
+                new CreateLotItemDto("Piece A", false, null),
+                new CreateLotItemDto("Piece B", false, null)
         ));
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())

@@ -22,9 +22,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Categories are set up with overlapping tables (Jouets=[1,2], Livres=[2,3]) so a lot spanning
- * both categories exercises the "least loaded table across all categories" branch of FR-023
- * (Story 3.2), applied independently per lot item.
+ * Categories are set up with overlapping tables (Jouets=[1,2], Livres=[2,3]) so a lot's category
+ * change from Jouets to Livres exercises the "least loaded table across all categories" branch of
+ * FR-023 (Story 3.2) — a lot has a single shared category (this story), so the whole lot is
+ * reassigned to one new shared table in a single operation, never per item.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class LotManagementIT extends IntegrationTest {
@@ -137,9 +138,9 @@ class LotManagementIT extends IntegrationTest {
         // (404 no-active-edition), avant même d'atteindre la résolution du vendeur ou le contrôle de
         // phase (l'ancien 422 item-modification-locked). Le résultat métier reste identique (création
         // bloquée).
-        CreateLotDto payload = new CreateLotDto(1L, "Lot Legos", new BigDecimal("15.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Piece A", false, null),
-                new CreateLotItemDto(jouetsCategoryId, "Piece B", false, null)
+        CreateLotDto payload = new CreateLotDto(1L, jouetsCategoryId, "Lot Legos", new BigDecimal("15.00"), List.of(
+                new CreateLotItemDto("Piece A", false, null),
+                new CreateLotItemDto("Piece B", false, null)
         ));
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -174,8 +175,8 @@ class LotManagementIT extends IntegrationTest {
     @Test
     @Order(4)
     void create_lot_with_a_single_item_is_rejected() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot incomplet", new BigDecimal("10.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Piece unique", false, null)
+        CreateLotDto payload = new CreateLotDto(sellerAId, jouetsCategoryId, "Lot incomplet", new BigDecimal("10.00"), List.of(
+                new CreateLotItemDto("Piece unique", false, null)
         ));
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -187,9 +188,9 @@ class LotManagementIT extends IntegrationTest {
     @Test
     @Order(5)
     void create_lot_with_a_blank_item_name_is_rejected() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot Invalide", new BigDecimal("10.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Piece valide", false, null),
-                new CreateLotItemDto(jouetsCategoryId, "  ", false, null)
+        CreateLotDto payload = new CreateLotDto(sellerAId, jouetsCategoryId, "Lot Invalide", new BigDecimal("10.00"), List.of(
+                new CreateLotItemDto("Piece valide", false, null),
+                new CreateLotItemDto("  ", false, null)
         ));
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -200,10 +201,10 @@ class LotManagementIT extends IntegrationTest {
 
     @Test
     @Order(6)
-    void create_lot_with_two_items_assigns_a_table_per_item() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot Jouets et Livres", new BigDecimal("25.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Kapla", false, null),
-                new CreateLotItemDto(livresCategoryId, "BD Tintin", true, "Couverture abimee")
+    void create_lot_with_two_items_shares_a_single_table() throws Exception {
+        CreateLotDto payload = new CreateLotDto(sellerAId, jouetsCategoryId, "Lot Jouets", new BigDecimal("25.00"), List.of(
+                new CreateLotItemDto("Kapla", false, null),
+                new CreateLotItemDto("BD Tintin", true, "Couverture abimee")
         ));
         MvcResult result = mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -215,18 +216,23 @@ class LotManagementIT extends IntegrationTest {
         createdLotId = created.id();
         itemKaplaId = created.items().get(0).id();
         itemTintinId = created.items().get(1).id();
-        assertThat(created.name()).isEqualTo("Lot Jouets et Livres");
+        assertThat(created.name()).isEqualTo("Lot Jouets");
         assertThat(created.globalPrice()).isEqualByComparingTo("25.00");
+        assertThat(created.categoryId()).isEqualTo(jouetsCategoryId);
+        assertThat(created.categoryName()).isEqualTo("Jouets");
         assertThat(created.items()).hasSize(2);
         assertThat(created.items()).extracting(ItemDto::price).containsOnlyNulls();
-        assertThat(created.items()).extracting(ItemDto::tableNumber).containsExactly(1, 2);
+        // A lot now has ONE category, so both members share the SAME table — replaces the old
+        // "different categories in the same lot get different tables" scenario, which no longer
+        // has an equivalent (FR-023 precise, AC 2).
+        assertThat(created.items()).extracting(ItemDto::tableNumber).containsExactly(1, 1);
         assertThat(created.items().get(1).incomplete()).isTrue();
         assertThat(created.items().get(1).comment()).isEqualTo("Couverture abimee");
     }
 
     @Test
     @Order(7)
-    void get_items_by_seller_returns_lot_items_with_lot_fields_and_null_price() throws Exception {
+    void get_items_by_seller_returns_lot_items_with_lot_and_category_fields_and_null_price() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -236,17 +242,22 @@ class LotManagementIT extends IntegrationTest {
         assertThat(items).allSatisfy(item -> {
             assertThat(item.price()).isNull();
             assertThat(item.lotId()).isEqualTo(createdLotId);
-            assertThat(item.lotName()).isEqualTo("Lot Jouets et Livres");
+            assertThat(item.lotName()).isEqualTo("Lot Jouets");
             assertThat(item.lotPrice()).isEqualByComparingTo("25.00");
+            // The lot's single category is still copied onto every member (AC 5) — Item.category
+            // stays populated per member even though the form no longer lets it be chosen
+            // independently (see story Dev Notes § Décision de conception).
+            assertThat(item.categoryId()).isEqualTo(jouetsCategoryId);
+            assertThat(item.categoryName()).isEqualTo("Jouets");
         });
     }
 
     @Test
     @Order(8)
     void create_lot_with_unknown_category_returns_404() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot Invalide", new BigDecimal("12.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Piece valide", false, null),
-                new CreateLotItemDto(999999L, "Piece invalide", false, null)
+        CreateLotDto payload = new CreateLotDto(sellerAId, 999999L, "Lot Invalide", new BigDecimal("12.00"), List.of(
+                new CreateLotItemDto("Piece valide", false, null),
+                new CreateLotItemDto("Piece invalide", false, null)
         ));
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -259,9 +270,9 @@ class LotManagementIT extends IntegrationTest {
     @Test
     @Order(9)
     void create_lot_with_category_from_another_edition_returns_404() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot Invalide", new BigDecimal("12.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Piece valide", false, null),
-                new CreateLotItemDto(foreignCategoryId, "Piece autre edition", false, null)
+        CreateLotDto payload = new CreateLotDto(sellerAId, foreignCategoryId, "Lot Invalide", new BigDecimal("12.00"), List.of(
+                new CreateLotItemDto("Piece valide", false, null),
+                new CreateLotItemDto("Piece autre edition", false, null)
         ));
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -273,10 +284,10 @@ class LotManagementIT extends IntegrationTest {
 
     @Test
     @Order(10)
-    void update_lot_name_and_price_reflected_on_all_member_items() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee")
+    void update_lot_name_and_price_with_unchanged_category_triggers_no_table_reassignment() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto(jouetsCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, "BD Tintin", true, "Couverture abimee")
         ));
         MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -285,9 +296,11 @@ class LotManagementIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
         LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
-        assertThat(updated.name()).isEqualTo("Lot Jouets et Livres Modifie");
+        assertThat(updated.name()).isEqualTo("Lot Jouets Modifie");
         assertThat(updated.globalPrice()).isEqualByComparingTo("30.00");
         assertThat(updated.items()).hasSize(2);
+        // Category unchanged (still Jouets) — no reassignment, both members keep their original table.
+        assertThat(updated.items()).extracting(ItemDto::tableNumber).containsExactly(1, 1);
 
         MvcResult itemsResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
                 .andExpect(status().isOk())
@@ -296,7 +309,7 @@ class LotManagementIT extends IntegrationTest {
         });
         assertThat(items).filteredOn(item -> item.lotId().equals(createdLotId))
                 .allSatisfy(item -> {
-                    assertThat(item.lotName()).isEqualTo("Lot Jouets et Livres Modifie");
+                    assertThat(item.lotName()).isEqualTo("Lot Jouets Modifie");
                     assertThat(item.lotPrice()).isEqualByComparingTo("30.00");
                 });
     }
@@ -304,9 +317,9 @@ class LotManagementIT extends IntegrationTest {
     @Test
     @Order(11)
     void create_second_lot_for_cross_lot_and_deletion_tests() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot a Supprimer", new BigDecimal("5.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Piece Jetable A", false, null),
-                new CreateLotItemDto(jouetsCategoryId, "Piece Jetable B", false, null)
+        CreateLotDto payload = new CreateLotDto(sellerAId, jouetsCategoryId, "Lot a Supprimer", new BigDecimal("5.00"), List.of(
+                new CreateLotItemDto("Piece Jetable A", false, null),
+                new CreateLotItemDto("Piece Jetable B", false, null)
         ));
         MvcResult result = mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -321,11 +334,11 @@ class LotManagementIT extends IntegrationTest {
 
     @Test
     @Order(12)
-    void update_lot_add_item_assigns_seller_existing_table_for_that_category() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee"),
-                new UpdateLotItemDto(null, jouetsCategoryId, "Playmobil", false, null)
+    void update_lot_add_item_without_changing_category_lands_on_the_lots_existing_table() throws Exception {
+        UpdateLotDto payload = new UpdateLotDto(jouetsCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, "BD Tintin", true, "Couverture abimee"),
+                new UpdateLotItemDto(null, "Playmobil", false, null)
         ));
         MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -337,49 +350,24 @@ class LotManagementIT extends IntegrationTest {
         assertThat(updated.items()).hasSize(3);
         ItemDto playmobil = updated.items().stream().filter(i -> i.name().equals("Playmobil")).findFirst().orElseThrow();
         itemPlaymobilId = playmobil.id();
-        // Seller already has a Jouets table (Kapla, table 1) — FR-023 keeps a single table per
-        // category per seller, so the new item must land on that same table, not a freshly
-        // computed least-loaded one.
+        // Category unchanged (Jouets): the lot's already-assigned table (1) is found directly via
+        // the seller's existing members in that category — no new least-loaded computation.
         assertThat(playmobil.tableNumber()).isEqualTo(1);
+        assertThat(playmobil.categoryId()).isEqualTo(jouetsCategoryId);
         assertThat(playmobil.price()).isNull();
     }
 
     @Test
     @Order(13)
-    void update_lot_change_item_category_reassigns_table() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemTintinId, jouetsCategoryId, "BD Tintin", true, "Couverture abimee"),
-                new UpdateLotItemDto(itemPlaymobilId, jouetsCategoryId, "Playmobil", false, null)
-        ));
-        MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
-                        .session(volunteerSession).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andReturn();
-        LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
-        assertThat(updated.items()).hasSize(3);
-        // Playmobil's id must be preserved (same row updated, not deleted+recreated) now that the
-        // payload correctly carries its captured id instead of null.
-        assertThat(updated.items()).extracting(ItemDto::id).contains(itemPlaymobilId);
-        ItemDto tintin = updated.items().stream().filter(i -> i.id().equals(itemTintinId)).findFirst().orElseThrow();
-        assertThat(tintin.categoryId()).isEqualTo(jouetsCategoryId);
-        // Reassigned to the seller's existing Jouets table, same rationale as the previous test.
-        assertThat(tintin.tableNumber()).isEqualTo(1);
-    }
-
-    @Test
-    @Order(14)
-    void update_lot_reassigns_category_and_adds_item_in_the_same_request() throws Exception {
-        // Exercises the combined lockOrder path the Dev Notes call out explicitly: an existing
-        // member's category reassignment (Tintin: Jouets -> Livres) and a brand-new item (Barbie)
-        // processed together, sorted by ascending category id in the same PUT.
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee"),
-                new UpdateLotItemDto(itemPlaymobilId, jouetsCategoryId, "Playmobil", false, null),
-                new UpdateLotItemDto(null, jouetsCategoryId, "Barbie", false, null)
+    void update_lot_changes_category_reassigns_every_member_to_one_new_shared_table() throws Exception {
+        // Exercises the categoryChanged branch and the multi-id excludeItemIds path together: every
+        // current member (Kapla, Tintin, Playmobil) AND a brand-new item (Barbie) submitted in the
+        // same request, all landing on a single freshly-computed Livres table.
+        UpdateLotDto payload = new UpdateLotDto(livresCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, "BD Tintin", true, "Couverture abimee"),
+                new UpdateLotItemDto(itemPlaymobilId, "Playmobil", false, null),
+                new UpdateLotItemDto(null, "Barbie", false, null)
         ));
         MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -389,25 +377,25 @@ class LotManagementIT extends IntegrationTest {
                 .andReturn();
         LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
         assertThat(updated.items()).hasSize(4);
-        ItemDto tintin = updated.items().stream().filter(i -> i.id().equals(itemTintinId)).findFirst().orElseThrow();
-        assertThat(tintin.categoryId()).isEqualTo(livresCategoryId);
-        // No seller item remains in Livres at this point (Tintin just left it), so this lands back
-        // on the freshly computed least-loaded Livres table rather than a pre-existing one.
-        assertThat(tintin.tableNumber()).isEqualTo(2);
+        assertThat(updated.categoryId()).isEqualTo(livresCategoryId);
+        assertThat(updated.categoryName()).isEqualTo("Livres");
+        // Existing members' ids must be preserved (same rows updated, not deleted+recreated).
+        assertThat(updated.items()).extracting(ItemDto::id).contains(itemKaplaId, itemTintinId, itemPlaymobilId);
         ItemDto barbie = updated.items().stream().filter(i -> i.name().equals("Barbie")).findFirst().orElseThrow();
         itemBarbieId = barbie.id();
-        // Seller already has a Jouets table (Kapla/Playmobil, table 1) — same shortcut as the
-        // earlier "add item" test.
-        assertThat(barbie.tableNumber()).isEqualTo(1);
-        assertThat(barbie.price()).isNull();
+        // No seller item was already on a Livres table (all were on Jouets' table 1) — the recount
+        // excludes the lot's own remaining members, so it lands on the least-loaded Livres table,
+        // shared by every member of the lot, old and new alike.
+        assertThat(updated.items()).extracting(ItemDto::tableNumber).containsOnly(2);
+        assertThat(updated.items()).extracting(ItemDto::categoryId).containsOnly(livresCategoryId);
     }
 
     @Test
-    @Order(15)
+    @Order(14)
     void update_lot_with_item_id_not_belonging_to_lot_returns_404() throws Exception {
-        UpdateLotDto unknownIdPayload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(999999999L, jouetsCategoryId, "Fantome", false, null)
+        UpdateLotDto unknownIdPayload = new UpdateLotDto(livresCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(999999999L, "Fantome", false, null)
         ));
         mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -418,9 +406,9 @@ class LotManagementIT extends IntegrationTest {
 
         // A real, existing item id is just as invalid here if it belongs to a *different* lot —
         // membership is scoped per-lot, not merely "does this id exist anywhere".
-        UpdateLotDto otherLotItemPayload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(secondLotItemAId, jouetsCategoryId, "Piece Jetable A", false, null)
+        UpdateLotDto otherLotItemPayload = new UpdateLotDto(livresCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(secondLotItemAId, "Piece Jetable A", false, null)
         ));
         mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -431,12 +419,12 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(16)
+    @Order(15)
     void update_lot_remove_item_succeeds() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemTintinId, livresCategoryId, "BD Tintin", true, "Couverture abimee"),
-                new UpdateLotItemDto(itemBarbieId, jouetsCategoryId, "Barbie", false, null)
+        UpdateLotDto payload = new UpdateLotDto(livresCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, "BD Tintin", true, "Couverture abimee"),
+                new UpdateLotItemDto(itemBarbieId, "Barbie", false, null)
         ));
         mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -454,10 +442,10 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(17)
+    @Order(16)
     void update_lot_to_single_item_is_rejected() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null)
+        UpdateLotDto payload = new UpdateLotDto(livresCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null)
         ));
         mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -467,11 +455,11 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(18)
+    @Order(17)
     void update_unknown_lot_returns_404() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Fantome", new BigDecimal("10.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemTintinId, jouetsCategoryId, "BD Tintin", false, null)
+        UpdateLotDto payload = new UpdateLotDto(jouetsCategoryId, "Lot Fantome", new BigDecimal("10.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(itemTintinId, "BD Tintin", false, null)
         ));
         mockMvc.perform(put("/api/lots/999999999")
                         .session(volunteerSession).with(csrf())
@@ -482,11 +470,11 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(19)
+    @Order(18)
     void update_lot_with_duplicate_item_id_is_rejected() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla en double", false, null)
+        UpdateLotDto payload = new UpdateLotDto(livresCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(itemKaplaId, "Kapla", false, null),
+                new UpdateLotItemDto(itemKaplaId, "Kapla en double", false, null)
         ));
         mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -497,7 +485,7 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(20)
+    @Order(19)
     void delete_unknown_lot_returns_404() throws Exception {
         mockMvc.perform(delete("/api/lots/999999999")
                         .session(volunteerSession).with(csrf()))
@@ -506,7 +494,7 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(21)
+    @Order(20)
     void delete_lot_removes_lot_and_all_member_items() throws Exception {
         MvcResult beforeResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
                 .andExpect(status().isOk())
@@ -529,7 +517,91 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
+    @Order(21)
+    void update_item_belonging_to_a_lot_via_the_individual_item_endpoint_is_rejected() throws Exception {
+        CreateItemDto payload = new CreateItemDto(sellerAId, jouetsCategoryId, "Kapla", new BigDecimal("5.00"), false, null);
+        mockMvc.perform(put("/api/items/" + itemKaplaId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/item-belongs-to-lot")));
+    }
+
+    @Test
     @Order(22)
+    void delete_item_from_lot_with_more_than_two_members_succeeds() throws Exception {
+        mockMvc.perform(delete("/api/items/" + itemKaplaId)
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        MvcResult afterResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        List<ItemDto> after = objectMapper.readValue(afterResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
+        assertThat(after).extracting(ItemDto::id).doesNotContain(itemKaplaId);
+        assertThat(after).filteredOn(item -> createdLotId.equals(item.lotId())).hasSize(2);
+    }
+
+    @Test
+    @Order(23)
+    void delete_item_from_lot_with_exactly_two_members_is_rejected() throws Exception {
+        mockMvc.perform(delete("/api/items/" + itemTintinId)
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/lot-below-minimum-members")));
+    }
+
+    @Test
+    @Order(24)
+    void update_lot_category_with_only_new_items_succeeds() throws Exception {
+        // Regresses TableAssignmentService.assignTable: when every submitted item is new,
+        // remainingMemberIds is empty — must still resolve as "exclude nothing", not an
+        // empty JPQL NOT IN list (see Review Findings).
+        UpdateLotDto payload = new UpdateLotDto(jouetsCategoryId, "Lot Jouets Renouvele", new BigDecimal("18.00"), List.of(
+                new UpdateLotItemDto(null, "Duplo", false, null),
+                new UpdateLotItemDto(null, "Puzzle", false, null)
+        ));
+        MvcResult result = mockMvc.perform(put("/api/lots/" + createdLotId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andReturn();
+        LotDto updated = objectMapper.readValue(result.getResponse().getContentAsString(), LotDto.class);
+        assertThat(updated.categoryId()).isEqualTo(jouetsCategoryId);
+        assertThat(updated.items()).hasSize(2);
+        assertThat(updated.items()).extracting(ItemDto::tableNumber).doesNotContainNull();
+        assertThat(updated.items()).extracting(ItemDto::tableNumber).containsOnly(updated.items().get(0).tableNumber());
+    }
+
+    @Test
+    @Order(25)
+    void patch_completeness_of_an_item_belonging_to_a_lot_still_succeeds() throws Exception {
+        // Dev Notes § Hors périmètre exempts PATCH from the AC 6 guard (it never touches
+        // category/tableNumber) — proves that exemption still behaves correctly post-story rather
+        // than only asserting it by reasoning.
+        MvcResult beforeResult = mockMvc.perform(get("/api/items").param("sellerProfileId", String.valueOf(sellerAId)).session(volunteerSession))
+                .andExpect(status().isOk())
+                .andReturn();
+        List<ItemDto> before = objectMapper.readValue(beforeResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
+        Long lotMemberId = before.stream().filter(i -> createdLotId.equals(i.lotId())).findFirst().orElseThrow().id();
+
+        ItemCompletenessDto payload = new ItemCompletenessDto(true, "Piece manquante");
+        mockMvc.perform(patch("/api/items/" + lotMemberId)
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.incomplete").value(true))
+                .andExpect(jsonPath("$.comment").value("Piece manquante"))
+                .andExpect(jsonPath("$.lotId").value(createdLotId));
+    }
+
+    @Test
+    @Order(26)
     void advance_edition_to_sale_phase() throws Exception {
         mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
                         .session(adminSession).with(csrf()))
@@ -538,11 +610,11 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(23)
+    @Order(27)
     void update_lot_outside_deposit_phase_is_blocked() throws Exception {
-        UpdateLotDto payload = new UpdateLotDto("Lot Jouets et Livres Modifie", new BigDecimal("30.00"), List.of(
-                new UpdateLotItemDto(itemKaplaId, jouetsCategoryId, "Kapla", false, null),
-                new UpdateLotItemDto(itemTintinId, jouetsCategoryId, "BD Tintin", false, null)
+        UpdateLotDto payload = new UpdateLotDto(livresCategoryId, "Lot Jouets Modifie", new BigDecimal("30.00"), List.of(
+                new UpdateLotItemDto(null, "Duplo", false, null),
+                new UpdateLotItemDto(null, "Puzzle", false, null)
         ));
         mockMvc.perform(put("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf())
@@ -553,7 +625,7 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(24)
+    @Order(28)
     void delete_lot_outside_deposit_phase_is_blocked() throws Exception {
         mockMvc.perform(delete("/api/lots/" + createdLotId)
                         .session(volunteerSession).with(csrf()))
@@ -562,11 +634,11 @@ class LotManagementIT extends IntegrationTest {
     }
 
     @Test
-    @Order(25)
+    @Order(29)
     void create_lot_outside_deposit_phase_is_blocked_again() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot Tardif", new BigDecimal("9.00"), List.of(
-                new CreateLotItemDto(jouetsCategoryId, "Piece A", false, null),
-                new CreateLotItemDto(jouetsCategoryId, "Piece B", false, null)
+        CreateLotDto payload = new CreateLotDto(sellerAId, jouetsCategoryId, "Lot Tardif", new BigDecimal("9.00"), List.of(
+                new CreateLotItemDto("Piece A", false, null),
+                new CreateLotItemDto("Piece B", false, null)
         ));
         mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())

@@ -212,16 +212,16 @@ class SettlementReportPrintingIT extends IntegrationTest {
         mockMvc.perform(post("/api/lots")
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateLotDto(aliceId, MIXED_LOT_NAME, new BigDecimal("8.00"),
-                                List.of(new CreateLotItemDto(categoryId, "Mixte A", false, null),
-                                        new CreateLotItemDto(categoryId, "Mixte B", false, null))))))
+                        .content(objectMapper.writeValueAsString(new CreateLotDto(aliceId, categoryId, MIXED_LOT_NAME, new BigDecimal("8.00"),
+                                List.of(new CreateLotItemDto("Mixte A", false, null),
+                                        new CreateLotItemDto("Mixte B", false, null))))))
                 .andExpect(status().isCreated());
         mockMvc.perform(post("/api/lots")
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateLotDto(aliceId, UNSOLD_LOT_NAME, new BigDecimal("6.00"),
-                                List.of(new CreateLotItemDto(categoryId, "Invendu A", false, null),
-                                        new CreateLotItemDto(categoryId, "Invendu B", false, null))))))
+                        .content(objectMapper.writeValueAsString(new CreateLotDto(aliceId, categoryId, UNSOLD_LOT_NAME, new BigDecimal("6.00"),
+                                List.of(new CreateLotItemDto("Invendu A", false, null),
+                                        new CreateLotItemDto("Invendu B", false, null))))))
                 .andExpect(status().isCreated());
     }
 
@@ -351,6 +351,11 @@ class SettlementReportPrintingIT extends IntegrationTest {
         // (AC 1).
         assertThat(countOccurrences(rendered, UNSOLD_LOT_NAME)).isEqualTo(1);
         assertThat(rendered).contains("6.00");
+        // Story 3.14 AC 5: a lot member's category still reflects the LOT's category (Item.category
+        // is now copied from Lot.category, never chosen per member) — 2 occurrences of "Jouets"
+        // proves it appears for BOTH the standalone Peluche row AND the Lot Invendu row, not just
+        // one of them.
+        assertThat(countOccurrences(rendered, "Jouets")).isEqualTo(2);
         // Total brut (5.00+2.00+8.00=15.00), commission (10%) and net (13.50) — all BigDecimal,
         // precise to the cent.
         assertThat(rendered).contains("15.00").contains("13.50");

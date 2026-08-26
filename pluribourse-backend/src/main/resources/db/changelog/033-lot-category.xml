@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="033-lot-category" author="pluribourse">
+        <addColumn tableName="lots">
+            <column name="category_id" type="BIGINT">
+                <constraints nullable="true" foreignKeyName="fk_lots_category" references="edition_categories(id)"/>
+            </column>
+        </addColumn>
+        <!-- Backfill from each lot's first member (by id) — a lot always has >= 2 members
+             (FR-043), so this subquery always resolves. No real prod data at stake (sprint-change-
+             proposal-2026-08-24 § Point 3), but a populated local dev DB must not break. -->
+        <sql>
+            UPDATE lots l
+            SET l.category_id = (
+                SELECT i.category_id FROM items i WHERE i.lot_id = l.id ORDER BY i.id ASC LIMIT 1
+            );
+        </sql>
+        <addNotNullConstraint tableName="lots" columnName="category_id" columnDataType="BIGINT"/>
+
+        <rollback>
+            <dropColumn tableName="lots" columnName="category_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -22,6 +22,15 @@
           <input matInput formControlName="globalPrice" type="number" step="1" min="0" />
           <span matTextSuffix>{{ currency() }}</span>
         </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'volunteer.deposit.item.lotForm.lotCategory' | translate }}</mat-label>
+          <mat-select formControlName="categoryId">
+            @for (category of categories(); track category.id) {
+              <mat-option [value]="category.id">{{ category.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
       </div>
 
       <div class="lot-items-section" formArrayName="items">
@@ -34,15 +43,6 @@
             <mat-form-field appearance="outline" class="lot-item-row__name">
               <mat-label>{{ 'volunteer.deposit.item.lotForm.itemName' | translate }}</mat-label>
               <input matInput formControlName="name" type="text" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="lot-item-row__category">
-              <mat-label>{{ 'volunteer.deposit.item.lotForm.itemCategory' | translate }}</mat-label>
-              <mat-select formControlName="categoryId">
-                @for (category of categories(); track category.id) {
-                  <mat-option [value]="category.id">{{ category.name }}</mat-option>
-                }
-              </mat-select>
             </mat-form-field>
 
             <mat-checkbox formControlName="incomplete">

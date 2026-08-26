@@ -17,6 +17,8 @@ const MOCK_LOT: LotDto = {
   id: 20,
   name: 'Lot Jouets',
   globalPrice: 15,
+  categoryId: 1,
+  categoryName: 'Jouets',
   items: [
     {
       id: 100,
@@ -114,14 +116,26 @@ describe('LotFormComponent', () => {
 
     expect(lotServiceMock.create).toHaveBeenCalledWith({
       sellerProfileId: 5,
+      categoryId: 1,
       name: 'Lot Jouets',
       globalPrice: 15,
       items: [
-        { categoryId: 1, name: 'Piece A', incomplete: false, comment: null },
-        { categoryId: 1, name: 'Piece B', incomplete: false, comment: null },
+        { name: 'Piece A', incomplete: false, comment: null },
+        { name: 'Piece B', incomplete: false, comment: null },
       ],
     });
     expect(savedSpy).toHaveBeenCalledWith(MOCK_LOT);
+  });
+
+  it('does not call create when categoryId is missing, even with valid items', async () => {
+    component.form.controls.name.setValue('Lot Jouets');
+    component.form.controls.globalPrice.setValue(15);
+    component.itemsFormArray.at(0).setValue({ id: null, name: 'Piece A', incomplete: false, comment: '' });
+    component.itemsFormArray.at(1).setValue({ id: null, name: 'Piece B', incomplete: false, comment: '' });
+
+    await component.onSubmit();
+
+    expect(lotServiceMock.create).not.toHaveBeenCalled();
   });
 
   it('resets the form after a successful create', async () => {
@@ -172,11 +186,11 @@ describe('LotFormComponent', () => {
       expect(component.isEditing()).toBe(true);
       expect(component.form.controls.name.value).toBe('Lot Jouets');
       expect(component.form.controls.globalPrice.value).toBe(15);
+      expect(component.form.controls.categoryId.value).toBe(1);
       expect(component.itemsFormArray.length).toBe(2);
       expect(component.itemsFormArray.at(0).value).toEqual({
         id: 100,
         name: 'Piece A',
-        categoryId: 1,
         incomplete: false,
         comment: '',
       });
@@ -184,17 +198,18 @@ describe('LotFormComponent', () => {
 
     it('calls update with existing ids preserved and null id for a newly added row', async () => {
       component.addItemRow();
-      component.itemsFormArray.at(2).setValue({ id: null, name: 'Piece C', categoryId: 2, incomplete: true, comment: 'Neuve' });
+      component.itemsFormArray.at(2).setValue({ id: null, name: 'Piece C', incomplete: true, comment: 'Neuve' });
 
       await component.onSubmit();
 
       expect(lotServiceMock.update).toHaveBeenCalledWith(20, {
+        categoryId: 1,
         name: 'Lot Jouets',
         globalPrice: 15,
         items: [
-          { id: 100, categoryId: 1, name: 'Piece A', incomplete: false, comment: null },
-          { id: 101, categoryId: 1, name: 'Piece B', incomplete: false, comment: null },
-          { id: null, categoryId: 2, name: 'Piece C', incomplete: true, comment: 'Neuve' },
+          { id: 100, name: 'Piece A', incomplete: false, comment: null },
+          { id: 101, name: 'Piece B', incomplete: false, comment: null },
+          { id: null, name: 'Piece C', incomplete: true, comment: 'Neuve' },
         ],
       });
       expect(lotServiceMock.create).not.toHaveBeenCalled();
@@ -222,7 +237,8 @@ describe('LotFormComponent', () => {
   function fillValidForm(cmp: LotFormComponent): void {
     cmp.form.controls.name.setValue('Lot Jouets');
     cmp.form.controls.globalPrice.setValue(15);
-    cmp.itemsFormArray.at(0).setValue({ id: null, name: 'Piece A', categoryId: 1, incomplete: false, comment: '' });
-    cmp.itemsFormArray.at(1).setValue({ id: null, name: 'Piece B', categoryId: 1, incomplete: false, comment: '' });
+    cmp.form.controls.categoryId.setValue(1);
+    cmp.itemsFormArray.at(0).setValue({ id: null, name: 'Piece A', incomplete: false, comment: '' });
+    cmp.itemsFormArray.at(1).setValue({ id: null, name: 'Piece B', incomplete: false, comment: '' });
   }
 });

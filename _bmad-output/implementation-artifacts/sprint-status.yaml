@@ -35,7 +35,65 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-25"  # Story 2-9 (devise par édition) : revue de code terminée (bmad-code-review), statut → done,
+last_updated: "2026-08-26"  # Story 3-14 (catégorie du lot) créée via bmad-create-story, statut → ready-for-dev.
+# 2026-08-26 — Story 3-14 : début d'implémentation (dev-story), statut → in-progress.
+# 2026-08-26 — Story 3-14 (catégorie du lot) : implémentation terminée (dev-story), statut → review.
+# 2026-08-26 — Story 3-14 (catégorie du lot) : revue de code terminée (bmad-code-review), statut →
+# done. 3 revues parallèles (Blind Hunter, Edge Case Hunter, Acceptance Auditor) : 2 décisions +
+# 5 patchs, tous résolus/appliqués avec confirmation utilisateur, 4 différés (décision Item.category
+# déjà justifiée, couplage Item.category/Lot.category par convention, dérivation frontend non
+# défensive, sentinelle NO_EXCLUSION). Décisions : (1) risque d'échec de la migration 033 si un lot
+# a <2 membres au moment du backfill (via le bug préexistant ItemService.delete()) — résolu à la
+# racine plutôt que par un simple garde-fou de migration : ItemService.delete() refuse désormais
+# (422 lot-below-minimum-members) de supprimer un membre de lot uniquement quand le lot n'a plus
+# que 2 membres, suppression individuelle restant permise au-dessus de ce seuil (décision
+# utilisateur) ; (2) AC 5 exigeait un test explicite (étiquette + bilan de vente) jamais ajouté —
+# assertions ajoutées à ThermalLabelPrintingIT et SettlementReportPrintingIT. Bug supplémentaire
+# découvert en écrivant le test de régression du patch TableAssignmentService : LotService.update()
+# désynchronisait lot.getItems() des suppressions de membres, provoquant une 500
+# ObjectNotFoundException dès qu'un changement de catégorie/ajout forçait un auto-flush Hibernate
+# avant le repository.save(lot) final (bug préexistant depuis la Story 3.10, jamais exercé jusqu'à
+# ce nouveau scénario) — corrigé. LotManagementIT.java passe de 25 à 29 scénarios. 534/534 tests
+# backend verts après application des patchs.
+# Migration Liquibase 033 (lots.category_id, backfill + NOT NULL) créée ; Lot.category, DTOs,
+# TableAssignmentService (exclusion multi-id), LotService.create()/update() et la garde
+# ItemService.update() (422 item-belongs-to-lot) implémentés exactement comme prescrit par la
+# story. 9 fichiers de test corrigés mécaniquement + LotManagementIT.java restructuré en 25
+# scénarios autour du modèle à catégorie unique par lot. Frontend : categoryId déplacé du niveau
+# article vers le niveau lot (lot.model.ts, lot-form.component.ts/.html, deposit-page.component.ts),
+# clé i18n itemCategory renommée lotCategory (fr/en). Aucun écart supplémentaire découvert par
+# rapport au code prescrit par la story. 530/530 tests backend verts, 671/671 tests frontend verts
+# (670 existants + 1 nouveau), mvn clean package + build production frontend réussis.
+# Sprint change proposal 2026-08-24, point 3 : la catégorie passe de l'article (Item) au lot (Lot) —
+# un lot n'a plus qu'une seule catégorie, saisie une fois, et une seule table partagée par tous ses
+# membres (au lieu d'une catégorie/table par article membre). Analyse exhaustive du code réel
+# (LotService, TableAssignmentService, ItemRepository) ayant révélé un écart non anticipé par
+# l'énoncé littéral du sprint-change-proposal ("retrait de Item.category pour les membres d'un
+# lot") : rendre ce champ réellement nullable casserait silencieusement 4 requêtes ItemRepository
+# en INNER JOIN FETCH i.category (catalogue, bilans de vente, impression), le tri catalogue par
+# "category.name" (résolu par réflexion par la librairie tierce jPageFlow, avant mapping DTO, sans
+# garantie de tolérance au null), et ferait planter ItemService.update() (accès direct
+# item.getCategory().getId() sans null-check). Décision actée sans validation utilisateur
+# nécessaire (choix d'implémentation interne) : Item.category reste NOT NULL et renseigné pour
+# chaque membre de lot, recopié depuis Lot.category à l'écriture plutôt que choisi indépendamment —
+# satisfait intégralement FR-022 (plus de saisie individuelle) et FR-023 (table assignée une fois)
+# sans toucher aux 6 fichiers de lecture (ItemMapper, ItemCatalogService, ThermalLabelRenderer,
+# SettlementReportRenderer, EditionArchivingService, tri catalogue). Bénéfice collatéral : la
+# boucle de verrouillage multi-catégories par ordre croissant d'id dans LotService (anti-deadlock
+# entre lots concurrents) disparaît entièrement, une seule catégorie par lot à verrouiller
+# désormais. TableAssignmentService généralisé pour exclure un ensemble d'ids (pas un seul) afin
+# de réassigner la table partagée d'un lot entier en une seule opération. Nouvelle garde
+# ItemService.update() (422 item-belongs-to-lot) : un membre de lot ne peut plus être modifié via
+# l'endpoint article individuel, invariant nécessaire introduit par cette story (ItemService.delete()
+# volontairement non gardé — faille préexistante orthogonale, non aggravée). 11 sites d'appel
+# positionnels de CreateLotDto/CreateLotItemDto recensés par grep (1 en main, 10 en tests) : 9
+# fichiers de test n'utilisent qu'une catégorie partagée par les 2 membres du lot qu'ils créent
+# (correctif mécanique, aucune assertion à changer) ; seul LotManagementIT.java exerce des lots
+# multi-catégories et nécessite une restructuration de scénario (23 tests réordonnés autour du
+# modèle à catégorie unique). Migration Liquibase 033 en 3 étapes (colonne nullable → backfill SQL
+# depuis le premier membre de chaque lot existant → contrainte NOT NULL) pour rester compatible
+# avec une base de dev locale déjà peuplée, sans réinitialisation de données. Statut → ready-for-dev.
+# Story 2-9 (devise par édition) : revue de code terminée (bmad-code-review), statut → done,
 # voir entrée détaillée ci-dessous. 3 revues parallèles (Blind Hunter, Edge Case Hunter, Acceptance
 # Auditor) : aucune violation d'AC, 5 patchs appliqués (panier POS oubliait la devise dans 3 clés i18n
 # malgré la même clé déjà corrigée dans le dialogue de paiement ; chaîne de devise vide/blanche non-null
@@ -364,7 +422,7 @@ development_status:
   # (Lot) — un lot n'a plus qu'une seule catégorie et une seule table pour tous ses membres.
   # Retouche du verrouillage pessimiste par catégorie et de la réassignation de table dans
   # LotService (Stories 3.3/3.10). Pas de donnée réelle à migrer (aucune édition en prod).
-  3-14-categorie-du-lot: backlog
+  3-14-categorie-du-lot: done
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────

@@ -163,6 +163,8 @@ export class DepositPageComponent {
       id: lotId,
       name: first.lotName!,
       globalPrice: first.lotPrice!,
+      categoryId: first.categoryId,
+      categoryName: first.categoryName,
       items: lotItems,
     });
   }

@@ -190,9 +190,9 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     @Test
     @Order(5)
     void create_lot_continues_the_same_item_number_sequence() throws Exception {
-        CreateLotDto payload = new CreateLotDto(sellerAId, "Lot Duo", new BigDecimal("12.00"), List.of(
-                new CreateLotItemDto(categoryId, "Piece A", false, null),
-                new CreateLotItemDto(categoryId, "Piece B", false, null)
+        CreateLotDto payload = new CreateLotDto(sellerAId, categoryId, "Lot Duo", new BigDecimal("12.00"), List.of(
+                new CreateLotItemDto("Piece A", false, null),
+                new CreateLotItemDto("Piece B", false, null)
         ));
         MvcResult result = mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
@@ -253,6 +253,12 @@ class ThermalLabelPrintingIT extends IntegrationTest {
 
         assertThat(renderedFirst).contains("Prix du lot : 12.00").contains("Lot indivisible : 1/2");
         assertThat(renderedSecond).contains("Lot indivisible : 2/2");
+        // Story 3.14 AC 5: a lot member's category still reflects the LOT's category (Item.category
+        // is now copied from Lot.category, never chosen per member) — both labels of "Lot Duo"
+        // (created with categoryId, the same "Jouets" category as Order 6's standalone item) must
+        // still show the "--- Jouets ---" heading.
+        assertThat(renderedFirst).contains("--- Jouets ---");
+        assertThat(renderedSecond).contains("--- Jouets ---");
     }
 
     @Test

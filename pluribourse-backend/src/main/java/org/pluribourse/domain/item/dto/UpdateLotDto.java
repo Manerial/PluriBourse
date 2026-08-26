@@ -7,6 +7,8 @@ import java.math.*;
 import java.util.*;
 
 public record UpdateLotDto(
+        @NotNull
+        Long categoryId,
         @NotBlank
         @Size(max = 200)
         String name,

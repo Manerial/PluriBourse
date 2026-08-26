@@ -369,7 +369,7 @@
           "lotPrice": "Lot price",
           "itemsLabel": "Lot items — 2 minimum",
           "itemName": "Item name",
-          "itemCategory": "Category",
+          "lotCategory": "Lot category",
           "itemIncomplete": "Incomplete",
           "itemComment": "Comment",
           "addItem": "Add item to lot",

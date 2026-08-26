@@ -38,8 +38,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findAllByLotIdOrderById(Long lotId);
 
     /**
-     * excludeItemId lets a category reassignment (AC 5) query the table state as if the item
-     * being reassigned did not exist yet — otherwise its own (stale) row, still visible via
+     * excludeItemIds lets a category reassignment (AC 3) query the table state as if the items
+     * being reassigned did not exist yet — otherwise their own (stale) rows, still visible via
      * Hibernate's pre-query auto-flush, would bias the result it is meant to help compute.
      * DISTINCT is required: a seller with 2+ items already in the category returns one row per
      * item (all sharing the same tableNumber by construction) — without it, getSingleResult()
@@ -48,20 +48,20 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     @Query("""
             SELECT DISTINCT i.tableNumber FROM Item i
             WHERE i.sellerProfile.id = :sellerProfileId AND i.category.id = :categoryId
-              AND (:excludeItemId IS NULL OR i.id <> :excludeItemId)
+              AND i.id NOT IN :excludeItemIds
             """)
     Optional<Integer> findTableNumberBySellerProfileIdAndCategoryId(
             @Param("sellerProfileId") Long sellerProfileId, @Param("categoryId") Long categoryId,
-            @Param("excludeItemId") Long excludeItemId);
+            @Param("excludeItemIds") Collection<Long> excludeItemIds);
 
     @Query("""
             SELECT i.tableNumber, COUNT(i) FROM Item i
             WHERE i.edition.id = :editionId AND i.tableNumber IN :tableNumbers
-              AND (:excludeItemId IS NULL OR i.id <> :excludeItemId)
+              AND i.id NOT IN :excludeItemIds
             GROUP BY i.tableNumber
             """)
     List<Object[]> countByTableNumber(@Param("editionId") Long editionId, @Param("tableNumbers") Collection<Integer> tableNumbers,
-                                      @Param("excludeItemId") Long excludeItemId);
+                                      @Param("excludeItemIds") Collection<Long> excludeItemIds);
 
     /**
      * Catalog listing (Story 6.1): eagerly fetches {@code sellerProfile}/{@code category} because
