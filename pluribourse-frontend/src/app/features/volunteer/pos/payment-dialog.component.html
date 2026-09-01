@@ -60,6 +60,13 @@
     </mat-radio-group>
   </div>
 
+  <mat-checkbox
+    class="print-invoice-option"
+    [checked]="printInvoice()"
+    (change)="printInvoice.set($event.checked)">
+    {{ 'volunteer.pos.payment.printInvoice' | translate }}
+  </mat-checkbox>
+
   <div class="dialog__actions">
     <button type="button" mat-button (click)="cancel()">
       {{ 'common.dialog.cancel' | translate }}

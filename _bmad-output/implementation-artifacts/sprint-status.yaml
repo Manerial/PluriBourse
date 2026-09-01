@@ -35,7 +35,73 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-08-26"  # Story 3-14 (catégorie du lot) créée via bmad-create-story, statut → ready-for-dev.
+last_updated: "2026-09-01"  # Story 4-7 : revue de code terminée (bmad-code-review), statut → done.
+# 2026-09-01 — Story 4-7 (refonte impression facture + écran Liste des ventes) : revue de code
+# terminée (bmad-code-review, 3 revues parallèles). Aucune violation d'AC (17/17 satisfaites par le
+# code). 0 decision-needed, 4 patch APPLIQUÉS, 5 defer (deferred-work.md), 11 rejetés. Patchs :
+# (1) javadoc SaleListFilterDto « exact » → « case-insensitive » ; (2) SaleRepository
+# .findAllByEditionIdForList gagne le départage `, s.id DESC` (pagination déterministe si soldAt
+# égal entre postes concurrents) ; (3) sales-list.component.html bouton réimpression désactivé par
+# ligne (=== sale.id) et non globalement ; (4) SaleListIT @Order(7) couvre le format datetime-local
+# sans secondes. Rejets notables : Post-vente sans UI de réimpression = choix utilisateur explicite
+# (Q2) ; « seller1 absent » = existe dans test-data.sql ; « @Order(14) casse les tests suivants » =
+# c'est le dernier @Test de la classe ; fuseau horaire / borne minute / tri enum par ordinal = tous
+# documentés et tranchés dans la story. Defer : index de page non clampé côté front, validateSort ne
+# valide pas la direction, chargement intégral en mémoire, montants sans 2 décimales, date non
+# parsable → 400 non-RFC7807 (tous hérités du gabarit 6.1 imposé ou pré-existants). Vérifs :
+# SaleListIT 16/16, InvoicePrintingIT 14/14, suite frontend 686/686 — vertes.
+# 2026-09-01 — Story 4-7 (refonte impression facture + écran Liste des ventes) : implémentation
+# complète (dev-story), statut → review. T1-T7 livrées. Backend : PosInvoicePrintService garde
+# d'appartenance → scoping édition active (404 IDOR-safe) ; PosSaleController @Validated sur la classe
+# + GET /pos/sales & /pos/sales/cashiers ; SaleListService calqué sur ItemCatalogService (+ DTOs,
+# SaleListMapper MapStruct, InvalidSortFieldException jumelle pos/exception, 2 requêtes SaleRepository).
+# Tests : InvoicePrintingIT @Order(10) inversé (404→204) + @Order(14) vente d'autre édition → 404 ;
+# SaleListIT NEW (16 scénarios, filtre date DEUX BORNES INCLUSES vérifié). Frontend : case « Imprimer
+# la facture » cochée par défaut + auto-impression best-effort découplée post-validate ; suppression
+# TOTALE du bouton 30 s (lastSale/printingInvoice/invoiceButtonTimer/INVOICE_BUTTON_VISIBLE_MS/
+# showInvoiceButton/printInvoice()), gardes basketCancelled() de la Story 4.6 préservées ;
+# SalesListComponent NEW (route /volunteer/sales + salePhaseGuard + entrée sidebar phase Vente +
+# ajout à PHASE_BOUND_VOLUNTEER_PATHS) calqué sur ItemCatalogComponent ; i18n volunteer.sales.* +
+# volunteer.pos.payment.printInvoice fr/en, clé orpheline volunteer.pos.invoice.button retirée.
+# EXPERIENCE.md volontairement non modifié (dérive documentaire connue, même convention qu'epics.md).
+# Vérifs : 551 tests backend verts, 686 tests frontend verts, mvnw clean package BUILD SUCCESS,
+# npm run build OK (sales-list-component = chunk lazy séparé), parité clés i18n fr/en OK.
+# 2026-09-01 — Story 4-7 : début d'implémentation (dev-story). Baseline commit 4df4a8d (déjà dans le
+# frontmatter de la story).
+# 2026-09-01 — Story 4-7 (refonte impression facture + écran Liste des ventes) créée via bmad-create-story.
+# 2026-09-01 — Story 4-7 : validation à froid (bmad-create-story validate) contre le code réel.
+# 7 corrections appliquées (aucun blocage) : @Validated sur la CLASSE PosSaleController (sinon les
+# @Min/@Max ne donnent pas 422 — GlobalExceptionHandler mappe ConstraintViolationException→422,
+# MethodArgumentNotValidException→400) ; refs résiduelles au patron borne haute exclusive de
+# ReportService neutralisées (filtre 4.7 = deux bornes incluses, Q3) ; fallback test unitaire mocké
+# EditionService supprimé (Mockito interdit hors composant externe) → cas "autre édition" en E2E ;
+# chemin pos.service.ts corrigé ; getCashiers via requête dédiée DISTINCT ; commentaire IDOR à
+# réécrire (AC 8) ; jumelle InvalidSortFieldException dans pos/exception. Statut inchangé (ready-for-dev).
+# 2026-09-01 — Story 4-7 (sprint change proposal 2026-08-24, points 5+6 regroupés) : créée. Analyse
+# exhaustive du code : aucune entité "poste de caisse" n'existe (Sale ne porte que user) → le filtre
+# "poste" du sprint change proposal est implémenté comme un filtre par caissier (Sale.user.username)
+# + endpoint GET /pos/sales/cashiers ; question ouverte n°1 posée pour un éventuel vrai concept de
+# poste (changement de modèle = story dédiée). L'UX de l'écran "Liste des ventes" n'a jamais été
+# produite (absente d'EXPERIENCE.md, renvoyée à un handoff UX par le sprint change proposal) → écran
+# calqué structurellement sur ItemCatalogComponent/ItemCatalogService (Story 6.1) : filtrage en
+# mémoire + FilterService.filterData() (JPageFlow 1.7.0), clampPage/validateSort/whitelist de tri,
+# MatSortModule, états vide/chargement/erreur mutualisés. Partie C : la garde d'appartenance de
+# PosInvoicePrintService.printInvoice (IDOR "auteur uniquement", Story 4.5) est remplacée par un
+# scoping à l'édition active (404 IDOR-safe pour une vente d'une autre édition) ; InvoicePrintingIT
+# @Order(10) à inverser (404→204). Partie B : suppression complète du bouton temporaire 30s
+# (lastSale/invoiceButtonTimer/INVOICE_BUTTON_VISIBLE_MS/showInvoiceButton/printInvoice()), les
+# gardes basketCancelled() de la Story 4.6 sont explicitement préservées, EXPERIENCE.md laissé tel
+# quel (dérive documentaire connue, même convention que epics.md non amendé pour ce sprint change
+# proposal). Partie A : case "Imprimer la facture" cochée par défaut dans PaymentDialogComponent,
+# auto-impression best-effort découplée après validate() (aucun champ ajouté à ValidateBasketDto /
+# ValidateBasketRequest, nouveau type frontend PaymentDialogResult). Clarifications utilisateur
+# 2026-09-01 : "poste" = compte bénévole caissier (pas d'entité station) ; écran en phase Vente
+# uniquement, pas de Post-vente ni d'entrée admin ; filtre date = LES DEUX BORNES INCLUSES ;
+# username suffit pour la colonne caissier. ReportService.getDailyReport (Story 5.3) laissé
+# INCHANGE (option a : intervalle semi-ouvert = déjà tout le jour, un <= littéral double-compterait
+# minuit pile). Aucune question ouverte restante. Statut → ready-for-dev.
+# --- entrées précédentes ---
+# Story 3-14 (catégorie du lot) créée via bmad-create-story, statut → ready-for-dev.
 # 2026-08-26 — Story 3-14 : début d'implémentation (dev-story), statut → in-progress.
 # 2026-08-26 — Story 3-14 (catégorie du lot) : implémentation terminée (dev-story), statut → review.
 # 2026-08-26 — Story 3-14 (catégorie du lot) : revue de code terminée (bmad-code-review), statut →
@@ -438,7 +504,7 @@ development_status:
   # paiement (4.2) ; nouvel écran « Liste des ventes » filtrable avec réimpression ouverte à
   # tout bénévole caissier (retrait de la restriction auteur-uniquement, 4.5) ; suppression du
   # bouton temporaire à 30s (INVOICE_BUTTON_VISIBLE_MS), devenu redondant.
-  4-7-refonte-impression-facture-liste-des-ventes: backlog
+  4-7-refonte-impression-facture-liste-des-ventes: done
   epic-4-retrospective: optional
 
   # ─── Epic 5 : Post-vente, Reversements & Rapports ──────────────────────────

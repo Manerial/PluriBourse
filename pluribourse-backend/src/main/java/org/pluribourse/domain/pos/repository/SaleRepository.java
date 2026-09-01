@@ -25,4 +25,23 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
      */
     @Query("SELECT s FROM Sale s WHERE s.edition.id = :editionId")
     List<Sale> findAllByEditionId(@Param("editionId") Long editionId);
+
+    /**
+     * Sales list screen (story 4.7, FR-108): every Sale of the edition, with its cashier eagerly
+     * fetched — the list DTO exposes the cashier's username, and mapping happens after the
+     * transaction closes (same JOIN FETCH rationale as ItemRepository.findAllByEditionIdForCatalog).
+     * The explicit ORDER BY s.soldAt DESC is the default sort (AC 10); the s.id DESC tiebreaker
+     * gives a deterministic base order for pagination when no {@code sort} param is supplied, even
+     * when two concurrent POS terminals validate sales at the same soldAt instant. Filtering (date
+     * range, cashier) and sort/page are applied in memory afterwards by SaleListService, not here.
+     */
+    @Query("SELECT s FROM Sale s JOIN FETCH s.user WHERE s.edition.id = :editionId ORDER BY s.soldAt DESC, s.id DESC")
+    List<Sale> findAllByEditionIdForList(@Param("editionId") Long editionId);
+
+    /**
+     * Cashier selector of the sales list screen (story 4.7, AC 12): usernames of the cashiers with
+     * at least one sale on the edition, distinct and alphabetically ordered.
+     */
+    @Query("SELECT DISTINCT s.user.username FROM Sale s WHERE s.edition.id = :editionId ORDER BY s.user.username")
+    List<String> findDistinctCashierUsernamesByEditionId(@Param("editionId") Long editionId);
 }

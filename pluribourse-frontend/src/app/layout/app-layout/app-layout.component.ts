@@ -17,7 +17,7 @@ const SIDEBAR_COLLAPSED_KEY_PREFIX = 'pluribourse.sidebarCollapsed.';
 // Volunteer pages the phase-change auto-redirect (below) is allowed to bounce the user away
 // from. Anything else under /volunteer (e.g. /volunteer/catalog, usable in every phase per
 // FR-083) must be left alone, exactly like /account already is.
-const PHASE_BOUND_VOLUNTEER_PATHS = ['/volunteer/deposit', '/volunteer/pos', '/volunteer/settlement'];
+const PHASE_BOUND_VOLUNTEER_PATHS = ['/volunteer/deposit', '/volunteer/pos', '/volunteer/sales', '/volunteer/settlement'];
 
 // localStorage throws in private-browsing/storage-disabled contexts — must not break the layout.
 function readSidebarCollapsed(username: string): boolean {

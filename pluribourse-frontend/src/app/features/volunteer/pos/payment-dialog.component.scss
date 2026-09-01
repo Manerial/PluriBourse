@@ -81,6 +81,11 @@
   }
 }
 
+.print-invoice-option {
+  display: block;
+  margin-top: var(--pb-space-lg);
+}
+
 .cash-detail {
   display: flex;
   flex-direction: column;

@@ -4,10 +4,11 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioChange, MatRadioModule } from '@angular/material/radio';
 import { TranslatePipe } from '@ngx-translate/core';
 import Big from 'big.js';
-import { PaymentMethod, ScanResult, ValidateBasketRequest } from '../../../models/pos.model';
+import { PaymentDialogResult, PaymentMethod, ScanResult } from '../../../models/pos.model';
 import { DialogShellComponent } from '../../../shared/components/dialog-shell/dialog-shell.component';
 
 export interface PaymentDialogData {
@@ -19,13 +20,16 @@ export interface PaymentDialogData {
 @Component({
   selector: 'app-payment-dialog',
   standalone: true,
-  imports: [A11yModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatRadioModule, TranslatePipe, DialogShellComponent],
+  imports: [A11yModule, MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatRadioModule, TranslatePipe, DialogShellComponent],
   templateUrl: './payment-dialog.component.html',
   styleUrl: './payment-dialog.component.scss',
 })
 export class PaymentDialogComponent {
-  readonly dialogRef = inject<DialogRef<ValidateBasketRequest | undefined>>(DialogRef);
+  readonly dialogRef = inject<DialogRef<PaymentDialogResult | undefined>>(DialogRef);
   readonly data = inject<PaymentDialogData>(DIALOG_DATA);
+
+  // Story 4.7 AC 1 — checked by default; the cashier can uncheck it before confirming.
+  readonly printInvoice = signal(true);
 
   // Explicit `read: ElementRef` — MatButton is itself a component (MDC-based), so a bare
   // #confirmButton template-variable query would otherwise resolve to the MatButton instance
@@ -77,8 +81,11 @@ export class PaymentDialogComponent {
       return;
     }
     this.dialogRef.close({
-      paymentMethod: this.paymentMethod()!,
-      amountGiven: this.paymentMethod() === 'CASH' ? this.amountGiven() : null,
+      request: {
+        paymentMethod: this.paymentMethod()!,
+        amountGiven: this.paymentMethod() === 'CASH' ? this.amountGiven() : null,
+      },
+      printInvoice: this.printInvoice(),
     });
   }
 

@@ -2,6 +2,7 @@ package org.pluribourse.domain.pos.service;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.pluribourse.domain.edition.service.EditionService;
 import org.pluribourse.domain.instanceconfig.service.GlobalInstanceConfigService;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.repository.ItemRepository;
@@ -26,13 +27,18 @@ import java.util.Locale;
  * separate from {@link PosBasketService}, which only ever deals with a {@code Basket} — by the
  * time a {@code Sale} exists, its originating basket has already been deleted (story 4.2). No
  * {@code PhaseGuard} here: unlike deposit items, a {@code Sale} is an immutable historical record
- * once created, and nothing in the epic conditions its invoice on the current edition phase.
+ * once created, and nothing in the epic conditions its invoice on the current edition phase — the
+ * reprint stays available in both Sale and Post-sale.
+ * <p>
+ * Story 4.7 (FR-108) — the reprint is open to any cashier, not just {@code sale.getUser()}: the
+ * only restriction is that the sale must belong to the currently active edition.
  */
 @Service
 @RequiredArgsConstructor
 public class PosInvoicePrintService {
 
     private final SaleRepository saleRepository;
+    private final EditionService editionService;
     private final ItemRepository itemRepository;
     private final GlobalInstanceConfigService globalInstanceConfigService;
     private final PrinterSelectionService printerSelectionService;
@@ -40,12 +46,13 @@ public class PosInvoicePrintService {
     private final DocumentPrintService documentPrintService;
 
     @Transactional(readOnly = true)
-    public void printInvoice(Long saleId, Long userId, HttpSession session) {
+    public void printInvoice(Long saleId, HttpSession session) {
         Sale sale = saleRepository.findById(saleId)
                 .orElseThrow(() -> new SaleNotFoundException(saleId));
-        if (!sale.getUser().getId().equals(userId)) {
-            // Never distinguish "doesn't exist" from "belongs to someone else" (IDOR, AC 6), same
-            // pattern as PosBasketService.requireOwnedBasket.
+        if (!sale.getEdition().getId().equals(editionService.getActiveEdition().getId())) {
+            // Story 4.7 AC 8 — a sale of another edition is scoped out: never distinguish "doesn't
+            // exist" from "belongs to another edition" (IDOR), so a guessed saleId cannot expose a
+            // past edition's items and amounts through the PDF. Same 404 as a missing sale.
             throw new SaleNotFoundException(saleId);
         }
 

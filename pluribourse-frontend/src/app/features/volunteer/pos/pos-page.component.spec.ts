@@ -186,7 +186,7 @@ describe('PosPageComponent', () => {
 
   it('validating opens the payment dialog and, on success, reloads a fresh empty basket (AC4)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
     posServiceMock.validate.mockReturnValue(of({ id: 1, total: 5, paymentMethod: 'CASH', amountGiven: null, changeDue: null }));
     const newBasket: Basket = { id: 11, items: [], lotGroups: [], total: 0 };
     posServiceMock.getCurrentBasket.mockReturnValue(of(newBasket));
@@ -207,7 +207,7 @@ describe('PosPageComponent', () => {
 
   it('a conflict at validation lists the conflicting item names and does not clear the local basket (AC8)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
     posServiceMock.validate.mockReturnValue(
       throwError(
         () =>
@@ -235,93 +235,78 @@ describe('PosPageComponent', () => {
   });
 
   const VALIDATED_SALE = { id: 42, total: 5, paymentMethod: 'CASH' as const, amountGiven: null, changeDue: null };
+  const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-  it('shows the invoice button after a successful validation, with the sale it printed (AC1, AC5)', async () => {
+  it('story 4.7 — no invoice button is rendered on the checkout screen after a validated sale (AC5)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
     posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
     posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
 
     await component.openPaymentDialog();
     fixture.detectChanges();
 
-    expect(component.lastSale()).toEqual(VALIDATED_SALE);
-    expect(fixture.nativeElement.querySelector('.print-invoice-btn')).not.toBeNull();
-  });
-
-  it('hides the invoice button 30 seconds after validation, with no user action (AC5)', async () => {
-    vi.useFakeTimers();
-    await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
-    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
-    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
-
-    await component.openPaymentDialog();
-    fixture.detectChanges();
-    expect(component.lastSale()).not.toBeNull();
-
-    vi.advanceTimersByTime(30000);
-    fixture.detectChanges();
-
-    expect(component.lastSale()).toBeNull();
     expect(fixture.nativeElement.querySelector('.print-invoice-btn')).toBeNull();
   });
 
-  it('a scan while the invoice button is visible never clears it (AC5, non-regression)', async () => {
+  it('story 4.7 — auto-prints the invoice when the dialog result keeps printInvoice: true, and toasts success (AC2, AC3)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: true }));
     posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
     posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
-    await component.openPaymentDialog();
-
-    posServiceMock.addItem.mockReturnValue(of(EMPTY_BASKET));
-    await component.onScan('00010001');
-
-    expect(component.lastSale()).toEqual(VALIDATED_SALE);
-  });
-
-  it('printing the invoice calls the service with the sale id and shows a success toast (AC1)', async () => {
-    await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
-    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
-    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
-    await component.openPaymentDialog();
-
     posServiceMock.printInvoice.mockReturnValue(of(undefined));
-    await component.printInvoice();
+
+    await component.openPaymentDialog();
+    await flush();
 
     expect(posServiceMock.printInvoice).toHaveBeenCalledWith(VALIDATED_SALE.id);
+    expect(posServiceMock.printInvoice).toHaveBeenCalledTimes(1);
     expect(toastMock.showSuccess).toHaveBeenCalledWith('volunteer.pos.invoice.success');
   });
 
-  it('shows a dedicated toast when no A4 printer is available (AC7)', async () => {
+  it('story 4.7 — never calls printInvoice when the box was unchecked (AC2)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
     posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
     posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
-    await component.openPaymentDialog();
 
+    await component.openPaymentDialog();
+    await flush();
+
+    expect(posServiceMock.printInvoice).not.toHaveBeenCalled();
+  });
+
+  it('story 4.7 — a 422 on the auto-print toasts the dedicated A4 message and still loads the fresh basket (AC3)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: true }));
+    posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
+    const newBasket: Basket = { id: 11, items: [], lotGroups: [], total: 0 };
+    posServiceMock.getCurrentBasket.mockReturnValue(of(newBasket));
     posServiceMock.printInvoice.mockReturnValue(
       throwError(() => new HttpErrorResponse({ status: 422, error: { type: 'https://pluribourse/errors/invalid-printer-selection' } }))
     );
-    await component.printInvoice();
+
+    await component.openPaymentDialog();
+    await flush();
 
     expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.invoice.error.a4PrinterUnavailable');
+    expect(component.basket()).toEqual(newBasket);
   });
 
-  it('reprinting within the 30s window calls the service again without hiding the button (AC4)', async () => {
+  it('story 4.7 — any other auto-print failure toasts the generic message and never reverts the sale (AC3)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: true }));
     posServiceMock.validate.mockReturnValue(of(VALIDATED_SALE));
     posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+    posServiceMock.printInvoice.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 500, error: {} }))
+    );
+
     await component.openPaymentDialog();
+    await flush();
 
-    posServiceMock.printInvoice.mockReturnValue(of(undefined));
-    await component.printInvoice();
-    await component.printInvoice();
-
-    expect(posServiceMock.printInvoice).toHaveBeenCalledTimes(2);
-    expect(component.lastSale()).toEqual(VALIDATED_SALE);
+    expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.invoice.error.generic');
+    expect(component.basket()).toEqual(EMPTY_BASKET);
   });
 
   it('a basket-cancelled event empties the basket, clears any scan issue, disables the scanner and shows a persistent toast (AC1)', async () => {
@@ -423,7 +408,7 @@ describe('PosPageComponent', () => {
 
   it('does not let a late validate error overwrite the persistent cancellation toast (regression, error path)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
-    paymentDialogServiceMock.open.mockReturnValue(of({ paymentMethod: 'CASH', amountGiven: null }));
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
     const validate$ = new Subject<Sale>();
     posServiceMock.validate.mockReturnValue(validate$);
     const validatePromise = component.openPaymentDialog();

@@ -217,6 +217,18 @@
               <span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span>
               <span class="sidebar__item-label">{{ 'nav.volunteer.pos' | translate }}</span>
             </a>
+
+            <a
+              routerLink="/volunteer/sales"
+              routerLinkActive="sidebar__item--active"
+              ariaCurrentWhenActive="page"
+              class="sidebar__item"
+              [attr.aria-label]="sidebarCollapsed() ? ('nav.volunteer.sales' | translate) : null"
+              [matTooltip]="sidebarCollapsed() ? ('nav.volunteer.sales' | translate) : ''"
+              matTooltipPosition="right">
+              <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
+              <span class="sidebar__item-label">{{ 'nav.volunteer.sales' | translate }}</span>
+            </a>
           }
 
           <a

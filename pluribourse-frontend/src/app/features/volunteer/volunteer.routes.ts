@@ -31,6 +31,12 @@ export const volunteerRoutes: Routes = [
       import('./pos/pos-page.component').then((m) => m.PosPageComponent),
   },
   {
+    path: 'sales',
+    canActivate: [salePhaseGuard],
+    loadComponent: () =>
+      import('./sales/sales-list.component').then((m) => m.SalesListComponent),
+  },
+  {
     path: 'catalog',
     loadComponent: () =>
       import('../catalog/item-catalog.component').then((m) => m.ItemCatalogComponent),

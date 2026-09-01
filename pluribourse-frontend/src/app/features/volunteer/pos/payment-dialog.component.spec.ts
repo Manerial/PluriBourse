@@ -93,7 +93,7 @@ describe('PaymentDialogComponent', () => {
     fixture.componentInstance.amountGiven.set(10);
     fixture.componentInstance.selectMethod({ value: 'CARD' } as MatRadioChange);
     fixture.componentInstance.confirm();
-    expect(mockClose).toHaveBeenCalledWith({ paymentMethod: 'CARD', amountGiven: null });
+    expect(mockClose).toHaveBeenCalledWith({ request: { paymentMethod: 'CARD', amountGiven: null }, printInvoice: true });
   });
 
   it('confirm() closes with the CASH payload including the amount given', () => {
@@ -102,7 +102,24 @@ describe('PaymentDialogComponent', () => {
     fixture.componentInstance.selectMethod({ value: 'CASH' } as MatRadioChange);
     fixture.componentInstance.amountGiven.set(10);
     fixture.componentInstance.confirm();
-    expect(mockClose).toHaveBeenCalledWith({ paymentMethod: 'CASH', amountGiven: 10 });
+    expect(mockClose).toHaveBeenCalledWith({ request: { paymentMethod: 'CASH', amountGiven: 10 }, printInvoice: true });
+  });
+
+  it('the "print invoice" checkbox is checked by default (story 4.7 AC1)', () => {
+    const fixture = TestBed.createComponent(PaymentDialogComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.printInvoice()).toBe(true);
+    const checkbox: HTMLInputElement = fixture.nativeElement.querySelector('.print-invoice-option input[type="checkbox"]');
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('confirm() carries printInvoice: false once the box is unchecked (story 4.7 AC1, AC2)', () => {
+    const fixture = TestBed.createComponent(PaymentDialogComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.selectMethod({ value: 'CARD' } as MatRadioChange);
+    fixture.componentInstance.printInvoice.set(false);
+    fixture.componentInstance.confirm();
+    expect(mockClose).toHaveBeenCalledWith({ request: { paymentMethod: 'CARD', amountGiven: null }, printInvoice: false });
   });
 
   it('confirm() does nothing while disabled', () => {

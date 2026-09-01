@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
-import { Basket, Sale } from '../../../models/pos.model';
+import { Basket } from '../../../models/pos.model';
 import { CurrentEditionService } from '../../../services/current-edition.service';
 import { PosService } from '../../../services/pos.service';
 import { SseService } from '../../../services/sse.service';
@@ -19,10 +19,6 @@ interface ScanIssue {
   message: string;
   variant: 'warning' | 'error';
 }
-
-// EXPERIENCE.md § Panier POS — état post-validation : the invoice button stays visible for exactly
-// this long after a successful sale, then disappears on its own (no user action required).
-const INVOICE_BUTTON_VISIBLE_MS = 30000;
 
 @Component({
   selector: 'app-pos-page',
@@ -45,11 +41,6 @@ export class PosPageComponent implements OnInit {
   // Story 4.2: the basket is now persisted server-side (NFR-006) — no longer a client-only signal.
   readonly basket = signal<Basket | null>(null);
   readonly lastScanIssue = signal<ScanIssue | null>(null);
-  // Story 4.5: the most recently validated sale, whose invoice can be (re)printed on demand while
-  // this signal is set. Independent of basket/scan state — never cleared by onScan()/addItem()
-  // (AC 5): the scanner stays usable for a new transaction while the print button is still shown.
-  readonly lastSale = signal<Sale | null>(null);
-  readonly printingInvoice = signal(false);
   // Story 4.6: set once by onBasketCancelled() and never cleared until a full page reload —
   // the scanner has no re-enable path in JS by design (epics.md AC 2). Also read as a general
   // "ignore this stale in-flight response" guard well beyond the scanner itself (removeItem,
@@ -66,11 +57,6 @@ export class PosPageComponent implements OnInit {
   // the remove buttons while a removal is in flight.
   readonly removeInFlight = signal(false);
   private validateInFlight = false;
-  private invoiceButtonTimer: ReturnType<typeof setTimeout> | undefined;
-
-  constructor() {
-    this.destroyRef.onDestroy(() => clearTimeout(this.invoiceButtonTimer));
-  }
 
   ngOnInit(): void {
     void this.loadBasket();
@@ -187,12 +173,16 @@ export class PosPageComponent implements OnInit {
     }
     this.validateInFlight = true;
     try {
-      const sale = await firstValueFrom(this.posService.validate(currentBasket.id, result));
+      const sale = await firstValueFrom(this.posService.validate(currentBasket.id, result.request));
       this.lastScanIssue.set(null);
-      this.showInvoiceButton(sale);
       // The validated basket is deleted server-side — reload to pick up the fresh empty one
       // created for the next transaction (AC4), rather than just clearing items locally.
       await this.loadBasket();
+      if (result.printInvoice) {
+        // Story 4.7 AC 3: best-effort and decoupled — not awaited before the fresh basket is
+        // loaded, and a print failure never invalidates the sale.
+        void this.autoPrintInvoice(sale.id);
+      }
     } catch (err: unknown) {
       if (this.basketCancelled()) {
         // Story 4.6 review: a basket-cancelled event arrived while validate() was in flight —
@@ -207,30 +197,32 @@ export class PosPageComponent implements OnInit {
     }
   }
 
-  async printInvoice(): Promise<void> {
-    const sale = this.lastSale();
-    if (this.printingInvoice() || !sale) {
-      return;
-    }
-    this.printingInvoice.set(true);
+  /**
+   * Story 4.7 — automatic invoice print triggered by a validated sale when the cashier left the
+   * "Imprimer la facture" box checked. Best-effort: its own error handling, its own toast, and it
+   * never blocks or reverts anything (the sale is already done, the fresh basket already loaded).
+   */
+  private async autoPrintInvoice(saleId: number): Promise<void> {
     try {
-      await firstValueFrom(this.posService.printInvoice(sale.id));
+      await firstValueFrom(this.posService.printInvoice(saleId));
+      if (this.basketCancelled()) {
+        // A basket-cancelled event landed while the print request was in flight. Story 4.6 kept
+        // the manual 30 s button working after a cancellation, but here the print is a side
+        // effect of validation, not a deliberate post-cancellation action — don't overwrite the
+        // persistent cancellation toast with a print success toast.
+        return;
+      }
       this.toast.showSuccess(this.translate.instant('volunteer.pos.invoice.success'));
     } catch (err: unknown) {
+      if (this.basketCancelled()) {
+        return;
+      }
       if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('volunteer.pos.invoice.error.a4PrinterUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('volunteer.pos.invoice.error.generic'));
       }
-    } finally {
-      this.printingInvoice.set(false);
     }
-  }
-
-  private showInvoiceButton(sale: Sale): void {
-    clearTimeout(this.invoiceButtonTimer);
-    this.lastSale.set(sale);
-    this.invoiceButtonTimer = setTimeout(() => this.lastSale.set(null), INVOICE_BUTTON_VISIBLE_MS);
   }
 
   private async loadBasket(): Promise<void> {

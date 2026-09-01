@@ -211,6 +211,15 @@ class InvoicePrintingIT extends IntegrationTest {
                         .content("{\"thermalPrinterId\":null,\"a4PrinterId\":" + a4PrinterId + "}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.a4PrinterId").value(a4PrinterId));
+
+        // Story 4.7 AC 7: volunteer2 now reprints volunteer1's sale (Order 10), so volunteer2's
+        // own session needs an A4 printer selected too — otherwise that call would 422, not 204.
+        mockMvc.perform(post("/api/printers/selection")
+                        .session(volunteer2Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"thermalPrinterId\":null,\"a4PrinterId\":" + a4PrinterId + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.a4PrinterId").value(a4PrinterId));
     }
 
     @Test
@@ -345,11 +354,13 @@ class InvoicePrintingIT extends IntegrationTest {
 
     @Test
     @Order(10)
-    void printing_another_volunteers_sale_returns_404_ownership_is_never_confirmed_or_denied() throws Exception {
+    void printing_another_volunteers_sale_is_now_allowed_for_any_cashier() throws Exception {
+        // Story 4.7 AC 7 (FR-108): the "author of the sale only" restriction is removed — volunteer2,
+        // who did not make this sale, reprints it and gets 204. volunteer2's own A4 selection was
+        // set up in Order 3.
         mockMvc.perform(post("/api/pos/sales/" + saleId + "/invoice/print")
                         .session(volunteer2Session).with(csrf()))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/sale-not-found")));
+                .andExpect(status().isNoContent());
     }
 
     @Test
@@ -396,6 +407,53 @@ class InvoicePrintingIT extends IntegrationTest {
         // ISO-8859-1-decoded view of a CP1252-encoded PDF stream) — its presence proves the passed
         // currency parameter reached the rendered text, not a symbol baked into the template.
         assertThat(rendered).contains("19.00$");
+    }
+
+    @Test
+    @Order(14)
+    void printing_a_sale_that_no_longer_belongs_to_the_active_edition_returns_404() throws Exception {
+        // Story 4.7 AC 8: move the original edition out of ACTIVE and stand up a new active one.
+        // The kept saleId still exists in the DB but belongs to a past edition — the reprint must
+        // 404 (sale-not-found), never revealing that a past edition's sale exists (IDOR). Uses
+        // volunteer2's session (A4 still selected) so the 404 can only be the edition scoping,
+        // never a printer-selection 422.
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("POST_SALE"));
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/close")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("CLOSED"));
+
+        MvcResult newEditionResult = mockMvc.perform(post("/api/admin/editions")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new EditionDto(null, "Bourse Facture 2027",
+                                null, new BigDecimal("10.00"), Language.FR, null, false,
+                                LocalDate.of(2027, 1, 1), LocalDate.of(2027, 1, 3), null, null))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long newEditionId = objectMapper.readValue(newEditionResult.getResponse().getContentAsString(), EditionDto.class).id();
+
+        mockMvc.perform(put("/api/admin/editions/" + newEditionId + "/categories")
+                        .session(adminSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(new EditionCategoryDto(null, "Jouets", List.of(1))))))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/admin/editions/" + newEditionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("DEPOSIT"));
+        mockMvc.perform(post("/api/admin/editions/" + newEditionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("SALE"));
+
+        mockMvc.perform(post("/api/pos/sales/" + saleId + "/invoice/print")
+                        .session(volunteer2Session).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/sale-not-found")));
     }
 
     private void waitUntil(BooleanSupplier condition) throws InterruptedException {

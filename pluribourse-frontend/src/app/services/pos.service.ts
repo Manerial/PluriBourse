@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Basket, Sale, ScanResult, ValidateBasketRequest } from '../models/pos.model';
+import { Basket, Sale, SaleListFilter, SaleListPageResponse, ScanResult, ValidateBasketRequest } from '../models/pos.model';
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
@@ -33,5 +33,26 @@ export class PosService {
 
   printInvoice(saleId: number): Observable<void> {
     return this.http.post<void>(`/api/pos/sales/${saleId}/invoice/print`, null);
+  }
+
+  listSales(filter: SaleListFilter): Observable<SaleListPageResponse> {
+    let params = new HttpParams().set('page', filter.page).set('size', filter.size);
+    if (filter.dateFrom) {
+      params = params.set('dateFrom', filter.dateFrom);
+    }
+    if (filter.dateTo) {
+      params = params.set('dateTo', filter.dateTo);
+    }
+    if (filter.cashier) {
+      params = params.set('cashier', filter.cashier);
+    }
+    if (filter.sort) {
+      params = params.set('sort', filter.sort);
+    }
+    return this.http.get<SaleListPageResponse>('/api/pos/sales', { params });
+  }
+
+  listCashiers(): Observable<string[]> {
+    return this.http.get<string[]>('/api/pos/sales/cashiers');
   }
 }

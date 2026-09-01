@@ -1,0 +1,91 @@
+<div class="card card--list">
+  <div class="card__header">
+    <h1 class="card__title">{{ 'volunteer.sales.title' | translate }}</h1>
+  </div>
+
+  <div class="filters-row">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'volunteer.sales.filters.dateFrom' | translate }}</mat-label>
+      <input
+        matInput
+        type="datetime-local"
+        [value]="dateFromFilter()"
+        [disabled]="isLoading()"
+        (change)="onDateFromChange($any($event.target).value)" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'volunteer.sales.filters.dateTo' | translate }}</mat-label>
+      <input
+        matInput
+        type="datetime-local"
+        [value]="dateToFilter()"
+        [disabled]="isLoading()"
+        (change)="onDateToChange($any($event.target).value)" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'volunteer.sales.filters.cashier' | translate }}</mat-label>
+      <mat-select [value]="cashierFilter()" [disabled]="isLoading()" (selectionChange)="onCashierChange($event.value)">
+        <mat-option [value]="null">{{ 'volunteer.sales.filters.allCashiers' | translate }}</mat-option>
+        @for (cashier of cashiers(); track cashier) {
+          <mat-option [value]="cashier">{{ cashier }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (isLoading()) {
+    <app-skeleton-row [rows]="5" />
+  }
+
+  @if (error()) {
+    <app-notification-inline [message]="error()! | translate" variant="error" />
+  }
+
+  @if (!isLoading() && !error()) {
+    @if (totalElements() === 0) {
+      <app-empty-state icon="receipt_long" [message]="'volunteer.sales.empty' | translate" />
+    } @else {
+      <table class="data-table" matSort matSortDisableClear [matSortActive]="sortField() ?? ''" [matSortDirection]="sortDirection()" (matSortChange)="onSortChange($event)">
+        <thead>
+          <tr>
+            <th mat-sort-header="soldAt">{{ 'volunteer.sales.columns.soldAt' | translate }}</th>
+            <th mat-sort-header="user.username">{{ 'volunteer.sales.columns.cashier' | translate }}</th>
+            <th mat-sort-header="paymentMethod">{{ 'volunteer.sales.columns.paymentMethod' | translate }}</th>
+            <th mat-sort-header="total">{{ 'volunteer.sales.columns.total' | translate }}</th>
+            <th>{{ 'volunteer.sales.columns.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (sale of sales(); track sale.id) {
+            <tr>
+              <td>{{ sale.soldAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ sale.cashier }}</td>
+              <td>{{ ('volunteer.sales.paymentMethod.' + sale.paymentMethod) | translate }}</td>
+              <td>{{ 'volunteer.sales.columns.totalFormat' | translate: { total: sale.total, currency: sale.currency } }}</td>
+              <td>
+                <button
+                  type="button"
+                  mat-button
+                  [disabled]="reprintInFlightId() === sale.id"
+                  (click)="reprint(sale.id)">
+                  {{ 'volunteer.sales.reprint' | translate }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <mat-paginator
+        [length]="totalElements()"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex()"
+        [hidePageSize]="true"
+        [disabled]="isLoading()"
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    }
+  }
+</div>

@@ -108,6 +108,7 @@
     "volunteer": {
       "deposit": "Deposit",
       "pos": "Checkout",
+      "sales": "Sales list",
       "catalog": "Catalog",
       "settlement": "Settlements"
     }
@@ -480,7 +481,8 @@
           "label": "Amount given (optional)",
           "note": "If you leave this field empty, the exact amount is assumed."
         },
-        "change": "Change due: {{ currency }}{{ amount }}"
+        "change": "Change due: {{ currency }}{{ amount }}",
+        "printInvoice": "Print invoice"
       },
       "error": {
         "alreadySold": "Item already sold at another checkout.",
@@ -494,12 +496,39 @@
         "alreadyInBasket": "This item is already in the basket."
       },
       "invoice": {
-        "button": "Print invoice",
         "success": "Invoice sent to print.",
         "error": {
           "generic": "Could not print the invoice.",
           "a4PrinterUnavailable": "No A4 printer available to print the invoice."
         }
+      }
+    },
+    "sales": {
+      "title": "Sales list",
+      "columns": {
+        "soldAt": "Date & time",
+        "cashier": "Cashier",
+        "paymentMethod": "Payment method",
+        "total": "Total",
+        "actions": "Actions",
+        "totalFormat": "{{ total }} {{ currency }}"
+      },
+      "filters": {
+        "dateFrom": "From",
+        "dateTo": "To",
+        "cashier": "Cashier",
+        "allCashiers": "All"
+      },
+      "paymentMethod": {
+        "CASH": "Cash",
+        "CHECK": "Check",
+        "CARD": "Card"
+      },
+      "reprint": "Reprint invoice",
+      "empty": "No sales to display.",
+      "error": {
+        "noActiveEdition": "No active edition.",
+        "load": "Could not load the sales list."
       }
     }
   },
