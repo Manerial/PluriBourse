@@ -4,6 +4,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SseService } from './sse.service';
 import { AuthService } from './auth.service';
 import { BasketCancelledEvent, PhaseChangedEvent } from '../models/edition.model';
+import { SettlementUpdatedEvent } from '../models/settlement.model';
 
 type MockEventSourceInstance = {
   addEventListener: ReturnType<typeof vi.fn>;
@@ -122,6 +123,37 @@ describe('SseService', () => {
     expect(received).toHaveLength(1);
     expect(received[0]).toEqual(event);
 
+    subscription.unsubscribe();
+  });
+
+  it('emits parsed SettlementUpdatedEvent on settlement-updated message', () => {
+    const { ctor, instance } = createMockEventSource();
+    vi.stubGlobal('EventSource', ctor);
+
+    const received: SettlementUpdatedEvent[] = [];
+    const subscription = service.settlementUpdated().subscribe(e => received.push(e));
+
+    const handler = instance.addEventListener.mock.calls.find(c => c[0] === 'settlement-updated')?.[1];
+    const event: SettlementUpdatedEvent = { editionId: 1, sellerId: 42 };
+    handler({ data: JSON.stringify(event) });
+
+    expect(received).toHaveLength(1);
+    expect(received[0]).toEqual(event);
+
+    subscription.unsubscribe();
+  });
+
+  it('ignores a settlement-updated payload missing a numeric sellerId', () => {
+    const { ctor, instance } = createMockEventSource();
+    vi.stubGlobal('EventSource', ctor);
+
+    const received: SettlementUpdatedEvent[] = [];
+    const subscription = service.settlementUpdated().subscribe(e => received.push(e));
+
+    const handler = instance.addEventListener.mock.calls.find(c => c[0] === 'settlement-updated')?.[1];
+    handler({ data: JSON.stringify({ editionId: 1 }) });
+
+    expect(received).toHaveLength(0);
     subscription.unsubscribe();
   });
 

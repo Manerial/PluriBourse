@@ -6,7 +6,8 @@ import { of, throwError, Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { SettlementListComponent } from './settlement-list.component';
 import { SettlementService } from '../../services/settlement.service';
-import { SettlementDto } from '../../models/settlement.model';
+import { SseService } from '../../services/sse.service';
+import { SettlementDto, SettlementUpdatedEvent } from '../../models/settlement.model';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
@@ -58,6 +59,11 @@ describe('SettlementListComponent', () => {
     open: vi.fn().mockReturnValue(of(false)),
   };
 
+  let settlementUpdated$: Subject<SettlementUpdatedEvent>;
+  const sseServiceMock = {
+    settlementUpdated: vi.fn(),
+  };
+
   async function setup(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [SettlementListComponent],
@@ -65,6 +71,7 @@ describe('SettlementListComponent', () => {
         provideRouter([]),
         provideTranslateService({ lang: 'en' }),
         { provide: SettlementService, useValue: settlementServiceMock },
+        { provide: SseService, useValue: sseServiceMock },
         { provide: AuthService, useValue: authMock },
         { provide: ToastService, useValue: toastMock },
         { provide: ConfirmDialogService, useValue: confirmDialogMock },
@@ -83,6 +90,8 @@ describe('SettlementListComponent', () => {
     settlementServiceMock.getSettlements.mockReturnValue(of([ALICE, BOB]));
     authMock.currentUser.mockReturnValue({ role: 'VOLUNTEER' });
     confirmDialogMock.open.mockReturnValue(of(false));
+    settlementUpdated$ = new Subject<SettlementUpdatedEvent>();
+    sseServiceMock.settlementUpdated.mockReturnValue(settlementUpdated$);
   });
 
   it('loads settlements on init', async () => {
@@ -111,10 +120,12 @@ describe('SettlementListComponent', () => {
     expect(component.filteredSettlements().map((s) => s.sellerId)).toEqual([1]);
   });
 
-  it('"all" filter shows every seller', async () => {
+  it('"all" filter shows every seller, in deterministic lastName order', async () => {
     await setup();
     component.setStatusFilter('all');
-    expect(component.filteredSettlements().map((s) => s.sellerId)).toEqual([1, 2]);
+    // BOB ("Vendeur") sorts before ALICE ("Vendeuse") — the list is sorted client-side (story 5.7)
+    // since GET /api/settlements guarantees no order.
+    expect(component.filteredSettlements().map((s) => s.sellerId)).toEqual([2, 1]);
   });
 
   it('an amount below the due amount shows a warning without blocking', async () => {
@@ -149,11 +160,16 @@ describe('SettlementListComponent', () => {
 
   it('a successful settle updates the row and shows a success toast', async () => {
     await setup();
-    settlementServiceMock.settle.mockReturnValue(of({ ...ALICE, status: 'SETTLED' }));
+    const settledAlice: SettlementDto = { ...ALICE, status: 'SETTLED', amountPaid: 3.0 };
+    settlementServiceMock.settle.mockReturnValue(of(settledAlice));
+    // The catch-up loadSettlements(true) in the finally block re-reads the list — the server now
+    // returns Alice settled.
+    settlementServiceMock.getSettlements.mockReturnValue(of([settledAlice, BOB]));
     component.openSettleForm(ALICE);
     component.settleAmount.set(3.0);
 
     await component.confirmSettle(ALICE.sellerId);
+    await fixture.whenStable();
 
     expect(settlementServiceMock.settle).toHaveBeenCalledWith(ALICE.sellerId, 3.0);
     expect(component.settlements().find((s) => s.sellerId === ALICE.sellerId)?.status).toBe('SETTLED');
@@ -176,9 +192,12 @@ describe('SettlementListComponent', () => {
   it('"unclaimed" opens the confirm dialog then updates the row on confirm', async () => {
     await setup();
     confirmDialogMock.open.mockReturnValue(of(true));
-    settlementServiceMock.markUnclaimed.mockReturnValue(of({ ...ALICE, status: 'UNCLAIMED' }));
+    const unclaimedAlice: SettlementDto = { ...ALICE, status: 'UNCLAIMED' };
+    settlementServiceMock.markUnclaimed.mockReturnValue(of(unclaimedAlice));
+    settlementServiceMock.getSettlements.mockReturnValue(of([unclaimedAlice, BOB]));
 
     await component.confirmUnclaimed(ALICE);
+    await fixture.whenStable();
 
     expect(confirmDialogMock.open).toHaveBeenCalledOnce();
     expect(settlementServiceMock.markUnclaimed).toHaveBeenCalledWith(ALICE.sellerId);
@@ -189,10 +208,13 @@ describe('SettlementListComponent', () => {
   it('"unclaimed" closes the settle form if it was open for the same seller', async () => {
     await setup();
     confirmDialogMock.open.mockReturnValue(of(true));
-    settlementServiceMock.markUnclaimed.mockReturnValue(of({ ...ALICE, status: 'UNCLAIMED' }));
+    const unclaimedAlice: SettlementDto = { ...ALICE, status: 'UNCLAIMED' };
+    settlementServiceMock.markUnclaimed.mockReturnValue(of(unclaimedAlice));
+    settlementServiceMock.getSettlements.mockReturnValue(of([unclaimedAlice, BOB]));
     component.openSettleForm(ALICE);
 
     await component.confirmUnclaimed(ALICE);
+    await fixture.whenStable();
 
     expect(component.openSettleFormForSellerId()).toBeNull();
     expect(toastMock.showSuccess).toHaveBeenCalledOnce();
@@ -396,5 +418,194 @@ describe('SettlementListComponent', () => {
     inFlight.complete();
     await groupedPromise;
     expect(component.printingAll()).toBe(false);
+  });
+
+  // ─── Story 5.7 — multi-terminal settlement sync ────────────────────────────────
+
+  function emitRemoteSettlementUpdate(event: SettlementUpdatedEvent = { editionId: 1, sellerId: 1 }): void {
+    vi.useFakeTimers();
+    try {
+      settlementUpdated$.next(event);
+      vi.advanceTimersByTime(300); // clears the auditTime(250) window
+    } finally {
+      vi.useRealTimers();
+    }
+  }
+
+  it('a remote settlement-updated event triggers a silent reload (no skeleton)', async () => {
+    await setup();
+    settlementServiceMock.getSettlements.mockClear();
+
+    emitRemoteSettlementUpdate();
+
+    expect(settlementServiceMock.getSettlements).toHaveBeenCalledOnce();
+    expect(component.isLoading()).toBe(false);
+  });
+
+  it('a remote settlement-updated event is ignored while a local action is in flight', async () => {
+    await setup();
+    settlementServiceMock.getSettlements.mockClear();
+    component.submitting.set(true);
+
+    emitRemoteSettlementUpdate();
+
+    expect(settlementServiceMock.getSettlements).not.toHaveBeenCalled();
+  });
+
+  it('a failed silent reload keeps the current list and raises no error banner', async () => {
+    await setup();
+    expect(component.settlements().length).toBe(2);
+    settlementServiceMock.getSettlements.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 422 })));
+
+    emitRemoteSettlementUpdate();
+    await fixture.whenStable();
+
+    expect(component.settlements().length).toBe(2);
+    expect(component.error()).toBeNull();
+  });
+
+  it('renders rows in a deterministic order regardless of the server response order', async () => {
+    await setup(); // getSettlements → [ALICE, BOB]
+    component.setStatusFilter('all');
+    const firstOrder = component.filteredSettlements().map((s) => s.sellerId);
+
+    settlementServiceMock.getSettlements.mockReturnValue(of([BOB, ALICE]));
+    emitRemoteSettlementUpdate({ editionId: 1, sellerId: 2 });
+    await fixture.whenStable();
+    const secondOrder = component.filteredSettlements().map((s) => s.sellerId);
+
+    expect(firstOrder).toEqual([2, 1]);
+    expect(secondOrder).toEqual([2, 1]);
+  });
+
+  it('breaks a lastName tie on firstName, then on sellerId', async () => {
+    const zoeMartin: SettlementDto = { ...ALICE, sellerId: 10, firstName: 'Zoe', lastName: 'Martin' };
+    const annaMartin: SettlementDto = { ...ALICE, sellerId: 11, firstName: 'Anna', lastName: 'Martin' };
+    const annaMartinHomonym: SettlementDto = { ...ALICE, sellerId: 3, firstName: 'Anna', lastName: 'Martin' };
+    settlementServiceMock.getSettlements.mockReturnValue(of([zoeMartin, annaMartin, annaMartinHomonym]));
+    await setup();
+    component.setStatusFilter('all');
+
+    // Anna before Zoe (firstName), and the two Anna Martin homonyms ordered by sellerId (3 before 11).
+    expect(component.filteredSettlements().map((s) => s.sellerId)).toEqual([3, 11, 10]);
+  });
+
+  it('confirmSettle: a 409 seller-already-settled shows the specific toast and closes the form', async () => {
+    await setup();
+    settlementServiceMock.settle.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: { type: 'https://pluribourse/errors/seller-already-settled' },
+          })
+      )
+    );
+    component.openSettleForm(ALICE);
+    component.settleAmount.set(3.0);
+
+    await component.confirmSettle(ALICE.sellerId);
+    await fixture.whenStable();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.alreadySettled');
+    expect(component.openSettleFormForSellerId()).toBeNull();
+  });
+
+  it('confirmSettle: a non-409 error keeps the generic settle-error toast', async () => {
+    await setup();
+    settlementServiceMock.settle.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 422,
+            error: { type: 'https://pluribourse/errors/invalid-settlement-amount' },
+          })
+      )
+    );
+    component.openSettleForm(ALICE);
+    component.settleAmount.set(3.0);
+
+    await component.confirmSettle(ALICE.sellerId);
+    await fixture.whenStable();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.settle');
+  });
+
+  it('confirmSettle triggers a catch-up silent reload in its finally block, even on success', async () => {
+    await setup();
+    settlementServiceMock.settle.mockReturnValue(of({ ...ALICE, status: 'SETTLED' }));
+    settlementServiceMock.getSettlements.mockClear();
+    settlementServiceMock.getSettlements.mockReturnValue(of([{ ...ALICE, status: 'SETTLED' }, BOB]));
+    component.openSettleForm(ALICE);
+    component.settleAmount.set(3.0);
+
+    await component.confirmSettle(ALICE.sellerId);
+    await fixture.whenStable();
+
+    expect(settlementServiceMock.getSettlements).toHaveBeenCalledOnce();
+  });
+
+  it('confirmUnclaimed: a 409 seller-already-settled shows the specific toast and closes the form if open for that seller', async () => {
+    await setup();
+    confirmDialogMock.open.mockReturnValue(of(true));
+    settlementServiceMock.markUnclaimed.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: { type: 'https://pluribourse/errors/seller-already-settled' },
+          })
+      )
+    );
+    component.openSettleForm(ALICE);
+
+    await component.confirmUnclaimed(ALICE);
+    await fixture.whenStable();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.alreadySettled');
+    expect(component.openSettleFormForSellerId()).toBeNull();
+  });
+
+  it('confirmUnclaimed: a 409 leaves a settle form open for a different seller untouched', async () => {
+    await setup();
+    confirmDialogMock.open.mockReturnValue(of(true));
+    settlementServiceMock.markUnclaimed.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: { type: 'https://pluribourse/errors/seller-already-settled' },
+          })
+      )
+    );
+    component.openSettleForm(ALICE);
+
+    await component.confirmUnclaimed(BOB);
+    await fixture.whenStable();
+
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.alreadySettled');
+    expect(component.openSettleFormForSellerId()).toBe(ALICE.sellerId);
+  });
+
+  it('confirmUnclaimed triggers a catch-up silent reload in its finally block', async () => {
+    await setup();
+    confirmDialogMock.open.mockReturnValue(of(true));
+    settlementServiceMock.markUnclaimed.mockReturnValue(of({ ...ALICE, status: 'UNCLAIMED' }));
+    settlementServiceMock.getSettlements.mockClear();
+    settlementServiceMock.getSettlements.mockReturnValue(of([{ ...ALICE, status: 'UNCLAIMED' }, BOB]));
+
+    await component.confirmUnclaimed(ALICE);
+    await fixture.whenStable();
+
+    expect(settlementServiceMock.getSettlements).toHaveBeenCalledOnce();
+  });
+
+  it('closes the settlement-updated subscription when the component is destroyed', async () => {
+    await setup();
+    expect(settlementUpdated$.observed).toBe(true);
+
+    fixture.destroy();
+
+    expect(settlementUpdated$.observed).toBe(false);
   });
 });

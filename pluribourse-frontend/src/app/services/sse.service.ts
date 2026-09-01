@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { BasketCancelledEvent, PhaseChangedEvent, PhaseType } from '../models/edition.model';
+import { SettlementUpdatedEvent } from '../models/settlement.model';
 import { ALL_PHASES } from '../models/active-phase.enum';
 import { AuthService } from './auth.service';
 import { CurrentEditionService } from './current-edition.service';
@@ -30,6 +31,14 @@ function isBasketCancelledEvent(value: unknown): value is BasketCancelledEvent {
   return typeof candidate['editionId'] === 'number' && isPhaseType(candidate['newPhase']);
 }
 
+function isSettlementUpdatedEvent(value: unknown): value is SettlementUpdatedEvent {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate['editionId'] === 'number' && typeof candidate['sellerId'] === 'number';
+}
+
 @Injectable({ providedIn: 'root' })
 export class SseService {
   private readonly auth = inject(AuthService);
@@ -42,6 +51,10 @@ export class SseService {
 
   basketCancelled(): Observable<BasketCancelledEvent> {
     return this.listen('basket-cancelled', isBasketCancelledEvent);
+  }
+
+  settlementUpdated(): Observable<SettlementUpdatedEvent> {
+    return this.listen('settlement-updated', isSettlementUpdatedEvent);
   }
 
   private listen<T>(eventName: string, isValid: (value: unknown) => value is T): Observable<T> {

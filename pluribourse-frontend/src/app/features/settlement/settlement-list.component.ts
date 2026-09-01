@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,9 +8,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import Big from 'big.js';
-import { firstValueFrom } from 'rxjs';
+import { auditTime, firstValueFrom } from 'rxjs';
 import { StatusFilter, SettlementDto } from '../../models/settlement.model';
 import { SettlementService } from '../../services/settlement.service';
+import { SseService } from '../../services/sse.service';
 import { AuthService } from '../../services/auth.service';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
@@ -43,6 +45,8 @@ export class SettlementListComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly currentEditionService = inject(CurrentEditionService);
+  private readonly sseService = inject(SseService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
   readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
@@ -55,9 +59,21 @@ export class SettlementListComponent implements OnInit {
   readonly statusFilter = signal<StatusFilter>('unsettled');
   readonly filteredSettlements = computed(() => {
     const filter = this.statusFilter();
-    return this.settlements().filter((s) =>
-      filter === 'all' ? true : filter === 'unsettled' ? s.status === 'UNSETTLED' : s.status !== 'UNSETTLED'
-    );
+    return this.settlements()
+      .filter((s) =>
+        filter === 'all' ? true : filter === 'unsettled' ? s.status === 'UNSETTLED' : s.status !== 'UNSETTLED'
+      )
+      // GET /api/settlements guarantees no order; with a silent reload on every remote
+      // settlement-updated event the row order would otherwise drift between reloads and
+      // flicker on every terminal. Sort client-side (lastName then firstName — SettlementDto
+      // carries no sellerNumber); no backend ORDER BY, no AC requires one (story 5.7). sellerId
+      // is the final tie-break so homonyms (same lastName + firstName) still get a stable order.
+      .sort(
+        (a, b) =>
+          a.lastName.localeCompare(b.lastName) ||
+          a.firstName.localeCompare(b.firstName) ||
+          a.sellerId - b.sellerId
+      );
   });
 
   readonly openSettleFormForSellerId = signal<number | null>(null);
@@ -108,8 +124,29 @@ export class SettlementListComponent implements OnInit {
     });
   });
 
+  constructor() {
+    // Another terminal settled (or marked Non réclamé) a seller — refresh this list so the row
+    // takes its new status and leaves the active filter. auditTime absorbs a burst (concurrent
+    // settlements across a handful of terminals); the emitting terminal's own echo is ignored in
+    // onRemoteSettlementUpdate while its optimistic applyUpdate is authoritative for it.
+    this.sseService
+      .settlementUpdated()
+      .pipe(auditTime(250), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onRemoteSettlementUpdate());
+  }
+
   async ngOnInit(): Promise<void> {
     await this.loadSettlements();
+  }
+
+  private onRemoteSettlementUpdate(): void {
+    if (this.submitting()) {
+      // A local settle/markUnclaimed is in flight: its applyUpdate is the source of truth for
+      // this terminal, and the loadSettlements(true) in its finally block picks up whatever
+      // remote change this event carried.
+      return;
+    }
+    void this.loadSettlements(true);
   }
 
   setStatusFilter(filter: StatusFilter): void {
@@ -142,12 +179,22 @@ export class SettlementListComponent implements OnInit {
       this.applyUpdate(updated);
       this.toast.showSuccess(this.translate.instant('settlement.success.settle'));
       this.closeSettleForm();
-    } catch {
-      // Server is the actual source of truth (never trust the client alone, cf. PosBasketService)
-      // — a 422 here is unlikely since the amount is already blocked client-side, but still handled.
-      this.toast.showError(this.translate.instant('settlement.error.settle'));
+    } catch (err: unknown) {
+      if (this.isAlreadySettledConflict(err)) {
+        // Another terminal won the race: NFR-008 wants a specific message, not the generic one.
+        this.toast.showError(this.translate.instant('settlement.error.alreadySettled'));
+        this.closeSettleForm();
+      } else {
+        // Server is the actual source of truth (never trust the client alone, cf. PosBasketService)
+        // — a 422 here is unlikely since the amount is already blocked client-side, but still handled.
+        this.toast.showError(this.translate.instant('settlement.error.settle'));
+      }
     } finally {
       this.submitting.set(false);
+      // Catch-up reload: realigns the row on the real server state after a 409, and picks up any
+      // remote settlement-updated events ignored by onRemoteSettlementUpdate while submitting was
+      // true. Idempotent (track sellerId + deterministic sort), silent, no error banner.
+      void this.loadSettlements(true);
     }
   }
 
@@ -173,11 +220,27 @@ export class SettlementListComponent implements OnInit {
       if (this.openSettleFormForSellerId() === settlement.sellerId) {
         this.closeSettleForm();
       }
-    } catch {
-      this.toast.showError(this.translate.instant('settlement.error.settle'));
+    } catch (err: unknown) {
+      if (this.isAlreadySettledConflict(err)) {
+        this.toast.showError(this.translate.instant('settlement.error.alreadySettled'));
+        if (this.openSettleFormForSellerId() === settlement.sellerId) {
+          this.closeSettleForm();
+        }
+      } else {
+        this.toast.showError(this.translate.instant('settlement.error.settle'));
+      }
     } finally {
       this.submitting.set(false);
+      void this.loadSettlements(true);
     }
+  }
+
+  private isAlreadySettledConflict(err: unknown): boolean {
+    return (
+      err instanceof HttpErrorResponse &&
+      err.status === 409 &&
+      (extractErrorType(err)?.endsWith('/seller-already-settled') ?? false)
+    );
   }
 
   async printReport(settlement: SettlementDto): Promise<void> {
@@ -229,17 +292,48 @@ export class SettlementListComponent implements OnInit {
     }
   }
 
-  private async loadSettlements(): Promise<void> {
-    this.isLoading.set(true);
-    this.error.set(null);
+  /**
+   * @param silent when true, a background refresh triggered by another terminal's action or by
+   * the catch-up reload after a local action: never touches the skeleton (`isLoading`) and never
+   * raises the full-screen `error()` banner. A failed silent reload keeps whatever is currently
+   * on screen (e.g. racing an edition closure that flips GET /api/settlements to 422) — the list
+   * is only ever replaced on success.
+   */
+  private loadSettlementsSeq = 0;
+
+  private async loadSettlements(silent = false): Promise<void> {
+    // Monotonic guard: ngOnInit, the catch-up reload in confirmSettle/confirmUnclaimed's finally
+    // and the SSE-triggered reload can all be in flight at once. Only the most recent call is
+    // allowed to write settlements()/error(), so an older response resolving last can never
+    // overwrite fresher rows.
+    const seq = ++this.loadSettlementsSeq;
+    if (!silent) {
+      this.isLoading.set(true);
+      this.error.set(null);
+    }
     try {
       const settlements = await firstValueFrom(this.settlementService.getSettlements());
+      if (seq !== this.loadSettlementsSeq) {
+        return;
+      }
       this.settlements.set(settlements);
+      // Fresh data is on screen — drop any error banner left by an earlier failed load, otherwise
+      // the template's `!isLoading() && !error()` guard keeps the list hidden behind it.
+      this.error.set(null);
     } catch (err: unknown) {
+      if (seq !== this.loadSettlementsSeq) {
+        return;
+      }
+      if (silent) {
+        console.debug('Silent settlement reload failed; keeping the current list');
+        return;
+      }
       const errorType = err instanceof HttpErrorResponse ? extractErrorType(err) : undefined;
       this.error.set(errorType?.endsWith('/no-active-edition') ? 'settlement.error.noActiveEdition' : 'settlement.error.load');
     } finally {
-      this.isLoading.set(false);
+      if (!silent) {
+        this.isLoading.set(false);
+      }
     }
   }
 

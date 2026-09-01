@@ -35,7 +35,46 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-09-01"  # Story 4-7 : revue de code terminée (bmad-code-review), statut → done.
+last_updated: "2026-09-01"  # Story 5-7 (synchro postes de soldage) : revue de code terminée (bmad-code-review), 7 patchs appliqués, statut → done.
+# 2026-09-01 — Story 5-7 (synchronisation des postes de soldage, sprint change proposal 2026-08-24
+# point 7) créée. Analyse exhaustive du code : le double-solde CONCURRENT du même vendeur renvoie
+# DÉJÀ un 409 propre (`seller-already-settled`) — `SettlementService.persistSettlement` fait
+# `saveAndFlush` + catch `DataIntegrityViolationException`, la contrainte `uk_settlements_seller_profile`
+# (changelog 024) est une garantie dure ici (INSERT unique, pas un read-modify-write). Décision
+# actée dans la story (à confirmer avec l'auteur du proposal si souhaité) : PAS de verrou pessimiste
+# ajouté — `architecture.md § Concurrence POS` a explicitement rejeté le pessimiste, et le 409
+# métier est déjà conforme à NFR-008 au niveau HTTP. Les 3 vrais écarts traités : (1) nouvel
+# évènement SSE nommé `settlement-updated` émis en `afterCommit` par `settle()`/`markUnclaimed()`
+# (patron `EditionService.savePhaseThenSendEvent`, registre `SseEmitterRegistry` unique existant —
+# « canal dédié » = évènement + payload + méthode `SseService` dédiés, comme `basket-cancelled`) ;
+# PAS d'émission depuis la fermeture d'édition (`phase-changed` + guard retirent déjà les postes de
+# la page) ; (2) `SettlementListComponent` (composant partagé /volunteer + /admin) se rafraîchit en
+# temps réel sur l'évènement (rechargement complet silencieux, ~100 lignes en mémoire, pas de
+# nouvel endpoint) ; (3) le poste perdant d'une course affiche enfin `settlement.error.alreadySettled`
+# (clé i18n déjà présente, jusqu'ici inutilisée) au lieu du toast générique, et sa ligne s'auto-corrige.
+# Test de concurrence réelle `SettlementConcurrencyIT` calqué sur `pos/SaleConcurrencyIT`
+# (Testcontainers MariaDB, 2 threads, `disabledWithoutDocker=true`, hors MockMvc — exception
+# « technique » déjà admise story 4.4). Aucune migration Liquibase, aucun champ `Settlement.user`
+# (hors périmètre — item différé revue 5-1). Aucune nouvelle clé i18n. Statut → ready-for-dev.
+# 2026-09-01 — Story 5-7 : revue de code terminée (bmad-code-review, 3 revues parallèles : Blind
+# Hunter + Edge Case Hunter + Acceptance Auditor). 0 decision-needed, 7 patch APPLIQUÉS, 6 defer
+# (deferred-work.md), 20 rejetés (dont 1 faux positif : broadcast en afterCommit ne peut pas
+# transformer un settle réussi en 500 — SseEmitterRegistry.broadcast catche IOException|RuntimeException
+# par émetteur et ne relance jamais). Patchs front settlement-list.component.ts : (1) loadSettlements
+# réinitialise error() sur succès (la bannière d'erreur ne masque plus une liste rechargée en
+# silencieux) ; (2) garde latest-wins (compteur monotone) entre rechargements concurrents
+# (ngOnInit + rattrapage finally + SSE) ; (3) départage de tri final sur sellerId (homonymes
+# lastName+firstName stables entre rechargements) ; (4) console.debug du rechargement silencieux ne
+# sérialise plus l'objet HttpErrorResponse. Patchs tests : +2 front (départage firstName/sellerId,
+# confirmUnclaimed 409 laisse ouvert le formulaire d'un autre vendeur) ; SettlementConcurrencyIT
+# ajoute une 2e course settle-vs-markUnclaimed sur un 2e vendeur de la même édition (AC1 « mélange
+# des deux »). Front npm test : 700/700. SettlementConcurrencyIT : 1/1 (Docker présent). Defer :
+# limites structurelles de SettlementConcurrencyIT / SettlementSyncIT (répliquent des patrons déjà
+# validés SaleConcurrencyIT / PosBasketCancellationIT), broadcast SSE synchrone, pas de rejeu des
+# évènements manqués à la reconnexion EventSource, 3e EventSource par onglet, /admin/settlement non
+# phase-gardé côté client après clôture d'édition (pré-existant, peut justifier sa propre story).
+# Statut → done.
+# 2026-09-01 — Story 4-7 : revue de code terminée (bmad-code-review), statut → done.
 # 2026-09-01 — Story 4-7 (refonte impression facture + écran Liste des ventes) : revue de code
 # terminée (bmad-code-review, 3 revues parallèles). Aucune violation d'AC (17/17 satisfaites par le
 # code). 0 decision-needed, 4 patch APPLIQUÉS, 5 defer (deferred-work.md), 11 rejetés. Patchs :
@@ -515,12 +554,15 @@ development_status:
   5-4-bilan-dedition-rapports-des-vendeurs-non-soldes: done
   5-5-page-des-rapports-admin: done
   5-6-impression-groupee-des-bilans-de-vente-admin: done
-  # Sprint change proposal 2026-08-24, point 7 : SettlementService.settle() fait un contrôle
-  # vérifier-puis-agir sans verrou applicatif (seul filet de sécurité : contrainte UNIQUE en
-  # base). Ajout d'un verrouillage explicite avec 409 propre (même patron que NFR-002/ARCH-003
-  # pour Item) + canal SSE dédié pour synchroniser la liste de solde en temps réel entre postes
-  # (même patron que SseEmitterRegistry/ARCH-012 pour la phase).
-  5-7-synchronisation-des-postes-de-soldage: backlog
+  # Sprint change proposal 2026-08-24, point 7 : SettlementService.settle()/markUnclaimed() font un
+  # contrôle vérifier-puis-agir sans verrou applicatif. Analyse de validation (2026-09-01) : le
+  # double-solde CONCURRENT renvoie DÉJÀ un 409 propre `seller-already-settled` (contrainte UNIQUE
+  # uk_settlements_seller_profile + catch DataIntegrityViolationException dans persistSettlement).
+  # La story n'ajoute donc PAS de verrou (INSERT-only = la contrainte est une garantie dure, pas un
+  # simple filet) : elle ajoute l'évènement SSE dédié `settlement-updated` (patron
+  # SseEmitterRegistry/ARCH-012), le message frontend spécifique (NFR-008), et un test de
+  # concurrence réelle (SettlementConcurrencyIT, patron SaleConcurrencyIT) qui prouve le 409.
+  5-7-synchronisation-des-postes-de-soldage: done
   epic-5-retrospective: optional
 
   # ─── Epic 6 : Catalogue articles ────────────────────────────────────────────

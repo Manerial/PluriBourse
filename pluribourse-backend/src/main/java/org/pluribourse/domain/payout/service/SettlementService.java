@@ -18,9 +18,13 @@ import org.pluribourse.domain.payout.repository.SettlementRepository;
 import org.pluribourse.domain.seller.entity.SellerProfile;
 import org.pluribourse.domain.seller.exception.SellerNotFoundException;
 import org.pluribourse.domain.seller.repository.SellerRepository;
+import org.pluribourse.shared.sse.SettlementUpdatedEventDto;
+import org.pluribourse.shared.sse.SseEmitterRegistry;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,6 +42,7 @@ public class SettlementService {
     private final SettlementRepository settlementRepository;
     private final ItemRepository itemRepository;
     private final EditionService editionService;
+    private final SseEmitterRegistry sseEmitterRegistry;
 
     @Transactional(readOnly = true)
     public List<SettlementDto> getSettlements() {
@@ -151,7 +156,9 @@ public class SettlementService {
         if (amount.compareTo(amountDue) > 0) {
             throw new InvalidSettlementAmountException();
         }
-        return persistSettlement(seller, SettlementStatus.SETTLED, amount, amountDue);
+        SettlementDto result = persistSettlement(seller, SettlementStatus.SETTLED, amount, amountDue);
+        broadcastSettlementUpdatedAfterCommit(edition, seller);
+        return result;
     }
 
     @Transactional
@@ -162,7 +169,30 @@ public class SettlementService {
         requireNotAlreadySettled(seller);
 
         BigDecimal amountDue = computeAmountDue(seller, edition);
-        return persistSettlement(seller, SettlementStatus.UNCLAIMED, amountDue, amountDue);
+        SettlementDto result = persistSettlement(seller, SettlementStatus.UNCLAIMED, amountDue, amountDue);
+        broadcastSettlementUpdatedAfterCommit(edition, seller);
+        return result;
+    }
+
+    /**
+     * Defers the {@code settlement-updated} SSE broadcast until after the current transaction
+     * commits, never before — same pattern as {@code EditionService.savePhaseThenSendEvent}: a
+     * listener must never observe an event for a settle/markUnclaimed that ends up rolled back.
+     * Registered only once {@link #persistSettlement} has returned, so a lost race (409
+     * {@code seller-already-settled}), a 422 amount rejection or a 404 wrong-edition never reach
+     * this point. Deliberately not called from {@link #closeAllUnsettledAsUnclaimed}: edition
+     * closure already broadcasts {@code phase-changed} POST_SALE→CLOSED, after which
+     * {@code GET /api/settlements} answers 422 and every terminal has already left the page
+     * (AC 6, story 5.7).
+     */
+    private void broadcastSettlementUpdatedAfterCommit(Edition edition, SellerProfile seller) {
+        SettlementUpdatedEventDto event = new SettlementUpdatedEventDto(edition.getId(), seller.getId());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sseEmitterRegistry.broadcast("settlement-updated", event);
+            }
+        });
     }
 
     /**
@@ -226,10 +256,17 @@ public class SettlementService {
      * amount (FR-052, never a volunteer choice). Never fuse the two parameters into one.
      * <p>
      * {@code requireNotAlreadySettled} only closes the TOCTOU window on the read side — the
-     * {@code uk_settlements_seller_profile} unique constraint is the actual guard against two
-     * concurrent calls for the same seller both passing that check; a violation here means a
-     * genuine race was lost, translated to the same {@link SellerAlreadySettledException} the
-     * read-side check throws (same rationale as PosBasketService's optimistic-lock handling).
+     * {@code uk_settlements_seller_profile} unique constraint (changelog 024) is the actual guard
+     * against two concurrent calls for the same seller both passing that check; a violation here
+     * means a genuine race was lost, translated to the same {@link SellerAlreadySettledException}
+     * the read-side check throws (same rationale as PosBasketService's optimistic-lock handling).
+     * <p>
+     * Creating a {@code Settlement} is a single unique INSERT, not a read-modify-write, so that
+     * constraint is a <em>hard</em> guarantee here rather than a mere safety net: two concurrent
+     * settle/markUnclaimed calls for one seller can only ever resolve to exactly one row plus one
+     * clean HTTP 409 — the explicit conflict NFR-008 requires, with no pessimistic lock added
+     * (architecture.md § Concurrence — POS rejects that). Proven under a real two-thread race by
+     * {@code SettlementConcurrencyIT}.
      */
     private SettlementDto persistSettlement(SellerProfile seller, SettlementStatus status, BigDecimal amount, BigDecimal amountDue) {
         Settlement settlement = new Settlement();
