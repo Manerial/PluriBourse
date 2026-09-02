@@ -35,6 +35,7 @@ public interface ItemMapper {
     @Mapping(target = "sellerLastName", source = "sellerProfile.lastName")
     @Mapping(target = "lotId", source = "lot.id")
     @Mapping(target = "lotName", source = "lot.name")
+    @Mapping(target = "lotPrice", source = "lot.globalPrice")
     ItemCatalogDto toCatalogDto(Item item);
 
     List<ItemCatalogDto> toCatalogDtos(List<Item> items);

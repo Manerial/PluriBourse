@@ -14,6 +14,7 @@ public record ItemCatalogDto(
         String sellerFirstName,
         String sellerLastName,
         Long lotId,
-        String lotName
+        String lotName,
+        BigDecimal lotPrice
 ) {
 }

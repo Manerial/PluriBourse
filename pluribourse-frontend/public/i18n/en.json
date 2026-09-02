@@ -833,6 +833,7 @@
         }
       },
       "priceFormat": "{{ price }} {{ currency }}",
+      "priceLotFormat": "{{ price }} {{ currency }} (lot)",
       "empty": {
         "noSelection": "Select an archived edition to browse its catalog.",
         "noResults": "No item matches the current filters."
@@ -852,6 +853,7 @@
       "seller": "Seller",
       "price": "Price",
       "priceFormat": "{{ price }} {{ currency }}",
+      "priceLotFormat": "{{ price }} {{ currency }} (lot)",
       "complete": "Completeness",
       "sold": "Sold"
     },

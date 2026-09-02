@@ -42,6 +42,7 @@ export interface ItemCatalogDto {
   sellerLastName: string;
   lotId: number | null;
   lotName: string | null;
+  lotPrice: number | null;
 }
 
 export interface CatalogFilter {

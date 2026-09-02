@@ -297,7 +297,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-084 : Epic 6 — Filtres du catalogue : nom, code-barres, catégorie, table, vendu/invendu, complet/incomplet, vendeur
 - FR-085 : Epic 6 — Catalogue triable par n'importe quelle colonne visible
 - FR-086 : Epic 6 — Catalogue affiche l'édition active uniquement ; indisponible après Archivage de l'édition
-- FR-088 : Epic 2 — « Archivage de l'édition » archive chaque article (nom, catégorie, statut) puis supprime les enregistrements ; désactive le retour arrière vers Post-vente
+- FR-088 : Epic 2 — « Archivage de l'édition » archive chaque article (nom, catégorie, statut, prix effectif, + référence de lot pour les membres de lot) puis supprime les enregistrements (code-barres, table, vendeur non conservés) ; désactive le retour arrière vers Post-vente
 - FR-096 : Epic 2 — À la clôture, vendeurs non soldés auto-marqués Non réclamé (atomique avec la phase) ; dialog de confirmation enrichie si vendeurs non soldés
 - FR-089 : Epic 3 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
 - FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
@@ -305,7 +305,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-092 : Epic 5 — Export CSV des reversements (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
 - FR-093 : Epic 4 — Moyen de paiement enregistré à la validation (espèces, chèque, carte)
 - FR-094 : Epic 5 — Ventilation des recettes par moyen de paiement dans les bilans journalier et d'édition — addendum
-- FR-102 : Epic 6 — Consultation du catalogue archivé d'une édition passée (admin uniquement, dépend de la Story 2.7) — addendum 2026-07-29
+- FR-102 : Epic 6 — Consultation du catalogue archivé d'une édition passée (admin uniquement, dépend de la Story 2.7) : nom, catégorie, statut, prix (marqueur « (lot) » pour les membres de lot) — addendum 2026-07-29, prix + marqueur lot 2026-09-02
 
 ## Liste des épics
 
@@ -1904,3 +1904,51 @@ afin de retrouver l'historique d'une édition après sa clôture et son archivag
 **Étant donné** qu'un bénévole (non admin) tente d'accéder à cette consultation
 **Quand** la requête est envoyée
 **Alors** l'accès est refusé (403) — réservé aux administrateurs
+
+### Story 6.3 : Prix et marqueur « (lot) » dans les catalogues
+
+Ajoutée le 2026-09-02, voir `sprint-change-proposal-2026-09-02.md`. Amende FR-088 et FR-102.
+
+En tant qu'administrateur ou bénévole,
+je veux que les articles membres d'un lot affichent le prix du lot avec un marqueur « (lot) » dans le catalogue actif comme dans le catalogue archivé,
+afin de disposer d'un prix lisible pour les membres de lot (vide aujourd'hui dans le catalogue actif) et de distinguer d'un coup d'œil une ligne de lot d'un article individuel.
+
+**Critères d'acceptation :**
+
+**Étant donné** un article appartenant à un lot dans le catalogue actif
+**Quand** la liste s'affiche
+**Alors** sa cellule prix affiche le prix global du lot suivi d'un marqueur « (lot) » (ex. « 10 € (lot) »)
+**Et** un article individuel affiche son propre prix, inchangé
+
+**Étant donné** l'API `GET /api/catalog`
+**Quand** la page est renvoyée
+**Alors** chaque entrée ayant un `lotId` porte aussi `lotPrice` égal au prix global du lot
+**Et** les entrées individuelles portent `lotPrice = null` ; `price` reste `null` pour les membres de lot (inchangé)
+
+**Étant donné** un article archivé ayant appartenu à un lot
+**Quand** le catalogue archivé s'affiche
+**Alors** sa cellule prix affiche le prix (= prix global du lot, déjà archivé) suivi d'un marqueur « (lot) »
+**Et** un article archivé individuel est inchangé
+
+**Étant donné** qu'une édition est archivée
+**Quand** les lignes d'archive sont écrites
+**Alors** chaque ligne membre d'un lot stocke l'identifiant du lot d'origine (`lot_ref`) et le nom du lot (`lot_name`)
+**Et** les lignes d'articles individuels stockent `null` pour ces deux champs
+
+**Étant donné** deux lots différents de la même édition portant le même nom
+**Quand** l'édition est archivée
+**Alors** leurs membres archivés portent des valeurs `lot_ref` différentes (les deux lots restent distinguables) malgré un `lot_name` identique
+
+**Étant donné** l'API `GET /api/admin/archive/editions/{id}/items`
+**Quand** la page est renvoyée
+**Alors** chaque entrée porte `lotRef` et `lotName` (`null` pour les articles individuels)
+
+**Étant donné** qu'un bénévole (non admin) appelle l'endpoint du catalogue archivé
+**Quand** la requête est envoyée
+**Alors** l'accès est toujours refusé (403) — inchangé
+
+**Étant donné** une édition archivée avant cette migration
+**Quand** son catalogue archivé est consulté
+**Alors** ses lignes existantes conservent `lot_ref = null` / `lot_name = null` et leurs membres s'affichent sans marqueur — accepté tel quel (données de dev, seront réinitialisées)
+
+**Hors périmètre :** regroupement repliable/dépliable des membres de lot en une seule ligne (dans les deux catalogues) ; tri du catalogue actif sur le prix effectif du lot (reste sur `Item.price`) ; filtre `nom` sur le nom de lot ; rétro-remplissage de `lot_ref`/`lot_name` sur les éditions déjà archivées.

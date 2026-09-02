@@ -47,7 +47,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Story 2.7 (AC 5, 6, 7, FR-088): edition archiving — item records copied into
- * {@code archived_items} (lot members archived individually, no lot reference retained), then
+ * {@code archived_items} (lot members archived individually; since Story 6.3 each keeps the
+ * originating lot's id in {@code lot_ref} and name in {@code lot_name}), then
  * {@code items}/{@code seller_profiles}/{@code settlements} permanently deleted, with the edition
  * report snapshot frozen beforehand so it stays readable afterwards. Alice sells one item and
  * keeps one unsold; Bob deposits a 2-member lot with only one member ever sold, proving the

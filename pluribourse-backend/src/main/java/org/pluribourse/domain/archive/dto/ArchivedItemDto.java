@@ -7,6 +7,8 @@ public record ArchivedItemDto(
         String name,
         String categoryName,
         boolean sold,
-        BigDecimal price
+        BigDecimal price,
+        Long lotRef,
+        String lotName
 ) {
 }

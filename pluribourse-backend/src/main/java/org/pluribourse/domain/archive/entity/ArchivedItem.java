@@ -42,4 +42,12 @@ public class ArchivedItem {
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    // Opaque discriminator for the originating lot (Story 6.3) — null for standalone items and for
+    // rows archived before migration 034. No FK: archiving leaves orphaned lots rows behind.
+    @Column(name = "lot_ref")
+    private Long lotRef;
+
+    @Column(name = "lot_name", length = 200)
+    private String lotName;
 }

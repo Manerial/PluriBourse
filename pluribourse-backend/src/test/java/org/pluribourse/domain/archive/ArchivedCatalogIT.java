@@ -1,6 +1,7 @@
 package org.pluribourse.domain.archive;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -24,8 +25,10 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -41,6 +44,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * lot archived member-by-member (Duo A sold, Duo B not) — exercising every filter/sort dimension.
  * A second, distinct archived edition guards against cross-edition leakage, and a fresh
  * never-archived edition proves the endpoint doesn't 404 just because {@code archived_items} is empty.
+ * Story 6.3 (AC 4-6): archived lot members now retain the originating lot's id in {@code lot_ref}
+ * and its name in {@code lot_name} (null for standalone items); two same-named lots stay
+ * distinguishable by their {@code lot_ref}.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ArchivedCatalogIT extends IntegrationTest {
@@ -120,14 +126,19 @@ class ArchivedCatalogIT extends IntegrationTest {
     @Test
     @Order(3)
     void admin_lists_all_archived_items_with_no_filter_and_dto_shape_is_limited() throws Exception {
-        mockMvc.perform(get("/api/admin/archive/editions/" + editionId + "/items").session(adminSession))
+        // sort=name,asc pins content[0] to "Duo A" (a lot member) so the lot_ref/lot_name shape can
+        // be asserted deterministically without perturbing the count/shape checks below.
+        mockMvc.perform(get("/api/admin/archive/editions/" + editionId + "/items")
+                        .param("sort", "name,asc").session(adminSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(4))
                 .andExpect(jsonPath("$.page.content.length()").value(4))
-                .andExpect(jsonPath("$.page.content[0].name").exists())
+                .andExpect(jsonPath("$.page.content[0].name").value("Duo A"))
                 .andExpect(jsonPath("$.page.content[0].categoryName").exists())
                 .andExpect(jsonPath("$.page.content[0].sold").exists())
                 .andExpect(jsonPath("$.page.content[0].price").exists())
+                .andExpect(jsonPath("$.page.content[0].lotRef").isNumber())
+                .andExpect(jsonPath("$.page.content[0].lotName").value("Lot Duo"))
                 .andExpect(jsonPath("$.page.content[0].barcode").doesNotExist())
                 .andExpect(jsonPath("$.page.content[0].tableNumber").doesNotExist())
                 .andExpect(jsonPath("$.page.content[0].sellerLastName").doesNotExist())
@@ -151,6 +162,76 @@ class ArchivedCatalogIT extends IntegrationTest {
                 .andExpect(jsonPath("$.page.content[2].price").value(10.00))
                 .andExpect(jsonPath("$.page.content[3].name").value("Robot"))
                 .andExpect(jsonPath("$.page.content[3].price").value(10.00));
+    }
+
+    @Test
+    @Order(21)
+    void archived_lot_members_retain_lot_ref_and_name_standalone_items_carry_null() throws Exception {
+        // AC 4: "Duo A" / "Duo B" (members of "Lot Duo") keep the originating lot's id in lot_ref —
+        // the SAME value for both — and its name in lot_name. "Kapla" / "Robot" are standalone, so
+        // both columns are null (jsonPath treats a JSON null as absent).
+        MvcResult result = mockMvc.perform(get("/api/admin/archive/editions/" + editionId + "/items")
+                        .param("sort", "name,asc").session(adminSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.content[0].name").value("Duo A"))
+                .andExpect(jsonPath("$.page.content[0].lotName").value("Lot Duo"))
+                .andExpect(jsonPath("$.page.content[1].name").value("Duo B"))
+                .andExpect(jsonPath("$.page.content[1].lotName").value("Lot Duo"))
+                .andExpect(jsonPath("$.page.content[2].name").value("Kapla"))
+                .andExpect(jsonPath("$.page.content[2].lotRef").doesNotExist())
+                .andExpect(jsonPath("$.page.content[2].lotName").doesNotExist())
+                .andExpect(jsonPath("$.page.content[3].name").value("Robot"))
+                .andExpect(jsonPath("$.page.content[3].lotRef").doesNotExist())
+                .andExpect(jsonPath("$.page.content[3].lotName").doesNotExist())
+                .andReturn();
+
+        JsonNode content = objectMapper.readTree(result.getResponse().getContentAsString()).path("page").path("content");
+        assertThat(content.get(0).path("lotRef").isNumber()).isTrue();
+        assertThat(content.get(0).path("lotRef").asLong()).isEqualTo(content.get(1).path("lotRef").asLong());
+    }
+
+    @Test
+    @Order(22)
+    void two_lots_sharing_a_name_keep_distinct_lot_refs_after_archiving() throws Exception {
+        // AC 5: a dedicated edition with two lots that share the exact same name, differing only by
+        // seller and price. After archiving, their members must carry DIFFERENT lot_ref values
+        // despite the identical lot_name. Built as its own edition so the main storyboard's
+        // hard-coded 4-row counts stay untouched.
+        Long homonymEditionId = createEdition("Bourse Lots Homonymes 2026", LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 3));
+        List<EditionCategoryDto> categories = putCategories(homonymEditionId, List.of(
+                new EditionCategoryDto(null, "Jouets", List.of(1))
+        ));
+        Long jouetsId = categories.get(0).id();
+
+        advancePhase(homonymEditionId, "DEPOSIT");
+        Long dianeId = createSeller("Diane", "Vendeuse", "diane.6-3@email.com", "0600000010");
+        Long edgarId = createSeller("Edgar", "Vendeur", "edgar.6-3@email.com", "0600000011");
+
+        createLot(dianeId, jouetsId, "Lot Homonyme", "5.00", "Alpha A", "Alpha B");
+        createLot(edgarId, jouetsId, "Lot Homonyme", "9.00", "Beta A", "Beta B");
+
+        advancePhase(homonymEditionId, "SALE");
+        advancePhase(homonymEditionId, "POST_SALE");
+        advancePhase(homonymEditionId, "CLOSED");
+        mockMvc.perform(post("/api/admin/editions/" + homonymEditionId + "/archive")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk());
+
+        MvcResult result = mockMvc.perform(get("/api/admin/archive/editions/" + homonymEditionId + "/items")
+                        .param("sort", "name,asc").session(adminSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements").value(4))
+                .andExpect(jsonPath("$.page.content[*].lotName", everyItem(is("Lot Homonyme"))))
+                .andReturn();
+
+        JsonNode content = objectMapper.readTree(result.getResponse().getContentAsString()).path("page").path("content");
+        long alphaARef = content.get(0).path("lotRef").asLong();
+        long alphaBRef = content.get(1).path("lotRef").asLong();
+        long betaARef = content.get(2).path("lotRef").asLong();
+        long betaBRef = content.get(3).path("lotRef").asLong();
+        assertThat(alphaARef).isNotZero().isEqualTo(alphaBRef);
+        assertThat(betaARef).isNotZero().isEqualTo(betaBRef);
+        assertThat(alphaARef).isNotEqualTo(betaARef);
     }
 
     @Test
@@ -435,6 +516,17 @@ class ArchivedCatalogIT extends IntegrationTest {
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreateItemDto(sellerProfileId, categoryId, name, new BigDecimal("10.00"), false, null))))
+                .andExpect(status().isCreated());
+    }
+
+    private void createLot(Long sellerProfileId, Long categoryId, String name, String globalPrice, String... memberNames) throws Exception {
+        List<CreateLotItemDto> members = Arrays.stream(memberNames)
+                .map((String memberName) -> new CreateLotItemDto(memberName, false, null))
+                .toList();
+        mockMvc.perform(post("/api/lots")
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateLotDto(sellerProfileId, categoryId, name, new BigDecimal(globalPrice), members))))
                 .andExpect(status().isCreated());
     }
 

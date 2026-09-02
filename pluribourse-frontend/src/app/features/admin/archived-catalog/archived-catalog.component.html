@@ -81,7 +81,13 @@
                 <td>{{ item.name }}</td>
                 <td>{{ item.categoryName }}</td>
                 <td>{{ (item.sold ? 'admin.archivedCatalog.columns.soldValues.sold' : 'admin.archivedCatalog.columns.soldValues.unsold') | translate }}</td>
-                <td>{{ 'admin.archivedCatalog.priceFormat' | translate: { price: item.price.toFixed(2), currency: currency() } }}</td>
+                <td>
+                  @if (item.lotRef !== null) {
+                    {{ 'admin.archivedCatalog.priceLotFormat' | translate: { price: item.price.toFixed(2), currency: currency() } }}
+                  } @else {
+                    {{ 'admin.archivedCatalog.priceFormat' | translate: { price: item.price.toFixed(2), currency: currency() } }}
+                  }
+                </td>
               </tr>
             }
           </tbody>

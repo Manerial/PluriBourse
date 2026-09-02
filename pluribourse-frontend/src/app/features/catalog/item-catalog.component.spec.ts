@@ -1,6 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { PageEvent } from '@angular/material/paginator';
@@ -10,10 +10,12 @@ import { ItemService } from '../../services/item.service';
 import { CategoryService } from '../../services/category.service';
 import { ItemCatalogDto, ItemCatalogPageResponse } from '../../models/item.model';
 import { EditionCategoryDto } from '../../models/category.model';
+import { CurrentEditionService } from '../../services/current-edition.service';
+import { EditionDto } from '../../models/edition.model';
 
 const MOCK_ITEMS: ItemCatalogDto[] = [
-  { id: 1, barcode: '0001-0001', name: 'Kapla', price: 5, incomplete: false, sold: false, categoryName: 'Jouets', tableNumber: 1, sellerFirstName: 'Alice', sellerLastName: 'Vendeuse', lotId: null, lotName: null },
-  { id: 2, barcode: '0001-0002', name: 'Robot incomplet', price: 8, incomplete: true, sold: false, categoryName: 'Livres', tableNumber: 2, sellerFirstName: 'Alice', sellerLastName: 'Vendeuse', lotId: null, lotName: null },
+  { id: 1, barcode: '0001-0001', name: 'Kapla', price: 5, incomplete: false, sold: false, categoryName: 'Jouets', tableNumber: 1, sellerFirstName: 'Alice', sellerLastName: 'Vendeuse', lotId: null, lotName: null, lotPrice: null },
+  { id: 2, barcode: '0001-0002', name: 'Robot incomplet', price: 8, incomplete: true, sold: false, categoryName: 'Livres', tableNumber: 2, sellerFirstName: 'Alice', sellerLastName: 'Vendeuse', lotId: null, lotName: null, lotPrice: null },
 ];
 
 const MOCK_PAGE: ItemCatalogPageResponse = {
@@ -198,6 +200,44 @@ describe('ItemCatalogComponent', () => {
     await component.onPageChange({ pageIndex: 0, pageSize: 50, length: 0 } as PageEvent);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
+  });
+
+  it('renders the lot price with a (lot) marker for lot members and a plain price for standalone items', async () => {
+    TestBed.inject(TranslateService).setTranslation('en', {
+      catalog: {
+        columns: {
+          priceFormat: '{{ price }} {{ currency }}',
+          priceLotFormat: '{{ price }} {{ currency }} (lot)',
+        },
+      },
+    });
+    TestBed.inject(CurrentEditionService).currentEdition.set({ currency: 'EUR' } as unknown as EditionDto);
+    const pageWithLotMember: ItemCatalogPageResponse = {
+      page: {
+        content: [
+          { id: 1, barcode: '0001-0001', name: 'Kapla', price: 5, incomplete: false, sold: false, categoryName: 'Jouets', tableNumber: 1, sellerFirstName: 'Alice', sellerLastName: 'Vendeuse', lotId: null, lotName: null, lotPrice: null },
+          { id: 3, barcode: '0002-0002', name: 'Duo BD 1', price: null, incomplete: false, sold: false, categoryName: 'Jeux', tableNumber: 11, sellerFirstName: 'Bruno', sellerLastName: 'Vendeur', lotId: 7, lotName: 'Lot BD', lotPrice: 20 },
+        ],
+        totalElements: 2,
+        totalPages: 1,
+        number: 0,
+        size: 50,
+      },
+    };
+    itemServiceMock.getCatalog.mockReturnValueOnce(of(pageWithLotMember));
+
+    await component.onPageChange({ pageIndex: 0, pageSize: 50, length: 2 } as PageEvent);
+    fixture.detectChanges();
+
+    const rows: NodeListOf<HTMLTableRowElement> = fixture.nativeElement.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(2);
+    // Standalone cell formats item.price, the lot cell formats item.lotPrice, and only the lot cell
+    // carries the "(lot)" marker.
+    const normalize = (cell: Element | undefined): string => (cell?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const standalonePriceCell: string = normalize(rows[0].querySelectorAll('td')[5]);
+    const lotPriceCell: string = normalize(rows[1].querySelectorAll('td')[5]);
+    expect(standalonePriceCell).toBe('5 EUR');
+    expect(lotPriceCell).toBe('20 EUR (lot)');
   });
 
   it('falls back to an empty category list when the category lookup fails', async () => {

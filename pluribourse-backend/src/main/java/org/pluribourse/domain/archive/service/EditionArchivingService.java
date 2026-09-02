@@ -13,6 +13,7 @@ import org.pluribourse.domain.edition.entity.PhaseType;
 import org.pluribourse.domain.edition.repository.EditionRepository;
 import org.pluribourse.domain.edition.service.EditionService;
 import org.pluribourse.domain.item.entity.Item;
+import org.pluribourse.domain.item.entity.Lot;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.payout.entity.Settlement;
 import org.pluribourse.domain.payout.repository.SettlementRepository;
@@ -66,6 +67,7 @@ public class EditionArchivingService {
         applySnapshot(edition, snapshot);
 
         List<ArchivedItem> archivedItems = items.stream().map(item -> {
+            Lot lot = item.getLot();
             ArchivedItem archivedItem = new ArchivedItem();
             archivedItem.setEdition(edition);
             archivedItem.setName(item.getName());
@@ -73,7 +75,12 @@ public class EditionArchivingService {
             archivedItem.setSold(item.isSold());
             // A lot member's own price is null — its price lives on the lot itself
             // (ItemPricing's convention throughout, e.g. SettlementReportRenderer).
-            archivedItem.setPrice(item.getLot() != null ? item.getLot().getGlobalPrice() : item.getPrice());
+            archivedItem.setPrice(lot != null ? lot.getGlobalPrice() : item.getPrice());
+            // Story 6.3 (FR-088): retain an opaque grouping discriminator + the lot's name for
+            // display; both null for standalone items. Two lots with the same name still get
+            // distinct lot_ref values (AC 5).
+            archivedItem.setLotRef(lot != null ? lot.getId() : null);
+            archivedItem.setLotName(lot != null ? lot.getName() : null);
             return archivedItem;
         }).toList();
         archivedItemRepository.saveAll(archivedItems);

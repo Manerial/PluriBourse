@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="034-archived-item-lot" author="pluribourse">
+        <!-- Story 6.3 (FR-088): the archive keeps an opaque discriminator for the originating lot so
+             archived lot members can be told apart from standalone items (and grouped later). Both
+             columns are legitimately null for standalone items and for rows archived before this
+             migration (AC 8) — no defaultValue, no NOT NULL, no FK (archiving deletes items but
+             leaves lots rows, and a later orphan cleanup must not cascade into the archive). -->
+        <addColumn tableName="archived_items">
+            <column name="lot_ref" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="lot_name" type="VARCHAR(200)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="archived_items" columnName="lot_ref"/>
+            <dropColumn tableName="archived_items" columnName="lot_name"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

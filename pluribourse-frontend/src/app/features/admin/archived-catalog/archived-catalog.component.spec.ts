@@ -1,5 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { Subject, of } from 'rxjs';
 import { vi } from 'vitest';
 import { PageEvent } from '@angular/material/paginator';
@@ -20,8 +20,8 @@ const MOCK_EDITIONS: EditionDto[] = [
 ];
 
 const MOCK_ITEMS: ArchivedItemDto[] = [
-  { id: 1, name: 'Kapla', categoryName: 'Jouets', sold: true, price: 5 },
-  { id: 2, name: 'Robot', categoryName: 'Livres', sold: false, price: 12.5 },
+  { id: 1, name: 'Kapla', categoryName: 'Jouets', sold: true, price: 5, lotRef: null, lotName: null },
+  { id: 2, name: 'Robot', categoryName: 'Livres', sold: false, price: 12.5, lotRef: null, lotName: null },
 ];
 
 const MOCK_PAGE: ArchivedItemPageResponse = {
@@ -172,6 +172,42 @@ describe('ArchivedCatalogComponent', () => {
 
   it('renders the no-selection empty state before any edition is chosen', () => {
     expect(fixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
+  });
+
+  it('shows the (lot) marker only on the price cell of an archived lot member', async () => {
+    TestBed.inject(TranslateService).setTranslation('en', {
+      admin: {
+        archivedCatalog: {
+          priceFormat: '{{ price }} {{ currency }}',
+          priceLotFormat: '{{ price }} {{ currency }} (lot)',
+        },
+      },
+    });
+    const pageWithLotMember: ArchivedItemPageResponse = {
+      page: {
+        content: [
+          { id: 1, name: 'Kapla', categoryName: 'Jouets', sold: true, price: 5, lotRef: null, lotName: null },
+          { id: 2, name: 'Duo A', categoryName: 'Jouets', sold: true, price: 8, lotRef: 42, lotName: 'Lot Duo' },
+        ],
+        totalElements: 2,
+        totalPages: 1,
+        number: 0,
+        size: 50,
+      },
+    };
+    archivedItemServiceMock.getArchivedCatalog.mockReturnValueOnce(of(pageWithLotMember));
+
+    await component.onEditionChange(1);
+    fixture.detectChanges();
+
+    const rows: NodeListOf<HTMLTableRowElement> = fixture.nativeElement.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(2);
+    // Edition 1 resolves currency() to '$'; both cells format price.toFixed(2), the lot row adds "(lot)".
+    const normalize = (cell: Element | undefined): string => (cell?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const standalonePriceCell: string = normalize(rows[0].querySelectorAll('td')[3]);
+    const lotPriceCell: string = normalize(rows[1].querySelectorAll('td')[3]);
+    expect(standalonePriceCell).toBe('5.00 $');
+    expect(lotPriceCell).toBe('8.00 $ (lot)');
   });
 
   it('renders the no-results empty state when the selected edition has no matching items', async () => {

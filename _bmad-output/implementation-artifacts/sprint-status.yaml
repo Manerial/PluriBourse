@@ -1,5 +1,5 @@
 # generated: 2026-06-11
-# last_updated: 2026-06-15
+# last_updated: 2026-09-02
 # project: PluriBourse
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,31 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-09-01"  # Story 5-7 (synchro postes de soldage) : revue de code terminée (bmad-code-review), 7 patchs appliqués, statut → done.
+last_updated: "2026-09-02"  # Story 6-3 (prix du lot dans les catalogues) : revue de code passée (3 couches, 0 violation AC), 2 patchs appliqués + 1 finding différé (regroupement repliable, cf. deferred-work.md), statut → done.
+# 2026-09-02 — Story 6-3 (prix + marqueur « (lot) » dans les catalogues actif et archivé) :
+# implémentation complète (dev-story), statut → review. T1-T12 dans un seul lot de changements.
+# Partie A : lotPrice (BigDecimal) sur ItemCatalogDto + @Mapping lot.globalPrice sur
+# ItemMapper.toCatalogDto (navigation null-safe MapStruct) ; template catalogue actif branché sur
+# item.lotId, clé i18n catalog.columns.priceLotFormat fr/en ; ALLOWED_SORT_FIELDS inchangé (tri
+# price reste sur Item.price). Partie B : migration 034-archived-item-lot.xml (lot_ref BIGINT
+# nullable SANS FK + lot_name VARCHAR(200) sur archived_items, shape de 030 moins NOT NULL/default,
+# pas de backfill — AC 8) ; ArchivedItem + ArchivedItemDto (+lotRef/+lotName, mapper 1:1) ;
+# EditionArchivingService résout Lot une fois et peuple les 2 champs (ligne setPrice dédupliquée,
+# comportement identique) ; template catalogue archivé branché sur item.lotRef (.toFixed(2)
+# conservé), clé i18n admin.archivedCatalog.priceLotFormat fr/en. Tests : ItemCatalogIT fixture
+# lot « Lot BD » dans @Order(3) (catégorie Jeux/Bruno → filtres catégorie/table/vendeur intacts),
+# assertions @Order(4/5/11/16) mises à jour, @Order(12) inchangée sur content[0..2] — désassemblage
+# de FilterService.compare() (JPageFlow 1.7.0) confirme : price null géré AVANT la branche
+# Comparable (pas de NPE) et trié EN DERNIER sous desc. Créneaux @Order 4-17 tous pris → nouvelle
+# méthode @Order(17) (AC 1/2) + queue renumérotée 17→18/18→19/19→20. ArchivedCatalogIT : @Order(3)
+# trié (sort=name,asc) + assertions lotRef/lotName ; nouvelle @Order(21) (AC 4) ; nouvelle
+# @Order(22) (AC 5 — édition dédiée, 2 lots homonymes → lot_ref distincts). Javadoc obsolète
+# d'EditionArchivingIT rafraîchie. Specs front : mockReturnValueOnce dédié + setTranslation pour
+# asserter le rendu (lot) sur la seule ligne lot. Aucune construction positionnelle de
+# ItemCatalogDto/ArchivedItemDto nulle part (MapStruct only). Vérifs : 559 tests backend verts,
+# 702 tests frontend verts (700 + 2), npm run build OK, migration 034 appliquée par le contexte
+# de test H2 (drop-first). Aucune nouvelle dépendance, aucun nouvel endpoint/composant/route,
+# base de dev locale non touchée.
 # 2026-09-01 — Story 5-7 (synchronisation des postes de soldage, sprint change proposal 2026-08-24
 # point 7) créée. Analyse exhaustive du code : le double-solde CONCURRENT du même vendeur renvoie
 # DÉJÀ un 409 propre (`seller-already-settled`) — `SettlementService.persistSettlement` fait
@@ -575,4 +599,13 @@ development_status:
   # proposal 2026-07-29) — dépend de la Story 2.7 (table d'archivage), qui
   # n'existe pas encore : ne peut pas démarrer avant que 2.7 soit done.
   6-2-consultation-catalogue-edition-archivee: done
+  # Sprint change proposal 2026-09-02 : les articles membres d'un lot n'ont pas de prix
+  # lisible dans le catalogue actif (Item.price null, prix porté par Lot.globalPrice) et
+  # aucun marqueur de lot dans le catalogue archivé. Story 6.3 : afficher le prix du lot +
+  # marqueur « (lot) » dans les deux catalogues (pas de regroupement repliable — reporté).
+  # Amende FR-088 + FR-102 (l'archive conserve désormais prix effectif + lot_ref/lot_name).
+  # Migration 034 : colonnes lot_ref (BIGINT nullable, discriminant opaque sans FK) + lot_name
+  # sur archived_items, peuplées par EditionArchivingService. Éditions déjà archivées non
+  # rétro-remplies (base de dev, sera réinitialisée).
+  6-3-prix-du-lot-dans-les-catalogues: done
   epic-6-retrospective: optional

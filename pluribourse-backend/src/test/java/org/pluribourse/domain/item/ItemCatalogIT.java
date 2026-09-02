@@ -116,15 +116,22 @@ class ItemCatalogIT extends IntegrationTest {
         createItem(sellerAliceId, livresCategoryId, "Robot incomplet", "8.00", true, "Piece manquante");
         Long jeuxCategoryId = getCategoryIdByName("Jeux");
         createItem(sellerBrunoId, jeuxCategoryId, "Console", "50.00", false, null);
+
+        // Lot fixture (Story 6.3): a 2-member lot priced globally at 20.00. Its members carry a
+        // null Item.price (lot pricing convention) and must surface the lot's globalPrice as
+        // lotPrice in the catalog. Placed in "Jeux" / Bruno so the category (@Order 6), table
+        // (@Order 7) and seller-name (@Order 9) filters stay untouched.
+        createLot(sellerBrunoId, jeuxCategoryId, "Lot BD", "20.00", List.of("Duo BD 1", "Duo BD 2"));
     }
 
     @Test
     @Order(4)
     void volunteer_lists_all_catalog_items_with_no_filter() throws Exception {
+        // 3 standalone items + 2 lot members = 5.
         mockMvc.perform(get("/api/catalog").session(volunteerSession))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.totalElements").value(3))
-                .andExpect(jsonPath("$.page.content.length()").value(3));
+                .andExpect(jsonPath("$.page.totalElements").value(5))
+                .andExpect(jsonPath("$.page.content.length()").value(5));
     }
 
     @Test
@@ -133,8 +140,8 @@ class ItemCatalogIT extends IntegrationTest {
         // AC1 names both ADMIN and VOLUNTEER — covered above only for volunteer until now.
         mockMvc.perform(get("/api/catalog").session(adminSession))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.totalElements").value(3))
-                .andExpect(jsonPath("$.page.content.length()").value(3));
+                .andExpect(jsonPath("$.page.totalElements").value(5))
+                .andExpect(jsonPath("$.page.content.length()").value(5));
     }
 
     @Test
@@ -187,29 +194,48 @@ class ItemCatalogIT extends IntegrationTest {
     @Test
     @Order(11)
     void sort_by_name_toggles_between_ascending_and_descending() throws Exception {
+        // Lot-member names ("Duo BD 1/2") join the ordering between "Console" and "Kapla".
         mockMvc.perform(get("/api/catalog").param("sort", "name,asc").session(volunteerSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.content[0].name").value("Console"))
-                .andExpect(jsonPath("$.page.content[1].name").value("Kapla"))
-                .andExpect(jsonPath("$.page.content[2].name").value("Robot incomplet"));
+                .andExpect(jsonPath("$.page.content[1].name").value("Duo BD 1"))
+                .andExpect(jsonPath("$.page.content[2].name").value("Duo BD 2"))
+                .andExpect(jsonPath("$.page.content[3].name").value("Kapla"))
+                .andExpect(jsonPath("$.page.content[4].name").value("Robot incomplet"));
 
         mockMvc.perform(get("/api/catalog").param("sort", "name,desc").session(volunteerSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.content[0].name").value("Robot incomplet"))
                 .andExpect(jsonPath("$.page.content[1].name").value("Kapla"))
-                .andExpect(jsonPath("$.page.content[2].name").value("Console"));
+                .andExpect(jsonPath("$.page.content[2].name").value("Duo BD 2"))
+                .andExpect(jsonPath("$.page.content[3].name").value("Duo BD 1"))
+                .andExpect(jsonPath("$.page.content[4].name").value("Console"));
     }
 
     @Test
     @Order(12)
     // ARCH-005 fixed in JPageFlow 1.7.0: FilterService.compare() now falls back to Comparable.compareTo()
     // instead of toString().compareTo(), so BigDecimal (and other Comparable types) sort numerically.
-    void sort_by_price_descending() throws Exception {
+    void sort_by_price_orders_non_null_prices_and_pushes_null_priced_lot_members_to_the_direction_edge() throws Exception {
+        // Lot members have a null Item.price. FilterService.compare() handles null without NPE, but its
+        // null sign IS flipped by the sort direction: null-price rows land LAST under desc and FIRST
+        // under asc. Both directions are asserted so a JPageFlow change to null handling is caught here
+        // rather than silently reordering the catalog.
         mockMvc.perform(get("/api/catalog").param("sort", "price,desc").session(volunteerSession))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.content[0].price").value(50.00))
                 .andExpect(jsonPath("$.page.content[1].price").value(8.00))
-                .andExpect(jsonPath("$.page.content[2].price").value(5.00));
+                .andExpect(jsonPath("$.page.content[2].price").value(5.00))
+                .andExpect(jsonPath("$.page.content[3].price").doesNotExist())
+                .andExpect(jsonPath("$.page.content[4].price").doesNotExist());
+
+        mockMvc.perform(get("/api/catalog").param("sort", "price,asc").session(volunteerSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.content[0].price").doesNotExist())
+                .andExpect(jsonPath("$.page.content[1].price").doesNotExist())
+                .andExpect(jsonPath("$.page.content[2].price").value(5.00))
+                .andExpect(jsonPath("$.page.content[3].price").value(8.00))
+                .andExpect(jsonPath("$.page.content[4].price").value(50.00));
     }
 
     @Test
@@ -249,14 +275,37 @@ class ItemCatalogIT extends IntegrationTest {
         // requested page keeps totalElements accurate and returns the last page's content instead.
         mockMvc.perform(get("/api/catalog").param("page", "10").param("size", "1").session(volunteerSession))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.totalElements").value(3))
-                .andExpect(jsonPath("$.page.number").value(2))
+                .andExpect(jsonPath("$.page.totalElements").value(5))
+                .andExpect(jsonPath("$.page.number").value(4))
                 .andExpect(jsonPath("$.page.content.length()").value(1))
-                .andExpect(jsonPath("$.page.content[0].name").value("Console"));
+                .andExpect(jsonPath("$.page.content[0].name").value("Duo BD 2"));
     }
 
     @Test
     @Order(17)
+    void lot_members_carry_lot_price_and_marker_fields_standalone_items_do_not() throws Exception {
+        // AC1 / AC2: a lot member exposes the lot's globalPrice as lotPrice (its own price stays
+        // null); a standalone item carries a null lotId/lotName/lotPrice and keeps its own price.
+        // jsonPath treats a JSON null as absent, so null fields are asserted with doesNotExist().
+        mockMvc.perform(get("/api/catalog").param("sort", "name,asc").session(volunteerSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.content[0].name").value("Console"))
+                .andExpect(jsonPath("$.page.content[0].price").value(50.00))
+                .andExpect(jsonPath("$.page.content[0].lotId").doesNotExist())
+                .andExpect(jsonPath("$.page.content[0].lotName").doesNotExist())
+                .andExpect(jsonPath("$.page.content[0].lotPrice").doesNotExist())
+                .andExpect(jsonPath("$.page.content[1].name").value("Duo BD 1"))
+                .andExpect(jsonPath("$.page.content[1].price").doesNotExist())
+                .andExpect(jsonPath("$.page.content[1].lotId").isNumber())
+                .andExpect(jsonPath("$.page.content[1].lotName").value("Lot BD"))
+                .andExpect(jsonPath("$.page.content[1].lotPrice").value(20.00))
+                .andExpect(jsonPath("$.page.content[2].name").value("Duo BD 2"))
+                .andExpect(jsonPath("$.page.content[2].lotName").value("Lot BD"))
+                .andExpect(jsonPath("$.page.content[2].lotPrice").value(20.00));
+    }
+
+    @Test
+    @Order(18)
     void unknown_sort_field_returns_400() throws Exception {
         mockMvc.perform(get("/api/catalog").param("sort", "password,asc").session(volunteerSession))
                 .andExpect(status().isBadRequest())
@@ -264,7 +313,7 @@ class ItemCatalogIT extends IntegrationTest {
     }
 
     @Test
-    @Order(18)
+    @Order(19)
     void catalog_unavailable_once_edition_is_closed() throws Exception {
         // Catalog is scoped to the currently ACTIVE edition only (PREPARATION/DEPOSIT/SALE/POST_SALE) —
         // browsing a closed or archived edition's catalog is out of scope for this story (a future
@@ -289,7 +338,7 @@ class ItemCatalogIT extends IntegrationTest {
     }
 
     @Test
-    @Order(19)
+    @Order(20)
     void seller_role_cannot_access_catalog() throws Exception {
         mockMvc.perform(get("/api/catalog").session(sellerSession))
                 .andExpect(status().isForbidden());
@@ -309,6 +358,18 @@ class ItemCatalogIT extends IntegrationTest {
     private void createItem(Long sellerProfileId, Long categoryId, String name, String price, boolean incomplete, String comment) throws Exception {
         CreateItemDto payload = new CreateItemDto(sellerProfileId, categoryId, name, new java.math.BigDecimal(price), incomplete, comment);
         mockMvc.perform(post("/api/items")
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isCreated());
+    }
+
+    private void createLot(Long sellerProfileId, Long categoryId, String name, String globalPrice, List<String> memberNames) throws Exception {
+        List<CreateLotItemDto> members = memberNames.stream()
+                .map((String memberName) -> new CreateLotItemDto(memberName, false, null))
+                .toList();
+        CreateLotDto payload = new CreateLotDto(sellerProfileId, categoryId, name, new java.math.BigDecimal(globalPrice), members);
+        mockMvc.perform(post("/api/lots")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
