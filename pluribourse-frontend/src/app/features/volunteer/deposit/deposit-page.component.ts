@@ -89,9 +89,9 @@ export class DepositPageComponent {
   readonly reprintingSlip = signal(false);
   readonly reprintingLabels = signal(false);
 
-  // The deposit slip's "reversement net attendu" is computed from what was deposited, not what
-  // was actually sold — reprinting it stays Dépôt-only (backend: PhaseGuard.
-  // requireDepositPhaseForSlipReprint), unlike the thermal labels, still reprintable in Post-vente.
+  // Both reprint actions (slip and thermal labels) are Dépôt-only since story 5.8 (backend:
+  // PhaseGuard.requireDepositPhaseForReprint) — /volunteer/deposit is no longer reachable in
+  // Post-vente, so this whole page only ever renders during the Deposit phase.
   readonly isDepositPhase = computed(() => this.currentEditionService.currentEdition()?.phase === 'DEPOSIT');
   readonly currency = computed(() => this.currentEditionService.currentEdition()?.currency);
 

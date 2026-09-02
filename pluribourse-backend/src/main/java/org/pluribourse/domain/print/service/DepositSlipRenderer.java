@@ -22,14 +22,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * Renders the A4 deposit slip as a PDF (FR-031): every standalone item on its own line, every lot
  * deduplicated to a single line regardless of member count, commission rate and expected net
- * payout. Built with OpenPDF ({@code org.openpdf.*} packages — see story 3.6 Dev Notes § OpenPDF
- * for the {@code com.lowagie}/groupId pitfalls).
+ * payout. When the seller has at least one lot, a second "lot details" table lists every member
+ * item (lot name, lot category, item name — no price) so the seller knows which physical articles
+ * make up each lot (story 5.8, FR-031). Built with OpenPDF ({@code org.openpdf.*} packages — see
+ * story 3.6 Dev Notes § OpenPDF for the {@code com.lowagie}/groupId pitfalls).
  */
 @Component
 @RequiredArgsConstructor
@@ -77,6 +80,12 @@ public class DepositSlipRenderer {
             document.add(buildItemsTable(items, documentLocale, currency));
             document.add(new Paragraph(" "));
 
+            if (items.stream().anyMatch(item -> item.getLot() != null)) {
+                document.add(new Paragraph(messageSource.getMessage("print.slip.lotDetailSection", null, documentLocale), HEADER_FONT));
+                document.add(buildLotDetailTable(items, documentLocale));
+                document.add(new Paragraph(" "));
+            }
+
             BigDecimal total = ItemPricing.computeTotal(items).setScale(2, RoundingMode.HALF_UP);
             BigDecimal net = ItemPricing.computeNetPayout(total, commissionRate);
             document.add(new Paragraph(
@@ -105,6 +114,36 @@ public class DepositSlipRenderer {
             } else {
                 addRow(table, item.getName(), item.getPrice(), currency);
             }
+        }
+        return table;
+    }
+
+    /**
+     * One row per lot member (not deduplicated by lot, unlike {@link #buildItemsTable}), grouped by
+     * lot then by item number, so the seller sees every physical article of a lot listed together.
+     * No price column — lot members have no individual price. The lot category comes from
+     * {@code item.getCategory()} (already {@code JOIN FETCH}ed, and equal to {@code Lot.category} for
+     * a member since story 3.14) — never {@code item.getLot().getCategory()}, which is LAZY, not
+     * fetch-joined, and would throw a LazyInitializationException on the print queue's consumer
+     * thread after the transaction closes.
+     */
+    private PdfPTable buildLotDetailTable(List<Item> items, Locale documentLocale) {
+        PdfPTable table = new PdfPTable(3);
+        table.setWidthPercentage(100);
+        table.addCell(headerCell(messageSource.getMessage("print.slip.column.lot", null, documentLocale)));
+        table.addCell(headerCell(messageSource.getMessage("print.slip.column.lotCategory", null, documentLocale)));
+        table.addCell(headerCell(messageSource.getMessage("print.slip.column.lotItem", null, documentLocale)));
+
+        // Grouped by lot (then item number): items arrive in item-number order, which interleaves
+        // members of lots that were registered in alternation.
+        List<Item> lotMembers = items.stream()
+                .filter(item -> item.getLot() != null)
+                .sorted(Comparator.comparing((Item item) -> item.getLot().getId()).thenComparing(Item::getItemNumber))
+                .toList();
+        for (Item item : lotMembers) {
+            table.addCell(new PdfPCell(new Phrase(item.getLot().getName(), BODY_FONT)));
+            table.addCell(new PdfPCell(new Phrase(item.getCategory().getName(), BODY_FONT)));
+            table.addCell(new PdfPCell(new Phrase(item.getName(), BODY_FONT)));
         }
         return table;
     }

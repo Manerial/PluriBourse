@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.pluribourse.domain.edition.entity.Edition;
 import org.pluribourse.domain.edition.service.EditionService;
 import org.pluribourse.domain.item.entity.Item;
+import org.pluribourse.domain.item.entity.Lot;
 import org.pluribourse.domain.item.exception.ItemAlreadySoldException;
 import org.pluribourse.domain.item.exception.ItemNotFoundException;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.item.service.PhaseGuard;
 import org.pluribourse.domain.pos.dto.ScanResultDto;
+import org.pluribourse.domain.pos.exception.LotAlreadySoldException;
 import org.pluribourse.domain.pos.mapper.ScanResultMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +33,9 @@ public class PosScanService {
      * doesn't match the fixed 8-digit {@code SSSSNNNN} format, or that doesn't resolve to an
      * item in the active edition, both surface as the same {@link ItemNotFoundException} (404) —
      * a single "item not found" contract for the volunteer, not two. An item already marked sold
-     * throws {@link ItemAlreadySoldException} (409) instead of being returned.
+     * throws {@link ItemAlreadySoldException} (409) instead of being returned; an item whose lot
+     * already has another member sold throws {@link LotAlreadySoldException} (409) — FR-109, a lot
+     * is sold at most once (story 5.8).
      */
     @Transactional(readOnly = true)
     public ScanResultDto scan(String barcode) {
@@ -49,6 +53,13 @@ public class PosScanService {
 
         if (item.isSold()) {
             throw new ItemAlreadySoldException(item.getId());
+        }
+        // FR-109: reject a sibling of an already-partly-sold lot. The read-only transaction is
+        // still open here, so item.getLot() resolves lazily; an explicit exists* query is used
+        // rather than lot.getItems() so this does not depend on the EAGER fetch being primed.
+        Lot lot = item.getLot();
+        if (lot != null && itemRepository.existsByLotIdAndSoldTrue(lot.getId())) {
+            throw new LotAlreadySoldException(lot.getId());
         }
         return mapper.toDto(item);
     }

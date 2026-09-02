@@ -234,8 +234,9 @@ Toutes les dépendances sélectionnées utilisent des licences permissives ou fa
 | Stratégie de verrouillage | **Verrouillage optimiste** (`@Version` sur l'entité `Item`) | Faible contention attendue sur 3 postes ; pas de verrous maintenus, pas d'interblocages |
 | Filet de sécurité | Contrainte `UNIQUE` en BDD sur l'état vendu d'un article | Garantie secondaire au niveau de la base de données |
 | Scénario de conflit | Article saisi manuellement dans deux paniers simultanément | Détecté à la **validation du paiement** (pas au moment du scan) |
+| Intégrité des lots | Un lot ne se vend qu'une fois : dès qu'un article du lot est vendu, scanner un autre article du même lot est rejeté (**au scan et à la validation**, 409, même patron que le verrouillage optimiste `@Version`). Les articles non vendus d'un lot vendu reviennent au vendeur (FR-109) | Empêche le double-encaissement du prix global d'un lot ; l'« intégrité des lots » de F4 (déjà mentionnée) inclut désormais cette règle *(SCP 2026-09-02b)* |
 | UX de conflit | Le backend retourne 409 avec la liste des articles conflictuels ; Angular affiche un message explicite ; le bénévole retire les articles conflictuels et revalide | Pas de réessai automatique — résolution manuelle par le bénévole |
-| Exigence de test | Test d'intégration avec deux `TransactionTemplate`s concurrents + **Testcontainers (MariaDB)** en CI | Le comportement de verrouillage de H2 diffère de MariaDB ; une vraie BDD est requise pour ce test |
+| Exigence de test | Test d'intégration avec deux `TransactionTemplate`s concurrents + **Testcontainers (MariaDB)** en CI ; **+ un scénario couvrant le rejet du scan d'un article de lot déjà vendu, au scan et en course multi-postes à la validation** | Le comportement de verrouillage de H2 diffère de MariaDB ; une vraie BDD est requise pour ce test |
 
 ---
 

@@ -359,13 +359,13 @@ describe('AppLayoutComponent', () => {
       expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/settlement"]')).toBeFalsy();
     });
 
-    it('shows the Deposit link in the Post-vente phase (deposit slip reprint)', () => {
+    it('hides the Deposit link in the Post-vente phase (story 5.8 removed the deposit slip reprint entry)', () => {
       mockEdition.set({ ...preparationEdition, phase: 'POST_SALE' });
       fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/deposit"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/deposit"]')).toBeFalsy();
     });
 
-    it('hides the Deposit link outside Deposit/Post-vente', () => {
+    it('hides the Deposit link outside Deposit', () => {
       mockEdition.set({ ...preparationEdition, phase: 'PREPARATION' });
       fixture.detectChanges();
       expect(fixture.nativeElement.querySelector('a[routerLink="/volunteer/deposit"]')).toBeFalsy();

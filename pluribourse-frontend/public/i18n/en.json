@@ -486,6 +486,7 @@
       },
       "error": {
         "alreadySold": "Item already sold at another checkout.",
+        "lotAlreadySold": "This item belongs to a lot that has already been sold.",
         "notFound": "Item not found.",
         "generic": "Could not scan the item.",
         "conflict": "Items already sold at another checkout: {{ names }}",
@@ -920,7 +921,8 @@
     "form": {
       "amountLabel": "Amount given",
       "warningBelowDue": "The given amount ({{ amount }} {{ currency }}) is lower than the amount due ({{ due }} {{ currency }}).",
-      "errorAboveDue": "The given amount cannot exceed the amount due."
+      "errorAboveDue": "The given amount cannot exceed the amount due.",
+      "printReportOnSettle": "Print the sales report"
     },
     "unclaimedDialog": {
       "title": "Confirm \"Unclaimed\"",

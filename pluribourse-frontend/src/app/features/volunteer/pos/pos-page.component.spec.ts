@@ -127,6 +127,16 @@ describe('PosPageComponent', () => {
     expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.error.alreadySold', variant: 'error' });
   });
 
+  it('shows the lot-already-sold inline error when scanning a sibling of an already-sold lot (FR-109)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.addItem.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409, error: { type: 'https://pluribourse/errors/lot-already-sold' } }))
+    );
+    await component.onScan('00010002');
+    expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.error.lotAlreadySold', variant: 'error' });
+    expect(component.basket()).toEqual(BASKET_WITH_ITEM_1);
+  });
+
   it('removing an item calls removeItem() and updates the basket display (AC3)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
     posServiceMock.removeItem.mockReturnValue(of(EMPTY_BASKET));
@@ -221,6 +231,19 @@ describe('PosPageComponent', () => {
     await component.openPaymentDialog();
 
     expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.error.conflict', variant: 'error' });
+    expect(component.basket()).toEqual(BASKET_WITH_ITEM_1);
+  });
+
+  it('a lot-already-sold conflict at validation shows the specific inline error and keeps the basket (FR-109)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
+    posServiceMock.validate.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409, error: { type: 'https://pluribourse/errors/lot-already-sold' } }))
+    );
+
+    await component.openPaymentDialog();
+
+    expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.error.lotAlreadySold', variant: 'error' });
     expect(component.basket()).toEqual(BASKET_WITH_ITEM_1);
   });
 

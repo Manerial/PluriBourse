@@ -197,7 +197,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
     @Order(5)
     @Transactional(readOnly = true)
         // read-only, no HTTP writes below: safe to keep the session open for lazy access
-    void deposit_slip_renderer_deduplicates_lot_line_and_computes_correct_net_amount() {
+    void deposit_slip_renderer_deduplicates_lot_line_and_lists_lot_members_and_computes_correct_net_amount() {
         List<Item> items = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerAId);
         SellerProfile seller = sellerRepository.findById(sellerAId).orElseThrow();
 
@@ -206,10 +206,16 @@ class DepositSlipPrintingIT extends IntegrationTest {
 
         assertThat(rendered).startsWith("%PDF");
         assertThat(rendered).contains("Peluche").contains("7.00");
-        // The lot has 2 member items but must appear on a single line (FR-031): its name and
-        // global price each occur exactly once, never duplicated per member item.
-        assertThat(countOccurrences(rendered, "Lot Duo")).isEqualTo(1);
+        // The lot still appears once on the deduplicated items table (FR-031). Story 5.8 adds a
+        // "lot details" table with one row PER MEMBER, each carrying the lot name in its first
+        // column — so "Lot Duo" now occurs 1 (items table) + 2 (Piece A, Piece B) = 3 times.
+        assertThat(countOccurrences(rendered, "Lot Duo")).isEqualTo(3);
+        // The lot's global price still shows exactly once (items table only): the lot details
+        // table has no price column, so members never leak a monetary value there.
         assertThat(countOccurrences(rendered, "12.00")).isEqualTo(1);
+        // Lot details table: every member item by name + the lot's own category (story 3.14,
+        // via item.getCategory(), never the LAZY item.getLot().getCategory()).
+        assertThat(rendered).contains("Piece A").contains("Piece B").contains("Jouets");
         // total = 7.00 + 12.00 = 19.00; commission 10% = 1.90; net = 17.10 (BigDecimal, HALF_UP)
         // € is encoded as CP1252 byte 0x80 in the PDF stream (see class-level font comment) but
         // this test decodes bytes as ISO-8859-1, where 0x80 is a different code point — the € sign
@@ -341,10 +347,12 @@ class DepositSlipPrintingIT extends IntegrationTest {
     @Test
     @Order(13)
     void reprint_deposit_slip_is_blocked_in_post_sale_phase() throws Exception {
-        // Follow-up decision (2026-08-24): unlike the thermal labels (still reprintable through
-        // Post-vente, unchanged), the deposit slip stays Dépôt-only — the settlement report PDF
-        // (story 5.2) already covers the seller's post-vente paper trail with the real sold/unsold
-        // breakdown, and the slip's "reversement net attendu" would otherwise show a stale figure.
+        // Story 5.8: the restriction is no longer a dedicated "slip" guard — both deposit-page
+        // reprints (slip AND thermal labels) now go through the common Deposit-phase guard
+        // (requireDepositPhaseForReprint). The slug stays deposit-reprint-not-allowed. Rationale
+        // unchanged: the settlement report PDF (story 5.2) already covers the seller's post-vente
+        // paper trail with the real sold/unsold breakdown, and the slip's "reversement net attendu"
+        // would otherwise show a stale figure.
         mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/slip/reprint")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isUnprocessableContent())
@@ -391,6 +399,26 @@ class DepositSlipPrintingIT extends IntegrationTest {
         // Order(5)'s comment) — its presence right after each amount proves the renderer used the
         // edition's currency, not a symbol baked into the template.
         assertThat(rendered).contains("10.00$").contains("9.00$");
+    }
+
+    @Test
+    @Order(16)
+    @Transactional(readOnly = true)
+        // Independent of the shared sellerAId state above — renders a single standalone item, same
+        // direct-call pattern as Order(14)/Order(15).
+    void deposit_slip_omits_the_lot_details_table_for_a_seller_with_no_lot() {
+        SellerProfile seller = sellerRepository.findById(sellerAId).orElseThrow();
+        Item standalone = new Item();
+        standalone.setName("Article Seul");
+        standalone.setPrice(new BigDecimal("4.00"));
+
+        byte[] pdf = depositSlipRenderer.renderSlip(seller, List.of(standalone), new BigDecimal("10.00"), Locale.FRENCH);
+        String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
+
+        assertThat(rendered).contains("Article Seul");
+        // Story 5.8: the "lot details" section (title + table) is rendered only when the seller has
+        // at least one lot.
+        assertThat(rendered).doesNotContain("Détail des lots");
     }
 
     private void waitUntil(BooleanSupplier condition) throws InterruptedException {

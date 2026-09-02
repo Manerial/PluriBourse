@@ -327,43 +327,38 @@ class SettlementReportPrintingIT extends IntegrationTest {
     @Order(8)
     @Transactional(readOnly = true)
         // read-only, no HTTP writes below: safe to keep the session open for lazy access
-    void settlement_report_renderer_includes_sold_and_unsold_sections_with_totals() {
+    void settlement_report_renderer_unified_table_lot_details_count_line_and_totals() {
         List<Item> items = itemRepository.findAllBySellerProfileIdForSettlementReport(aliceId);
 
         byte[] pdf = settlementReportRenderer.renderReport(items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.FRENCH, null);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
 
         assertThat(rendered).startsWith("%PDF");
-        // Sold section: Kapla (5.00€) and the incomplete Doudou (2.00€, AC 2 — full price, no
-        // commission exemption despite incomplete=true).
-        assertThat(rendered).contains("Kapla").contains("5.00");
-        assertThat(rendered).contains("Doudou").contains("2.00");
-        // Sold section: Lot Mixte appears on exactly ONE line even though only one of its two
-        // members was scanned — its full price counted once, never split or duplicated into the
-        // unsold section below (code review patch, 2026-08-14).
-        assertThat(countOccurrences(rendered, MIXED_LOT_NAME)).isEqualTo(1);
-        assertThat(countOccurrences(rendered, "8.00")).isEqualTo(1);
-        // Unsold section: Peluche, its category and table number (FR-050) — no price cell for a
-        // standalone unsold item.
-        assertThat(rendered).contains("Peluche").contains("Jouets").contains("7");
-        // Unsold section: Lot Invendu (never scanned) shows its name, category, table AND its
-        // price — unlike a standalone unsold item, a lot must show its price regardless of section
-        // (AC 1).
-        assertThat(countOccurrences(rendered, UNSOLD_LOT_NAME)).isEqualTo(1);
+        // Story 5.8: a single unified items table (name, category, table, price, STATUS) — a lot on
+        // one line, a standalone item (sold OR unsold) on its own line with its own price.
+        assertThat(rendered).contains("Statut");
+        assertThat(rendered).contains("Kapla").contains("5.00");   // sold standalone
+        assertThat(rendered).contains("Doudou").contains("2.00");  // sold standalone (incomplete, AC 2 — full price)
+        assertThat(rendered).contains("Peluche").contains("7.00"); // unsold standalone — now DOES show its price
+        // A lot is one line in the unified table (price once), then one row PER MEMBER in the new
+        // "lot details" table (Lot Mixte / Lot Invendu each: 1 unified + 2 member rows = 3).
+        assertThat(countOccurrences(rendered, MIXED_LOT_NAME)).isEqualTo(3);
+        assertThat(countOccurrences(rendered, UNSOLD_LOT_NAME)).isEqualTo(3);
+        assertThat(countOccurrences(rendered, "8.00")).isEqualTo(1); // lot global price shown once (unified only)
         assertThat(rendered).contains("6.00");
-        // Story 3.14 AC 5: a lot member's category still reflects the LOT's category (Item.category
-        // is now copied from Lot.category, never chosen per member) — 2 occurrences of "Jouets"
-        // proves it appears for BOTH the standalone Peluche row AND the Lot Invendu row, not just
-        // one of them.
-        assertThat(countOccurrences(rendered, "Jouets")).isEqualTo(2);
-        // Total brut (5.00+2.00+8.00=15.00), commission (10%) and net (13.50) — all BigDecimal,
-        // precise to the cent.
-        assertThat(rendered).contains("15.00").contains("13.50");
-        // Commission amount (10% of 15.00 = 1.50€, distinct from the already-asserted 10% rate
-        // line) is now printed alongside the rate.
-        assertThat(rendered).contains("1.50");
-        // Alice has not been settled yet at this point in the scenario (Order 7 only reads
-        // amountDue) — no "montant remis" line should appear.
+        // Lot details table: every member by name, with its OWN real isSold() status.
+        assertThat(rendered).contains("Mixte A").contains("Mixte B").contains("Invendu A").contains("Invendu B");
+        // Story 3.14: a lot member's category is the LOT's category — "Jouets" now on all 5 unified
+        // rows + all 4 lot-member rows = 9.
+        assertThat(countOccurrences(rendered, "Jouets")).isEqualTo(9);
+        // Count line — 1 physical Item = 1 unit, raw per-member isSold() (NO lot normalization):
+        // sold = Kapla + Doudou + Mixte A = 3; unsold = Peluche + Mixte B + Invendu A + Invendu B = 4;
+        // deposited = 7.
+        assertThat(rendered).contains("3 vendus").contains("4 invendus");
+        // Totals unchanged: gross on the NORMALIZED soldItems (5.00 + 2.00 + 8.00 = 15.00), 10%
+        // commission = 1.50, net = 13.50 — the partially-sold Lot Mixte's price counted once.
+        assertThat(rendered).contains("15.00").contains("13.50").contains("1.50");
+        // Alice is not settled yet (Order 7 only read amountDue) — no "Montant remis" line.
         assertThat(rendered).doesNotContain("Montant remis");
     }
 
@@ -384,8 +379,11 @@ class SettlementReportPrintingIT extends IntegrationTest {
         byte[] pdf = settlementReportRenderer.renderReport(items.getFirst().getSellerProfile(), items, new BigDecimal("10.00"), Locale.ENGLISH, null);
         String rendered = new String(pdf, StandardCharsets.ISO_8859_1);
 
-        assertThat(rendered).contains("Sales report").contains("Sold items").contains("Unsold items");
-        assertThat(rendered).doesNotContain("Bilan de vente").doesNotContain("Articles vendus").doesNotContain("Articles invendus");
+        // Story 5.8 labels: the "Sold items"/"Unsold items" section titles are gone, replaced by
+        // the unified "Items" table, a "Lot details" table, a "Status" column and the count line.
+        assertThat(rendered).contains("Sales report").contains("Lot details").contains("Status");
+        assertThat(rendered).contains("3 sold").contains("4 unsold").contains("7 deposited");
+        assertThat(rendered).doesNotContain("Bilan de vente").doesNotContain("Sold items").doesNotContain("Unsold items");
     }
 
     @Test

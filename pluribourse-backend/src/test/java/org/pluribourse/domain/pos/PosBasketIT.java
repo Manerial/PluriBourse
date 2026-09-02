@@ -44,9 +44,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Story 4.2/4.3 — persisted POS basket, payment validation & lot handling. Alice (seller 1) gets 4
  * individual items (barcodes 0001-0003 for the shopping-cart scenarios, 0006 reserved untouched
  * for the end-of-class phase-guard scenario) plus a 2-item lot (barcodes 0004-0005, global price
- * 10.00) to prove the lot-aware total, and a second 2-item lot (barcodes 0008-0009, global price
- * 6.00) used only by the lot-removal scenario. Bob (seller 2) gets a single item used only by the
- * concurrency scenario.
+ * 10.00) to prove the lot-aware total, a second 2-item lot (barcodes 0008-0009, global price
+ * 6.00) used only by the lot-removal scenario, and a third 2-item lot (barcodes 0010-0011, global
+ * price 8.00) used only by the FR-109 lot-already-sold scenario (story 5.8). Bob (seller 2) gets a
+ * single item used only by the concurrency scenario.
  * <p>
  * Order matters: phase transitions are one-directional in these E2E scenarios (cf. {@link PosScanIT}) —
  * the class ends in POST_SALE, so any scenario needing the Sale phase must run before {@link #phase_guard_rejects_four_endpoints_and_the_cancelled_basket_404s_add_item()}.
@@ -76,6 +77,8 @@ class PosBasketIT extends IntegrationTest {
     private static final String ITEM_7_BARCODE = "00010007"; // Insuffisant, 4.00 — insufficient-amount scenario only
     private static final String LOT2_ITEM_1_BARCODE = "00010008"; // Lot Retrait, 6.00 — removal scenario only
     private static final String LOT2_ITEM_2_BARCODE = "00010009";
+    private static final String LOT3_ITEM_1_BARCODE = "00010010"; // Lot Course, 8.00 — FR-109 lot-already-sold scenario only
+    private static final String LOT3_ITEM_2_BARCODE = "00010011";
     private static final String BOB_ITEM_BARCODE = "00020001"; // Boardgame, 6.00 — concurrency scenario only
 
     private Long item1Id;
@@ -181,6 +184,16 @@ class PosBasketIT extends IntegrationTest {
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(lot2Payload)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        CreateLotDto lot3Payload = new CreateLotDto(aliceId, categoryId, "Lot Course", new BigDecimal("8.00"),
+                List.of(new CreateLotItemDto("Lot course item A", false, null),
+                        new CreateLotItemDto("Lot course item B", false, null)));
+        mockMvc.perform(post("/api/lots")
+                        .session(volunteer1Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lot3Payload)))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -487,6 +500,51 @@ class PosBasketIT extends IntegrationTest {
 
     @Test
     @Order(20)
+    void a_lot_with_one_member_already_sold_is_rejected_at_add_item_and_at_validation() throws Exception {
+        // FR-109 (story 5.8): a lot is sold at most once.
+        // (a) One member of "Lot Retrait" sold directly (its members are still unsold after the
+        // removal scenario above) — adding a sibling to any basket now 409s at add-item time.
+        Item lotRetraitA = itemRepository.findByEditionIdAndSellerNumberAndItemNumber(editionId, 1, 8).orElseThrow();
+        lotRetraitA.setSold(true);
+        itemRepository.saveAndFlush(lotRetraitA);
+
+        MvcResult v2CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer2Session)).andReturn();
+        Long v2BasketId = objectMapper.readValue(v2CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+
+        mockMvc.perform(post("/api/pos/baskets/" + v2BasketId + "/items")
+                        .session(volunteer2Session).with(csrf())
+                        .param("barcode", LOT2_ITEM_2_BARCODE))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value(endsWith("/lot-already-sold")));
+
+        // (b) "Lot Course" member A is added while the lot is fully unsold, THEN member B is sold
+        // elsewhere — the guard now fires at validation time instead.
+        BasketDto afterAdd = addItem(volunteer2Session, v2BasketId, LOT3_ITEM_1_BARCODE);
+        Long lotCourseId = afterAdd.lotGroups().get(0).lotId();
+
+        Item lotCourseB = itemRepository.findByEditionIdAndSellerNumberAndItemNumber(editionId, 1, 11).orElseThrow();
+        lotCourseB.setSold(true);
+        itemRepository.saveAndFlush(lotCourseB);
+
+        ValidateBasketDto payload = new ValidateBasketDto(PaymentMethod.CASH, null);
+        mockMvc.perform(post("/api/pos/baskets/" + v2BasketId + "/validate")
+                        .session(volunteer2Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value(endsWith("/lot-already-sold")));
+
+        Item lotCourseA = itemRepository.findByEditionIdAndSellerNumberAndItemNumber(editionId, 1, 10).orElseThrow();
+        assertThat(lotCourseA.isSold()).isFalse();
+
+        // Empty the v2 basket so the sale-conflict scenario below starts clean.
+        mockMvc.perform(delete("/api/pos/baskets/" + v2BasketId + "/lots/" + lotCourseId)
+                        .session(volunteer2Session).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @Order(21)
     void a_sale_conflict_is_detected_at_validation_not_at_scan() throws Exception {
         MvcResult v1CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer1Session))
                 .andReturn();
@@ -525,7 +583,7 @@ class PosBasketIT extends IntegrationTest {
     }
 
     @Test
-    @Order(21)
+    @Order(22)
     void seller_role_is_forbidden_on_all_five_endpoints() throws Exception {
         mockMvc.perform(get("/api/pos/baskets/current").session(sellerSession))
                 .andExpect(status().isForbidden());
@@ -546,7 +604,7 @@ class PosBasketIT extends IntegrationTest {
     }
 
     @Test
-    @Order(22)
+    @Order(23)
     void unauthenticated_request_returns_401() throws Exception {
         mockMvc.perform(get("/api/pos/baskets/current"))
                 .andExpect(status().isUnauthorized());
@@ -565,7 +623,7 @@ class PosBasketIT extends IntegrationTest {
      * transitions are one-directional in this test class.
      */
     @Test
-    @Order(23)
+    @Order(24)
     void phase_guard_rejects_four_endpoints_and_the_cancelled_basket_404s_add_item() throws Exception {
         addItem(volunteer1Session, volunteer1BasketId, ITEM_6_BARCODE);
 

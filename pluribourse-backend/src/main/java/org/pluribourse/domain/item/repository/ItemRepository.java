@@ -38,6 +38,13 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findAllByLotIdOrderById(Long lotId);
 
     /**
+     * FR-109 (story 5.8) — true as soon as any member of the given lot has been sold. Used by the
+     * POS scan and basket-validation guards to reject a lot that is already partly sold, without
+     * loading {@code lot.getItems()} (EAGER, but the fetch is not guaranteed at every call site).
+     */
+    boolean existsByLotIdAndSoldTrue(Long lotId);
+
+    /**
      * excludeItemIds lets a category reassignment (AC 3) query the table state as if the items
      * being reassigned did not exist yet — otherwise their own (stale) rows, still visible via
      * Hibernate's pre-query auto-flush, would bias the result it is meant to help compute.

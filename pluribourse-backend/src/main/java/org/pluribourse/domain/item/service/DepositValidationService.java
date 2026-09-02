@@ -24,12 +24,12 @@ import java.util.Locale;
 
 /**
  * Two independent print actions available from the seller's deposit page: (re)printing the
- * thermal labels (FR-028, story 3.5), reachable from the Deposit and Post-sale phases (FR-031),
- * and (re)printing the deposit slip PDF (story 3.6), restricted to the Deposit phase only
- * (follow-up decision, 2026-08-24 — see {@link PhaseGuard#requireDepositPhaseForSlipReprint}).
- * Deliberately not persisting any "deposit validated" state (see story 3.5 Dev Notes § Scope) —
- * every call reprints every article currently registered for the seller, and each action only
- * checks the printer it actually needs.
+ * thermal labels (FR-028, story 3.5) and (re)printing the deposit slip PDF (story 3.6). Both are
+ * restricted to the Deposit phase (story 5.8 — see {@link PhaseGuard#requireDepositPhaseForReprint};
+ * story 3.6's earlier Post-vente allowance for the labels and slip reprint is removed now that
+ * {@code /volunteer/deposit} is unreachable in Post-vente). Deliberately not persisting any
+ * "deposit validated" state (see story 3.5 Dev Notes § Scope) — every call reprints every article
+ * currently registered for the seller, and each action only checks the printer it actually needs.
  */
 @Service
 @RequiredArgsConstructor
@@ -61,7 +61,6 @@ public class DepositValidationService {
     @Transactional(readOnly = true)
     public void reprintDepositSlip(Long sellerProfileId, HttpSession session) {
         SellerDeposit deposit = resolveSellerDeposit(sellerProfileId);
-        PhaseGuard.requireDepositPhaseForSlipReprint(deposit.edition());
 
         Long a4PrinterId = printerSelectionService.getSelectedPrinterId(session, PrinterType.A4)
                 .orElseThrow(() -> new InvalidPrinterSelectionException("No A4 printer selected in session"));
@@ -76,7 +75,7 @@ public class DepositValidationService {
 
     private SellerDeposit resolveSellerDeposit(Long sellerProfileId) {
         Edition edition = editionService.getActiveEdition();
-        PhaseGuard.requireDepositOrPostSalePhase(edition);
+        PhaseGuard.requireDepositPhaseForReprint(edition);
         SellerProfile sellerProfile = editionScopedLookup.findSellerInEdition(sellerProfileId, edition);
         List<Item> items = itemRepository.findAllBySellerProfileIdOrderByItemNumberAsc(sellerProfile.getId());
         if (items.isEmpty()) {

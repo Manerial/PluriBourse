@@ -88,6 +88,10 @@ describe('SettlementListComponent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     settlementServiceMock.getSettlements.mockReturnValue(of([ALICE, BOB]));
+    // Story 5.8: confirmSettle() best-effort auto-prints the report on success (checkbox checked
+    // by default) — give every test a benign no-op default so that side effect stays silent
+    // unless a test opts into asserting it.
+    settlementServiceMock.printReport.mockReturnValue(of(undefined));
     authMock.currentUser.mockReturnValue({ role: 'VOLUNTEER' });
     confirmDialogMock.open.mockReturnValue(of(false));
     settlementUpdated$ = new Subject<SettlementUpdatedEvent>();
@@ -167,6 +171,8 @@ describe('SettlementListComponent', () => {
     settlementServiceMock.getSettlements.mockReturnValue(of([settledAlice, BOB]));
     component.openSettleForm(ALICE);
     component.settleAmount.set(3.0);
+    // Focused on the settle itself — the auto-print side effect has its own tests below.
+    component.printReportOnSettle.set(false);
 
     await component.confirmSettle(ALICE.sellerId);
     await fixture.whenStable();
@@ -174,6 +180,7 @@ describe('SettlementListComponent', () => {
     expect(settlementServiceMock.settle).toHaveBeenCalledWith(ALICE.sellerId, 3.0);
     expect(component.settlements().find((s) => s.sellerId === ALICE.sellerId)?.status).toBe('SETTLED');
     expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(settlementServiceMock.printReport).not.toHaveBeenCalled();
     expect(component.openSettleFormForSellerId()).toBeNull();
   });
 
@@ -229,7 +236,7 @@ describe('SettlementListComponent', () => {
     expect(settlementServiceMock.markUnclaimed).not.toHaveBeenCalled();
   });
 
-  it('the print report button is available on both an unsettled and a settled row', async () => {
+  it('the print report button is shown only for a settled row, not an unsettled one (story 5.8)', async () => {
     await setup();
     component.setStatusFilter('all');
     fixture.detectChanges();
@@ -237,18 +244,18 @@ describe('SettlementListComponent', () => {
       fixture.nativeElement.querySelectorAll('tbody tr:not(.settlement-form-row)')
     );
     expect(rows.length).toBe(2);
-    // Alice (UNSETTLED): print + settle + unclaimed = 3 buttons. Bob (SETTLED): print only = 1.
+    // Alice (UNSETTLED): settle + unclaimed = 2 buttons, no print. Bob (SETTLED): print only = 1.
     const buttonCounts = rows.map((row) => row.querySelectorAll('.actions-cell button').length);
-    expect(buttonCounts.sort()).toEqual([1, 3]);
+    expect(buttonCounts.sort()).toEqual([1, 2]);
   });
 
   it('a successful print report shows a success toast', async () => {
     await setup();
     settlementServiceMock.printReport.mockReturnValue(of(undefined));
 
-    await component.printReport(ALICE);
+    await component.printReport(BOB);
 
-    expect(settlementServiceMock.printReport).toHaveBeenCalledWith(ALICE.sellerId);
+    expect(settlementServiceMock.printReport).toHaveBeenCalledWith(BOB.sellerId);
     expect(toastMock.showSuccess).toHaveBeenCalledOnce();
   });
 
@@ -264,7 +271,7 @@ describe('SettlementListComponent', () => {
       )
     );
 
-    await component.printReport(ALICE);
+    await component.printReport(BOB);
 
     expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printerUnavailable');
   });
@@ -273,7 +280,7 @@ describe('SettlementListComponent', () => {
     await setup();
     settlementServiceMock.printReport.mockReturnValue(throwError(() => new Error('server')));
 
-    await component.printReport(ALICE);
+    await component.printReport(BOB);
 
     expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printReport');
   });
@@ -283,15 +290,15 @@ describe('SettlementListComponent', () => {
     const inFlight = new Subject<void>();
     settlementServiceMock.printReport.mockReturnValueOnce(inFlight);
 
-    const printPromise = component.printReport(ALICE);
-    expect(component.printingReportForSellerId()).toBe(ALICE.sellerId);
+    const printPromise = component.printReport(BOB);
+    expect(component.printingReportForSellerId()).toBe(BOB.sellerId);
     expect(component.anyPrintInFlight()).toBe(true);
 
     // A click on a different row's button while the first is still in flight is ignored — the
     // backend print queue is single-threaded per printer anyway (PrintQueueService).
-    await component.printReport(BOB);
+    await component.printReport(ALICE);
     expect(settlementServiceMock.printReport).toHaveBeenCalledOnce();
-    expect(settlementServiceMock.printReport).not.toHaveBeenCalledWith(BOB.sellerId);
+    expect(settlementServiceMock.printReport).not.toHaveBeenCalledWith(ALICE.sellerId);
 
     // The grouped button is blocked too, in the same direction.
     await component.printAllReports();
@@ -309,13 +316,70 @@ describe('SettlementListComponent', () => {
     const inFlight = new Subject<void>();
     settlementServiceMock.printReport.mockReturnValueOnce(inFlight);
 
-    const first = component.printReport(ALICE);
-    await component.printReport(ALICE);
+    const first = component.printReport(BOB);
+    await component.printReport(BOB);
     expect(settlementServiceMock.printReport).toHaveBeenCalledOnce();
 
     inFlight.next(undefined);
     inFlight.complete();
     await first;
+  });
+
+  // ─── Story 5.8 — auto-print the sales report on settle ─────────────────────────
+
+  it('confirmSettle auto-prints the report when the checkbox is left checked', async () => {
+    await setup();
+    settlementServiceMock.settle.mockReturnValue(of({ ...ALICE, status: 'SETTLED', amountPaid: 3.0 }));
+    settlementServiceMock.getSettlements.mockReturnValue(of([{ ...ALICE, status: 'SETTLED' }, BOB]));
+    component.openSettleForm(ALICE);
+    component.settleAmount.set(3.0);
+    // checkbox defaults to checked — no need to touch printReportOnSettle
+
+    await component.confirmSettle(ALICE.sellerId);
+    await fixture.whenStable();
+
+    expect(settlementServiceMock.printReport).toHaveBeenCalledWith(ALICE.sellerId);
+  });
+
+  it('confirmSettle does not auto-print when the checkbox is unchecked', async () => {
+    await setup();
+    settlementServiceMock.settle.mockReturnValue(of({ ...ALICE, status: 'SETTLED', amountPaid: 3.0 }));
+    settlementServiceMock.getSettlements.mockReturnValue(of([{ ...ALICE, status: 'SETTLED' }, BOB]));
+    component.openSettleForm(ALICE);
+    component.settleAmount.set(3.0);
+    component.printReportOnSettle.set(false);
+
+    await component.confirmSettle(ALICE.sellerId);
+    await fixture.whenStable();
+
+    expect(settlementServiceMock.printReport).not.toHaveBeenCalled();
+  });
+
+  it('a failed auto-print never rolls the settlement back and clears submitting', async () => {
+    await setup();
+    settlementServiceMock.settle.mockReturnValue(of({ ...ALICE, status: 'SETTLED', amountPaid: 3.0 }));
+    settlementServiceMock.getSettlements.mockReturnValue(of([{ ...ALICE, status: 'SETTLED' }, BOB]));
+    settlementServiceMock.printReport.mockReturnValue(throwError(() => new Error('printer down')));
+    component.openSettleForm(ALICE);
+    component.settleAmount.set(3.0);
+
+    await component.confirmSettle(ALICE.sellerId);
+    await fixture.whenStable();
+
+    expect(component.settlements().find((s) => s.sellerId === ALICE.sellerId)?.status).toBe('SETTLED');
+    expect(component.error()).toBeNull();
+    expect(component.submitting()).toBe(false);
+    expect(toastMock.showError).toHaveBeenCalledWith('settlement.error.printReport');
+  });
+
+  it('the settle form resets the auto-print checkbox to checked every time it opens', async () => {
+    await setup();
+    component.openSettleForm(ALICE);
+    component.printReportOnSettle.set(false);
+    component.closeSettleForm();
+
+    component.openSettleForm(BOB);
+    expect(component.printReportOnSettle()).toBe(true);
   });
 
   it('the "Imprimer tous les bilans" button is present for ADMIN, absent for VOLUNTEER', async () => {

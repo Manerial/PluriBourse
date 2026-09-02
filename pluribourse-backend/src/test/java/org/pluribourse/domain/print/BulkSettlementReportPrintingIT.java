@@ -370,8 +370,8 @@ class BulkSettlementReportPrintingIT extends IntegrationTest {
 
         assertThat(rendered).startsWith("%PDF");
         assertThat(rendered).contains("Article Alice Vendu").contains("5.00");
-        // Standalone unsold item: no price cell (same as SettlementReportPrintingIT's Peluche) —
-        // only a lot shows its price in the unsold section.
+        // Same renderer as the single-report endpoint (story 5.8 unified items table): a standalone
+        // item — sold or unsold — shows on its own row with its category.
         assertThat(rendered).contains("Article Alice Invendu").contains("Jouets");
     }
 

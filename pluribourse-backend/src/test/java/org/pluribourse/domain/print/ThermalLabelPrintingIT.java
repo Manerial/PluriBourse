@@ -127,13 +127,14 @@ class ThermalLabelPrintingIT extends IntegrationTest {
 
     @Test
     @Order(1)
-    void reprint_labels_outside_deposit_or_post_sale_phase_is_blocked() throws Exception {
+    void reprint_labels_before_any_active_edition_returns_404() throws Exception {
         // No seller can exist yet (SellerService also requires DEPOSIT phase).
         // Story 2.10 : editionId est encore en PREPARATION ici — PhaseType.ACTIVE ne la couvre plus
-        // (AC 4), donc SellerService échoue désormais dès editionService.getActiveEdition() (404
-        // no-active-edition), avant même d'atteindre la résolution du vendeur ou le contrôle de phase
-        // (l'ancien 422 deposit-reprint-not-allowed). Le résultat métier reste identique (réimpression
-        // bloquée).
+        // (AC 4), donc DepositValidationService échoue désormais dès editionService.getActiveEdition()
+        // (404 no-active-edition), avant même d'atteindre la résolution du vendeur ou le contrôle de
+        // phase. Ce test n'exerce donc PAS la garde de phase (le refus "hors phase Dépôt" est couvert
+        // par reprint_labels_in_post_sale_phase_is_blocked, @Order(20)). Le résultat métier reste
+        // identique (réimpression bloquée).
         mockMvc.perform(post("/api/sellers/1/deposit/labels/reprint")
                         .session(volunteerSession).with(csrf()))
                 .andExpect(status().isNotFound())
@@ -389,6 +390,32 @@ class ThermalLabelPrintingIT extends IntegrationTest {
         // Order(6)'s comment) — its presence proves the renderer used the edition's currency, not
         // a symbol baked into the template.
         assertThat(rendered).contains("Peluche - 5.00$");
+    }
+
+    @Test
+    @Order(19)
+    void advance_edition_to_post_sale_phase() throws Exception {
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("SALE"));
+        mockMvc.perform(post("/api/admin/editions/" + editionId + "/phase/advance")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phase").value("POST_SALE"));
+    }
+
+    @Test
+    @Order(20)
+    void reprint_labels_in_post_sale_phase_is_blocked() throws Exception {
+        // Story 5.8: labels reprinting now requires the Deposit phase, exactly like the deposit
+        // slip. First real assertion of this phase gate — before story 5.8 the labels reprint was
+        // allowed through Post-vente. The unavailable thermal printer is still selected in the
+        // session (Order 12), but requireDepositPhaseForReprint rejects before any printer check.
+        mockMvc.perform(post("/api/sellers/" + sellerAId + "/deposit/labels/reprint")
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/deposit-reprint-not-allowed")));
     }
 
     private Long createSeller(String firstName, String lastName, String email) throws Exception {

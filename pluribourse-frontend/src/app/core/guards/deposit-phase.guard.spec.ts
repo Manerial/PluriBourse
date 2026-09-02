@@ -48,9 +48,11 @@ describe('depositPhaseGuard', () => {
     expect(await runGuard()).toBe(true);
   });
 
-  it('allows activation when the active edition is in the Post-vente phase', async () => {
+  it('redirects to /404 when the active edition is in the Post-vente phase (story 5.8 removed the allowance)', async () => {
     mockEdition.set(edition('POST_SALE'));
-    expect(await runGuard()).toBe(true);
+    const result = await runGuard();
+    expect(result).toBeInstanceOf(UrlTree);
+    expect(router.serializeUrl(result as UrlTree)).toBe('/404');
   });
 
   it('redirects to /404 when the active edition is in another phase', async () => {

@@ -9,8 +9,11 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.pluribourse.domain.edition.dto.EditionCategoryDto;
 import org.pluribourse.domain.edition.dto.EditionDto;
 import org.pluribourse.domain.item.dto.CreateItemDto;
+import org.pluribourse.domain.item.dto.CreateLotDto;
+import org.pluribourse.domain.item.dto.CreateLotItemDto;
 import org.pluribourse.domain.item.dto.ItemCompletenessDto;
 import org.pluribourse.domain.item.dto.ItemDto;
+import org.pluribourse.domain.item.dto.LotDto;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.pos.dto.ScanResultDto;
@@ -60,9 +63,13 @@ class PosScanIT extends IntegrationTest {
     private Long categoryId;
     private Long itemFirstId;
     private Long itemSecondId;
+    private Long lotFirstMemberId;
+    private Long lotSecondMemberId;
 
     private static final String FIRST_BARCODE = "00010001";
     private static final String SECOND_BARCODE = "00010002";
+    private static final String LOT_FIRST_MEMBER_BARCODE = "00010003";
+    private static final String LOT_SECOND_MEMBER_BARCODE = "00010004";
 
     @org.junit.jupiter.api.BeforeAll
     void setUpSessions() throws Exception {
@@ -148,6 +155,21 @@ class PosScanIT extends IntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn();
         itemSecondId = objectMapper.readValue(secondResult.getResponse().getContentAsString(), ItemDto.class).id();
+
+        // A 2-member lot (item numbers 3 & 4) kept for the FR-109 lot-already-sold scan scenario
+        // (Order 13) — lots can only be created in the Deposit phase, so it is built here.
+        CreateLotDto lotPayload = new CreateLotDto(sellerId, categoryId, "Lot Duo", new java.math.BigDecimal("12.00"), List.of(
+                new CreateLotItemDto("Piece A", false, null),
+                new CreateLotItemDto("Piece B", false, null)));
+        MvcResult lotResult = mockMvc.perform(post("/api/lots")
+                        .session(volunteerSession).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lotPayload)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        LotDto lot = objectMapper.readValue(lotResult.getResponse().getContentAsString(), LotDto.class);
+        lotFirstMemberId = lot.items().get(0).id();
+        lotSecondMemberId = lot.items().get(1).id();
     }
 
     @Test
@@ -249,5 +271,21 @@ class PosScanIT extends IntegrationTest {
     void unauthenticated_request_returns_401() throws Exception {
         mockMvc.perform(get("/api/pos/scan").param("barcode", SECOND_BARCODE))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @Order(13)
+    void scanning_a_sibling_of_an_already_sold_lot_returns_409() throws Exception {
+        // FR-109 (story 5.8): mark one lot member sold directly (same technique as Order 8), then
+        // scan the other — a lot is sold at most once, so its remaining members are unreachable.
+        Item lotMember = itemRepository.findById(lotFirstMemberId).orElseThrow();
+        lotMember.setSold(true);
+        itemRepository.saveAndFlush(lotMember);
+
+        mockMvc.perform(get("/api/pos/scan").session(volunteerSession).param("barcode", LOT_SECOND_MEMBER_BARCODE))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value(endsWith("/lot-already-sold")));
+
+        assertThat(itemRepository.findById(lotSecondMemberId).orElseThrow().isSold()).isFalse();
     }
 }

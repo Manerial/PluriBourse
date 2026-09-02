@@ -4,8 +4,8 @@ import { ActivePhase } from '../../models/active-phase.enum';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { loadEditionOrRedirect } from './edition-load.util';
 
-// Blocks a direct/bookmarked navigation to /volunteer/deposit outside the Deposit/Post-vente
-// phases (AC 7 of story 3.9, extended by story 3.6 to also allow Post-vente for deposit slip
+// Blocks a direct/bookmarked navigation to /volunteer/deposit outside the Deposit phase (AC 7 of
+// story 3.9; story 5.8 removed the Post-vente allowance that story 3.6 had added for deposit slip
 // reprinting) instead of relying solely on AppLayoutComponent's reactive redirect, which only
 // fires on a phase *change* and would otherwise let the page render briefly before redirecting away.
 export const depositPhaseGuard: CanActivateFn = async () => {
@@ -16,7 +16,7 @@ export const depositPhaseGuard: CanActivateFn = async () => {
     return redirect;
   }
   const phase = currentEditionService.currentEdition()?.phase;
-  if (phase === ActivePhase.DEPOSIT || phase === ActivePhase.POST_SALE) {
+  if (phase === ActivePhase.DEPOSIT) {
     return true;
   }
   return router.createUrlTree(['/404']);

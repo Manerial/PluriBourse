@@ -6,6 +6,7 @@ import org.pluribourse.domain.edition.service.EditionService;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.entity.Lot;
 import org.pluribourse.domain.item.repository.ItemRepository;
+import org.pluribourse.domain.item.repository.LotRepository;
 import org.pluribourse.domain.item.service.ItemPricing;
 import org.pluribourse.domain.item.service.PhaseGuard;
 import org.pluribourse.domain.pos.dto.BasketDto;
@@ -25,6 +26,7 @@ import org.pluribourse.domain.pos.exception.BasketValidationConflictException;
 import org.pluribourse.domain.pos.exception.EmptyBasketException;
 import org.pluribourse.domain.pos.exception.InvalidAmountGivenException;
 import org.pluribourse.domain.pos.exception.ItemAlreadyInBasketException;
+import org.pluribourse.domain.pos.exception.LotAlreadySoldException;
 import org.pluribourse.domain.pos.mapper.ScanResultMapper;
 import org.pluribourse.domain.pos.repository.BasketItemRepository;
 import org.pluribourse.domain.pos.repository.BasketRepository;
@@ -37,9 +39,12 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -61,6 +66,7 @@ public class PosBasketService {
     private final EditionService editionService;
     private final PosScanService posScanService;
     private final ScanResultMapper scanResultMapper;
+    private final LotRepository lotRepository;
 
     @Transactional
     public BasketDto getOrCreateCurrentBasket(Long userId) {
@@ -124,9 +130,11 @@ public class PosBasketService {
     /**
      * Validates the basket's payment atomically: either every item is marked sold and the basket
      * is replaced by a {@code Sale}, or nothing is persisted at all (AC 4). Guards, in order: Sale
-     * phase (AC 9), ownership (IDOR), non-empty basket, no item already sold, a sufficient CASH
-     * amount, then a per-item optimistic-lock check (AC 8) so that every item that actually lost
-     * the concurrent-sale race is reported precisely — not just the first one Hibernate happens to
+     * phase (AC 9), ownership (IDOR), non-empty basket, no item already sold, no lot already partly
+     * sold (FR-109, story 5.8), a sufficient CASH amount, a force-increment on every lot's
+     * {@code @Version} to serialize concurrent sales of different members of the same lot (FR-109),
+     * then a per-item optimistic-lock check (AC 8) so that every item that actually lost the
+     * concurrent-sale race is reported precisely — not just the first one Hibernate happens to
      * surface — rather than falling back to blaming the whole basket.
      */
     @Transactional
@@ -148,6 +156,25 @@ public class PosBasketService {
             throw new BasketValidationConflictException(alreadySold);
         }
 
+        // FR-109 (story 5.8): every distinct lot present in the basket, ordered by id. That order is
+        // the canonical lock order for the concurrency guard further down — two terminals whose
+        // baskets share two lots must bump them in the same sequence, otherwise they deadlock
+        // (MariaDB 1213 -> CannotAcquireLockException, which has no DataAccessException handler and
+        // would escape as a 500). Same ascending-id anti-deadlock ordering LotService used before
+        // story 3.14.
+        List<Item> lotRepresentatives = ItemPricing.distinctByLot(items).stream()
+                .filter(representative -> representative.getLot() != null)
+                .sorted(Comparator.comparing((Item representative) -> representative.getLot().getId()))
+                .toList();
+
+        // Reject the whole validation if any lot in the basket already has a member sold on another
+        // terminal (committed before this point) — the sibling in this basket can never be sold.
+        for (Item representative : lotRepresentatives) {
+            if (itemRepository.existsByLotIdAndSoldTrue(representative.getLot().getId())) {
+                throw new LotAlreadySoldException(representative.getLot().getId());
+            }
+        }
+
         BigDecimal total = ItemPricing.computeTotal(items);
         if (dto.paymentMethod() == PaymentMethod.CASH
                 && dto.amountGiven() != null
@@ -163,6 +190,40 @@ public class PosBasketService {
         sale.setTotal(total);
         sale.setSoldAt(LocalDateTime.now());
         sale = saleRepository.save(sale);
+
+        // FR-109 concurrency guard (story 5.8): the per-Item @Version does not protect against two
+        // terminals selling *different* members of the same lot at the same time (each pre-check
+        // above sees no sold member). Force-bump Lot.@Version — otherwise never touched by selling a
+        // member — for every distinct lot in ascending id order (see lotRepresentatives above) as
+        // the single serialization point: both racing validate() calls reach
+        // lotRepository.bumpVersion(), which takes the lot row's write-lock, so the second blocks
+        // here. The loser then either matches 0 rows (version already moved) or, under MariaDB
+        // snapshot isolation, fails outright with error 1020 — both become LotAlreadySoldException,
+        // thrown BEFORE any member is marked sold, so the loser's whole transaction rolls back: no
+        // Sale row, no sold member, sale = null (AC-C3). Placed right after saving the Sale and
+        // before the setSold loop on purpose (bumping later would mark then un-mark members via
+        // rollback — same outcome, wasted work, wider conflict window). A bulk JPQL update, not
+        // em.lock(OPTIMISTIC_FORCE_INCREMENT): the latter defers its increment to before-commit,
+        // where the failure escapes this method uncatchable.
+        //
+        // Residual risk (story 5.8 review): a basket spanning several lots, held under contention
+        // long enough, can still hit innodb_lock_wait_timeout (MariaDB 1205 -> CannotAcquireLockException,
+        // a 500) — the ascending-id order rules out the deadlock (1213) case, not a slow lock
+        // holder. Needs a multi-lot basket plus a lock held across the per-item flush loop below.
+        // The planned "reserve the lot at scan time" story would drop this guard entirely.
+        for (Item representative : lotRepresentatives) {
+            Lot lot = representative.getLot();
+            try {
+                if (lotRepository.bumpVersion(lot.getId(), lot.getVersion()) == 0) {
+                    throw new LotAlreadySoldException(lot.getId());
+                }
+            } catch (JpaSystemException e) {
+                if (!isLotVersionRace(e)) {
+                    throw e;
+                }
+                throw new LotAlreadySoldException(lot.getId());
+            }
+        }
 
         // Flushed one item at a time (rather than a single batched flush) so that every item that
         // actually lost the optimistic-lock race is identified precisely (AC 8) — a single batched
@@ -265,6 +326,26 @@ public class PosBasketService {
     private static boolean isCausedBy(Throwable throwable, Class<? extends Throwable> type) {
         for (Throwable cause = throwable.getCause(); cause != null; cause = cause.getCause()) {
             if (type.isInstance(cause)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True when {@code throwable} is the lost-update race on {@code Lot.@Version} from the
+     * {@code lotRepository.bumpVersion} bulk update above: either Hibernate's
+     * {@link SnapshotIsolationException} or a raw MariaDB error 1020 ("Record has changed since last
+     * read") anywhere in the cause chain — MariaDB under snapshot isolation rejects the racing
+     * {@code UPDATE} outright instead of applying it with zero affected rows. Anything else is a
+     * real failure and rethrown.
+     */
+    private static boolean isLotVersionRace(Throwable throwable) {
+        if (isCausedBy(throwable, SnapshotIsolationException.class)) {
+            return true;
+        }
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException && sqlException.getErrorCode() == 1020) {
                 return true;
             }
         }

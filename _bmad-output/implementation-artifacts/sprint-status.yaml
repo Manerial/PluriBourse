@@ -1,5 +1,5 @@
 # generated: 2026-06-11
-# last_updated: 2026-09-02
+# last_updated: 2026-09-03
 # project: PluriBourse
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,111 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-09-02"  # Story 6-3 (prix du lot dans les catalogues) : revue de code passée (3 couches, 0 violation AC), 2 patchs appliqués + 1 finding différé (regroupement repliable, cf. deferred-work.md), statut → done.
+last_updated: "2026-09-03"  # Story 5-8 : revue de code (bmad-code-review), statut review → done.
+# 2026-09-03 — Story 5-8 : revue de code (bmad-code-review, 3 revues parallèles Blind Hunter +
+# Edge Case Hunter + Acceptance Auditor). 1 point decision-needed tranché par Manerial (deadlock
+# multi-lots de la garde bumpVersion → 500 non géré ; option 3 : ordre de verrouillage canonique
+# par id, timeout 1205 en risque résiduel commenté). 5 patchs APPLIQUÉS : (P5) tri des lots
+# distincts par id dans PosBasketService.validate() ; (P1) nettoyage PosBasketService (Javadoc
+# isLotVersionRace, suppression du catch ObjectOptimisticLockingFailureException|OptimisticLockException
+# mort sur le bulk @Modifying, import retiré) ; (P2) DepositSlipRenderer + SettlementReportRenderer
+# buildLotDetailTable trié par (lot, itemNumber) ; (P3) settlement-list.component.ts printReportOnSettle
+# réinit aussi dans openSettleForm() (AC-B1) ; (P4) settlement-list.component.html <mat-checkbox>
+# avant les boutons (tab order) + SCSS order:1. 7 différés (deferred-work.md) : bumpVersion @Modifying
+# sans clearAutomatically ; pas de filet BDD lot ; couverture SaleConcurrencyIT mono-lot ; lots
+# pré-3.14 catégories divergentes ; messages.properties défaut incomplet (inerte) ; AC-E6 fixture
+# sans lot ; le commit livre les amendements de planification dits « déjà appliqués ». 10 rejetés.
+# Vérifs : mvnw -o test-compile OK, IT affectées vertes (PosBasketIT, PosScanIT, DepositSlipPrintingIT,
+# SettlementReportPrintingIT, BulkSettlementReportPrintingIT, ThermalLabelPrintingIT), SaleConcurrencyIT
+# skippé (Docker absent — à rejouer), npm test 717/717, npm run build sans warning. Vérification
+# visuelle toujours à faire par Manerial. À rédiger : story « Réservation de lot au scan » (remplacerait
+# bumpVersion) — en attente de discussion des 4 points ouverts.
+# 2026-09-02 — Story 5-8 : implémentation complète (dev-story). Parties A→E livrées en un lot.
+# (A) depositPhaseGuard + entrée sidebar Dépôt resserrés à la phase DEPOSIT seule ; PhaseGuard
+# .requireDepositPhaseForSlipReprint → .requireDepositPhaseForReprint (couvre étiquettes ET
+# bordereau), .requireDepositOrPostSalePhase supprimé, appel redondant retiré de reprintDepositSlip ;
+# ThermalLabelPrintingIT +2 @Order (POST_SALE → 422 deposit-reprint-not-allowed, 1re assertion
+# réelle du phase-gate étiquettes). PARTIE A COMMITÉE PAR L'UTILISATEUR EN COURS DE STORY dans
+# 0749c3c « Add story 5.8 : update post sale » (parent 6d24347) ; B→E restent dans le working tree.
+# (B) settlement-list : signal printReportOnSettle (coché par défaut, réinit closeSettleForm),
+# autoPrintReport best-effort en void dans la branche succès de confirmSettle (patron
+# pos-page.autoPrintInvoice — jamais de rethrow, ne touche pas submitting, n'annule pas le solde) ;
+# bouton « Imprimer le bilan » par ligne encadré @if status !== 'UNSETTLED' ; mat-checkbox + SCSS ;
+# clé settlement.form.printReportOnSettle (fr/en). (C) FR-109 : LotAlreadySoldException (409
+# lot-already-sold, patron ItemAlreadySoldException, aucun handler), ItemRepository
+# .existsByLotIdAndSoldTrue, garde au scan (PosScanService après isSold) + garde au pré-check de
+# PosBasketService.validate + garde de course multi-postes. NOTE : l'OPTIMISTIC_FORCE_INCREMENT
+# prescrit par la story via entityManager.lock+flush NE FONCTIONNE PAS — l'incrément forcé JPA est
+# différé au beforeTransactionCompletion, l'échec remonte au commit hors du try/catch du service
+# (prouvé par le 1er run de SaleConcurrencyIT). Remplacé par un bulk JPQL @Modifying
+# LotRepository.bumpVersion(id, expectedVersion) exécuté immédiatement (verrou d'écriture de ligne
+# = sérialisation ; perdant → 0 ligne ou 1020 MariaDB → LotAlreadySoldException). Rollback intégral
+# du perdant : pas de Sale, aucun membre sold, sale=null. Front pos-page : branche lot-already-sold
+# dans handleScanError ET handleValidationError → volunteer.pos.error.lotAlreadySold (fr/en).
+# SaleConcurrencyIT + méthode lot (LotRepository injecté, @AfterEach wipeFixtures pour isoler les
+# 2 tests). (D) DepositSlipRenderer.buildLotDetailTable (3 col. Lot · Catégorie du lot · Article,
+# 1 ligne/membre, sans prix, conditionnel ≥1 lot ; catégorie via item.getCategory() anti-LazyInit) ;
+# 4 clés print.slip.* × 3 fichiers .properties ; DepositSlipPrintingIT @Order(5) recalculé + nouveau
+# @Order(16) (vendeur sans lot). (E) SettlementReportRenderer : buildSoldItemsTable/
+# buildUnsoldItemsTable → buildUnifiedItemsTable (5 col., statut lot via soldLotIds jamais
+# representative.isSold()) + buildLotDetailTable (5 col., statut réel par membre) + ligne de
+# comptage (Item.isSold() brut, vendus+invendus=déposés) ; normalisation soldLotIds/soldItems
+# conservée (statut lot + totaux) ; totaux brut/commission/net et « Montant remis » INCHANGÉS ;
+# 7 clés print.settlementReport.* × 3 fichiers, .soldSection/.unsoldSection supprimées ;
+# SettlementReportPrintingIT @Order(8/9) recalculés, BulkSettlementReportPrintingIT @Order(14)
+# commentaire. Vérifs : ./mvnw clean package 565/565 (jar produit, SaleConcurrencyIT exécuté,
+# baseline 559 → +6), npm test 717/717 (67 fichiers, baseline 702 → +15), npm run build sans
+# warning, parité i18n fr.json⇔en.json (605/605) + messages{,_fr,_en}.properties OK. Aucune
+# migration Liquibase, aucun nouvel endpoint/route/composant/dépendance. EXPERIENCE.md non amendé.
+# Base de dev locale non touchée. Statut → review.
+# 2026-09-02 — Story 5-8 : début d'implémentation (bmad-dev-story), statut ready-for-dev →
+# in-progress. Baseline commit 6d24347 (déjà dans le frontmatter).
+# 2026-09-02 — Story 5-8 créée (bmad-create-story). Analyse parallèle exhaustive (5 sous-agents :
+# epics/PRD, architecture, code POS backend, renderers PDF backend, code frontend). Story unique
+# multi-parties A→E issue de la SCP 2026-09-02b — les amendements d'artefacts P1–P13 (PRD FR-031/
+# 047/050/095 + FR-109 créé ; epics lignes miroir + carte couverture + UX-DR22 L206 + ACs Stories
+# 3-6/4-3/5-1/5-2 ; architecture § Concurrence — POS L234-239) sont DÉJÀ appliqués et vérifiés ;
+# T2 (clé i18n `volunteer.deposit.error` dupliquée) DÉJÀ corrigé hors story. La story ne livre que
+# du code + des tests + de l'i18n. (A) Retrait accès fiche Dépôt en Post-vente : 1 ligne
+# `app-layout.component.html` (L208 → `phase === 'DEPOSIT'` seul), `depositPhaseGuard` resserré,
+# `DepositValidationService.resolveSellerDeposit` → garde Dépôt seul en conservant le slug
+# `deposit-reprint-not-allowed` (rename `PhaseGuard.requireDepositPhaseForSlipReprint` →
+# `…ForReprint`, suppression de `requireDepositOrPostSalePhase` — 1 seul appelant). Conséquence
+# assumée : plus de réimpression étiquettes/bordereau en Post-vente. (B) `settlement-list` :
+# signal `printReportOnSettle` (case cochée par défaut, réinit dans `closeSettleForm`), méthode
+# best-effort `autoPrintReport` appelée en `void` dans la branche succès de `confirmSettle` (patron
+# `pos-page.autoPrintInvoice` Story 4.7 — jamais de rethrow, ne touche pas `submitting`, n'annule
+# pas le solde) ; bouton « Imprimer le bilan » par ligne encadré `@if status !== 'UNSETTLED'`
+# (visible SETTLED + UNCLAIMED). (C) FR-109 : `LotAlreadySoldException` (409 `lot-already-sold`,
+# patron `ItemAlreadySoldException`, aucun handler à écrire), `ItemRepository.existsByLotIdAndSoldTrue`,
+# garde au scan (`PosScanService.scan` après `isSold`) + garde à la validation (`PosBasketService.
+# validate` après le pré-check `alreadySold`) + garde de course multi-postes via
+# `LockModeType.OPTIMISTIC_FORCE_INCREMENT` sur `Lot.@Version` (jamais touché aujourd'hui par la
+# vente d'un membre) + flush explicite — point le plus délicat (risque Faible-Moyen SCP), prouvé
+# par une nouvelle méthode `SaleConcurrencyIT` ; front `handleScanError` + `handleValidationError`
+# (`/lot-already-sold` → `volunteer.pos.error.lotAlreadySold`). Prix global inchangé (compté 1 fois,
+# pas de prorata). (D) `DepositSlipRenderer` : tableau « détail des lots » (3 col. Lot · Catégorie
+# du lot · Article, 1 ligne/membre, sans prix, rendu seulement si ≥1 lot) — catégorie via
+# `item.getCategory()` (recopiée de `Lot.category` depuis Story 3.14, déjà fetch-join) et JAMAIS
+# `item.getLot().getCategory()` (LAZY, rendu hors transaction → LazyInitializationException).
+# (E) `SettlementReportRenderer` : sections vendus/invendus fusionnées en un tableau unifié 5 col.
+# (nom · catégorie · table · prix · statut ; lot = 1 ligne, prix global 1 fois, statut « vendu »
+# si ≥1 membre vendu) + tableau éclaté des membres (statut réel par `Item.isSold()`) + ligne de
+# comptage (1 Item = 1 unité, sans `distinctByLot`, `vendus + invendus = déposés`) ; totaux brut/
+# commission/net et ligne « Montant remis » (`if amountPaid != null`) INCHANGÉS ; clés
+# `print.settlementReport.soldSection/.unsoldSection` supprimées. Tests fragiles à réécrire :
+# `DepositSlipPrintingIT` @Order(5), `SettlementReportPrintingIT` @Order(8/9) (grep d'octets PDF,
+# `countOccurrences` à recalculer), `ThermalLabelPrintingIT` (nouveau @Order POST_SALE → 422),
+# `SaleConcurrencyIT` (nouvelle méthode Testcontainers), specs front `app-layout` / `deposit-phase.guard`
+# / `settlement-list` / `pos-page`. Nouvelles clés i18n : `settlement.form.printReportOnSettle` +
+# `volunteer.pos.error.lotAlreadySold` (json), `print.slip.*` + `print.settlementReport.*`
+# (messages_{fr,en}.properties + messages.properties). Aucune migration Liquibase, aucun nouvel
+# endpoint/route/composant/dépendance. EXPERIENCE.md non amendé (dérive assumée). Statut → ready-for-dev.
+# 2026-09-02 — Sprint change proposal 2026-09-02b (« Post-vente : accès Dépôt, documents vendeur &
+# lots partiels ») approuvée. Correct-course, mode incrémental, 6 déclencheurs. Ajoute la Story 5-8
+# (backlog) : story unique multi-parties A→E amendant les Stories 3-6 / 4-3 / 5-1 / 5-2 (toutes
+# done). Amende PRD FR-031/047/050/095, crée FR-109, amende architecture § Concurrence — POS et
+# UX-DR22. Correctif i18n (clé `volunteer.deposit.error` dupliquée) déjà appliqué hors story.
 # 2026-09-02 — Story 6-3 (prix + marqueur « (lot) » dans les catalogues actif et archivé) :
 # implémentation complète (dev-story), statut → review. T1-T12 dans un seul lot de changements.
 # Partie A : lotPrice (BigDecimal) sur ItemCatalogDto + @Mapping lot.globalPrice sur
@@ -587,6 +691,20 @@ development_status:
   # SseEmitterRegistry/ARCH-012), le message frontend spécifique (NFR-008), et un test de
   # concurrence réelle (SettlementConcurrencyIT, patron SaleConcurrencyIT) qui prouve le 409.
   5-7-synchronisation-des-postes-de-soldage: done
+  # Sprint change proposal 2026-09-02b : story unique multi-parties issue de tests Post-vente.
+  # Bien qu'elle touche aussi les Epics 3 (Story 3-6) et 4 (Story 4-3, FR-109), elle est rattachée
+  # ici — 4 des 6 déclencheurs relèvent de la Post-vente / des documents vendeur / du solde.
+  #   A — retrait de l'accès Dépôt en Post-vente (sidebar + depositPhaseGuard + PhaseGuard back).
+  #   B — formulaire de solde : case « Imprimer le bilan » cochée par défaut (impression best-effort
+  #       à la confirmation) ; bouton bilan par ligne masqué tant que status == UNSETTLED.
+  #   C — POS FR-109 : un lot ne se vend qu'une fois — garde au scan ET à la validation (409
+  #       `lot-already-sold`), articles restants rendus au vendeur. Test concurrence réelle dédié.
+  #   D — bordereau de dépôt : tableau « détail des lots » (Lot · Catégorie du lot · Article).
+  #   E — bilan de vente : table unifiée vendus/invendus + colonne Statut (lot = 1 ligne), table
+  #       éclatée des membres de lots, ligne de comptage (1 article = 1 unité, sold réel par membre).
+  #   Points figés : prix global entier encaissé une fois ; statut lot 2 états ; bouton bilan visible
+  #   pour status != UNSETTLED ; catégorie = celle du Lot ; pas de réimpression étiquettes en Post-vente.
+  5-8-post-vente-acces-depot-documents-vendeur-et-lots-partiels: done
   epic-5-retrospective: optional
 
   # ─── Epic 6 : Catalogue articles ────────────────────────────────────────────

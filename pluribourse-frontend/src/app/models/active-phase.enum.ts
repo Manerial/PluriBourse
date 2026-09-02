@@ -19,10 +19,10 @@ export const ALL_PHASES: readonly PhaseType[] = [...Object.values(ActivePhase), 
 // Used both by the initial /volunteer redirect and by the reactive redirect that fires when
 // the edition's phase changes while a volunteer is already on a page (see AppLayoutComponent).
 // Story 5.1 (2026-08-14): Post-vente now lands on /volunteer/settlement rather than
-// /volunteer/deposit (story 3.6's deposit slip reprint landing) — volunteers have no navigation
-// menu, so the reversements page carries an explicit link back to /volunteer/deposit for that
-// reprint flow instead. /volunteer/deposit itself stays reachable in Post-vente
-// (depositPhaseGuard is unchanged), just no longer the automatic landing target.
+// /volunteer/deposit (story 3.6's deposit slip reprint landing).
+// Story 5.8 (2026-09-02): /volunteer/deposit is no longer reachable at all in Post-vente —
+// depositPhaseGuard now allows the Deposit phase only, and there is no reprint entry point from
+// the settlement page. Reprinting labels or the deposit slip requires the Deposit phase.
 export function resolveVolunteerLandingPath(phase: PhaseType | undefined): string {
   if (phase === ActivePhase.PREPARATION) {
     return '/printer-selection';

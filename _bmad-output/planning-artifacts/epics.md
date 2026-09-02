@@ -62,7 +62,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-028 : Le système déclenche l'impression des étiquettes automatiquement lorsqu'un bénévole valide le dépôt d'un vendeur.
 - FR-029 : Les travaux d'impression sont mis en file d'attente côté serveur et exécutés séquentiellement.
 - FR-030 : Le rouleau imprimé suit le format : [séparateur vendeur : nom du vendeur + édition] → [étiquette article] → [séparateur article] → [étiquette article] → …
-- FR-031 : Un bordereau de dépôt est imprimable par vendeur : liste des articles, prix unitaires, reversement net attendu après commission.
+- FR-031 : Un bordereau de dépôt est imprimable par vendeur **en phase Dépôt** : articles + prix (lot = 1 ligne), taux de commission, reversement net attendu, **+ tableau « détail des lots » (nom du lot, catégorie du lot, article)**. *(SCP 2026-09-02b)*
 - FR-032 : La largeur du ticket thermique est configurable dans les paramètres administrateur (défaut : 57 mm).
 - FR-043 : Un bénévole peut créer un lot en lui attribuant un nom et un prix global, puis en ajoutant plusieurs articles.
 - FR-044 : Chaque article d'un lot possède son propre nom/description et reçoit sa propre étiquette.
@@ -86,15 +86,16 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 **F4 bis — Lots en caisse**
 
 - FR-046 : Le scan d'un article appartenant à un lot affiche le nom du lot en rouge avec un compteur « X/N scannés ».
-- FR-047 : Si le lot n'est pas complet lors de la validation, une notification inline avertissement est affichée dans le panier, mais la validation du paiement n'est pas bloquée — le caissier peut valider un lot incomplet.
+- FR-047 : Si le lot n'est pas complet lors de la validation, une notification inline avertissement est affichée dans le panier, mais la validation du paiement n'est pas bloquée — le caissier peut valider un lot incomplet. **Dès qu'un article du lot est vendu, le lot est réputé vendu comme un tout ; les articles restants reviennent au vendeur (FR-109).** *(SCP 2026-09-02b)*
 - FR-048 : Les articles d'un lot n'ont pas de prix individuel — seul le lot en a un. Une fois complet, le lot est vendu à son prix global. La commission s'applique au prix global : `commission_lot = prix_lot × taux_commission`.
 - FR-081 : Si un caissier ne peut pas compléter un lot, il peut retirer l'ensemble du lot du panier.
+- FR-109 : Un lot ne se vend qu'une fois — scanner un article d'un lot déjà vendu est rejeté (409, au scan et à la validation) ; les articles restants reviennent au vendeur. *(SCP 2026-09-02b)*
 
 **F5 — Post-vente et reversements**
 
-- FR-095 : La page de solde est le point d'entrée de F5. Elle affiche la liste de tous les vendeurs de l'édition active, filtrable par statut (soldé / non soldé). Chaque ligne comporte les actions : imprimer le bilan de vente, accéder au formulaire de solde, marquer comme non réclamé. Accessible aux bénévoles via `/volunteer/settlement` et à l'admin via `/admin/settlement`. L'admin voit en plus téléphone et email. Composant Angular unique — affichage des colonnes de contact conditionné par le rôle.
+- FR-095 : La page de solde est le point d'entrée de F5. Elle affiche la liste de tous les vendeurs de l'édition active, filtrable par statut (soldé / non soldé). Actions par ligne : solder et marquer non réclamé (non soldés), imprimer le bilan (**soldés / non réclamés uniquement**) ; **case « Imprimer le bilan » cochée par défaut dans le formulaire de solde**. Accessible aux bénévoles via `/volunteer/settlement` et à l'admin via `/admin/settlement`. L'admin voit en plus téléphone et email. Composant Angular unique — affichage des colonnes de contact conditionné par le rôle. *(SCP 2026-09-02b)*
 - FR-049 : En phase Post-vente, un bilan de vente est imprimable par vendeur.
-- FR-050 : Le bilan de vente contient : articles vendus, articles invendus avec emplacement de table, total brut, commission, reversement net. Un lot apparaît sur une seule ligne.
+- FR-050 : Le bilan de vente contient : tableau unifié des articles avec **statut vendu/invendu** (lot = 1 ligne), **tableau « détail des lots »** (statut réel par article), **ligne de comptage vendus/invendus/déposés**, total brut, commission, reversement net, **montant remis si soldé**. *(SCP 2026-09-02b)*
 - FR-051 : Pour solder un vendeur, le bénévole saisit le montant en espèces remis et clique « Solder ». Le système enregistre le montant saisi. Si ce montant est strictement inférieur au montant net calculé, un avertissement est affiché avant confirmation — le bénévole peut tout de même valider. Si le montant est supérieur, la validation est bloquée. Après l'opération, le statut du vendeur passe à **Soldé**.
 - FR-052 : Le bouton « Non réclamé » transfère l'intégralité du montant dû en recettes de l'association.
 - FR-053 : Les vendeurs non soldés sont identifiables dans la liste de solde via un filtre dédié.
@@ -202,7 +203,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR19 : Implémenter le pattern de retour visuel du bouton d'impression : spinner dans le bouton pendant la soumission à la file d'attente, toast de succès (4s), toast d'erreur persistant si l'imprimante est hors ligne avec bouton « Fermer ». Toujours redéclenchable.
 - UX-DR20 : Implémenter le socle d'accessibilité WCAG 2.2 AA : anneaux de focus sur tous les éléments interactifs (jamais supprimés), ordre de tabulation suivant l'ordre de lecture visuel, piège de focus dans les boîtes de dialogue de confirmation, annonces pour lecteurs d'écran via aria-live/aria-label/aria-describedby, cibles tactiles minimales de 44×44px, icônes décoratives aria-hidden="true", icônes sémantiques avec texte accompagnateur ou aria-label.
 - UX-DR21 : Implémenter la gestion des transitions de phase dans l'interface POS bénévole : événement SSE `basket-cancelled` → toast persistant « La phase a changé. Votre panier a été annulé. » → panier vidé → scanner désactivé jusqu'au rechargement de la page.
-- UX-DR22 : Implémenter le bouton d'impression bilan/reversement sur la liste de solde bénévole (par ligne vendeur, après solde) et sur la page de détail vendeur admin. Retour visuel spinner pendant la file d'attente, toast sur le résultat.
+- UX-DR22 : Implémenter l'impression du bilan de vente : (1) case « Imprimer le bilan » dans le formulaire de solde, **cochée par défaut**, déclenchant l'impression à la confirmation du solde (best-effort) ; (2) bouton « Imprimer le bilan » par ligne, **visible uniquement pour les vendeurs soldés ou non réclamés** (ré-impression). Retour visuel spinner + toast dans les deux cas. *(SCP 2026-09-02b)*
 
 ### Carte de couverture FR
 
@@ -254,17 +255,18 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-044 : Epic 3 — Chaque article d'un lot a son propre nom et étiquette
 - FR-045 : Epic 3 — L'étiquette d'un article de lot affiche le prix du lot et « Lot indivisible : X/N »
 - FR-046 : Epic 4 — Le scan d'un article de lot affiche le nom du lot en rouge + compteur « X/N scannés »
-- FR-047 : Epic 4 — Avertissement inline si lot incomplet, validation non bloquée
+- FR-047 : Epic 4 — Avertissement inline si lot incomplet, validation non bloquée ; un lot avec ≥1 article vendu est réputé vendu en entier
 - FR-048 : Epic 4 — Lot complet vendu au prix global du lot
+- FR-109 : Epic 4 — Un lot ne se vend qu'une fois ; scan d'un article d'un lot déjà vendu rejeté (409, au scan et à la validation) ; articles restants rendus au vendeur *(SCP 2026-09-02b)*
 - FR-049 : Epic 5 — Bilan de vente imprimable par vendeur en phase Post-vente
-- FR-050 : Epic 5 — Bilan de vente : articles vendus, invendus + table, total brut, commission, reversement net
+- FR-050 : Epic 5 — Bilan de vente : tableau unifié des articles + statut vendu/invendu, tableau « détail des lots », ligne de comptage vendus/invendus/déposés, total brut, commission, reversement net, montant remis si soldé *(SCP 2026-09-02b)*
 - FR-051 : Epic 5 — Le bénévole solde le vendeur : saisit le montant en espèces, clique Solder
 - FR-052 : Epic 5 — Le bouton « Non réclamé » transfère le reversement en recettes de l'association
 - FR-053 : Epic 5 — Vendeurs non soldés identifiables dans la liste de solde via un filtre dédié
 - FR-097 : Epic 5 — Impression groupée des bilans depuis `/admin/settlement` (filtre actif, toutes pages, Post-vente uniquement)
 - FR-054 : Epic 5 — Bilan journalier générable par l'admin en phase Vente
 - FR-055 : Epic 5 — Bilan d'édition généré à la clôture de l'édition
-- FR-095 : Epic 5 — Page de solde : liste de tous les vendeurs filtrable par statut (soldé / non soldé), actions par ligne (imprimer bilan, solder, non réclamé) ; accessible bénévoles (`/volunteer/settlement`) et admin (`/admin/settlement`) ; l'admin voit en plus téléphone et email ; composant Angular unique
+- FR-095 : Epic 5 — Page de solde : liste de tous les vendeurs filtrable par statut (soldé / non soldé), actions par ligne (solder + non réclamé pour les non soldés ; imprimer bilan pour les soldés / non réclamés uniquement), case « Imprimer le bilan » cochée par défaut dans le formulaire de solde ; accessible bénévoles (`/volunteer/settlement`) et admin (`/admin/settlement`) ; l'admin voit en plus téléphone et email ; composant Angular unique *(SCP 2026-09-02b)*
 - FR-057 : Epic 5 — Tous les rapports générés en PDF
 - FR-058 : Epic 5 — Rapports accessibles à l'admin uniquement
 - FR-059 : Epic 5 — Éditions clôturées : métriques agrégées + profils vendeurs + détail articles en lecture seule jusqu'à l'Archivage ; après archivage, seules les métriques agrégées en base
@@ -1243,10 +1245,12 @@ afin que le vendeur dispose d'un justificatif papier de ce qu'il a déposé et d
 **Quand** le contenu est rendu
 **Alors** il contient : liste des articles (nom, prix unitaire), taux de commission, reversement net attendu (BigDecimal, précis au centime, FR-031)
 **Et** un lot apparaît sur une seule ligne (nom du lot, prix du lot)
+**Et** un tableau « détail des lots » liste chaque article membre d'un lot : nom du lot, catégorie du lot, nom de l'article *(SCP 2026-09-02b)*
 
-**Étant donné** que le bénévole consulte la fiche vendeur (en phase Dépôt ou Post-vente)
+**Étant donné** que le bénévole consulte la fiche vendeur **en phase Dépôt**
 **Quand** il clique sur « Réimprimer le bordereau »
-**Alors** le bordereau est régénéré et remis en file d'attente — l'impression est toujours rejouable depuis la fiche vendeur
+**Alors** le bordereau est régénéré et remis en file d'attente
+**Et** en phase Post-vente, la fiche vendeur (`/volunteer/deposit`) n'est plus accessible (ni entrée de navigation, ni route active) — le bilan de vente (Story 5.2) est le document de référence du vendeur en Post-vente *(SCP 2026-09-02b — supersède la décision de suivi 2026-08-24)*
 
 ### Story 3.7 : Vue admin de diagnostic des imprimantes
 
@@ -1569,6 +1573,11 @@ afin de décider de le vendre en l'état ou de le retirer du panier.
 **Quand** le dernier article est ajouté
 **Alors** le lot est marqué complet et vendu à son prix global (FR-048)
 
+**Étant donné** qu'au moins un article d'un lot a été vendu
+**Quand** un caissier scanne un autre article du même lot
+**Alors** le scan est rejeté avec une erreur explicite (« cet article appartient à un lot déjà vendu ») — au scan **et** à la validation du panier (course multi-postes)
+**Et** les articles non vendus du lot reviennent au vendeur et apparaissent comme invendus au bilan (FR-109) *(SCP 2026-09-02b)*
+
 **Étant donné** qu'un lot est partiellement scanné et que l'acheteur ne trouve pas les articles restants
 **Quand** le bénévole clique sur « Retirer le lot entier »
 **Alors** tous les articles de ce lot sont retirés du panier (FR-081)
@@ -1691,10 +1700,15 @@ afin que tous les reversements soient comptabilisés avant la fin de l'événeme
 **Et** à la confirmation, le montant total dû est enregistré comme recette de l'association
 **Et** le vendeur est retiré de la liste des non soldés
 
-**Étant donné** qu'un vendeur a été soldé
+**Étant donné** que le bénévole ouvre le formulaire de solde d'un vendeur
+**Alors** une case « Imprimer le bilan de vente » y est présente, cochée par défaut
+**Et** à la confirmation du solde, si la case est cochée, le bilan est mis en file d'impression A4 (best-effort — un échec d'impression n'annule pas le solde)
+
+**Étant donné** qu'un vendeur est soldé ou marqué non réclamé
 **Quand** le bénévole consulte la liste de solde
-**Alors** un bouton « Imprimer le bilan de vente » est disponible pour ce vendeur (UX-DR22)
-**Et** cliquer dessus met le PDF en file d'attente pour impression A4 avec retour visuel spinner et toast
+**Alors** un bouton « Imprimer le bilan de vente » est disponible pour ce vendeur (ré-impression, UX-DR22), avec retour visuel spinner et toast
+**Et** ce bouton est masqué pour les vendeurs non soldés
+*(Les deux blocs ci-dessus : SCP 2026-09-02b — remplacent « un vendeur a été soldé → bouton disponible ».)*
 
 ### Story 5.2 : Génération du bilan de vente PDF
 
@@ -1706,8 +1720,7 @@ afin que les vendeurs puissent récupérer leur paiement avec un détail complet
 
 **Étant donné** qu'un bilan de vente est demandé pour un vendeur
 **Quand** le PDF est généré via OpenPDF 3.0.0
-**Alors** il contient : articles vendus (nom, prix unitaire), articles invendus (nom, catégorie, numéro de table), total brut, commission déduite, montant net à reverser (FR-050)
-**Et** un lot apparaît sur une seule ligne (nom du lot, prix du lot)
+**Alors** il contient : (1) un tableau unifié des articles — nom, catégorie, table, prix, **statut (vendu/invendu)** — un lot sur une ligne unique (statut « vendu » si ≥1 article du lot vendu, prix global compté une fois) ; (2) **un tableau « détail des lots »** — nom du lot, article, catégorie, table, statut réel par article — pour indiquer les articles à récupérer ; (3) une **ligne de comptage** : articles vendus / invendus / déposés (1 article = 1 unité, `vendus + invendus = déposés`) ; (4) total brut, commission déduite, montant net à reverser (FR-050) ; (5) le montant remis, **uniquement si le vendeur est soldé** *(SCP 2026-09-02b)*
 
 **Étant donné** qu'un vendeur a vendu des articles avec l'indicateur incomplet
 **Quand** le reversement net est calculé

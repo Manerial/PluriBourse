@@ -20,24 +20,17 @@ public final class PhaseGuard {
     }
 
     /**
-     * The seller file view (`/volunteer/deposit`) stays reachable through Post-vente so a
-     * volunteer can reprint a deposit slip after the Deposit phase ends (story 3.6, FR-031).
+     * Both deposit-page reprint actions — the thermal labels and the deposit slip PDF — are
+     * restricted to the Deposit phase (story 5.8, tightening story 3.6's earlier Post-vente
+     * allowance for slip reprinting). The deposit slip's "reversement net attendu" is computed
+     * from what was deposited, not what was actually sold, so showing it again in Post-vente
+     * risks contradicting the settlement report PDF (story 5.2), which already covers the
+     * seller's post-vente paper trail with the real sold/unsold breakdown and actual net payout;
+     * the labels follow the same rule now that {@code /volunteer/deposit} is no longer reachable
+     * in Post-vente. Keeps the {@code deposit-reprint-not-allowed} error type (not
+     * {@code item-modification-locked}) so the two reprint endpoints stay distinguishable.
      */
-    public static void requireDepositOrPostSalePhase(Edition edition) {
-        if (edition.getPhase() != PhaseType.DEPOSIT && edition.getPhase() != PhaseType.POST_SALE) {
-            throw new DepositReprintNotAllowedException();
-        }
-    }
-
-    /**
-     * The deposit slip PDF specifically (story 3.6) — unlike the thermal labels above, which stay
-     * reprintable through Post-vente — is restricted to the Deposit phase only (follow-up
-     * decision, 2026-08-24): its "reversement net attendu" is computed from what was deposited,
-     * not what was actually sold, so showing it again in Post-vente risks contradicting the
-     * settlement report PDF (story 5.2), which already covers the seller's post-vente paper trail
-     * with the real sold/unsold breakdown and actual net payout.
-     */
-    public static void requireDepositPhaseForSlipReprint(Edition edition) {
+    public static void requireDepositPhaseForReprint(Edition edition) {
         if (edition.getPhase() != PhaseType.DEPOSIT) {
             throw new DepositReprintNotAllowedException();
         }

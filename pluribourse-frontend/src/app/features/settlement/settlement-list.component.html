@@ -81,15 +81,17 @@
                       {{ 'settlement.actions.settle' | translate }}
                     </button>
                   }
-                  <button
-                    type="button"
-                    mat-button
-                    color="primary"
-                    [disabled]="anyPrintInFlight()"
-                    (click)="printReport(settlement)">
-                    <mat-icon aria-hidden="true">print</mat-icon>
-                    {{ 'settlement.actions.printReport' | translate }}
-                  </button>
+                  @if (settlement.status !== 'UNSETTLED') {
+                    <button
+                      type="button"
+                      mat-button
+                      color="primary"
+                      [disabled]="anyPrintInFlight()"
+                      (click)="printReport(settlement)">
+                      <mat-icon aria-hidden="true">print</mat-icon>
+                      {{ 'settlement.actions.printReport' | translate }}
+                    </button>
+                  }
                   @if (settlement.status === 'UNSETTLED') {
                     <button type="button" mat-button [disabled]="submitting()" (click)="confirmUnclaimed(settlement)">
                       <mat-icon aria-hidden="true">block</mat-icon>
@@ -117,6 +119,12 @@
                         (input)="onSettleAmountChange($event)" />
                       <span matTextSuffix>{{ currency() }}</span>
                     </mat-form-field>
+                    <mat-checkbox
+                      class="settlement-form-inner__print-option"
+                      [checked]="printReportOnSettle()"
+                      (change)="printReportOnSettle.set($event.checked)">
+                      {{ 'settlement.form.printReportOnSettle' | translate }}
+                    </mat-checkbox>
                     <button
                       type="button"
                       mat-flat-button

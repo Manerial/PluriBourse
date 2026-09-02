@@ -2,6 +2,7 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -26,6 +27,7 @@ import { extractErrorType } from '../../shared/http-error.util';
   standalone: true,
   imports: [
     MatButtonModule,
+    MatCheckboxModule,
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
@@ -80,6 +82,11 @@ export class SettlementListComponent implements OnInit {
   readonly settleAmount = signal<number | null>(null);
   readonly printingReportForSellerId = signal<number | null>(null);
   readonly printingAll = signal(false);
+
+  // Story 5.8: the settle form offers to print the sales report right after a successful settle;
+  // checked by default, reset to checked every time the form opens (openSettleForm) or closes
+  // (closeSettleForm).
+  readonly printReportOnSettle = signal(true);
 
   // Both the per-row print buttons and the grouped button share this guard: the backend print
   // queue is single-threaded per printer (PrintQueueService), so an individual send in flight
@@ -156,11 +163,15 @@ export class SettlementListComponent implements OnInit {
   openSettleForm(settlement: SettlementDto): void {
     this.openSettleFormForSellerId.set(settlement.sellerId);
     this.settleAmount.set(settlement.amountDue);
+    // AC-B1: the box is checked on every open — including a direct switch from another seller's
+    // form, which closes via the @if without running closeSettleForm().
+    this.printReportOnSettle.set(true);
   }
 
   closeSettleForm(): void {
     this.openSettleFormForSellerId.set(null);
     this.settleAmount.set(null);
+    this.printReportOnSettle.set(true);
   }
 
   onSettleAmountChange(event: Event): void {
@@ -178,7 +189,12 @@ export class SettlementListComponent implements OnInit {
       const updated = await firstValueFrom(this.settlementService.settle(sellerId, amount));
       this.applyUpdate(updated);
       this.toast.showSuccess(this.translate.instant('settlement.success.settle'));
+      // Capture the checkbox before closeSettleForm() resets it to checked.
+      const shouldPrint = this.printReportOnSettle();
       this.closeSettleForm();
+      if (shouldPrint) {
+        void this.autoPrintReport(sellerId);
+      }
     } catch (err: unknown) {
       if (this.isAlreadySettledConflict(err)) {
         // Another terminal won the race: NFR-008 wants a specific message, not the generic one.
@@ -254,6 +270,29 @@ export class SettlementListComponent implements OnInit {
     this.printingReportForSellerId.set(settlement.sellerId);
     try {
       await firstValueFrom(this.settlementService.printReport(settlement.sellerId));
+      this.toast.showSuccess(this.translate.instant('settlement.success.printReport'));
+    } catch (err: unknown) {
+      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+        this.toast.showError(this.translate.instant('settlement.error.printerUnavailable'));
+      } else {
+        this.toast.showError(this.translate.instant('settlement.error.printReport'));
+      }
+    } finally {
+      this.printingReportForSellerId.set(null);
+    }
+  }
+
+  /**
+   * Story 5.8 — best-effort auto-print of the sales report right after a successful settle, when
+   * the "Imprimer le bilan de vente" box was left checked. Pattern: pos-page.autoPrintInvoice
+   * (story 4.7). Never rethrows, never touches `submitting`, never reverts the settlement — an
+   * error here only raises a toast. Reuses `printingReportForSellerId` so a manual re-print stays
+   * blocked (via `anyPrintInFlight`) while it runs.
+   */
+  private async autoPrintReport(sellerId: number): Promise<void> {
+    this.printingReportForSellerId.set(sellerId);
+    try {
+      await firstValueFrom(this.settlementService.printReport(sellerId));
       this.toast.showSuccess(this.translate.instant('settlement.success.printReport'));
     } catch (err: unknown) {
       if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {

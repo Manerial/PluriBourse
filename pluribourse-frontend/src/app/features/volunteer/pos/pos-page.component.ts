@@ -254,6 +254,12 @@ export class PosPageComponent implements OnInit {
         this.lastScanIssue.set({ message: this.translate.instant('volunteer.pos.error.conflict', { names }), variant: 'error' });
         return;
       }
+      if (type?.endsWith('/lot-already-sold')) {
+        // FR-109 (story 5.8): another member of this lot was sold on another terminal between the
+        // scan and this validation. Manual resolution — the basket is left untouched.
+        this.lastScanIssue.set({ message: this.translate.instant('volunteer.pos.error.lotAlreadySold'), variant: 'error' });
+        return;
+      }
     }
     this.toast.showError(this.translate.instant('volunteer.pos.error.generic'));
   }
@@ -263,6 +269,11 @@ export class PosPageComponent implements OnInit {
       const type = extractErrorType(err);
       if (type?.endsWith('/item-already-sold')) {
         this.lastScanIssue.set({ message: this.translate.instant('volunteer.pos.error.alreadySold'), variant: 'error' });
+        return;
+      }
+      if (type?.endsWith('/lot-already-sold')) {
+        // FR-109 (story 5.8): a sibling of this item's lot is already sold — the lot is done.
+        this.lastScanIssue.set({ message: this.translate.instant('volunteer.pos.error.lotAlreadySold'), variant: 'error' });
         return;
       }
       if (type?.endsWith('/item-not-found')) {

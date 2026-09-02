@@ -59,3 +59,11 @@
 .settlement-form-inner__field {
   width: 140px;
 }
+
+.settlement-form-inner__print-option {
+  // Sits before the action buttons in the DOM (so keyboard focus reaches the print option before
+  // "Valider"), but `order` drops it visually onto its own line under the amount field + buttons.
+  order: 1;
+  flex-basis: 100%;
+  color: var(--mat-sys-on-primary-container);
+}

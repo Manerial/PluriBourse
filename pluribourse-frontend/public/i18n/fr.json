@@ -486,6 +486,7 @@
       },
       "error": {
         "alreadySold": "Article déjà vendu sur un autre poste.",
+        "lotAlreadySold": "Cet article appartient à un lot déjà vendu.",
         "notFound": "Article introuvable.",
         "generic": "Impossible de scanner l'article.",
         "conflict": "Articles déjà vendus sur un autre poste : {{ names }}",
@@ -920,7 +921,8 @@
     "form": {
       "amountLabel": "Montant remis",
       "warningBelowDue": "Le montant saisi ({{ amount }} {{ currency }}) est inférieur au montant dû ({{ due }} {{ currency }}).",
-      "errorAboveDue": "Le montant saisi ne peut pas dépasser le montant dû."
+      "errorAboveDue": "Le montant saisi ne peut pas dépasser le montant dû.",
+      "printReportOnSettle": "Imprimer le bilan de vente"
     },
     "unclaimedDialog": {
       "title": "Confirmer « Non réclamé »",

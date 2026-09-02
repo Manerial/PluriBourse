@@ -205,7 +205,7 @@
         <div class="sidebar__section">
           <span class="sidebar__section-label">{{ 'nav.sections.myScreens' | translate }}</span>
 
-          @if (currentEdition()?.phase === 'DEPOSIT' || currentEdition()?.phase === 'POST_SALE') {
+          @if (currentEdition()?.phase === 'DEPOSIT') {
             <a
               routerLink="/volunteer/deposit"
               routerLinkActive="sidebar__item--active"
