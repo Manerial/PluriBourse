@@ -23,7 +23,8 @@ interface EditableCategoryRow {
   id: number | null;
   name: string;
   tableInput: string;
-  rowError: string | null;
+  nameTouched: boolean;
+  tableTouched: boolean;
 }
 
 export interface EditionCategoriesDialogData {
@@ -66,6 +67,7 @@ export class EditionCategoriesComponent implements OnInit {
   });
 
   readonly categories = signal<EditableCategoryRow[]>([]);
+  private readonly saveAttempted = signal(false);
 
   private editionId = 0;
 
@@ -94,7 +96,7 @@ export class EditionCategoriesComponent implements OnInit {
   }
 
   addCategory(): void {
-    this.categories.update(rows => [...rows, { id: null, name: '', tableInput: '', rowError: null }]);
+    this.categories.update(rows => [...rows, { id: null, name: '', tableInput: '', nameTouched: false, tableTouched: false }]);
   }
 
   removeCategory(index: number): void {
@@ -147,30 +149,43 @@ export class EditionCategoriesComponent implements OnInit {
     this.selectedSourceEditionId.set(editionId);
   }
 
+  markNameTouched(row: EditableCategoryRow): void {
+    row.nameTouched = true;
+  }
+
+  markTableTouched(row: EditableCategoryRow): void {
+    row.tableTouched = true;
+  }
+
+  /**
+   * A required-field error surfaces once the field has been visited (blur) or a save has been attempted,
+   * and clears itself as soon as the field holds a valid value.
+   */
+  isNameInvalid(row: EditableCategoryRow): boolean {
+    return !this.isReadOnly()
+      && row.name.trim().length === 0
+      && (row.nameTouched || this.saveAttempted());
+  }
+
+  isTableInvalid(row: EditableCategoryRow): boolean {
+    return !this.isReadOnly()
+      && this.parseTableInput(row.tableInput).length === 0
+      && (row.tableTouched || this.saveAttempted());
+  }
+
   nameErrorMatcher(row: EditableCategoryRow): ErrorStateMatcher {
-    return { isErrorState: () => row.rowError === 'category.row.error.nameRequired' };
+    return { isErrorState: () => this.isNameInvalid(row) };
   }
 
   tableErrorMatcher(row: EditableCategoryRow): ErrorStateMatcher {
-    return { isErrorState: () => row.rowError === 'category.row.error.tableRequired' };
+    return { isErrorState: () => this.isTableInvalid(row) };
   }
 
   private validateRows(): boolean {
-    let valid = true;
-    this.categories.update(rows =>
-      rows.map(row => {
-        if (!row.name.trim()) {
-          valid = false;
-          return { ...row, rowError: 'category.row.error.nameRequired' };
-        }
-        if (this.parseTableInput(row.tableInput).length === 0) {
-          valid = false;
-          return { ...row, rowError: 'category.row.error.tableRequired' };
-        }
-        return { ...row, rowError: null };
-      })
+    this.saveAttempted.set(true);
+    return this.categories().every(row =>
+      row.name.trim().length > 0 && this.parseTableInput(row.tableInput).length > 0
     );
-    return valid;
   }
 
   private parseTableInput(input: string): number[] {
@@ -185,7 +200,8 @@ export class EditionCategoriesComponent implements OnInit {
       id: dto.id,
       name: dto.name,
       tableInput: dto.tableNumbers.join(', '),
-      rowError: null,
+      nameTouched: false,
+      tableTouched: false,
     };
   }
 }

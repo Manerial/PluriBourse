@@ -1,12 +1,15 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatTimepickerModule } from '@angular/material/timepicker';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { SaleListFilter, SaleListItem } from '../../../models/pos.model';
@@ -18,6 +21,21 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { extractErrorType } from '../../../shared/http-error.util';
 
 const DEFAULT_PAGE_SIZE = 50;
+
+/**
+ * Serializes a picked Date to a local "YYYY-MM-DDTHH:mm:ss" string (no timezone). The sales are
+ * stored as LocalDateTime server-side, so the bound must be sent in the user's wall-clock time,
+ * not shifted to UTC as Date.toISOString() would.
+ */
+function toLocalIsoDateTime(date: Date | null): string | undefined {
+  if (date === null) {
+    return undefined;
+  }
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  const datePart = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const timePart = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return `${datePart}T${timePart}`;
+}
 
 /**
  * Sales list screen (story 4.7, FR-108). Structural copy of {@code ItemCatalogComponent}: the
@@ -32,12 +50,15 @@ const DEFAULT_PAGE_SIZE = 50;
   standalone: true,
   imports: [
     DatePipe,
+    FormsModule,
     MatButtonModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
     MatPaginatorModule,
     MatSelectModule,
     MatSortModule,
+    MatTimepickerModule,
     TranslatePipe,
     EmptyStateComponent,
     NotificationInlineComponent,
@@ -60,10 +81,11 @@ export class SalesListComponent implements OnInit {
 
   readonly cashiers = signal<string[]>([]);
 
-  // Bound to <input type="datetime-local"> — values look like "2026-06-12T14:30" (no seconds);
-  // Spring's @DateTimeFormat(iso = DATE_TIME) parses that as-is.
-  readonly dateFromFilter = signal('');
-  readonly dateToFilter = signal('');
+  // Bound to a Material datepicker + timepicker pair (one shared Date per bound). Serialized to a
+  // local ISO string "YYYY-MM-DDTHH:mm:ss" in loadPage() — the format Spring's
+  // @DateTimeFormat(iso = DATE_TIME) parses on the /pos/sales endpoint.
+  readonly dateFromFilter = signal<Date | null>(null);
+  readonly dateToFilter = signal<Date | null>(null);
   readonly cashierFilter = signal<string | null>(null);
 
   readonly sortField = signal<string | undefined>(undefined);
@@ -79,12 +101,12 @@ export class SalesListComponent implements OnInit {
     await this.loadPage(0);
   }
 
-  async onDateFromChange(value: string): Promise<void> {
+  async onDateFromChange(value: Date | null): Promise<void> {
     this.dateFromFilter.set(value);
     await this.loadPage(0);
   }
 
-  async onDateToChange(value: string): Promise<void> {
+  async onDateToChange(value: Date | null): Promise<void> {
     this.dateToFilter.set(value);
     await this.loadPage(0);
   }
@@ -138,8 +160,8 @@ export class SalesListComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
     const filter: SaleListFilter = {
-      dateFrom: this.dateFromFilter() || undefined,
-      dateTo: this.dateToFilter() || undefined,
+      dateFrom: toLocalIsoDateTime(this.dateFromFilter()),
+      dateTo: toLocalIsoDateTime(this.dateToFilter()),
       cashier: this.cashierFilter() ?? undefined,
       page,
       size: this.pageSize,

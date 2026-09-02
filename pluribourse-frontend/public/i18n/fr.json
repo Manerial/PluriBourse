@@ -99,6 +99,7 @@
       "editions": "Éditions",
       "catalog": "Catalogue",
       "sellers": "Vendeurs",
+      "sales": "Liste des ventes",
       "printQueue": "File d'impression",
       "printers": "Imprimantes",
       "settlement": "Reversements",
@@ -167,6 +168,7 @@
       "cancel": "Annuler",
       "error": {
         "associationNameNotConfigured": "Le nom de l'association doit être renseigné dans les paramètres avant de créer une édition.",
+        "associationNameNotConfiguredLink": "Ouvrir les paramètres",
         "save": "Impossible de créer l'édition."
       },
       "success": "Édition créée."
@@ -324,7 +326,11 @@
       "change": "Changer de vendeur",
       "error": {
         "search": "Impossible de rechercher les vendeurs.",
-        "noActiveEdition": "Cette édition n'est plus active. Rechargez la page ou reconnectez-vous."
+        "noActiveEdition": "Cette édition n'est plus active. Rechargez la page ou reconnectez-vous.",
+        "reprintSlip": "Impossible d'imprimer le bordereau.",
+        "a4PrinterUnavailable": "Aucune imprimante A4 disponible pour l'impression du bordereau.",
+        "reprintLabels": "Impossible d'imprimer les étiquettes.",
+        "thermalPrinterUnavailable": "Aucune imprimante thermique disponible pour l'impression des étiquettes."
       },
       "form": {
         "title": "Créer un profil vendeur",
@@ -431,12 +437,6 @@
         "reprintSlip": "Bordereau envoyé à l'impression.",
         "reprintLabels": "Étiquettes envoyées à l'impression."
       },
-      "error": {
-        "reprintSlip": "Impossible d'imprimer le bordereau.",
-        "a4PrinterUnavailable": "Aucune imprimante A4 disponible pour l'impression du bordereau.",
-        "reprintLabels": "Impossible d'imprimer les étiquettes.",
-        "thermalPrinterUnavailable": "Aucune imprimante thermique disponible pour l'impression des étiquettes."
-      },
       "reprintDialog": {
         "title": "Imprimer le bordereau de dépôt ?",
         "description": "Le bordereau de dépôt sera régénéré et renvoyé à l'imprimante A4. Continuer ?"
@@ -514,8 +514,10 @@
         "totalFormat": "{{ total }} {{ currency }}"
       },
       "filters": {
-        "dateFrom": "Du",
-        "dateTo": "Au",
+        "dateFrom": "Date de début",
+        "dateTo": "Date de fin",
+        "timeFrom": "Heure de début",
+        "timeTo": "Heure de fin",
         "cashier": "Caissier",
         "allCashiers": "Tous"
       },

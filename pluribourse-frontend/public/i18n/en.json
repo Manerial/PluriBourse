@@ -99,6 +99,7 @@
       "editions": "Editions",
       "catalog": "Catalog",
       "sellers": "Sellers",
+      "sales": "Sales list",
       "printQueue": "Print queue",
       "printers": "Printers",
       "settlement": "Settlements",
@@ -167,6 +168,7 @@
       "cancel": "Cancel",
       "error": {
         "associationNameNotConfigured": "The association name must be set in settings before creating an edition.",
+        "associationNameNotConfiguredLink": "Open settings",
         "save": "Failed to create edition."
       },
       "success": "Edition created."
@@ -324,7 +326,11 @@
       "change": "Change seller",
       "error": {
         "search": "Failed to search sellers.",
-        "noActiveEdition": "This edition is no longer active. Reload the page or log in again."
+        "noActiveEdition": "This edition is no longer active. Reload the page or log in again.",
+        "reprintSlip": "Unable to print the deposit slip.",
+        "a4PrinterUnavailable": "No A4 printer available to print the deposit slip.",
+        "reprintLabels": "Unable to print the labels.",
+        "thermalPrinterUnavailable": "No thermal printer available to print the labels."
       },
       "form": {
         "title": "Create seller profile",
@@ -431,12 +437,6 @@
         "reprintSlip": "Deposit slip sent to the printer.",
         "reprintLabels": "Labels sent to the printer."
       },
-      "error": {
-        "reprintSlip": "Unable to print the deposit slip.",
-        "a4PrinterUnavailable": "No A4 printer available to print the deposit slip.",
-        "reprintLabels": "Unable to print the labels.",
-        "thermalPrinterUnavailable": "No thermal printer available to print the labels."
-      },
       "reprintDialog": {
         "title": "Print the deposit slip?",
         "description": "The deposit slip will be regenerated and resent to the A4 printer. Continue?"
@@ -514,8 +514,10 @@
         "totalFormat": "{{ total }} {{ currency }}"
       },
       "filters": {
-        "dateFrom": "From",
-        "dateTo": "To",
+        "dateFrom": "Start date",
+        "dateTo": "End date",
+        "timeFrom": "Start time",
+        "timeTo": "End time",
         "cashier": "Cashier",
         "allCashiers": "All"
       },

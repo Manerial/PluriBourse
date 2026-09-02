@@ -1,5 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideTranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -35,6 +36,7 @@ describe('SalesListComponent', () => {
       imports: [SalesListComponent],
       providers: [
         provideTranslateService({ lang: 'en' }),
+        provideNativeDateAdapter(),
         { provide: PosService, useValue: posServiceMock },
         { provide: ToastService, useValue: toastMock },
       ],
@@ -73,12 +75,24 @@ describe('SalesListComponent', () => {
     expect(component.pageIndex()).toBe(1);
   });
 
-  it('a date-range filter reloads from page 0 with both bounds (AC11)', async () => {
+  it('a date-range filter reloads from page 0 with both bounds serialized to local ISO (AC11)', async () => {
     await createComponent();
-    await component.onDateFromChange('2026-06-12T00:00');
-    await component.onDateToChange('2026-06-12T23:59');
+    await component.onDateFromChange(new Date(2026, 5, 12, 0, 0, 0));
+    await component.onDateToChange(new Date(2026, 5, 12, 23, 59, 0));
     expect(posServiceMock.listSales).toHaveBeenLastCalledWith(
-      expect.objectContaining({ dateFrom: '2026-06-12T00:00', dateTo: '2026-06-12T23:59', page: 0 }),
+      expect.objectContaining({ dateFrom: '2026-06-12T00:00:00', dateTo: '2026-06-12T23:59:00', page: 0 }),
+    );
+  });
+
+  it('clearing a date bound drops it from the filter', async () => {
+    await createComponent();
+    await component.onDateFromChange(new Date(2026, 5, 12, 8, 30, 0));
+    expect(posServiceMock.listSales).toHaveBeenLastCalledWith(
+      expect.objectContaining({ dateFrom: '2026-06-12T08:30:00' }),
+    );
+    await component.onDateFromChange(null);
+    expect(posServiceMock.listSales).toHaveBeenLastCalledWith(
+      expect.objectContaining({ dateFrom: undefined }),
     );
   });
 

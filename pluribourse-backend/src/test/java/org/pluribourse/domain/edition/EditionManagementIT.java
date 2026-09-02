@@ -108,7 +108,7 @@ class EditionManagementIT extends IntegrationTest {
         assertThat(created.name()).isEqualTo("Bourse 2026");
         assertThat(created.phase()).isEqualTo(PhaseType.PREPARATION);
         assertThat(created.commissionRate()).isEqualByComparingTo(new BigDecimal("20.00"));
-        assertThat(created.documentLanguage()).isEqualTo(Language.EN);
+        assertThat(created.documentLanguage()).isEqualTo(Language.FR);
         // FR-103 (Story 2.9): currency null in the request falls back to the instance default,
         // same mechanism as commissionRate/documentLanguage above.
         assertThat(created.currency()).isEqualTo("€");

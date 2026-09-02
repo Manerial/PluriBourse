@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 import { EditionDto } from '../../../models/edition.model';
 import { EditionService } from '../../../services/edition.service';
 import { CurrentEditionService } from '../../../services/current-edition.service';
+import { GlobalInstanceConfigService } from '../../../services/global-instance-config.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/skeleton-row.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -30,6 +31,7 @@ import { EditionCategoriesComponent, EditionCategoriesDialogData } from './editi
 export class EditionListComponent implements OnInit {
   private readonly editionService = inject(EditionService);
   private readonly currentEditionService = inject(CurrentEditionService);
+  private readonly instanceConfigService = inject(GlobalInstanceConfigService);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly toast = inject(ToastService);
   private readonly translate = inject(TranslateService);
@@ -75,8 +77,31 @@ export class EditionListComponent implements OnInit {
     });
   }
 
-  openCreateDialog(): void {
+  async openCreateDialog(): Promise<void> {
+    if (!(await this.isAssociationNameConfigured())) {
+      this.toast.showError(
+        this.translate.instant('edition.create.error.associationNameNotConfigured'),
+        {
+          path: '/admin/settings',
+          label: this.translate.instant('edition.create.error.associationNameNotConfiguredLink'),
+        }
+      );
+      return;
+    }
     this.openEditionDialog(null, this.translate.instant('edition.create.title'));
+  }
+
+  /**
+   * Guards the creation flow: the backend rejects an edition when no association name is set.
+   * On a config fetch failure we let the dialog open — the backend still enforces the rule.
+   */
+  private async isAssociationNameConfigured(): Promise<boolean> {
+    try {
+      const config = await firstValueFrom(this.instanceConfigService.getConfig());
+      return config.associationName.trim().length > 0;
+    } catch {
+      return true;
+    }
   }
 
   openEditDialog(edition: EditionDto): void {

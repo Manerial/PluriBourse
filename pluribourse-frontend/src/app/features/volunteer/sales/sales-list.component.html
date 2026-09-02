@@ -8,20 +8,48 @@
       <mat-label>{{ 'volunteer.sales.filters.dateFrom' | translate }}</mat-label>
       <input
         matInput
-        type="datetime-local"
-        [value]="dateFromFilter()"
+        [matDatepicker]="dateFromPicker"
+        [ngModel]="dateFromFilter()"
         [disabled]="isLoading()"
-        (change)="onDateFromChange($any($event.target).value)" />
+        (ngModelChange)="onDateFromChange($event)" />
+      <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker" />
+      <mat-datepicker #dateFromPicker />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'volunteer.sales.filters.timeFrom' | translate }}</mat-label>
+      <input
+        matInput
+        [matTimepicker]="timeFromPicker"
+        [ngModel]="dateFromFilter()"
+        [disabled]="isLoading() || dateFromFilter() === null"
+        (ngModelChange)="onDateFromChange($event)" />
+      <mat-timepicker-toggle matIconSuffix [for]="timeFromPicker" />
+      <mat-timepicker #timeFromPicker />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>{{ 'volunteer.sales.filters.dateTo' | translate }}</mat-label>
       <input
         matInput
-        type="datetime-local"
-        [value]="dateToFilter()"
+        [matDatepicker]="dateToPicker"
+        [ngModel]="dateToFilter()"
         [disabled]="isLoading()"
-        (change)="onDateToChange($any($event.target).value)" />
+        (ngModelChange)="onDateToChange($event)" />
+      <mat-datepicker-toggle matIconSuffix [for]="dateToPicker" />
+      <mat-datepicker #dateToPicker />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'volunteer.sales.filters.timeTo' | translate }}</mat-label>
+      <input
+        matInput
+        [matTimepicker]="timeToPicker"
+        [ngModel]="dateToFilter()"
+        [disabled]="isLoading() || dateToFilter() === null"
+        (ngModelChange)="onDateToChange($event)" />
+      <mat-timepicker-toggle matIconSuffix [for]="timeToPicker" />
+      <mat-timepicker #timeToPicker />
     </mat-form-field>
 
     <mat-form-field appearance="outline">

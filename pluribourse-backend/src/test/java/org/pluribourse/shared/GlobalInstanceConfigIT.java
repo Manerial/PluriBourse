@@ -80,7 +80,7 @@ class GlobalInstanceConfigIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.associationName").value("Association Test"))
                 .andExpect(jsonPath("$.defaultCommissionRate").value(20.00))
-                .andExpect(jsonPath("$.defaultDocumentLanguage").value("EN"))
+                .andExpect(jsonPath("$.defaultDocumentLanguage").value("FR"))
                 .andExpect(jsonPath("$.defaultCurrency").value("€"));
     }
 

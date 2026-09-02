@@ -30,6 +30,11 @@ const MOCK_CLOSED: EditionDto = {
 
 const MOCK_CATEGORY: EditionCategoryDto = { id: 1, name: 'Jouets', tableNumbers: [1, 2] };
 
+type Row = { id: number | null; name: string; tableInput: string; nameTouched: boolean; tableTouched: boolean };
+const makeRow = (over: Partial<Row> = {}): Row => ({
+  id: null, name: 'Jouets', tableInput: '1, 2', nameTouched: false, tableTouched: false, ...over,
+});
+
 describe('EditionCategoriesComponent', () => {
   let fixture: ComponentFixture<EditionCategoriesComponent>;
   let component: EditionCategoriesComponent;
@@ -136,7 +141,7 @@ describe('EditionCategoriesComponent', () => {
   });
 
   it('onSave calls saveCategories with parsed tableNumbers and shows success toast', async () => {
-    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1, 2', rowError: null }]);
+    component.categories.set([makeRow({ tableInput: '1, 2' })]);
     await component.onSave();
     expect(categoryServiceMock.saveCategories).toHaveBeenCalledWith(1, [
       { id: null, name: 'Jouets', tableNumbers: [1, 2] },
@@ -145,43 +150,75 @@ describe('EditionCategoriesComponent', () => {
     expect(component.categories()[0].name).toBe('Jouets');
   });
 
-  it('onSave blocks save and sets nameRequired error when name is blank', async () => {
-    component.categories.set([{ id: null, name: '', tableInput: '1, 2', rowError: null }]);
+  it('onSave blocks save and flags the name field as invalid when name is blank', async () => {
+    component.categories.set([makeRow({ name: '' })]);
     await component.onSave();
     expect(categoryServiceMock.saveCategories).not.toHaveBeenCalled();
-    expect(component.categories()[0].rowError).toBe('category.row.error.nameRequired');
+    expect(component.isNameInvalid(component.categories()[0])).toBe(true);
   });
 
-  it('onSave blocks save and sets tableRequired error when no tables assigned', async () => {
-    component.categories.set([{ id: null, name: 'Jouets', tableInput: '', rowError: null }]);
+  it('onSave blocks save and flags the tables field as invalid when no tables assigned', async () => {
+    component.categories.set([makeRow({ tableInput: '' })]);
     await component.onSave();
     expect(categoryServiceMock.saveCategories).not.toHaveBeenCalled();
-    expect(component.categories()[0].rowError).toBe('category.row.error.tableRequired');
+    expect(component.isTableInvalid(component.categories()[0])).toBe(true);
+  });
+
+  it('clears the name error as soon as a name is typed, without another save attempt', async () => {
+    component.categories.set([makeRow({ name: '' })]);
+    await component.onSave();
+    expect(component.isNameInvalid(component.categories()[0])).toBe(true);
+
+    component.categories()[0].name = 'Livres';
+    expect(component.isNameInvalid(component.categories()[0])).toBe(false);
+  });
+
+  it('shows the required error after the field is blurred, before any save', () => {
+    component.categories.set([makeRow({ name: '', tableInput: '' })]);
+    const row = component.categories()[0];
+    expect(component.isNameInvalid(row)).toBe(false);
+    expect(component.isTableInvalid(row)).toBe(false);
+
+    component.markNameTouched(row);
+    expect(component.isNameInvalid(row)).toBe(true);
+    expect(component.isTableInvalid(row)).toBe(false);
+
+    component.markTableTouched(row);
+    expect(component.isTableInvalid(row)).toBe(true);
+  });
+
+  it('does not flag fields as invalid in read-only mode', async () => {
+    editionServiceMock.getById.mockReturnValue(of(MOCK_EDITION_DEPOSIT));
+    await component.ngOnInit();
+    component.categories.set([makeRow({ name: '', tableInput: '', nameTouched: true, tableTouched: true })]);
+    const row = component.categories()[0];
+    expect(component.isNameInvalid(row)).toBe(false);
+    expect(component.isTableInvalid(row)).toBe(false);
   });
 
   it('onSave shows error toast when service fails', async () => {
     categoryServiceMock.saveCategories.mockReturnValue(throwError(() => new Error('server')));
-    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1', rowError: null }]);
+    component.categories.set([makeRow({ tableInput: '1' })]);
     await component.onSave();
     expect(toastMock.showError).toHaveBeenCalled();
   });
 
   it('onSave closes the dialog after a successful save', async () => {
     categoryServiceMock.saveCategories.mockReturnValue(of([MOCK_CATEGORY]));
-    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1, 2', rowError: null }]);
+    component.categories.set([makeRow({ tableInput: '1, 2' })]);
     await component.onSave();
     expect(dialogRefMock.close).toHaveBeenCalledOnce();
   });
 
   it('onSave does not close the dialog when the service fails', async () => {
     categoryServiceMock.saveCategories.mockReturnValue(throwError(() => new Error('server')));
-    component.categories.set([{ id: null, name: 'Jouets', tableInput: '1', rowError: null }]);
+    component.categories.set([makeRow({ tableInput: '1' })]);
     await component.onSave();
     expect(dialogRefMock.close).not.toHaveBeenCalled();
   });
 
   it('onSave does not close the dialog when validation fails', async () => {
-    component.categories.set([{ id: null, name: '', tableInput: '1, 2', rowError: null }]);
+    component.categories.set([makeRow({ name: '' })]);
     await component.onSave();
     expect(dialogRefMock.close).not.toHaveBeenCalled();
   });

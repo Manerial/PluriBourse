@@ -71,6 +71,7 @@ describe('AppLayoutComponent', () => {
           { path: 'admin/catalog', component: StubComponent },
           { path: 'volunteer/deposit', component: StubComponent },
           { path: 'volunteer/pos', component: StubComponent },
+          { path: 'volunteer/sales', component: StubComponent },
           { path: 'volunteer/settlement', component: StubComponent },
           { path: 'volunteer/catalog', component: StubComponent },
           { path: 'account', component: StubComponent },
@@ -236,6 +237,16 @@ describe('AppLayoutComponent', () => {
         fixture.nativeElement.querySelectorAll('a.sidebar__item')
       );
       expect(links.some(l => l.getAttribute('href') === '/admin/catalog')).toBe(true);
+    });
+
+    it('shows the sales list link only in the Sale phase, pointing at /volunteer/sales', () => {
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[href="/volunteer/sales"]')).toBeTruthy();
+
+      mockEdition.set({ ...preparationEdition, phase: 'DEPOSIT' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[href="/volunteer/sales"]')).toBeFalsy();
     });
 
     it('renders admin role badge', () => {
@@ -515,6 +526,35 @@ describe('AppLayoutComponent', () => {
       await fixture.whenStable();
 
       expect(router.url).toBe('/volunteer/catalog');
+    });
+
+    it('does not bounce a volunteer off /volunteer/sales when the edition is re-emitted with the same phase (phase guards re-fetch on every navigation)', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/volunteer/sales');
+      fixture.detectChanges();
+
+      // Fresh object, identical phase — exactly what CurrentEditionService.loadEdition() produces.
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/volunteer/sales');
+    });
+
+    it('still redirects away from /volunteer/sales to /volunteer/settlement on a real phase change to Post-vente', async () => {
+      const router = TestBed.inject(Router);
+      mockEdition.set({ ...preparationEdition, phase: 'SALE' });
+      fixture.detectChanges();
+      await router.navigateByUrl('/volunteer/sales');
+      fixture.detectChanges();
+
+      mockEdition.set({ ...preparationEdition, phase: 'POST_SALE' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(router.url).toBe('/volunteer/settlement');
     });
   });
 

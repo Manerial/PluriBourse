@@ -9,6 +9,7 @@ import { PhaseControlComponent } from './phase-control/phase-control.component';
 import { EditionCategoriesComponent } from './edition-categories/edition-categories.component';
 import { EditionService } from '../../../services/edition.service';
 import { CurrentEditionService } from '../../../services/current-edition.service';
+import { GlobalInstanceConfigService } from '../../../services/global-instance-config.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { EditionDto } from '../../../models/edition.model';
@@ -34,12 +35,15 @@ describe('EditionListComponent', () => {
   const confirmMock = { open: vi.fn().mockReturnValue(of(false)) };
   const dialogMock = { open: vi.fn().mockReturnValue({ closed: from(Promise.resolve(undefined)) }) };
   const currentEditionServiceMock = { loadEdition: vi.fn().mockReturnValue(of(undefined)) };
+  const CONFIGURED_CONFIG = { associationName: 'Mon Asso', defaultCommissionRate: 20, defaultDocumentLanguage: Language.EN, defaultCurrency: '€' };
+  const instanceConfigServiceMock = { getConfig: vi.fn().mockReturnValue(of(CONFIGURED_CONFIG)) };
 
   beforeEach(async () => {
     vi.clearAllMocks();
     editionServiceMock.getAll.mockReturnValue(of(MOCK_EDITIONS));
     dialogMock.open.mockReturnValue({ closed: from(Promise.resolve(undefined)) });
     currentEditionServiceMock.loadEdition.mockReturnValue(of(undefined));
+    instanceConfigServiceMock.getConfig.mockReturnValue(of(CONFIGURED_CONFIG));
 
     await TestBed.configureTestingModule({
       imports: [EditionListComponent],
@@ -47,6 +51,7 @@ describe('EditionListComponent', () => {
         provideTranslateService({ lang: 'en' }),
         { provide: EditionService, useValue: editionServiceMock },
         { provide: CurrentEditionService, useValue: currentEditionServiceMock },
+        { provide: GlobalInstanceConfigService, useValue: instanceConfigServiceMock },
         { provide: ToastService, useValue: toastMock },
         { provide: ConfirmDialogService, useValue: confirmMock },
         { provide: Dialog, useValue: dialogMock },
@@ -84,8 +89,27 @@ describe('EditionListComponent', () => {
     );
   });
 
-  it('openCreateDialog opens EditionFormComponent with editionId null', () => {
-    component.openCreateDialog();
+  it('openCreateDialog opens EditionFormComponent with editionId null', async () => {
+    await component.openCreateDialog();
+    expect(dialogMock.open).toHaveBeenCalledWith(
+      EditionFormComponent,
+      expect.objectContaining({ data: { editionId: null } })
+    );
+  });
+
+  it('openCreateDialog shows an error toast with a settings link instead of opening the dialog when the association name is not configured', async () => {
+    instanceConfigServiceMock.getConfig.mockReturnValue(of({ ...CONFIGURED_CONFIG, associationName: '   ' }));
+    await component.openCreateDialog();
+    expect(dialogMock.open).not.toHaveBeenCalled();
+    expect(toastMock.showError).toHaveBeenCalledWith(
+      'edition.create.error.associationNameNotConfigured',
+      expect.objectContaining({ path: '/admin/settings' })
+    );
+  });
+
+  it('openCreateDialog still opens the dialog when the config fetch fails', async () => {
+    instanceConfigServiceMock.getConfig.mockReturnValue(throwError(() => new Error('network')));
+    await component.openCreateDialog();
     expect(dialogMock.open).toHaveBeenCalledWith(
       EditionFormComponent,
       expect.objectContaining({ data: { editionId: null } })
@@ -94,14 +118,14 @@ describe('EditionListComponent', () => {
 
   it('reloads the edition list after the edition dialog closes', async () => {
     editionServiceMock.getAll.mockClear();
-    component.openCreateDialog();
+    await component.openCreateDialog();
     await fixture.whenStable();
     expect(editionServiceMock.getAll).toHaveBeenCalledTimes(1);
   });
 
   it('refreshes the current edition (topbar chip) after the create/edit dialog closes', async () => {
     currentEditionServiceMock.loadEdition.mockClear();
-    component.openCreateDialog();
+    await component.openCreateDialog();
     await fixture.whenStable();
     expect(currentEditionServiceMock.loadEdition).toHaveBeenCalledTimes(1);
   });

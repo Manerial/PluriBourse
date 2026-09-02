@@ -18,7 +18,7 @@
                 <constraints nullable="false"/>
             </column>
             <!-- VARCHAR(2) instead of ENUM for H2/MariaDB portability — same rationale as users.role -->
-            <column name="default_document_language" type="VARCHAR(2)" defaultValue="EN">
+            <column name="default_document_language" type="VARCHAR(2)" defaultValue="FR">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -27,7 +27,7 @@
             <column name="id" valueNumeric="1"/>
             <column name="association_name" value=""/>
             <column name="default_commission_rate" valueNumeric="20.00"/>
-            <column name="default_document_language" value="EN"/>
+            <column name="default_document_language" value="FR"/>
         </insert>
     </changeSet>
 

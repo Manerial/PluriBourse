@@ -10,6 +10,7 @@ import { AuthService } from '../../services/auth.service';
 import { ToastContainerComponent } from '../../shared/components/toast/toast-container.component';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { SseService } from '../../services/sse.service';
+import { PhaseType } from '../../models/edition.model';
 import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 
 const SIDEBAR_COLLAPSED_KEY_PREFIX = 'pluribourse.sidebarCollapsed.';
@@ -59,13 +60,24 @@ export class AppLayoutComponent implements OnInit {
     // Skips the effect's own initial run (fired at construction, before ngOnInit's loadEdition()
     // resolves) so it never redirects on a stale/null phase — only on real changes afterwards,
     // whether that's the first load settling or a later SSE phase-changed event.
+    //
+    // Gated on an actual phase *transition*: CurrentEditionService.loadEdition() re-emits a fresh
+    // (but phase-identical) edition object on every call, and the phase guards call it on each
+    // navigation. Without the previousPhase check, that re-emission would bounce a volunteer off
+    // a valid same-phase page (e.g. /volunteer/sales → /volunteer/pos) every time they opened it.
+    let previousPhase: PhaseType | undefined;
     let isFirstRun = true;
     effect(() => {
       const phase = this.currentEdition()?.phase;
       if (isFirstRun) {
         isFirstRun = false;
+        previousPhase = phase;
         return;
       }
+      if (phase === previousPhase) {
+        return;
+      }
+      previousPhase = phase;
       if (!this.isVolunteer()) {
         return;
       }
