@@ -35,7 +35,35 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-09-03"  # Story 5-8 : revue de code (bmad-code-review), statut review → done.
+last_updated: "2026-09-03"  # Correct-course (SCP 2026-09-03) : Story 4-8 enregistrée en backlog.
+# 2026-09-03 — Correct-course (bmad-correct-course, SCP 2026-09-03 : sprint-change-proposal-2026-09-03.md).
+# Déclencheur : point decision-needed D1 de la revue de code de la Story 5-8 — la garde de course
+# multi-postes de FR-109 (LotRepository.bumpVersion, force-increment Lot.@Version en masse) peut
+# produire un HTTP 500 (deadlock MariaDB 1213 / lock-wait 1205 non mappés) quand deux postes valident
+# des paniers touchant les deux mêmes lots en ordre inverse. Le patch P5 (ordre canonique par id) ne
+# couvre pas le 1205. Décision Manerial : remplacer le verrou optimiste par une RÉSERVATION LÉGÈRE DE
+# LOT prise à l'ajout au panier (UPDATE lots SET reserved_by_basket_id=? WHERE reserved_by_basket_id
+# IS NULL → 0 ligne = 409 lot-reserved). Comme deux paniers ne peuvent plus détenir de membres du même
+# lot, la course multi-postes à validate() disparaît → bumpVersion / isLotVersionRace / catch
+# JpaSystemException / patch P5 retirés. existsByLotIdAndSoldTrue CONSERVÉ (frère vendu dans une vente
+# committée). Nouvelle story 4-8 multi-parties : (A) réservation de lot au scan + migration Liquibase
+# 035 (2 colonnes nullables sur lots, FK reserved_by_basket_id → baskets(id) ON DELETE SET NULL, pas
+# de TTL) ; (B) annulation du panier à la déconnexion explicite (LogoutHandler avant invalidation de
+# session, routine cancelBasket extraite de EditionService ~l.216, SSE basket-cancelled aux autres
+# onglets). Artefacts amendés (working tree, NON commités) : prd.md (FR-109 réécrit, FR-110 créé,
+# FR-066 amendé), epics.md (miroirs FR-109/110/066, carte de couverture, FR couvertes Epic 4, AC Story
+# 4.3, notes Stories 4.4 et 2.8, UX-DR21), architecture.md (§ Concurrence — POS : lignes Stratégie de
+# verrouillage / Intégrité des lots / Exigence de test ; § SSE : déclencheur bis déconnexion).
+# EXPERIENCE.md non amendé (convention 5.8).
+# 4 questions ouvertes tranchées par Manerial le 2026-09-03 : (1) home = une seule story 4-8 (Epic 4),
+# inchangé ; (2) story « expiration de session » DIFFÉRÉE, à réévaluer après livraison de 4-8 ; (3)
+# FR-066 CORRIGÉ = 1 h effective (vérif code : spring-session-jdbc + spring.session.timeout=PT1H ;
+# server.servlet.session.timeout=2h à l.23 = config morte). Déconnexion auto après 1 h d'inactivité
+# sur postes partagés. Le retrait de la ligne morte server.servlet.session.timeout + du commentaire
+# l.22 est INCLUS dans le périmètre de la story 4-8 (Partie B), pas un commit séparé ; (4) déconnexion
+# = PAS de message distinct, disparition silencieuse du panier acceptée, feedback de déconnexion
+# générique suffit, aucune chaîne i18n dédiée. Hook réutilisable Partie B : SessionInvalidationService
+# (Story 1.12, FindByIndexNameSessionRepository.findByPrincipalName).
 # 2026-09-03 — Story 5-8 : revue de code (bmad-code-review, 3 revues parallèles Blind Hunter +
 # Edge Case Hunter + Acceptance Auditor). 1 point decision-needed tranché par Manerial (deadlock
 # multi-lots de la garde bumpVersion → 500 non géré ; option 3 : ordre de verrouillage canonique
@@ -672,6 +700,16 @@ development_status:
   # tout bénévole caissier (retrait de la restriction auteur-uniquement, 4.5) ; suppression du
   # bouton temporaire à 30s (INVOICE_BUTTON_VISIBLE_MS), devenu redondant.
   4-7-refonte-impression-facture-liste-des-ventes: done
+  # Correct-course SCP 2026-09-03 : ré-architecture de la garde de concurrence FR-109 (livrée par la
+  # Story 5-8) suite au point decision-needed D1 de sa revue de code. Story multi-parties : (A)
+  # réservation légère de lot prise à l'ajout au panier — remplace le force-increment Lot.@Version
+  # (bumpVersion) qui pouvait sortir en 500 sur deadlock/lock-wait MariaDB ; migration Liquibase 035
+  # (reserved_by_basket_id + reserved_at sur lots, FK ON DELETE SET NULL, pas de TTL) ; 409
+  # lot-reserved au scan/addItem ; existsByLotIdAndSoldTrue conservé pour le frère vendu committé.
+  # (B) annulation du panier actif à la déconnexion explicite (FR-110) + libération des réservations
+  # + SSE basket-cancelled ; routine cancelBasket extraite de EditionService. Amende Stories 4.3 (AC
+  # FR-109), 4.4 (note : lot ≠ @Version), 2.8 (note : routine extraite + libération des réservations).
+  4-8-reservation-de-lot-au-scan-et-annulation-panier-a-la-deconnexion: backlog
   epic-4-retrospective: optional
 
   # ─── Epic 5 : Post-vente, Reversements & Rapports ──────────────────────────

@@ -82,6 +82,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-042 : L'application supporte un minimum de 3 postes caissiers simultanés sans conflits de données.
 - FR-090 : Si l'administrateur déclenche une transition de phase pendant qu'un bénévole a un panier actif, le système annule le panier et affiche un message d'erreur explicite.
 - FR-093 : À la validation du paiement, le caissier sélectionne le moyen de paiement de l'acheteur. Valeurs possibles : espèces, chèque, carte. Le moyen de paiement est enregistré avec la transaction. En cas de paiement en espèces, un champ optionnel permet de saisir la somme remise par l'acheteur ; si renseigné, le système affiche la monnaie à rendre. Si laissé vide, aucun calcul n'est effectué (montant exact supposé).
+- FR-110 : Le panier de caisse est persisté côté serveur (un par bénévole et par édition) ; sa durée de vie est bornée par la session. Une **déconnexion explicite** annule le panier actif et libère les réservations de lot ; les autres onglets de l'utilisateur reçoivent l'évènement SSE `basket-cancelled`. L'annulation du panier sur expiration de session par inactivité (FR-066) est laissée en suite possible, à réévaluer après livraison. *(SCP 2026-09-03)*
 
 **F4 bis — Lots en caisse**
 
@@ -89,7 +90,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-047 : Si le lot n'est pas complet lors de la validation, une notification inline avertissement est affichée dans le panier, mais la validation du paiement n'est pas bloquée — le caissier peut valider un lot incomplet. **Dès qu'un article du lot est vendu, le lot est réputé vendu comme un tout ; les articles restants reviennent au vendeur (FR-109).** *(SCP 2026-09-02b)*
 - FR-048 : Les articles d'un lot n'ont pas de prix individuel — seul le lot en a un. Une fois complet, le lot est vendu à son prix global. La commission s'applique au prix global : `commission_lot = prix_lot × taux_commission`.
 - FR-081 : Si un caissier ne peut pas compléter un lot, il peut retirer l'ensemble du lot du panier.
-- FR-109 : Un lot ne se vend qu'une fois — scanner un article d'un lot déjà vendu est rejeté (409, au scan et à la validation) ; les articles restants reviennent au vendeur. *(SCP 2026-09-02b)*
+- FR-109 : Un lot ne se vend qu'une fois — dès qu'un de ses articles entre dans un panier, le lot est **réservé pour ce panier** (`UPDATE lots … WHERE reserved_by_basket_id IS NULL`) ; ajouter un membre du même lot depuis un autre panier est rejeté (409 `lot-reserved`). Réservation levée au retrait du dernier membre / retrait du lot / validation / annulation de panier / déconnexion. Un frère déjà vendu (vente committée) reste rejeté. Les articles restants reviennent au vendeur. *(SCP 2026-09-03 — remplace le verrou optimiste `Lot.@Version` de la SCP 2026-09-02b)*
 
 **F5 — Post-vente et reversements**
 
@@ -119,7 +120,7 @@ Ce document présente le découpage complet en épics et en stories pour PluriBo
 - FR-063 : Si l'administrateur perd son mot de passe, une commande exécutée sur le serveur génère un mot de passe temporaire. L'administrateur est forcé de le changer à la connexion suivante.
 - FR-064 : Les rôles Administrateur et Bénévole sont strictement séparés. L'administrateur ne peut pas accéder aux interfaces bénévoles.
 - FR-065 : L'interface bénévole s'adapte à la phase active. En Post-vente, le bénévole peut imprimer le bilan de vente.
-- FR-066 : Les sessions n'expirent pas automatiquement.
+- FR-066 : Les sessions sont persistées (Spring Session JDBC) et survivent à un redémarrage du conteneur serveur ; après **1 heure d'inactivité**, la session expire et l'utilisateur est déconnecté automatiquement (`spring.session.timeout=PT1H`) — choix de sécurité délibéré pour les postes bénévoles partagés. *(Amendé SCP 2026-09-03 — l'ancienne rédaction « les sessions n'expirent pas automatiquement » ne reflétait pas l'implémentation.)*
 - FR-067 : Chaque compte mémorise une préférence de langue d'interface (EN/FR), détectée depuis le navigateur à la création, modifiable dans les paramètres.
 
 **F8 — Infrastructure et déploiement**
@@ -202,7 +203,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR18 : Implémenter l'action « Archiver l'édition » : bouton secondaire couleur d'erreur, boîte de dialogue de confirmation irréversible (« Archiver et supprimer tous les articles de cette édition. Cette action est irréversible. »), état vide post-archivage « Édition archivée — aucun article. » sans action, bouton disparaît après l'archivage. Bouton visible uniquement si des articles existent encore.
 - UX-DR19 : Implémenter le pattern de retour visuel du bouton d'impression : spinner dans le bouton pendant la soumission à la file d'attente, toast de succès (4s), toast d'erreur persistant si l'imprimante est hors ligne avec bouton « Fermer ». Toujours redéclenchable.
 - UX-DR20 : Implémenter le socle d'accessibilité WCAG 2.2 AA : anneaux de focus sur tous les éléments interactifs (jamais supprimés), ordre de tabulation suivant l'ordre de lecture visuel, piège de focus dans les boîtes de dialogue de confirmation, annonces pour lecteurs d'écran via aria-live/aria-label/aria-describedby, cibles tactiles minimales de 44×44px, icônes décoratives aria-hidden="true", icônes sémantiques avec texte accompagnateur ou aria-label.
-- UX-DR21 : Implémenter la gestion des transitions de phase dans l'interface POS bénévole : événement SSE `basket-cancelled` → toast persistant « La phase a changé. Votre panier a été annulé. » → panier vidé → scanner désactivé jusqu'au rechargement de la page.
+- UX-DR21 : Implémenter la gestion des transitions de phase dans l'interface POS bénévole : événement SSE `basket-cancelled` → toast persistant « La phase a changé. Votre panier a été annulé. » → panier vidé → scanner désactivé jusqu'au rechargement de la page. La déconnexion explicite d'un caissier (FR-110) s'appuie sur le feedback de déconnexion générique existant (redirection vers l'écran de connexion) : la disparition silencieuse du panier est acceptable — aucun toast ni chaîne i18n dédiés à l'annulation du panier ne sont ajoutés pour ce cas. *(Note déconnexion : SCP 2026-09-03.)*
 - UX-DR22 : Implémenter l'impression du bilan de vente : (1) case « Imprimer le bilan » dans le formulaire de solde, **cochée par défaut**, déclenchant l'impression à la confirmation du solde (best-effort) ; (2) bouton « Imprimer le bilan » par ligne, **visible uniquement pour les vendeurs soldés ou non réclamés** (ré-impression). Retour visuel spinner + toast dans les deux cas. *(SCP 2026-09-02b)*
 
 ### Carte de couverture FR
@@ -257,7 +258,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-046 : Epic 4 — Le scan d'un article de lot affiche le nom du lot en rouge + compteur « X/N scannés »
 - FR-047 : Epic 4 — Avertissement inline si lot incomplet, validation non bloquée ; un lot avec ≥1 article vendu est réputé vendu en entier
 - FR-048 : Epic 4 — Lot complet vendu au prix global du lot
-- FR-109 : Epic 4 — Un lot ne se vend qu'une fois ; scan d'un article d'un lot déjà vendu rejeté (409, au scan et à la validation) ; articles restants rendus au vendeur *(SCP 2026-09-02b)*
+- FR-109 : Epic 4 — Un lot ne se vend qu'une fois ; **réservation du lot prise à l'ajout au panier** (409 `lot-reserved` si un autre panier le détient), levée au retrait/validation/annulation/déconnexion ; frère déjà vendu (vente committée) toujours rejeté ; articles restants rendus au vendeur *(SCP 2026-09-03 — remplace le verrou `@Version` de la SCP 2026-09-02b)*
 - FR-049 : Epic 5 — Bilan de vente imprimable par vendeur en phase Post-vente
 - FR-050 : Epic 5 — Bilan de vente : tableau unifié des articles + statut vendu/invendu, tableau « détail des lots », ligne de comptage vendus/invendus/déposés, total brut, commission, reversement net, montant remis si soldé *(SCP 2026-09-02b)*
 - FR-051 : Epic 5 — Le bénévole solde le vendeur : saisit le montant en espèces, clique Solder
@@ -277,7 +278,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-063 : Epic 1 — Réinitialisation du mot de passe admin via commande CLI serveur
 - FR-064 : Epic 1 — Rôles Admin/Bénévole strictement séparés
 - FR-065 : Epic 1 — Interface bénévole adaptée à la phase active
-- FR-066 : Epic 1 — Les sessions n'expirent pas automatiquement
+- FR-066 : Epic 1 — Sessions persistées (Spring Session JDBC), survivent au redémarrage du conteneur ; expiration et déconnexion automatique après **1 h d'inactivité** (`spring.session.timeout=PT1H`) sur les postes bénévoles partagés *(amendé SCP 2026-09-03)*
 - FR-067 : Epic 1 — Chaque compte mémorise une préférence de langue d'interface (EN/FR)
 - FR-068 : Epic 1 — Serveur fonctionnel sur Linux, macOS, Windows sans modification du code
 - FR-069 : Epic 1 — Configuration minimale : Raspberry Pi 4 (2 Go de RAM)
@@ -303,6 +304,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - FR-096 : Epic 2 — À la clôture, vendeurs non soldés auto-marqués Non réclamé (atomique avec la phase) ; dialog de confirmation enrichie si vendeurs non soldés
 - FR-089 : Epic 3 — La commission s'applique normalement aux articles vendus avec l'indicateur incomplet
 - FR-090 : Epic 4 — Transition de phase avec panier actif : panier annulé, message explicite au bénévole
+- FR-110 : Epic 4 — Panier de caisse persisté côté serveur, durée de vie bornée par la session ; déconnexion explicite → annulation du panier actif + libération des réservations de lot + SSE `basket-cancelled` aux autres onglets *(SCP 2026-09-03)*
 - FR-091 : Epic 5 — Export CSV du catalogue articles (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
 - FR-092 : Epic 5 — Export CSV des reversements (Post-vente + Clôturée, admin uniquement, téléchargement direct) — addendum
 - FR-093 : Epic 4 — Moyen de paiement enregistré à la validation (espèces, chèque, carte)
@@ -335,7 +337,7 @@ Les bénévoles peuvent enregistrer les vendeurs et tous leurs articles (y compr
 ### Epic 4 : Point de vente
 Les bénévoles peuvent scanner des articles avec un scanner code-barres USB, gérer les paniers avec prise en charge complète des lots, finaliser les ventes et imprimer les factures acheteurs — en toute sécurité sur plusieurs postes simultanés.
 
-**FR couvertes :** FR-033–042, FR-046–048, FR-081, FR-090 (côté client), FR-093
+**FR couvertes :** FR-033–042, FR-046–048, FR-081, FR-090 (côté client), FR-093, FR-109, FR-110
 **Architecture :** ARCH-003 (validation concurrence), ARCH-004
 **UX :** UX-DR10, UX-DR14, UX-DR21
 
@@ -1023,6 +1025,8 @@ afin que les bénévoles en caisse ne puissent pas finaliser des ventes dans une
 **Quand** le `SseEmitterRegistry` diffuse `basket-cancelled`
 **Alors** le payload contient l'`editionId` et la nouvelle phase
 
+**Note (SCP 2026-09-03) :** la routine d'annulation d'un panier (suppression des `BasketItem` + du `Basket`, émission de `basket-cancelled`) est **extraite** en un point réutilisable (Story 4.8) et invoquée aussi par la déconnexion explicite (FR-110). Toute annulation de panier — changement de phase inclus — **libère désormais les réservations de lot** (`lots.reserved_by_basket_id`) détenues par ce panier (FR-109).
+
 **Note de développement :** La gestion côté Angular du composant POS (toast persistant, vidage du panier, désactivation du scanner) est implémentée dans Story 4.6.
 
 ---
@@ -1573,10 +1577,12 @@ afin de décider de le vendre en l'état ou de le retirer du panier.
 **Quand** le dernier article est ajouté
 **Alors** le lot est marqué complet et vendu à son prix global (FR-048)
 
-**Étant donné** qu'au moins un article d'un lot a été vendu
-**Quand** un caissier scanne un autre article du même lot
-**Alors** le scan est rejeté avec une erreur explicite (« cet article appartient à un lot déjà vendu ») — au scan **et** à la validation du panier (course multi-postes)
-**Et** les articles non vendus du lot reviennent au vendeur et apparaissent comme invendus au bilan (FR-109) *(SCP 2026-09-02b)*
+**Étant donné** qu'un caissier a ajouté un article d'un lot à son panier
+**Quand** un second caissier scanne (ou ajoute au panier) un autre article du même lot
+**Alors** l'ajout est rejeté avec un 409 `lot-reserved` (« lot en cours d'encaissement sur une autre caisse ») — le lot est réservé pour le premier panier tant qu'il y détient au moins un article
+**Et** la réservation est levée au retrait du dernier membre du lot, au retrait du lot (FR-081), à la validation, à l'annulation du panier (changement de phase) ou à la déconnexion explicite du premier caissier
+**Et** si un frère du lot a déjà été vendu dans une vente committée, le scan/ajout est rejeté (409) au scan comme à la validation
+**Et** les articles non vendus d'un lot vendu reviennent au vendeur et apparaissent comme invendus au bilan (FR-109) *(SCP 2026-09-03 — réservation au scan, remplace le verrou optimiste de la SCP 2026-09-02b)*
 
 **Étant donné** qu'un lot est partiellement scanné et que l'acheteur ne trouve pas les articles restants
 **Quand** le bénévole clique sur « Retirer le lot entier »
@@ -1610,6 +1616,8 @@ afin que deux caissiers ne puissent pas accidentellement vendre le même article
 
 **Notes de développement :**
 Valider la concurrence via un test d'intégration Testcontainers MariaDB : deux threads `TransactionTemplate` concurrents valident des paniers qui se chevauchent — exactement un doit réussir et l'autre recevoir un 409.
+
+**Note (SCP 2026-09-03) :** l'intégrité des lots (FR-109) ne repose plus sur le verrou optimiste décrit dans cette story mais sur une **réservation de lot** prise à l'ajout au panier (Story 4.8). Le verrou `@Version` sur `Item` reste la garde du double-encaissement d'un **article individuel**. Le test Testcontainers ci-dessus reste valable pour les articles ; le scénario **lot** correspondant cible désormais le rejet à l'`addItem`, plus à la validation.
 
 ### Story 4.5 : Impression de la facture acheteur
 
