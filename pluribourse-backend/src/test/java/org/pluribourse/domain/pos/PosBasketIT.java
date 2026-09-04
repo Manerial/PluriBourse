@@ -15,6 +15,7 @@ import org.pluribourse.domain.item.dto.ItemDto;
 import org.pluribourse.domain.item.dto.LotDto;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.repository.ItemRepository;
+import org.pluribourse.domain.item.repository.LotRepository;
 import org.pluribourse.domain.pos.dto.BasketDto;
 import org.pluribourse.domain.pos.dto.SaleDto;
 import org.pluribourse.domain.pos.dto.ValidateBasketDto;
@@ -45,9 +46,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * individual items (barcodes 0001-0003 for the shopping-cart scenarios, 0006 reserved untouched
  * for the end-of-class phase-guard scenario) plus a 2-item lot (barcodes 0004-0005, global price
  * 10.00) to prove the lot-aware total, a second 2-item lot (barcodes 0008-0009, global price
- * 6.00) used only by the lot-removal scenario, and a third 2-item lot (barcodes 0010-0011, global
- * price 8.00) used only by the FR-109 lot-already-sold scenario (story 5.8). Bob (seller 2) gets a
- * single item used only by the concurrency scenario.
+ * 6.00) used only by the lot-removal scenario, a third 2-item lot (barcodes 0010-0011, global
+ * price 8.00) used only by the FR-109 lot-already-sold scenario (story 5.8), and — for story 4.8 —
+ * a fourth and fifth 2-item lot (barcodes 0012-0013 / 0014-0015, global price 7.00 / 4.00) that
+ * exercise the scan-time lot reservation lifecycle. Bob (seller 2) gets a single item used only by
+ * the concurrency scenario.
  * <p>
  * Order matters: phase transitions are one-directional in these E2E scenarios (cf. {@link PosScanIT}) —
  * the class ends in POST_SALE, so any scenario needing the Sale phase must run before {@link #phase_guard_rejects_four_endpoints_and_the_cancelled_basket_404s_add_item()}.
@@ -60,6 +63,9 @@ class PosBasketIT extends IntegrationTest {
 
     @Autowired
     private ItemRepository itemRepository;
+
+    @Autowired
+    private LotRepository lotRepository;
 
     private MockHttpSession adminSession;
     private MockHttpSession volunteer1Session;
@@ -79,6 +85,10 @@ class PosBasketIT extends IntegrationTest {
     private static final String LOT2_ITEM_2_BARCODE = "00010009";
     private static final String LOT3_ITEM_1_BARCODE = "00010010"; // Lot Course, 8.00 — FR-109 lot-already-sold scenario only
     private static final String LOT3_ITEM_2_BARCODE = "00010011";
+    private static final String LOT4_ITEM_1_BARCODE = "00010012"; // Lot Réservation A, 7.00 — story 4.8 reservation lifecycle
+    private static final String LOT4_ITEM_2_BARCODE = "00010013";
+    private static final String LOT5_ITEM_1_BARCODE = "00010014"; // Lot Réservation B, 4.00 — story 4.8 release-on-validate
+    private static final String LOT5_ITEM_2_BARCODE = "00010015";
     private static final String BOB_ITEM_BARCODE = "00020001"; // Boardgame, 6.00 — concurrency scenario only
 
     private Long item1Id;
@@ -194,6 +204,26 @@ class PosBasketIT extends IntegrationTest {
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(lot3Payload)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        CreateLotDto lot4Payload = new CreateLotDto(aliceId, categoryId, "Lot Réservation A", new BigDecimal("7.00"),
+                List.of(new CreateLotItemDto("Lot réservation A item A", false, null),
+                        new CreateLotItemDto("Lot réservation A item B", false, null)));
+        mockMvc.perform(post("/api/lots")
+                        .session(volunteer1Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lot4Payload)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        CreateLotDto lot5Payload = new CreateLotDto(aliceId, categoryId, "Lot Réservation B", new BigDecimal("4.00"),
+                List.of(new CreateLotItemDto("Lot réservation B item A", false, null),
+                        new CreateLotItemDto("Lot réservation B item B", false, null)));
+        mockMvc.perform(post("/api/lots")
+                        .session(volunteer1Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lot5Payload)))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -543,8 +573,96 @@ class PosBasketIT extends IntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    /**
+     * Story 4.8 (FR-109) — the scan-time lot reservation lifecycle on "Lot Réservation A": taken on
+     * the first member (AC-A1), idempotent for a second member in the same basket (AC-A1 f), blocks
+     * another basket with 409 {@code lot-reserved} (AC-A2), held while any member remains, released
+     * only when the last member leaves (AC-A3) and on {@code removeLot} (AC-A4).
+     */
     @Test
     @Order(21)
+    void lot_reservation_is_taken_held_and_released_across_add_remove_and_another_basket() throws Exception {
+        MvcResult v1CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer1Session)).andReturn();
+        Long v1BasketId = objectMapper.readValue(v1CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+
+        BasketDto afterFirst = addItem(volunteer1Session, v1BasketId, LOT4_ITEM_1_BARCODE);
+        Long lotAId = afterFirst.lotGroups().get(0).lotId();
+        assertThat(lotRepository.findById(lotAId).orElseThrow().getReservedByBasketId()).isEqualTo(v1BasketId);
+
+        // AC-A1 (f): a second member of the same lot into the same basket is accepted, no error.
+        BasketDto afterSecond = addItem(volunteer1Session, v1BasketId, LOT4_ITEM_2_BARCODE);
+        assertThat(afterSecond.lotGroups().get(0).scannedCount()).isEqualTo(2);
+
+        // AC-A2: another volunteer's basket cannot touch the lot.
+        MvcResult v2CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer2Session)).andReturn();
+        Long v2BasketId = objectMapper.readValue(v2CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+        mockMvc.perform(post("/api/pos/baskets/" + v2BasketId + "/items")
+                        .session(volunteer2Session).with(csrf())
+                        .param("barcode", LOT4_ITEM_1_BARCODE))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value(endsWith("/lot-reserved")));
+
+        // AC-A3: removing one member while another remains keeps the reservation.
+        Long memberAId = itemRepository.findByEditionIdAndSellerNumberAndItemNumber(editionId, 1, 12).orElseThrow().getId();
+        Long memberBId = itemRepository.findByEditionIdAndSellerNumberAndItemNumber(editionId, 1, 13).orElseThrow().getId();
+        mockMvc.perform(delete("/api/pos/baskets/" + v1BasketId + "/items/" + memberAId)
+                        .session(volunteer1Session).with(csrf()))
+                .andExpect(status().isOk());
+        assertThat(lotRepository.findById(lotAId).orElseThrow().getReservedByBasketId()).isEqualTo(v1BasketId);
+
+        // AC-A3: removing the last member releases it.
+        mockMvc.perform(delete("/api/pos/baskets/" + v1BasketId + "/items/" + memberBId)
+                        .session(volunteer1Session).with(csrf()))
+                .andExpect(status().isOk());
+        assertThat(lotRepository.findById(lotAId).orElseThrow().getReservedByBasketId()).isNull();
+
+        // The lot is free again: v2 can now reserve it, then AC-A4 releases it via removeLot.
+        addItem(volunteer2Session, v2BasketId, LOT4_ITEM_1_BARCODE);
+        assertThat(lotRepository.findById(lotAId).orElseThrow().getReservedByBasketId()).isEqualTo(v2BasketId);
+        mockMvc.perform(delete("/api/pos/baskets/" + v2BasketId + "/lots/" + lotAId)
+                        .session(volunteer2Session).with(csrf()))
+                .andExpect(status().isOk());
+        assertThat(lotRepository.findById(lotAId).orElseThrow().getReservedByBasketId()).isNull();
+    }
+
+    /**
+     * Story 4.8 (AC-A4 / AC-A5) — a successful payment validation releases every lot reservation the
+     * basket held before the basket row is deleted, and a second terminal that then touches that lot
+     * is blocked by the committed sale (AC-A5), never by a stale {@code lot-reserved}.
+     */
+    @Test
+    @Order(22)
+    void validating_a_basket_holding_a_reserved_lot_clears_the_reservation() throws Exception {
+        MvcResult v1CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer1Session)).andReturn();
+        Long v1BasketId = objectMapper.readValue(v1CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+
+        addItem(volunteer1Session, v1BasketId, LOT5_ITEM_1_BARCODE);
+        BasketDto afterSecond = addItem(volunteer1Session, v1BasketId, LOT5_ITEM_2_BARCODE);
+        Long lotBId = afterSecond.lotGroups().get(0).lotId();
+        assertThat(lotRepository.findById(lotBId).orElseThrow().getReservedByBasketId()).isEqualTo(v1BasketId);
+
+        ValidateBasketDto payload = new ValidateBasketDto(PaymentMethod.CASH, null);
+        mockMvc.perform(post("/api/pos/baskets/" + v1BasketId + "/validate")
+                        .session(volunteer1Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk());
+
+        assertThat(lotRepository.findById(lotBId).orElseThrow().getReservedByBasketId()).isNull();
+
+        // AC-A4 / AC-A5: the reservation is gone, so a second terminal is now blocked by the sold
+        // sibling (committed sale) — a sale-state conflict, never a stale lot-reserved.
+        MvcResult v2CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer2Session)).andReturn();
+        Long v2BasketId = objectMapper.readValue(v2CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+        mockMvc.perform(post("/api/pos/baskets/" + v2BasketId + "/items")
+                        .session(volunteer2Session).with(csrf())
+                        .param("barcode", LOT5_ITEM_1_BARCODE))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value(endsWith("/item-already-sold")));
+    }
+
+    @Test
+    @Order(25)
     void a_sale_conflict_is_detected_at_validation_not_at_scan() throws Exception {
         MvcResult v1CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer1Session))
                 .andReturn();
@@ -583,7 +701,7 @@ class PosBasketIT extends IntegrationTest {
     }
 
     @Test
-    @Order(22)
+    @Order(26)
     void seller_role_is_forbidden_on_all_five_endpoints() throws Exception {
         mockMvc.perform(get("/api/pos/baskets/current").session(sellerSession))
                 .andExpect(status().isForbidden());
@@ -604,7 +722,7 @@ class PosBasketIT extends IntegrationTest {
     }
 
     @Test
-    @Order(23)
+    @Order(27)
     void unauthenticated_request_returns_401() throws Exception {
         mockMvc.perform(get("/api/pos/baskets/current"))
                 .andExpect(status().isUnauthorized());
@@ -623,7 +741,7 @@ class PosBasketIT extends IntegrationTest {
      * transitions are one-directional in this test class.
      */
     @Test
-    @Order(24)
+    @Order(28)
     void phase_guard_rejects_four_endpoints_and_the_cancelled_basket_404s_add_item() throws Exception {
         addItem(volunteer1Session, volunteer1BasketId, ITEM_6_BARCODE);
 

@@ -137,6 +137,16 @@ describe('PosPageComponent', () => {
     expect(component.basket()).toEqual(BASKET_WITH_ITEM_1);
   });
 
+  it('shows the lot-reserved inline error when scanning a member of a lot held by another basket (FR-109, story 4.8)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.addItem.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409, error: { type: 'https://pluribourse/errors/lot-reserved' } }))
+    );
+    await component.onScan('00010004');
+    expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.error.lotReserved', variant: 'error' });
+    expect(component.basket()).toEqual(BASKET_WITH_ITEM_1);
+  });
+
   it('removing an item calls removeItem() and updates the basket display (AC3)', async () => {
     await createComponent(BASKET_WITH_ITEM_1);
     posServiceMock.removeItem.mockReturnValue(of(EMPTY_BASKET));
@@ -244,6 +254,19 @@ describe('PosPageComponent', () => {
     await component.openPaymentDialog();
 
     expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.error.lotAlreadySold', variant: 'error' });
+    expect(component.basket()).toEqual(BASKET_WITH_ITEM_1);
+  });
+
+  it('a lot-reserved conflict at validation shows the specific inline error and keeps the basket (FR-109, story 4.8)', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
+    posServiceMock.validate.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409, error: { type: 'https://pluribourse/errors/lot-reserved' } }))
+    );
+
+    await component.openPaymentDialog();
+
+    expect(component.lastScanIssue()).toEqual({ message: 'volunteer.pos.error.lotReserved', variant: 'error' });
     expect(component.basket()).toEqual(BASKET_WITH_ITEM_1);
   });
 

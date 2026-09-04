@@ -487,6 +487,7 @@
       "error": {
         "alreadySold": "Item already sold at another checkout.",
         "lotAlreadySold": "This item belongs to a lot that has already been sold.",
+        "lotReserved": "This lot is being checked out at another checkout.",
         "notFound": "Item not found.",
         "generic": "Could not scan the item.",
         "conflict": "Items already sold at another checkout: {{ names }}",

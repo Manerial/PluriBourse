@@ -10,6 +10,7 @@ import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.entity.Lot;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.item.repository.LotRepository;
+import org.pluribourse.domain.pos.dto.BasketDto;
 import org.pluribourse.domain.pos.dto.ConflictingItemDto;
 import org.pluribourse.domain.pos.dto.SaleDto;
 import org.pluribourse.domain.pos.dto.ValidateBasketDto;
@@ -17,7 +18,7 @@ import org.pluribourse.domain.pos.entity.Basket;
 import org.pluribourse.domain.pos.entity.BasketItem;
 import org.pluribourse.domain.pos.entity.PaymentMethod;
 import org.pluribourse.domain.pos.exception.BasketValidationConflictException;
-import org.pluribourse.domain.pos.exception.LotAlreadySoldException;
+import org.pluribourse.domain.pos.exception.LotReservedException;
 import org.pluribourse.domain.pos.repository.BasketItemRepository;
 import org.pluribourse.domain.pos.repository.BasketRepository;
 import org.pluribourse.domain.pos.repository.SaleRepository;
@@ -49,11 +50,19 @@ import java.util.concurrent.Future;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Story 4.4 (AC 3) — proves the optimistic-lock branch of {@link PosBasketService#validate}
- * (the {@code ObjectOptimisticLockingFailureException} catch, {@code PosBasketService.java:169-181})
- * under a real concurrent write, something {@link PosBasketIT}'s sequential conflict scenario
- * (@Order 20) never exercises: there, the first HTTP call fully completes and commits before the
- * second begins, so only the up-front {@code alreadySold} check is ever hit.
+ * Two real concurrent-write scenarios that {@link PosBasketIT}'s sequential HTTP scenarios can never
+ * exercise (there the first call fully commits before the second begins):
+ * <ul>
+ *   <li>Story 4.4 (AC 3) — the per-{@code Item} {@code @Version} optimistic-lock branch of
+ *       {@link PosBasketService#validate} (the {@code ObjectOptimisticLockingFailureException} /
+ *       {@code SnapshotIsolationException} catch): two terminals validating the <em>same</em> item.</li>
+ *   <li>Story 4.8 (FR-109) — the scan-time lot reservation ({@link PosBasketService#addItem}): two
+ *       terminals adding <em>different</em> members of the same lot to their own baskets at the same
+ *       time. Exactly one takes the reservation, the other gets {@link LotReservedException}; no
+ *       {@code Sale} is created and no deadlock/lock-wait is possible (single-row {@code UPDATE}).
+ *       The old force-increment of {@code Lot.@Version} at validation time is gone, so there is no
+ *       longer a lot race to test in {@code validate()}.</li>
+ * </ul>
  * <p>
  * Bypasses MockMvc/the controller deliberately (a second, technique-driven exception to the
  * project's E2E-by-controller testing philosophy, confirmed with the user at story creation):
@@ -226,7 +235,7 @@ class SaleConcurrencyIT {
     @Test
     // Same no-@Transactional rule as above — the fixtures must actually commit so the two
     // background threads can see them.
-    void two_concurrent_validations_of_different_members_of_the_same_lot_exactly_one_succeeds() throws InterruptedException {
+    void two_concurrent_add_item_of_two_members_of_the_same_lot_exactly_one_reserves() throws InterruptedException {
         Edition edition = new Edition();
         edition.setName("Bourse Concurrence Lot");
         edition.setPhase(PhaseType.SALE);
@@ -259,39 +268,41 @@ class SaleConcurrencyIT {
         lot.setName("Lot disputé");
         lot.setGlobalPrice(new BigDecimal("12.00"));
         lot = lotRepository.save(lot);
+        Long lotId = lot.getId();
 
         Item memberA = newLotMember(edition, seller, category, lot, "Membre A", 1);
         Item memberB = newLotMember(edition, seller, category, lot, "Membre B", 2);
-        Long memberAId = itemRepository.save(memberA).getId();
-        Long memberBId = itemRepository.save(memberB).getId();
+        itemRepository.save(memberA);
+        itemRepository.save(memberB);
+        String memberABarcode = String.format("%04d%04d", 1, 1);
+        String memberBBarcode = String.format("%04d%04d", 1, 2);
 
         Long volunteer1Id = userRepository.findByUsername("volunteer1").orElseThrow().getId();
         Long volunteer2Id = userRepository.findByUsername("volunteer2").orElseThrow().getId();
 
-        Long basket1Id = createBasketWithItem(edition, volunteer1Id, memberA);
-        Long basket2Id = createBasketWithItem(edition, volunteer2Id, memberB);
+        // Empty baskets: the concurrent addItem itself is what takes the reservation.
+        Long basket1Id = createEmptyBasket(edition, volunteer1Id);
+        Long basket2Id = createEmptyBasket(edition, volunteer2Id);
 
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-        ValidateBasketDto payload = new ValidateBasketDto(PaymentMethod.CASH, null);
         CountDownLatch startSignal = new CountDownLatch(1);
 
         int successCount = 0;
-        SaleDto winningSale = null;
         Throwable losingCause = null;
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-            Future<SaleDto> future1 = executor.submit(() -> {
+            Future<BasketDto> future1 = executor.submit(() -> {
                 startSignal.await();
-                return transactionTemplate.execute(status -> posBasketService.validate(basket1Id, payload, volunteer1Id));
+                return transactionTemplate.execute(status -> posBasketService.addItem(basket1Id, memberABarcode, volunteer1Id));
             });
-            Future<SaleDto> future2 = executor.submit(() -> {
+            Future<BasketDto> future2 = executor.submit(() -> {
                 startSignal.await();
-                return transactionTemplate.execute(status -> posBasketService.validate(basket2Id, payload, volunteer2Id));
+                return transactionTemplate.execute(status -> posBasketService.addItem(basket2Id, memberBBarcode, volunteer2Id));
             });
             startSignal.countDown();
 
-            for (Future<SaleDto> future : List.of(future1, future2)) {
+            for (Future<BasketDto> future : List.of(future1, future2)) {
                 try {
-                    winningSale = future.get();
+                    future.get();
                     successCount++;
                 } catch (ExecutionException e) {
                     losingCause = e.getCause();
@@ -299,22 +310,15 @@ class SaleConcurrencyIT {
             }
         }
 
-        assertThat(successCount).isEqualTo(1);
-        assertThat(winningSale).isNotNull();
-        assertThat(winningSale.total()).isEqualByComparingTo("12.00");
-        assertThat(losingCause).isInstanceOf(LotAlreadySoldException.class);
-        assertThat(saleRepository.count()).isEqualTo(1);
+        assertThat(successCount).as("exactly one addItem takes the reservation").isEqualTo(1);
+        assertThat(losingCause).isInstanceOf(LotReservedException.class);
+        assertThat(saleRepository.count()).as("no sale is created on the reservation path").isZero();
 
-        Item a = itemRepository.findById(memberAId).orElseThrow();
-        Item b = itemRepository.findById(memberBId).orElseThrow();
-        assertThat(a.isSold() ^ b.isSold()).as("exactly one member sold").isTrue();
-        Item soldMember = a.isSold() ? a : b;
-        Item unsoldMember = a.isSold() ? b : a;
-        assertThat(soldMember.getSale()).isNotNull();
-        assertThat(soldMember.getSale().getId()).isEqualTo(winningSale.id());
-        // FR-109: the other member of the lot goes back to the seller — never sold, never attached.
-        assertThat(unsoldMember.isSold()).isFalse();
-        assertThat(unsoldMember.getSale()).isNull();
+        Lot reservedLot = lotRepository.findById(lotId).orElseThrow();
+        assertThat(reservedLot.getReservedByBasketId())
+                .as("the winner holds the reservation")
+                .isIn(basket1Id, basket2Id);
+        assertThat(reservedLot.getReservedAt()).isNotNull();
     }
 
     private Item newLotMember(Edition edition, SellerProfile seller, EditionCategory category, Lot lot, String name, int itemNumber) {
@@ -345,5 +349,12 @@ class SaleConcurrencyIT {
         basketItemRepository.save(basketItem);
 
         return basket.getId();
+    }
+
+    private Long createEmptyBasket(Edition edition, Long userId) {
+        Basket basket = new Basket();
+        basket.setEdition(edition);
+        basket.setUser(userRepository.getReferenceById(userId));
+        return basketRepository.save(basket).getId();
     }
 }

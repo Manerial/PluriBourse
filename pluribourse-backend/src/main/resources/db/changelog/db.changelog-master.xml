@@ -38,5 +38,6 @@
     <include file="db/changelog/032-edition-currency.xml"/>
     <include file="db/changelog/033-lot-category.xml"/>
     <include file="db/changelog/034-archived-item-lot.xml"/>
+    <include file="db/changelog/035-lot-reservation.xml"/>
 
 </databaseChangeLog>

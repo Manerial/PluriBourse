@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="035-lot-reservation" author="pluribourse">
+        <!-- SCP 2026-09-03 / FR-109 réécrit : la garde de concurrence multi-postes des lots passe
+             d'un force-increment de Lot.@Version à la validation (story 5.8, pouvait sortir en 500
+             sur deadlock/lock-wait MariaDB) à une réservation légère prise à l'ajout au panier.
+             reserved_by_basket_id = jeton de revendication optimiste (UPDATE ... WHERE id = :l AND
+             (reserved_by_basket_id IS NULL OR reserved_by_basket_id = :b)). reserved_at est purement
+             diagnostic/observabilité — jamais lu par la logique, pas de TTL, pas de purge planifiée.
+             FK ON DELETE SET NULL (même convention que fk_items_sale, 022) : filet BDD derrière la
+             libération applicative explicite, baskets étant une table à forte rotation (un panier
+             supprimé — validation, changement de phase, déconnexion — ne doit jamais bloquer sur une
+             réservation encore pendante). Colonnes nullables : legit pour tout lot non en cours
+             d'encaissement, et SET NULL exige une colonne nullable. -->
+        <addColumn tableName="lots">
+            <column name="reserved_by_basket_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="reserved_at" type="DATETIME">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="lots" baseColumnNames="reserved_by_basket_id"
+                                 constraintName="fk_lots_reserved_basket"
+                                 referencedTableName="baskets" referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="lots" constraintName="fk_lots_reserved_basket"/>
+            <dropColumn tableName="lots" columnName="reserved_by_basket_id"/>
+            <dropColumn tableName="lots" columnName="reserved_at"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

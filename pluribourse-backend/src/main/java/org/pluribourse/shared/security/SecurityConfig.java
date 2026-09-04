@@ -34,6 +34,7 @@ public class SecurityConfig {
                                            LoginSuccessHandler loginSuccessHandler,
                                            LoginFailureHandler loginFailureHandler,
                                            LogoutSuccessHandler logoutSuccessHandler,
+                                           BasketCancellingLogoutHandler basketCancellingLogoutHandler,
                                            ForcePasswordChangeFilter forcePasswordChangeFilter) {
 
         // Build the provider inline — not a @Bean — so Spring Security's
@@ -80,6 +81,7 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .logoutSuccessHandler(logoutSuccessHandler)
+                        .addLogoutHandler(basketCancellingLogoutHandler)
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID", "SESSION")
                 )

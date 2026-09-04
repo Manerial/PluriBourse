@@ -6,6 +6,7 @@ import org.pluribourse.domain.edition.entity.*;
 import org.pluribourse.domain.seller.entity.*;
 
 import java.math.*;
+import java.time.*;
 import java.util.*;
 
 @Entity
@@ -48,4 +49,15 @@ public class Lot {
     // No dedicated conflict handling — relies on Hibernate's default behavior.
     @Version
     private Long version;
+
+    // FR-109 (SCP 2026-09-03): optimistic claim token taken when the first member of the lot is
+    // added to a POS basket (PosBasketService.addItem) and released on removeItem of the last
+    // member / removeLot / a successful validate() / basket cancellation. A raw basket id, not a
+    // @ManyToOne — pos depends on item, never the reverse (same choice as archived_items.lot_ref).
+    // reserved_at is diagnostic only, never read by the logic.
+    @Column(name = "reserved_by_basket_id")
+    private Long reservedByBasketId;
+
+    @Column(name = "reserved_at")
+    private LocalDateTime reservedAt;
 }
