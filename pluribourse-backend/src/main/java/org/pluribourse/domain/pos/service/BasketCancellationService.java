@@ -8,6 +8,7 @@ import org.pluribourse.domain.pos.repository.BasketRepository;
 import org.pluribourse.shared.sse.BasketCancelledEventDto;
 import org.pluribourse.shared.sse.SseEmitterRegistry;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -36,6 +37,10 @@ import java.util.List;
  * cashier's in-progress basket. The logging-out user's other tabs share the now-invalidated session
  * and drop to the login screen on their next request (story 4.8 Dev Notes "Notification de
  * déconnexion — pas de SSE").
+ * <p>
+ * Since story 4.9 {@link #cancelBasketSilently} has a third caller — the inactive-terminal sweep
+ * ({@code BasketReaperService}), one call per stale basket — for the same reason: it must not
+ * broadcast a basket-cancelled that would clear every other terminal's basket.
  */
 @Service
 @RequiredArgsConstructor
@@ -74,6 +79,21 @@ public class BasketCancellationService {
     @Transactional
     public void cancelBasketSilently(Basket basket) {
         releaseAndDelete(List.of(basket));
+    }
+
+    /**
+     * Releases a single lot's reservation held by {@code basketId}, in its own transaction. Used by
+     * {@link org.pluribourse.domain.pos.service.PosBasketService#validate} when its
+     * {@code existsByLotIdAndSoldTrue} pre-check rejects a lot (Blind Hunter #7, story 4.8 review):
+     * {@code validate()} is {@code @Transactional} and about to roll back with
+     * {@code LotAlreadySoldException}, while the reservation to release was committed by an earlier
+     * {@code addItem} transaction — releasing it in {@code validate()}'s own transaction would be
+     * undone by that rollback, so it must commit separately here ({@code REQUIRES_NEW}, and a
+     * different bean so the call actually crosses the Spring proxy).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void releaseLotReservationInNewTransaction(Long lotId, Long basketId) {
+        lotRepository.releaseLot(lotId, basketId);
     }
 
     private void releaseAndDelete(Collection<Basket> baskets) {

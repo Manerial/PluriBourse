@@ -35,7 +35,68 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-09-04"  # Correct-course (bmad-correct-course, SCP 2026-09-04) : ajoute la Story 4-9 (backlog) — détection de poste de caisse inactif par heartbeat + libération du panier/réservations. Suite de la décision D2 de la revue de code de la Story 4-8.
+last_updated: "2026-09-07"  # Correct-course (bmad-correct-course, SCP 2026-09-04) : ajoute la Story 4-9 (backlog) — détection de poste de caisse inactif par heartbeat + libération du panier/réservations. Suite de la décision D2 de la revue de code de la Story 4-8.
+# 2026-09-07 — Story 4-9 : revue de code (bmad-code-review) → done. 4 décisions tranchées par Manerial
+# (D1 « pas de récupération client si panier balayé » → patch : branche /basket-not-found dans
+# handleScanError + handleValidationError, rechargement silencieux, aucune chaîne i18n ; D2 « 1re passe
+# reaper sans délai initial » → patch : initialDelayString sur @Scheduled ; D3 « validate() ne libère
+# que le 1er lot rejeté » → accepté, littéral SCP, fuite cosmétique ; D4 « instantané figé du reaper »
+# → accepté, fenêtre quasi nulle, DELETE en masse écarté car casse FK basket_items + AC5). 8 patchs
+# appliqués (2 issus des décisions + P1 log reaper reaped/failed, P2 PosBasketReaperIT @Order(6)/(7)
+# renommés + assertions renforcées, P3 assertion heartbeat PosBasketIT @Order(24), P4 défauts sur les
+# placeholders de propriétés, P5 @PostConstruct log INFO au démarrage du reaper, P6 JavaDoc
+# SchedulingConfig corrigée). ~20 findings écartés. Vérifs : ./mvnw clean package BUILD SUCCESS
+# 581 tests / 0 échec (Docker présent → SaleConcurrencyIT exécuté) ; npm test 727/727 (+2) ;
+# npm run build 0 warning ; parité i18n inchangée. Vérification visuelle (checklist T10) à faire par Manerial.
+# 2026-09-07 — Story 4-9 : début d'implémentation (bmad-dev-story), statut ready-for-dev → in-progress.
+# Baseline commit e0d356a (déjà dans le frontmatter). 5 questions ouvertes tranchées par Manerial : (1) Blind
+# Hunter #7 = libérer le seul lot rejeté (littéral SCP) ; (2) findStale = @Query avec OR lastSeenAt IS NULL ;
+# (3) course « poste qui revient » = différée (micro-course de quelques ms, jamais de 500, cas nominal = 404
+# géré par la Story 4.6) ; (4) log reaper = debug par passage, info si N>0 ; (5) réalignement doc D1/P4 de la
+# Story 4.8 = item séparé, hors périmètre 4.9.
+# 2026-09-07 — Story 4-9 : implémentation terminée (bmad-dev-story), statut in-progress → review. T1-T10 en un
+# lot. Nouveaux fichiers back : 036-basket-last-seen.xml, SchedulingConfig, BasketReaperService, PosBasketReaperIT.
+# Migration 036 (baskets.last_seen_at DATETIME nullable, ni FK ni index) ; POST /api/pos/baskets/{id}/heartbeat
+# → 204 (recordHeartbeat : garde phase Vente + requireOwnedBasket) ; helper touch() sur getOrCreateCurrentBasket/
+# addItem/removeItem/removeLot/createBasket ; SchedulingConfig @EnableScheduling dédié (1er @Scheduled du projet) ;
+# BasketReaperService @Scheduled(fixedDelayString=pos.basket.reaper.interval) @ConditionalOnProperty(...enabled,
+# matchIfMissing=true) — findStale (@Query OR lastSeenAt IS NULL) puis boucle try/catch(RuntimeException) sur
+# cancelBasketSilently, AUCUN SSE, log info si N>0 sinon debug ; props application.properties (dead-threshold PT3M,
+# reaper.interval PT2M, enabled true ; =false + 2 durées en profil test) ; correctif Blind Hunter #7 :
+# BasketCancellationService.releaseLotReservationInNewTransaction (@Transactional REQUIRES_NEW) appelé dans le
+# pré-check existsByLotIdAndSoldTrue de validate() AVANT le throw (périmètre = le seul lot rejeté) ; front
+# pos-page.component.ts interval(60_000) HEARTBEAT_INTERVAL_MS + takeUntilDestroyed, garde basketCancelled()/
+# basket()==null, subscribe({error:()=>{}}) ; pos.service.ts sendHeartbeat. PosBasketReaperIT = entorse E2E
+# documentée (last_seen_at antidaté, reaper invoqué en direct, @TestPropertySource réactive le reaper + BDD H2
+# dédiée reaper-testdb + interval PT1H). Ajouts PosBasketIT (6e lot fixture, @Order 23/24, +assertions @Order
+# 26/28) + pos-page.component.spec.ts (5 cas fake timers) + pos.service.spec.ts. Bookkeeping T9 : W5 de la Story
+# 4.8 + deferred-work.md marqués livrés ; epics.md l.1028 déjà OK (baseline) ; EXPERIENCE.md non amendé.
+# Vérifs : ./mvnw clean package BUILD SUCCESS 581 tests / 0 échec (Docker présent → SaleConcurrencyIT exécuté) ;
+# npm test 725/725 ; npm run build sans warning ; parité i18n fr/en inchangée, messages*.properties inchangés.
+# Aucune clé i18n, route, composant ni dépendance nouvelle. Vérification visuelle à faire par Manerial.
+# Q3 (course « poste qui revient ») et Q5 (réalignement doc D1/P4 4.8) différées comme convenu.
+# 2026-09-04 — Story 4-9 créée (bmad-create-story). Analyse parallèle exhaustive (5 sous-agents : epics/PRD,
+# architecture, code POS backend livré par 4-8, SCP 2026-09-04 + story 4-8 + deferred-work, frontend POS).
+# Baseline commit e0d356a (Story 4-8 commitée). Story indivisible issue de la SCP 2026-09-04 (D2) : (1) migration
+# Liquibase 036 = colonne baskets.last_seen_at DATETIME nullable, pas de FK, pas d'index ; (2) endpoint
+# POST /api/pos/baskets/{id}/heartbeat → 204 (PosBasketService.recordHeartbeat, garde phase Vente + requireOwnedBasket) ;
+# getOrCreateCurrentBasket/addItem/removeItem/removeLot + création rafraîchissent last_seen_at (helper touch) ;
+# (3) SchedulingConfig @EnableScheduling (1er @Scheduled du projet, classe dédiée pas sur PluribourseApplication) +
+# BasketReaperService @Scheduled(fixedDelayString="${pos.basket.reaper.interval}") @ConditionalOnProperty
+# pos.basket.reaper.enabled — balaie baskets last_seen_at < now - pos.basket.heartbeat.dead-threshold (PT3M) et
+# appelle BasketCancellationService.cancelBasketSilently par panier (try/catch RuntimeException, AUCUN SSE, log sans
+# PII) ; props application.properties (dead-threshold PT3M, reaper.interval PT2M, reaper.enabled true ; =false en
+# profil test) ; (4) correctif Blind Hunter #7 : validate() libère la réservation d'un lot rejeté au pré-check
+# existsByLotIdAndSoldTrue AVANT le throw, via BasketCancellationService.releaseLotReservationInNewTransaction
+# (@Transactional(REQUIRES_NEW) — la tx de validate() rollback) ; (5) front pos-page.component.ts : interval(60s)
+# HEARTBEAT_INTERVAL_MS + takeUntilDestroyed, pas de ping si basketCancelled()/basket()==null, erreur avalée
+# (subscribe({error:()=>{}}) sinon le flux interval meurt) ; pos.service.ts sendHeartbeat. Ferme la lacune FR-066
+# (session expirée 1 h → panier non annulé) laissée ouverte par la SCP 2026-09-03. Aucun amendement archi/PRD/epics
+# à porter (déjà commités dans e0d356a) ; seul bookkeeping = note W5 de la Story 4-8. EXPERIENCE.md non amendé.
+# Tests : PosBasketReaperIT NEW (entorse E2E documentée, méthode reaper invoquée directement, comme SaleConcurrencyIT)
+# + ajouts PosBasketIT + pos-page.component.spec.ts + pos.service.spec.ts. Aucune clé i18n, aucune route/composant/
+# dépendance nouvelle. 5 questions ouvertes consignées dans la story (périmètre Blind Hunter #7, findStale IS NULL,
+# course « poste qui revient » W2, verbosité log reaper, réalignement doc D1/P4). Statut → ready-for-dev.
 # 2026-09-04 — Story 4-8 : revue de code (bmad-code-review) → done. 2 decisions tranchées (D1 → patch snapshot renforcé ; D2 → story de suivi « heartbeat poste mort » à créer via correct-course), 4 patchs appliqués (releaseLot borné au panier, +2 assertions AC-A4/AC-A5 & AC-B2, catch snapshot élargi err.1020 + faux positif same-basket), 5 defer, 15 rejetés. ITs POS + logout + phase vertes ; SaleConcurrencyIT skip (Docker). Vérif visuelle Manerial à faire.
 # 2026-09-04 — Story 4-8 : implémentation terminée (bmad-dev-story) → review.
 # 2026-09-03 — Correct-course (bmad-correct-course, SCP 2026-09-03 : sprint-change-proposal-2026-09-03.md).
@@ -728,7 +789,7 @@ development_status:
   # la réservation d'un lot rejeté à son pré-check « frère vendu committé » (Blind Hunter #7). Amende
   # Stories 4.8 (note W5) et 2.8 (note : cancelBasketSilently aussi appelé par le balayage). Ferme la
   # lacune FR-066 (expiration de session → panier non annulé) laissée ouverte par la SCP 2026-09-03.
-  4-9-detection-poste-caisse-inactif-et-liberation-du-panier: backlog
+  4-9-detection-poste-caisse-inactif-et-liberation-du-panier: done
   epic-4-retrospective: optional
 
   # ─── Epic 5 : Post-vente, Reversements & Rapports ──────────────────────────

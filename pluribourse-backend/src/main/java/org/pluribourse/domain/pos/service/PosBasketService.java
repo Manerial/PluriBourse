@@ -66,6 +66,7 @@ public class PosBasketService {
     private final PosScanService posScanService;
     private final ScanResultMapper scanResultMapper;
     private final LotRepository lotRepository;
+    private final BasketCancellationService basketCancellationService;
 
     @Transactional
     public BasketDto getOrCreateCurrentBasket(Long userId) {
@@ -73,7 +74,22 @@ public class PosBasketService {
         PhaseGuard.requireSalePhase(edition);
         Basket basket = basketRepository.findByEditionIdAndUserId(edition.getId(), userId)
                 .orElseGet(() -> createBasket(edition, userId));
+        touch(basket);
         return toDto(basket);
+    }
+
+    /**
+     * FR-110 / FR-066 (SCP 2026-09-04) — records a sign of life from the cashier's POS page so
+     * {@link BasketReaperService} does not sweep an actively-used basket. Sale phase is required
+     * like the four mutating methods (a heartbeat outside the Sale phase means a stale page, and a
+     * {@code Basket} only legitimately exists during that phase). Returns nothing: the controller
+     * answers 204.
+     */
+    @Transactional
+    public void recordHeartbeat(Long basketId, Long userId) {
+        PhaseGuard.requireSalePhase(editionService.getActiveEdition());
+        Basket basket = requireOwnedBasket(basketId, userId);
+        touch(basket);
     }
 
     @Transactional
@@ -102,6 +118,7 @@ public class PosBasketService {
             // surface as a raw 500.
             throw new ItemAlreadyInBasketException(scanned.itemId());
         }
+        touch(basket);
         return toDto(basket);
     }
 
@@ -118,6 +135,7 @@ public class PosBasketService {
         if (lotId != null && basketItemRepository.findAllByBasketIdAndItemLotId(basketId, lotId).isEmpty()) {
             lotRepository.releaseLot(lotId, basketId);
         }
+        touch(basket);
         return toDto(basket);
     }
 
@@ -136,6 +154,7 @@ public class PosBasketService {
         }
         basketItemRepository.deleteAll(lotItems);
         lotRepository.releaseLot(lotId, basketId);
+        touch(basket);
         return toDto(basket);
     }
 
@@ -179,6 +198,13 @@ public class PosBasketService {
         for (Item representative : ItemPricing.distinctByLot(items)) {
             Lot lot = representative.getLot();
             if (lot != null && itemRepository.existsByLotIdAndSoldTrue(lot.getId())) {
+                // This basket can never validate this lot: the pre-check will keep failing as long
+                // as the lot stays in it. Its reservation was committed by an earlier addItem
+                // transaction, so releasing it here in a separate REQUIRES_NEW transaction — before
+                // this @Transactional validate() rolls back with the exception — is the only way it
+                // survives; without it the dead lot stays blocked at every terminal (Blind Hunter
+                // #7, story 4.8 review).
+                basketCancellationService.releaseLotReservationInNewTransaction(lot.getId(), basket.getId());
                 throw new LotAlreadySoldException(lot.getId());
             }
         }
@@ -244,6 +270,7 @@ public class PosBasketService {
         Basket basket = new Basket();
         basket.setEdition(edition);
         basket.setUser(userRepository.getReferenceById(userId));
+        touch(basket);
         try {
             return basketRepository.saveAndFlush(basket);
         } catch (DataIntegrityViolationException e) {
@@ -253,6 +280,16 @@ public class PosBasketService {
             return basketRepository.findByEditionIdAndUserId(edition.getId(), userId)
                     .orElseThrow(() -> e);
         }
+    }
+
+    /**
+     * Stamps the basket's last sign of life (FR-110 / FR-066). Called on creation and on every
+     * successful mutating action so {@link BasketReaperService} never sweeps a basket a cashier is
+     * actively using. The basket is a managed entity here — the surrounding {@code @Transactional}
+     * flushes the column on commit, no explicit save needed (same as the rest of this service).
+     */
+    private void touch(Basket basket) {
+        basket.setLastSeenAt(LocalDateTime.now());
     }
 
     private Basket requireOwnedBasket(Long basketId, Long userId) {

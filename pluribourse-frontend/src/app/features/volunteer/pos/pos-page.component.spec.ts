@@ -49,6 +49,7 @@ describe('PosPageComponent', () => {
     removeLot: vi.fn(),
     validate: vi.fn(),
     printInvoice: vi.fn(),
+    sendHeartbeat: vi.fn(),
   };
   const paymentDialogServiceMock = { open: vi.fn() };
   const toastMock = { showSuccess: vi.fn(), showError: vi.fn() };
@@ -483,5 +484,109 @@ describe('PosPageComponent', () => {
 
     expect(toastMock.showError).toHaveBeenCalledTimes(1);
     expect(toastMock.showError).toHaveBeenCalledWith('volunteer.pos.error.phaseChanged');
+  });
+
+  it('story 4.9 — a 404 basket-not-found on scan silently reloads onto a fresh empty basket, no toast', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.addItem.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 404, error: { type: 'https://pluribourse/errors/basket-not-found' } }))
+    );
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+
+    await component.onScan('00010001');
+    await flush();
+
+    expect(component.basket()).toEqual(EMPTY_BASKET);
+    expect(component.lastScanIssue()).toBeNull();
+    expect(toastMock.showError).not.toHaveBeenCalled();
+  });
+
+  it('story 4.9 — a 404 basket-not-found at validation silently reloads onto a fresh empty basket, no toast', async () => {
+    await createComponent(BASKET_WITH_ITEM_1);
+    paymentDialogServiceMock.open.mockReturnValue(of({ request: { paymentMethod: 'CASH', amountGiven: null }, printInvoice: false }));
+    posServiceMock.validate.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 404, error: { type: 'https://pluribourse/errors/basket-not-found' } }))
+    );
+    posServiceMock.getCurrentBasket.mockReturnValue(of(EMPTY_BASKET));
+
+    await component.openPaymentDialog();
+    await flush();
+
+    expect(component.basket()).toEqual(EMPTY_BASKET);
+    expect(toastMock.showError).not.toHaveBeenCalled();
+  });
+
+  // ─── Story 4.9 — POS terminal heartbeat ───────────────────────────────────────
+
+  it('sends a heartbeat with the current basket id on every interval tick while a basket is active (AC8)', async () => {
+    vi.useFakeTimers();
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.sendHeartbeat.mockReturnValue(of(undefined));
+
+    vi.advanceTimersByTime(60_000);
+    expect(posServiceMock.sendHeartbeat).toHaveBeenCalledWith(BASKET_WITH_ITEM_1.id);
+    expect(posServiceMock.sendHeartbeat).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(60_000);
+    expect(posServiceMock.sendHeartbeat).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops sending heartbeats once the component is destroyed (AC8)', async () => {
+    vi.useFakeTimers();
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.sendHeartbeat.mockReturnValue(of(undefined));
+
+    vi.advanceTimersByTime(60_000);
+    expect(posServiceMock.sendHeartbeat).toHaveBeenCalledTimes(1);
+
+    fixture.destroy();
+    vi.advanceTimersByTime(120_000);
+    expect(posServiceMock.sendHeartbeat).toHaveBeenCalledTimes(1);
+  });
+
+  it('never sends a heartbeat once the basket has been cancelled (AC8)', async () => {
+    vi.useFakeTimers();
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.sendHeartbeat.mockReturnValue(of(undefined));
+
+    basketCancelled$.next({ editionId: 1, newPhase: 'DEPOSIT' });
+    vi.advanceTimersByTime(60_000);
+
+    expect(posServiceMock.sendHeartbeat).not.toHaveBeenCalled();
+  });
+
+  it('swallows a failed heartbeat: no toast, and the interval keeps firing (AC8)', async () => {
+    vi.useFakeTimers();
+    await createComponent(BASKET_WITH_ITEM_1);
+    posServiceMock.sendHeartbeat.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(60_000);
+
+    expect(posServiceMock.sendHeartbeat).toHaveBeenCalledTimes(2);
+    expect(toastMock.showError).not.toHaveBeenCalled();
+  });
+
+  it('never sends a heartbeat while the initial basket load has not resolved (AC8)', async () => {
+    vi.useFakeTimers();
+    posServiceMock.getCurrentBasket.mockReturnValue(NEVER);
+
+    await TestBed.configureTestingModule({
+      imports: [PosPageComponent],
+      providers: [
+        provideTranslateService({ lang: 'en' }),
+        { provide: PosService, useValue: posServiceMock },
+        { provide: SseService, useValue: { basketCancelled: () => basketCancelled$.asObservable() } },
+        { provide: PaymentDialogService, useValue: paymentDialogServiceMock },
+        { provide: ToastService, useValue: toastMock },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(PosPageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    vi.advanceTimersByTime(120_000);
+
+    expect(posServiceMock.sendHeartbeat).not.toHaveBeenCalled();
   });
 });

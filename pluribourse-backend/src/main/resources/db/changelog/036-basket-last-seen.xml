@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="036-basket-last-seen" author="pluribourse">
+        <!-- SCP 2026-09-04 / FR-110 + FR-066 : signal de vie du poste de caisse. La page caisse
+             envoie un heartbeat périodique tant qu'elle est ouverte ; last_seen_at porte l'instant
+             du dernier signe de vie (heartbeat OU action POS réelle OU création du panier). Un
+             balayage serveur (@Scheduled BasketReaperService) annule les paniers dont last_seen_at
+             est plus vieux que pos.basket.heartbeat.dead-threshold et libère leurs réservations de
+             lot — fermant la lacune de la réservation orpheline laissée par un poste fermé/planté/
+             sans réseau/en session expirée par inactivité (1 h).
+             Colonne nullable UNIQUEMENT pour rendre l'addColumn légal sur d'éventuelles lignes
+             existantes : le code l'écrit toujours (création du panier, chaque action POS, chaque
+             heartbeat), aucun panier créé après cette migration ne la laisse NULL.
+             Pas de FK (ce n'est pas une référence, juste un horodatage). Pas d'index : volume v1 =
+             une poignée de paniers actifs par édition, un balayage full-scan toutes les 2 min est
+             négligeable. -->
+        <addColumn tableName="baskets">
+            <column name="last_seen_at" type="DATETIME">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="baskets" columnName="last_seen_at"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

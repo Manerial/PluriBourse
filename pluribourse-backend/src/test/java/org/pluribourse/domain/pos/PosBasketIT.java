@@ -16,6 +16,8 @@ import org.pluribourse.domain.item.dto.LotDto;
 import org.pluribourse.domain.item.entity.Item;
 import org.pluribourse.domain.item.repository.ItemRepository;
 import org.pluribourse.domain.item.repository.LotRepository;
+import org.pluribourse.domain.pos.entity.Basket;
+import org.pluribourse.domain.pos.repository.BasketRepository;
 import org.pluribourse.domain.pos.dto.BasketDto;
 import org.pluribourse.domain.pos.dto.SaleDto;
 import org.pluribourse.domain.pos.dto.ValidateBasketDto;
@@ -29,6 +31,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,6 +70,9 @@ class PosBasketIT extends IntegrationTest {
     @Autowired
     private LotRepository lotRepository;
 
+    @Autowired
+    private BasketRepository basketRepository;
+
     private MockHttpSession adminSession;
     private MockHttpSession volunteer1Session;
     private MockHttpSession volunteer2Session;
@@ -89,6 +95,8 @@ class PosBasketIT extends IntegrationTest {
     private static final String LOT4_ITEM_2_BARCODE = "00010013";
     private static final String LOT5_ITEM_1_BARCODE = "00010014"; // Lot Réservation B, 4.00 — story 4.8 release-on-validate
     private static final String LOT5_ITEM_2_BARCODE = "00010015";
+    private static final String LOT6_ITEM_1_BARCODE = "00010016"; // Lot Blind Hunter, 9.00 — story 4.9 validate() pre-check release
+    private static final String LOT6_ITEM_2_BARCODE = "00010017";
     private static final String BOB_ITEM_BARCODE = "00020001"; // Boardgame, 6.00 — concurrency scenario only
 
     private Long item1Id;
@@ -224,6 +232,16 @@ class PosBasketIT extends IntegrationTest {
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(lot5Payload)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        CreateLotDto lot6Payload = new CreateLotDto(aliceId, categoryId, "Lot Blind Hunter", new BigDecimal("9.00"),
+                List.of(new CreateLotItemDto("Lot blind hunter item A", false, null),
+                        new CreateLotItemDto("Lot blind hunter item B", false, null)));
+        mockMvc.perform(post("/api/lots")
+                        .session(volunteer1Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lot6Payload)))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -661,6 +679,79 @@ class PosBasketIT extends IntegrationTest {
                 .andExpect(jsonPath("$.type").value(endsWith("/item-already-sold")));
     }
 
+    /**
+     * Story 4.9 (Blind Hunter #7, story 4.8 review) — when {@code validate()} rejects at its
+     * "sibling sold in a committed sale" pre-check ({@code lot-already-sold}), the reservation this
+     * basket holds on that dead lot is released before the exception propagates, and survives the
+     * rollback of {@code validate()}'s own transaction (it is committed by a separate REQUIRES_NEW
+     * transaction). Without it the lot would stay blocked at every till forever.
+     */
+    @Test
+    @Order(23)
+    void a_validate_rejected_at_the_sold_sibling_pre_check_still_releases_that_lots_reservation() throws Exception {
+        MvcResult v1CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer1Session)).andReturn();
+        Long v1BasketId = objectMapper.readValue(v1CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+
+        BasketDto afterAdd = addItem(volunteer1Session, v1BasketId, LOT6_ITEM_1_BARCODE);
+        Long lot6Id = afterAdd.lotGroups().get(0).lotId();
+        assertThat(lotRepository.findById(lot6Id).orElseThrow().getReservedByBasketId()).isEqualTo(v1BasketId);
+
+        // The other member of the lot is sold elsewhere (same simulation as @Order(20): the
+        // pre-check keys on Item.sold). This basket's member can now never be sold.
+        Item sibling = itemRepository.findByEditionIdAndSellerNumberAndItemNumber(editionId, 1, 17).orElseThrow();
+        sibling.setSold(true);
+        itemRepository.saveAndFlush(sibling);
+
+        ValidateBasketDto payload = new ValidateBasketDto(PaymentMethod.CASH, null);
+        mockMvc.perform(post("/api/pos/baskets/" + v1BasketId + "/validate")
+                        .session(volunteer1Session).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value(endsWith("/lot-already-sold")));
+
+        // Released despite validate()'s rollback — the dead lot is no longer blocked everywhere.
+        assertThat(lotRepository.findById(lot6Id).orElseThrow().getReservedByBasketId()).isNull();
+        // The other failure paths are unchanged: validate() rolled back, so the basket still exists.
+        assertThat(basketRepository.findById(v1BasketId)).isPresent();
+
+        // Leave the basket empty for the scenarios that follow.
+        mockMvc.perform(delete("/api/pos/baskets/" + v1BasketId + "/lots/" + lot6Id)
+                        .session(volunteer1Session).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    /**
+     * Story 4.9 — the heartbeat endpoint: 204 and last_seen_at moved forward for the owner, 404 for
+     * anyone else (IDOR-safe, {@code requireOwnedBasket}).
+     */
+    @Test
+    @Order(24)
+    void heartbeat_refreshes_last_seen_at_for_the_owner_and_404s_for_everyone_else() throws Exception {
+        MvcResult v1CurrentResult = mockMvc.perform(get("/api/pos/baskets/current").session(volunteer1Session)).andReturn();
+        Long v1BasketId = objectMapper.readValue(v1CurrentResult.getResponse().getContentAsString(), BasketDto.class).id();
+
+        Basket backdated = basketRepository.findById(v1BasketId).orElseThrow();
+        backdated.setLastSeenAt(LocalDateTime.now().minusMinutes(30));
+        basketRepository.saveAndFlush(backdated);
+
+        LocalDateTime beforeHeartbeat = LocalDateTime.now();
+        mockMvc.perform(post("/api/pos/baskets/" + v1BasketId + "/heartbeat")
+                        .session(volunteer1Session).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        // Stamped to "now", not just to something newer than the back-dated value — a bug writing a
+        // wrong-but-recent constant would still pass an isAfter(staleStamp) check.
+        assertThat(basketRepository.findById(v1BasketId).orElseThrow().getLastSeenAt())
+                .isAfterOrEqualTo(beforeHeartbeat);
+
+        // Another volunteer cannot heartbeat this basket — 404, never confirming it exists.
+        mockMvc.perform(post("/api/pos/baskets/" + v1BasketId + "/heartbeat")
+                        .session(volunteer2Session).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(endsWith("/basket-not-found")));
+    }
+
     @Test
     @Order(25)
     void a_sale_conflict_is_detected_at_validation_not_at_scan() throws Exception {
@@ -702,11 +793,14 @@ class PosBasketIT extends IntegrationTest {
 
     @Test
     @Order(26)
-    void seller_role_is_forbidden_on_all_five_endpoints() throws Exception {
+    void seller_role_is_forbidden_on_all_basket_endpoints() throws Exception {
         mockMvc.perform(get("/api/pos/baskets/current").session(sellerSession))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/pos/baskets/" + volunteer1BasketId + "/items")
                         .session(sellerSession).with(csrf()).param("barcode", ITEM_6_BARCODE))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/pos/baskets/" + volunteer1BasketId + "/heartbeat")
+                        .session(sellerSession).with(csrf()))
                 .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/pos/baskets/" + volunteer1BasketId + "/items/1")
                         .session(sellerSession).with(csrf()))
@@ -770,6 +864,12 @@ class PosBasketIT extends IntegrationTest {
                         .session(volunteer1Session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ValidateBasketDto(PaymentMethod.CASH, null))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));
+        // Story 4.9 — heartbeat checks the Sale phase before basket ownership, so outside Sale it
+        // 422s (never leaks whether the cancelled basket still exists).
+        mockMvc.perform(post("/api/pos/baskets/" + volunteer1BasketId + "/heartbeat")
+                        .session(volunteer1Session).with(csrf()))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.type").value(endsWith("/sale-phase-required")));
     }

@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, interval } from 'rxjs';
 import { Basket } from '../../../models/pos.model';
 import { CurrentEditionService } from '../../../services/current-edition.service';
 import { PosService } from '../../../services/pos.service';
@@ -19,6 +19,10 @@ interface ScanIssue {
   message: string;
   variant: 'warning' | 'error';
 }
+
+// Story 4.9: sign of life sent while the POS page is open. The server sweeps a basket whose
+// heartbeat has been silent for pos.basket.heartbeat.dead-threshold (~3 missed beats).
+const HEARTBEAT_INTERVAL_MS = 60_000;
 
 @Component({
   selector: 'app-pos-page',
@@ -64,6 +68,21 @@ export class PosPageComponent implements OnInit {
     this.sseService.basketCancelled().pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(() => this.onBasketCancelled());
+
+    interval(HEARTBEAT_INTERVAL_MS).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => this.sendHeartbeat());
+  }
+
+  private sendHeartbeat(): void {
+    const currentBasket = this.basket();
+    if (this.basketCancelled() || !currentBasket) {
+      return;
+    }
+    // Errors are swallowed inside the callback (a 404 for an already-swept basket, a phase 409, a
+    // network blip): a toast would be noise, and letting the error reach the interval stream would
+    // terminate it — no further heartbeats.
+    this.posService.sendHeartbeat(currentBasket.id).subscribe({ error: () => {} });
   }
 
   async onScan(barcode: string): Promise<void> {
@@ -247,6 +266,14 @@ export class PosPageComponent implements OnInit {
   private handleValidationError(err: unknown): void {
     if (err instanceof HttpErrorResponse) {
       const type = extractErrorType(err);
+      if (type?.endsWith('/basket-not-found')) {
+        // Story 4.9: the basket was swept (inactive-terminal reaper) or the session lapsed between
+        // opening the payment dialog and confirming it. Same handling as a failed scan — silently
+        // reload onto the fresh empty basket rather than showing a generic error.
+        this.lastScanIssue.set(null);
+        void this.loadBasket();
+        return;
+      }
       if (type?.endsWith('/basket-validation-conflict')) {
         const names = (extractConflictingItems(err) ?? []).map(item => item.name).join(', ');
         // The conflicting items must be removed manually by the volunteer — the basket is left
@@ -273,6 +300,15 @@ export class PosPageComponent implements OnInit {
   private handleScanError(err: unknown): void {
     if (err instanceof HttpErrorResponse) {
       const type = extractErrorType(err);
+      if (type?.endsWith('/basket-not-found')) {
+        // Story 4.9: the server-side basket is gone — swept by the inactive-terminal reaper after
+        // this page went quiet, or the session lapsed. SCP §5 "UX du panier balayé": no dedicated
+        // string, no toast — just reload onto the fresh empty basket getCurrentBasket() hands back
+        // (getOrCreateCurrentBasket creates one), so the next scan works instead of a dead-end.
+        this.lastScanIssue.set(null);
+        void this.loadBasket();
+        return;
+      }
       if (type?.endsWith('/item-already-sold')) {
         this.lastScanIssue.set({ message: this.translate.instant('volunteer.pos.error.alreadySold'), variant: 'error' });
         return;

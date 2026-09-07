@@ -90,4 +90,13 @@ describe('PosService', () => {
     req.flush(MOCK_SALE);
     expect(await p).toEqual(MOCK_SALE);
   });
+
+  it('sendHeartbeat() sends POST /api/pos/baskets/{basketId}/heartbeat with a null body', async () => {
+    const p = firstValueFrom(service.sendHeartbeat(7));
+    const req = http.expectOne('/api/pos/baskets/7/heartbeat');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush(null);
+    expect(await p).toBeNull();
+  });
 });

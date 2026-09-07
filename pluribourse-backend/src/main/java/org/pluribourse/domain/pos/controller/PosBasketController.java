@@ -58,6 +58,17 @@ public class PosBasketController {
         return ResponseEntity.ok(service.validate(basketId, dto, userId(authentication)));
     }
 
+    /**
+     * FR-110 / FR-066 (SCP 2026-09-04) — the POS page pings this while it is open so the server can
+     * tell a live terminal from an abandoned one. No body, 204 on success; 404 (basket-not-found)
+     * if the basket is unknown or not the caller's, 422 (sale-phase-required) outside the Sale phase.
+     */
+    @PostMapping("/{basketId}/heartbeat")
+    public ResponseEntity<Void> heartbeat(@PathVariable Long basketId, Authentication authentication) {
+        service.recordHeartbeat(basketId, userId(authentication));
+        return ResponseEntity.noContent().build();
+    }
+
     private Long userId(Authentication authentication) {
         return ((PluriBourseUserDetails) authentication.getPrincipal()).getUserId();
     }
