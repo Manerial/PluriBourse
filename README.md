@@ -25,6 +25,11 @@ L'accent est mis sur une expérience utilisateur fluide.
 
 Ce projet a été généré et spécifié à l'aide de l'outil BMAD. Vous trouverez ci-dessous un résumé du projet basé sur les documents générés.
 
+## PrinterBridge
+
+Afin de faciliter l'utilisation des imprimantes à travers l'outil instancié dans Docker, un petit logiciel de gestion d'imprimantes a été implémenté.
+Il est disponible à cette adresse : https://github.com/Manerial/PrinterBridge/releases/
+
 ## MKDocs
 
 MKdocs est utilisé pour relire la documentation générée par BMAD.
