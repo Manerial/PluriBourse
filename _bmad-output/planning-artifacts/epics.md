@@ -175,7 +175,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - ARCH-009 : escpos-coffee (ou équivalent) pour l'impression thermique ESC/POS via jSerialComm (port série RFCOMM Bluetooth). N files `LinkedBlockingQueue` dynamiques — une par imprimante enregistrée (thermique ou A4) — livraison au plus une fois, redéclenchable depuis l'interface. Les files sont instanciées au démarrage depuis la liste des imprimantes configurées en base.
 - ARCH-010 : ZXing pour la génération de codes-barres Code 128 (Apache 2.0).
 - ARCH-011 : Le rôle `SELLER` est déclaré dans le code et bloqué en 403 dans la v1 via `SecurityConfig`. Aucun endpoint ni interface SELLER jusqu'à la v2.
-- ARCH-012 : SSE (`SseEmitterRegistry`) doit être initialisé avant les endpoints de transition de phase. Événements : `phase-changed` (payload : editionId, newPhase, previousPhase) et `basket-cancelled`.
+- ARCH-012 : SSE (`SseEmitterRegistry`) doit être initialisé avant les endpoints de transition de phase. Événements : `phase-changed` (payload : editionId, newPhase, previousPhase) et `basket-cancelled`. La connexion SSE est **maintenue par un keepalive serveur** et le client applique une **reconnexion automatique** (délai fixe + jitter) ; une coupure de transport ne déconnecte jamais l'utilisateur (redirection `/login` réservée à un 401/403 confirmé ou à l'expiration de session FR-066). Le reverse-proxy expose un `location /api/sse/` dédié (buffering off, read timeout long, HTTP/1.1). *(SCP 2026-09-07, Story 2.11)*
 - ARCH-013 : RFC 7807 Problem Details pour toutes les réponses d'erreur via `@ControllerAdvice`.
 - ARCH-014 : Springdoc OpenAPI activé dans le profil `dev` uniquement, désactivé en `prod`.
 - ARCH-015 : Ordre de build inter-composants — la machine à états des phases (F2) doit être implémentée avant F3, F4, F5, F10. Spring Session JDBC nécessite la migration Liquibase avant toute fonctionnalité d'authentification. Les consommateurs de la file d'impression doivent être des beans Spring avant l'impression F3/F4.
@@ -186,7 +186,7 @@ Exigences issues de l'architecture ayant un impact sur l'implémentation :
 - UX-DR1 : Implémenter le thème global Angular Material 3 avec tous les tokens de design du fichier DESIGN.md : primaire corail (`#C44626` clair / `#F07040` sombre), surfaces beige chaud (`#FFFBF9` clair / `#1A0C06` sombre), fond de la barre latérale (`#2A100A`), couleurs de statut sémantiques (succès vert `#166534`/`#F0FDF4`, avertissement corail-container, erreur rouge `#BA1A1A`/`#FFDAD6`), tokens d'élévation (3 niveaux), tokens de forme/arrondi (5 niveaux : 4/8/12/20/999px), échelle d'espacement (base-4 : 4/8/16/24/32/48/64px).
 - UX-DR2 : Implémenter la police DM Sans (Google Fonts, SIL OFL) avec une échelle typographique à 8 niveaux — display (32px/700) à label-sm (12px/600 majuscules). Taille de police minimale de 12px imposée.
 - UX-DR3 : Implémenter `AppLayoutComponent` avec une barre supérieure fixe (hauteur 56px) + barre latérale optionnelle (largeur 200px, admin uniquement, non rétractable en v1) + zone de contenu (padding 24px, max 640px pour les formulaires, illimité pour les tableaux).
-- UX-DR4 : Implémenter le composant chip de phase (centre de la barre supérieure) : pill arrondie, fond primary-container, indicateur ● corail, mise à jour en temps réel via SSE avec transition de fondu 150ms. Cliquable pour l'admin (→ page de contrôle de phase), non cliquable pour le bénévole. aria-label « Phase actuelle : [phase] ».
+- UX-DR4 : Implémenter le composant chip de phase (centre de la barre supérieure) : pill arrondie, fond primary-container, indicateur ● corail, mise à jour en temps réel via SSE avec transition de fondu 150ms. Cliquable pour l'admin (→ page de contrôle de phase), non cliquable pour le bénévole. aria-label « Phase actuelle : [phase] ». En cas de perte de la connexion SSE, la reconnexion est **silencieuse** : le chip conserve la dernière phase connue, aucune erreur n'est affichée, et il se met à jour dès la reconnexion. *(SCP 2026-09-07)*
 - UX-DR5 : Implémenter le composant badge de rôle (droite de la barre supérieure) : pill arrondie, style admin (primary-container), style bénévole (surface-variant), label-sm majuscules.
 - UX-DR6 : Implémenter le composant boîte de dialogue de confirmation : rounded-xl, élévation niveau 3, superposition sombre à 50%, titre + description des conséquences + bouton confirmer + bouton annuler (ghost), focus piégé, focus initial sur le bouton annuler, Échap ferme la fenêtre.
 - UX-DR7 : Implémenter le composant notification inline : fond primary-container, bordure gauche de 3px corail, icône Material Symbols `warning`, apparaît sous l'élément déclencheur dans le flux (pas de toast), persiste jusqu'à résolution.
@@ -321,7 +321,7 @@ Les administrateurs et les bénévoles peuvent déployer l'application, se conne
 **UX :** UX-DR1, UX-DR2, UX-DR3, UX-DR5, UX-DR6, UX-DR7, UX-DR8, UX-DR9, UX-DR12, UX-DR13, UX-DR20
 
 ### Epic 2 : Gestion du cycle de vie des éditions
-Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/archiver les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/archiver les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE — connexion maintenue par keepalive et reconnexion automatique, résiliente aux coupures de proxy/réseau.
 
 **FR couvertes :** FR-008–018, FR-080, FR-082, FR-088, FR-090 (côté serveur), FR-096, FR-099, FR-100
 **Architecture :** ARCH-012, ARCH-015 (prérequis machine de phases)
@@ -766,7 +766,7 @@ afin qu'un compte révoqué ne conserve pas un accès fonctionnel pendant la dur
 
 ## Epic 2 : Gestion du cycle de vie des éditions
 
-Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/archiver les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE.
+Les administrateurs peuvent créer des éditions, piloter l'intégralité du cycle de phases (Préparation → Dépôt → Vente → Post-vente → Clôturée), effectuer des retours arrière de phases, et clôturer/archiver les éditions. Tous les utilisateurs connectés voient la phase active en temps réel via SSE — connexion maintenue par keepalive et reconnexion automatique, résiliente aux coupures de proxy/réseau.
 
 ### Story 2.1 : CRUD d'édition & Configuration du taux de commission
 

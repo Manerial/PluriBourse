@@ -255,7 +255,13 @@ class PosBasketCancellationIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phase").value("PREPARATION"));
 
-        assertThat(sse.getResponse().getContentAsString()).isEmpty();
+        // The stream now opens with an ":ok" initial frame (story 2.11), so the body is no longer
+        // byte-empty. Assert the stream actually opened (":ok" present) and that no business event
+        // was broadcast — the intent here is "no event", not "zero bytes".
+        assertThat(sse.getResponse().getContentAsString())
+                .contains(":ok")
+                .doesNotContain("phase-changed")
+                .doesNotContain("basket-cancelled");
     }
 
     private Long createBasketWithItem(MockHttpSession session, String barcode) throws Exception {

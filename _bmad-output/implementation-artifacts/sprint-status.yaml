@@ -35,7 +35,30 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-09-07"  # Correct-course (bmad-correct-course, SCP 2026-09-04) : ajoute la Story 4-9 (backlog) — détection de poste de caisse inactif par heartbeat + libération du panier/réservations. Suite de la décision D2 de la revue de code de la Story 4-8.
+last_updated: "2026-09-07"  # Story 2-11 : revue de code (bmad-code-review, 3 revues parallèles) → done. 2 decision-needed tranchées par Manerial (D1 sonde /api/auth/me : laisser tel quel ; D2 retrait AuthService/Router de SseService : validé), 4 patchs appliqués (I/O frame initiale hors du synchronized de register(), @Slf4j mort retiré, +assertion .contains(":ok") sur PosBasketCancellationIT @Order(6), nginx location ^~ /api/sse/), 3 defer (completeWithError double-appel, multi-EventSource → V2, scheduler mono-thread). 33 ITs SSE verts. T6.3 (rebuild image front) + T8 (vérif manuelle) restent à faire par Manerial.
+# 2026-09-07 — Correct-course (bmad-correct-course, SCP 2026-09-07) : ajoute la Story 2-11 (backlog) à l'Epic 2 — résilience de la connexion SSE derrière le reverse-proxy (frame initiale + keepalive backend, reconnexion client sans déconnexion, durcissement nginx). Bug pré-existant Story 2.6, sans lien avec 4.9.
+# 2026-09-07 — Story 2-11 créée (bmad-create-story) : backlog → ready-for-dev.
+# 2026-09-07 — Story 2-11 : début d'implémentation (bmad-dev-story) : ready-for-dev → in-progress.
+# 2026-09-07 — Story 2-11 : implémentation terminée (bmad-dev-story), in-progress → review. T1-T7 en un lot.
+# Back : SseEmitterRegistry (frame initiale :ok dans register() + @Scheduled sendKeepalive() gardé par
+# sse.keepalive.enabled, sans @ConditionalOnProperty), SseController (X-Accel-Buffering: no via
+# HttpServletResponse), SchedulingConfig (JavaDoc : 2e @Scheduled), application.properties main+test
+# (sse.keepalive.interval=PT20S ; enabled=true prod / false test). Nouveau SseEmitterRegistryKeepaliveTest
+# (isolé, sans Mockito, sous-classes locales de SseEmitter). Fix PosBasketCancellationIT @Order(6)
+# .isEmpty() → .doesNotContain(phase-changed/basket-cancelled). Front : sse.service.ts listen<T> devient
+# une boucle connect()/scheduleReconnect()/probeSession() — délai 4-7 s, sonde GET /api/auth/me une seule
+# fois à consecutiveFailures===2, plus AUCUN clearSession/navigate/currentEdition.set(null) sur CLOSE de
+# transport ; phaseChanges() seul resynchronise via loadEdition() au (re)open. sse.service.spec.ts remanié
+# (fabrique multi-instances, provideHttpClient(Testing), HttpTestingController) : test « CLOSED → logout »
+# remplacé par 3 cas + test « timer annulé au teardown ». nginx.conf : bloc location /api/sse/ avant
+# /api/ (proxy_buffering off, http/1.1, Connection '', proxy_read_timeout 3600s). Notes miroir Stories
+# 2.6 et 4.8. Écart assumé : AuthService/Router retirés de SseService (code mort après T4.7) — T4.1
+# demandait de les garder ; challengeable, consigné dans la story. Vérifs : ./mvnw -o clean package
+# BUILD SUCCESS 584 tests / 0 échec / 0 skip (Docker présent → SaleConcurrencyIT exécuté) ; npm test
+# 730/730 (67 fichiers) ; npm run build sans warning ; aucune clé i18n, route, composant ni dépendance
+# nouvelle ; parité i18n fr/en inchangée. Reste côté Manerial : T6.3 (rebuild image pluribourse-frontend,
+# nginx.conf embarqué via Dockerfile) + T8 (vérif manuelle : OPEN immédiat, > 5 min sans 504, onglet
+# oisif + avance de phase, docker restart backend, logout réel).
 # 2026-09-07 — Story 4-9 : revue de code (bmad-code-review) → done. 4 décisions tranchées par Manerial
 # (D1 « pas de récupération client si panier balayé » → patch : branche /basket-not-found dans
 # handleScanError + handleValidationError, rechargement silencieux, aucune chaîne i18n ; D2 « 1re passe
@@ -722,6 +745,34 @@ development_status:
   # c'est sûr" et 1 test manquant côté frontend (rollback Dépôt→Préparation doit vider
   # currentEdition()) — les deux corrigés dans la story avant finalisation. Statut → ready-for-dev.
   2-10-preparation-non-exclusive: done
+  # Correct-course SCP 2026-09-07 : bug pré-existant depuis la Story 2.6 (SSE temps réel), révélé en
+  # test post-4.9 (mais sans lien avec 4.9). Derrière le reverse-proxy livré (pluribourse-frontend/
+  # nginx.conf, location /api/ sans réglage SSE), GET /api/sse/events renvoie 504 au bout de 60 s.
+  # Cause réelle : SseEmitter ne valide la réponse HTTP qu'au 1er send() ; register() n'envoie rien →
+  # sur connexion oisive le backend n'émet aucun octet → nginx renvoie 504 (attente en-têtes upstream).
+  # L'EventSource passe CLOSED sans reconnexion native, et sse.service.ts onerror fait clearSession() +
+  # navigate(['/login']) — l'utilisateur (session backend valide) est rejeté vers /login toutes les
+  # minutes. Régression vs FR-066 (déconnexion auto après 1 h, pas 60 s).
+  # Story 2-11 (porteur, indépendant du proxy) : (a) register() envoie une frame initiale immédiate
+  # (commit la réponse → EventSource OPEN tout de suite, plus de 504) + en-tête X-Accel-Buffering: no ;
+  # (b) keepalive backend planifié sur SseEmitterRegistry (~20 s, réutilise @EnableScheduling de 4.9) ;
+  # (c) front : plus de clearSession/redirect sur CLOSED — reconnexion applicative (délai fixe + jitter),
+  # sonde GET /api/auth/me pour laisser authInterceptor trancher un vrai 401/403 ; (d) currentEdition
+  # remis à null seulement sur logout confirmé.
+  # Story 2-11 (durcissement, hors chemin critique) : (e) bloc nginx location /api/sse/ (buffering off,
+  # HTTP/1.1, read timeout long). Backoff exponentiel + bannière « connexion perdue » + multicast SSE :
+  # reportés V2 (deferred-work.md). Amende Stories 2.6 (onerror superseded) et 4.8 (émetteurs gardés
+  # ouverts → CLOSED ≠ session expirée). Artefacts amendés : architecture.md (§ Notification de phase),
+  # epics.md (ARCH-012, objectif Epic 2, UX-DR4), prd.md (FR-066).
+  # 2026-09-07 — Story 2-11 créée (bmad-create-story). 9 AC (frame initiale + keepalive backend, reconnexion
+  # applicative front avec sonde /api/auth/me, bloc nginx /api/sse/, tests, vérif manuelle). Baseline
+  # caf5ab08 (+ amendements d'artefacts SCP 2026-09-07 dans l'arbre de travail, à committer avant le dev).
+  # Aucun schéma, endpoint, route, composant, dépendance ni clé i18n nouveaux. Statut → ready-for-dev.
+  # 2026-09-07 — Story 2-11 : début d'implémentation (bmad-dev-story), statut ready-for-dev → in-progress.
+  # Baseline commit caf5ab08 (déjà dans le frontmatter). Manerial commitera les amendements SCP 2026-09-07
+  # + le code de la story en un lot à la fin.
+  # 2026-09-07 — Story 2-11 : implémentation terminée (bmad-dev-story), in-progress → review.
+  2-11-resilience-connexion-sse-derriere-reverse-proxy: done
   epic-2-retrospective: optional
 
   # ─── Epic 3 : Enregistrement des vendeurs & Dépôt ──────────────────────────
