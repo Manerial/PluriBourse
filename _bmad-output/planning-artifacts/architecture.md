@@ -264,12 +264,15 @@ Toutes les dépendances sélectionnées utilisent des licences permissives ou fa
 | Gestion des erreurs | Les erreurs d'imprimante remontent vers l'interface via SSE ou réponse de polling (FR-079). La file est suspendue. L'utilisateur peut relancer le job en erreur ou l'ignorer. L'admin dispose d'une vue de l'état de la file et des erreurs en cours. | Utilisateur notifié ; peut réessayer ou ignorer ; admin peut diagnostiquer |
 | Imprimante thermique | ESC/POS construit en un seul payload, transmis via WebSocket à PrinterBridge (`WS /printers/{id}/print`) | Une file, un thread consommateur |
 | Imprimante A4/document | PDF généré par OpenPDF 3.0.0 → transmis via WebSocket à PrinterBridge, qui le soumet au spouleur OS | Une file, un thread consommateur |
+| **Vérification périodique de connectivité** | **`@Scheduled` (réutilise `@EnableScheduling`, introduit Story 4.9) sur toutes les imprimantes enregistrées non suspendues, intervalle configurable (`fixedDelay`, propriété dédiée)** | **Maintient l'état de connectivité à jour sans check bloquant dans le cycle requête/réponse HTTP (FR-079). Sans danger vis-à-vis d'un job en cours : `PrinterLocks.tryLock()` côté PrinterBridge est non bloquant (voir Frontière PrinterBridge). *(Ajouté — SCP 2026-09-11)*** |
 
 ---
 
 ### Frontière PrinterBridge
 
 PluriBourse ↔ PrinterBridge communiquent via HTTP/WebSocket (`host.docker.internal` / `extra_hosts: host-gateway` sous Docker Engine natif — résolu nativement par Docker Desktop). PrinterBridge est un repository séparé (`github.com/Manerial/PrinterBridge`), pas un module du monorepo — un composant natif installé sur le poste admin, seul à posséder l'accès matériel (Bluetooth + spouleur d'impression OS). Le backend ne stocke plus d'adresse physique, uniquement un identifiant opaque renvoyé par PrinterBridge. Endpoints consommés : `GET /printers` (découverte), `GET /printers/{id}/status` (connectivité), `POST /printers/{id}/test-print` (test d'impression), `WS /printers/{id}/print` (envoi d'un job).
+
+**`GET /printers/{id}/status` est appelé à trois moments distincts : au démarrage du serveur (toutes les imprimantes enregistrées), par la tâche de fond planifiée (toutes les imprimantes enregistrées non suspendues, voir Infrastructure d'Impression), et à la demande de l'admin pour une imprimante précise (`/admin/printers`). Il n'est plus appelé à la création d'une imprimante — le statut déjà renvoyé par `GET /printers` (découverte) est réutilisé directement. *(Amendé — SCP 2026-09-11)***
 
 Les imprimantes ignorées (table `ignored_printers`) sont un concept propre à PluriBourse — PrinterBridge n'a aucune notion d'ignorer et continue de détecter la même imprimante à chaque scan ; le filtrage se fait entièrement côté PluriBourse au moment de `discover()`, au même endroit que le filtrage des imprimantes déjà enregistrées.
 

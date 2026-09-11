@@ -81,6 +81,11 @@
     flex-shrink: 0;
   }
 
+  &--pending-verification {
+    background: var(--mat-sys-surface-variant);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
   &--job-error {
     background: var(--pb-warning-container);
     color: var(--pb-on-warning-container);

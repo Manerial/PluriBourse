@@ -6,6 +6,7 @@ public record PrinterSummaryDto(
         Long id,
         String name,
         PrinterType type,
-        boolean connected
+        boolean connected,
+        boolean pendingVerification
 ) {
 }

@@ -1,5 +1,5 @@
 # generated: 2026-06-11
-# last_updated: 2026-09-03
+# last_updated: 2026-09-11
 # project: PluriBourse
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,44 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: "2026-06-11"
-last_updated: "2026-09-07"  # Story 2-11 : revue de code (bmad-code-review, 3 revues parallèles) → done. 2 decision-needed tranchées par Manerial (D1 sonde /api/auth/me : laisser tel quel ; D2 retrait AuthService/Router de SseService : validé), 4 patchs appliqués (I/O frame initiale hors du synchronized de register(), @Slf4j mort retiré, +assertion .contains(":ok") sur PosBasketCancellationIT @Order(6), nginx location ^~ /api/sse/), 3 defer (completeWithError double-appel, multi-EventSource → V2, scheduler mono-thread). 33 ITs SSE verts. T6.3 (rebuild image front) + T8 (vérif manuelle) restent à faire par Manerial.
+last_updated: "2026-09-11"  # Story 3-15 : seconde revue de code (bmad-code-review, session fraîche,
+# 3 revues parallèles) → reste `done`. 1 decision-needed tranchée (badge pendingVerification sans
+# levier sur /admin/print-queue, accepté tel quel), 2 patchs appliqués (registerPrinter atomique,
+# ordre connectionState() corrigeant un affichage "Connecté" trompeur en état torn), 6 defer copiés
+# dans deferred-work.md, 14 dismiss. mvnw BUILD SUCCESS (Docker → concurrency ITs exécutés) ; npm
+# test 735/735 (+1). Voir Change Log de la story pour le détail.
+# 2026-09-11 — Story 3-15 : revue de code (bmad-code-review, 3 revues parallèles) → done. 2 decision-needed
+# tranchées par Manerial (D1 race refreshOne()/job en échec, pré-existante mais désormais automatique
+# toutes les 5 min → différé, impact réel = texte d'erreur vide sur une file déjà correctement
+# suspendue ; D2 imprimante UNKNOWN affichée connectée → patché, nouveau pendingVerification sur
+# PrinterQueueHandle/PrinterSummaryDto/PrinterStatusDto, badge dédié /admin/printers + /admin/print-queue).
+# 2 patchs supplémentaires (findById dupliqué PrinterService/PrintQueueService.refreshConnectivity,
+# garde containsKey manquante sur registerPrinter(Printer, PrinterStatus)). Vérifs : mvnw clean package
+# BUILD SUCCESS 590/590 (Docker → SaleConcurrencyIT + SettlementConcurrencyIT exécutés) ; npm test
+# 734/734 (+2) ; npm run build sans warning ; parité i18n 609/609 (+2 pendingVerification).
+# 2026-09-11 — Story 3-15 : implémentation terminée (bmad-dev-story), in-progress → review. Tâches T1-T14 en un lot :
+# CreatePrinterDto gagne un champ status (5e champ, NotNull) ; inventaire exhaustif des ~20 call sites
+# positionnels dans 12 fichiers de test appliqué (ONLINE/OFFLINE selon les Dev Notes) ; PrintQueueService
+# gagne registerPrinter(Printer, PrinterStatus) (seed sans appel réseau) + refreshOne() factorisé +
+# refreshConnectivity(Long) (ciblé) ; PrinterService.create() bascule sur la surcharge seedée, nouvelle
+# refreshConnectivity(Long id) + toSummaryDto() extrait ; nouveau endpoint POST /admin/printers/{id}/
+# refresh-connectivity ; nouveau PrinterConnectivityRefreshService (modèle exact BasketReaperService,
+# Story 4.9) + SchedulingConfig javadoc à jour ; POST /admin/print-queue/refresh retiré (contrôleur +
+# service) ; properties printer.connectivity.refresh.{interval,enabled} (main=true/PT5M, test=false).
+# PrintInfrastructureIT @Order(5) et PrinterRegistryIT @Order(5) renforcés (double dépeuplé avant la
+# création, status=OFFLINE explicite dans le payload) ; couverture PrintQueueDiagnosticsIT @Order(12-14)
+# supprimée puis migrée vers 5 nouveaux tests PrinterRegistryIT (online→offline, offline→online,
+# suspendue non affectée, 404, 403) ; nouveau PrinterConnectivityRefreshIT (modèle exact
+# PosBasketReaperIT). Front : printer-form (status transmis, dialog reste ouvert jusqu'à liste
+# détectée vide — Story 3.13 amendée), printer-list (bouton rafraîchissement ciblé par ligne),
+# print-queue-list (bouton "Actualiser" + refreshStatuses() + param live retirés). i18n :
+# admin.printers.*.refreshConnectivity ajoutées, admin.printQueue.refresh/error.refresh retirées
+# (fr/en, parité 607/607). Vérifs : ./mvnw -o clean package BUILD SUCCESS (Docker présent →
+# SaleConcurrencyIT exécuté) ; npm test 732/732 (67 fichiers) ; npm run build sans warning. Aucune
+# migration Liquibase. docs/workflow-ajout-imprimante.md (hors périmètre, présent dans l'arbre de
+# travail) à régénérer par Manerial. Vérification visuelle à faire par Manerial.
+# 2026-09-11 — Story 3-15 : début d'implémentation (bmad-dev-story), ready-for-dev → in-progress.
+# Baseline commit 47725f0 (déjà dans le frontmatter). Précédent : Story 2-11 : revue de code (bmad-code-review, 3 revues parallèles) → done. 2 decision-needed tranchées par Manerial (D1 sonde /api/auth/me : laisser tel quel ; D2 retrait AuthService/Router de SseService : validé), 4 patchs appliqués (I/O frame initiale hors du synchronized de register(), @Slf4j mort retiré, +assertion .contains(":ok") sur PosBasketCancellationIT @Order(6), nginx location ^~ /api/sse/), 3 defer (completeWithError double-appel, multi-EventSource → V2, scheduler mono-thread). 33 ITs SSE verts. T6.3 (rebuild image front) + T8 (vérif manuelle) restent à faire par Manerial.
 # 2026-09-07 — Correct-course (bmad-correct-course, SCP 2026-09-07) : ajoute la Story 2-11 (backlog) à l'Epic 2 — résilience de la connexion SSE derrière le reverse-proxy (frame initiale + keepalive backend, reconnexion client sans déconnexion, durcissement nginx). Bug pré-existant Story 2.6, sans lien avec 4.9.
 # 2026-09-07 — Story 2-11 créée (bmad-create-story) : backlog → ready-for-dev.
 # 2026-09-07 — Story 2-11 : début d'implémentation (bmad-dev-story) : ready-for-dev → in-progress.
@@ -798,6 +835,31 @@ development_status:
   # Retouche du verrouillage pessimiste par catégorie et de la réassignation de table dans
   # LotService (Stories 3.3/3.10). Pas de donnée réelle à migrer (aucune édition en prod).
   3-14-categorie-du-lot: done
+  # Sprint change proposal 2026-09-11 : suppression du check de connectivité PrinterBridge
+  # bloquant à la création d'une imprimante (réutilise le statut déjà connu de discover()),
+  # vérification périodique en tâche de fond (@Scheduled, modèle BasketReaperService de la
+  # Story 4.9), rafraîchissement manuel ciblé par imprimante. Amende les Stories 3.7, 3.11, 3.13.
+  # 2026-09-11 — Story 3.15 créée (bmad-create-story). Amendements du SCP 2026-09-11 (epics.md
+  # Stories 3.11/3.13, prd.md FR-079, architecture.md Infrastructure d'Impression + Frontière
+  # PrinterBridge, notes de complétion de la Story 3.7) appliqués dans l'arbre de travail par cette
+  # même session, avant la création du fichier de story — ils ne l'avaient pas encore été (seul
+  # sprint-status.yaml avait été mis à jour par le correct-course). Design : CreatePrinterDto gagne
+  # un champ status (statut déjà connu de discover(), transporté sans nouvel appel PrinterBridge) ;
+  # PrintQueueService.registerPrinter() gagne une surcharge seedée pour la création, la surcharge
+  # existante (live check) reste réservée au démarrage serveur ; refreshConnectivity() existant
+  # (toutes imprimantes, skip suspendues) réutilisé tel quel par un nouveau scheduler
+  # PrinterConnectivityRefreshService (modèle exact BasketReaperService/Story 4.9) ; nouvelle
+  # méthode refreshConnectivity(id) + endpoint POST /admin/printers/{id}/refresh-connectivity pour
+  # le rafraîchissement ciblé ; POST /admin/print-queue/refresh retiré. Rayon d'impact identifié et
+  # consigné dans la story : CreatePrinterDto est un record, son 5e champ casse la compilation de
+  # ~20 call sites positionnels dans 12 fichiers de test sans rapport avec cette story (renderers
+  # PDF, clôture d'édition...) — inventaire exhaustif fourni (fichier:ligne, ONLINE/OFFLINE attendu)
+  # pour éviter un faux vert silencieux sur les tests dépendant d'un état déconnecté
+  # (PrinterSelectionIT, PrintInfrastructureIT, PrinterRegistryIT, ThermalLabelPrintingIT). 3 tests
+  # PrintQueueDiagnosticsIT (@Order 12-14, rafraîchissement global) à retirer, leur couverture à
+  # migrer vers le nouvel endpoint ciblé dans PrinterRegistryIT. Baseline commit 47725f0 (déjà dans
+  # le frontmatter). Statut → ready-for-dev.
+  3-15-verification-connectivite-asynchrone-et-rafraichissement-cible: done
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Point de vente ────────────────────────────────────────────────

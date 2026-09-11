@@ -200,7 +200,7 @@ class InvoicePrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "A4 Facture Test", PrinterType.A4, null, "bridge-invoice-a4"))))
+                                "A4 Facture Test", PrinterType.A4, null, "bridge-invoice-a4", PrinterStatus.ONLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         a4PrinterId = objectMapper.readValue(a4Result.getResponse().getContentAsString(), PrinterDto.class).id();

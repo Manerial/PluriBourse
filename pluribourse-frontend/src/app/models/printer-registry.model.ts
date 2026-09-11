@@ -3,6 +3,7 @@ export interface PrinterSummary {
   name: string;
   type: 'THERMAL' | 'A4';
   connected: boolean;
+  pendingVerification: boolean;
 }
 
 export interface DiscoveredPrinter {
@@ -17,6 +18,7 @@ export interface CreatePrinterPayload {
   type: 'THERMAL' | 'A4';
   widthMm: number | null;
   printerBridgeId: string;
+  status: 'ONLINE' | 'OFFLINE' | 'UNKNOWN';
 }
 
 export interface PrintResult {

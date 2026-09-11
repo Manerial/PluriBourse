@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -40,6 +41,7 @@ class PrinterRegistryIT extends IntegrationTest {
 
     private MockHttpSession adminSession;
     private MockHttpSession volunteerSession;
+    private Long pendingVerificationPrinterId;
 
     @DynamicPropertySource
     static void printerBridgeProperties(DynamicPropertyRegistry registry) throws IOException {
@@ -96,7 +98,7 @@ class PrinterRegistryIT extends IntegrationTest {
     @Order(3)
     void an_already_registered_printer_is_excluded_from_discovery() throws Exception {
         printerBridgeDouble.register("bridge-already-registered-1", "Imprimante Deja Enregistree", "NETWORK", "ONLINE");
-        createPrinter("Imprimante Deja Enregistree", "bridge-already-registered-1");
+        createPrinter("Imprimante Deja Enregistree", "bridge-already-registered-1", PrinterStatus.ONLINE);
 
         mockMvc.perform(get("/api/admin/printers/discovered").session(adminSession))
                 .andExpect(status().isOk())
@@ -107,7 +109,7 @@ class PrinterRegistryIT extends IntegrationTest {
     @Order(4)
     void reachable_printer_appears_connected_in_the_registry() throws Exception {
         printerBridgeDouble.register("bridge-online-2", "Imprimante Joignable", "NETWORK", "ONLINE");
-        Long printerId = createPrinter("Imprimante Joignable", "bridge-online-2");
+        Long printerId = createPrinter("Imprimante Joignable", "bridge-online-2", PrinterStatus.ONLINE);
 
         PrinterSummaryDto summary = findSummary(printerId);
         assertThat(summary.name()).isEqualTo("Imprimante Joignable");
@@ -118,8 +120,12 @@ class PrinterRegistryIT extends IntegrationTest {
     @Test
     @Order(5)
     void unreachable_printer_appears_disconnected_in_the_registry() throws Exception {
+        // Story 3.15: creation no longer performs a live check — depopulating the double for this
+        // bridgeId before the POST proves the OFFLINE status comes from the payload's seeded
+        // status, not from a leftover live call.
         printerBridgeDouble.register("bridge-offline-1", "Imprimante Injoignable", "NETWORK", "OFFLINE");
-        Long printerId = createPrinter("Imprimante Injoignable", "bridge-offline-1");
+        printerBridgeDouble.unregister("bridge-offline-1");
+        Long printerId = createPrinter("Imprimante Injoignable", "bridge-offline-1", PrinterStatus.OFFLINE);
 
         PrinterSummaryDto summary = findSummary(printerId);
         assertThat(summary.connected()).isFalse();
@@ -129,7 +135,7 @@ class PrinterRegistryIT extends IntegrationTest {
     @Order(6)
     void test_print_relays_the_printerbridge_double_result() throws Exception {
         printerBridgeDouble.register("bridge-online-3", "Imprimante Test", "NETWORK", "ONLINE");
-        Long printerId = createPrinter("Imprimante Test", "bridge-online-3");
+        Long printerId = createPrinter("Imprimante Test", "bridge-online-3", PrinterStatus.ONLINE);
 
         mockMvc.perform(post("/api/admin/printers/" + printerId + "/test-print")
                         .session(adminSession).with(csrf()))
@@ -154,7 +160,7 @@ class PrinterRegistryIT extends IntegrationTest {
         // answers this with a 404 on POST /test-print, which must surface as a normal ERROR
         // PrintResult, not an uncaught exception (code review finding, story 3.11/3.12).
         printerBridgeDouble.register("bridge-stale-1", "Imprimante Bientot Perimee", "NETWORK", "ONLINE");
-        Long printerId = createPrinter("Imprimante Bientot Perimee", "bridge-stale-1");
+        Long printerId = createPrinter("Imprimante Bientot Perimee", "bridge-stale-1", PrinterStatus.ONLINE);
         printerBridgeDouble.unregister("bridge-stale-1");
 
         mockMvc.perform(post("/api/admin/printers/" + printerId + "/test-print")
@@ -167,7 +173,7 @@ class PrinterRegistryIT extends IntegrationTest {
     @Order(9)
     void deleting_a_printer_removes_it_from_the_registry_and_tears_down_its_queue() throws Exception {
         printerBridgeDouble.register("bridge-online-4", "Imprimante A Supprimer", "NETWORK", "ONLINE");
-        Long printerId = createPrinter("Imprimante A Supprimer", "bridge-online-4");
+        Long printerId = createPrinter("Imprimante A Supprimer", "bridge-online-4", PrinterStatus.ONLINE);
         assertThat(printQueueService.getHandle(printerId)).isNotNull();
 
         mockMvc.perform(delete("/api/admin/printers/" + printerId)
@@ -184,7 +190,7 @@ class PrinterRegistryIT extends IntegrationTest {
     @Order(10)
     void submitting_to_a_deleted_printer_throws_not_found() throws Exception {
         printerBridgeDouble.register("bridge-online-5", "Imprimante A Supprimer Puis Soumettre", "NETWORK", "ONLINE");
-        Long printerId = createPrinter("Imprimante A Supprimer Puis Soumettre", "bridge-online-5");
+        Long printerId = createPrinter("Imprimante A Supprimer Puis Soumettre", "bridge-online-5", PrinterStatus.ONLINE);
         mockMvc.perform(delete("/api/admin/printers/" + printerId)
                         .session(adminSession).with(csrf()))
                 .andExpect(status().isNoContent());
@@ -270,7 +276,7 @@ class PrinterRegistryIT extends IntegrationTest {
     @Order(15)
     void ignoring_an_already_registered_printer_is_rejected() throws Exception {
         printerBridgeDouble.register("bridge-ignore-registered-1", "Imprimante Deja Enregistree Pour Ignorer", "NETWORK", "ONLINE");
-        createPrinter("Imprimante Deja Enregistree Pour Ignorer", "bridge-ignore-registered-1");
+        createPrinter("Imprimante Deja Enregistree Pour Ignorer", "bridge-ignore-registered-1", PrinterStatus.ONLINE);
 
         mockMvc.perform(post("/api/admin/printers/discovered/bridge-ignore-registered-1/ignore")
                         .session(adminSession).with(csrf())
@@ -322,10 +328,107 @@ class PrinterRegistryIT extends IntegrationTest {
 
     @Test
     @Order(19)
+    void refresh_connectivity_detects_a_printer_that_went_offline_since_registration() throws Exception {
+        // Registered ONLINE (seeded from discover() at creation, no live check performed at that
+        // point) then flipped to OFFLINE on the double without any job ever submitted — nothing
+        // else notices this until the targeted refresh (or the periodic scheduler) re-checks it
+        // live (story 3.15, AC4 — migrated from the removed global refresh, see PrintQueueDiagnosticsIT).
+        printerBridgeDouble.register("bridge-refresh-1", "Imprimante A Rafraichir", "NETWORK", "ONLINE");
+        Long printerId = createPrinter("Imprimante A Rafraichir", "bridge-refresh-1", PrinterStatus.ONLINE);
+        assertThat(findSummary(printerId).connected()).isTrue();
+
+        printerBridgeDouble.register("bridge-refresh-1", "Imprimante A Rafraichir", "NETWORK", "OFFLINE");
+        assertThat(findSummary(printerId).connected()).isTrue();
+
+        PrinterSummaryDto refreshed = refreshConnectivity(printerId);
+        assertThat(refreshed.connected()).isFalse();
+        assertThat(findSummary(printerId).connected()).isFalse();
+    }
+
+    @Test
+    @Order(20)
+    void refresh_connectivity_detects_a_printer_that_came_back_online_since_registration() throws Exception {
+        printerBridgeDouble.register("bridge-refresh-2", "Imprimante Redevenue Joignable", "NETWORK", "OFFLINE");
+        Long printerId = createPrinter("Imprimante Redevenue Joignable", "bridge-refresh-2", PrinterStatus.OFFLINE);
+        assertThat(findSummary(printerId).connected()).isFalse();
+
+        printerBridgeDouble.register("bridge-refresh-2", "Imprimante Redevenue Joignable", "NETWORK", "ONLINE");
+
+        PrinterSummaryDto refreshed = refreshConnectivity(printerId);
+        assertThat(refreshed.connected()).isTrue();
+    }
+
+    @Test
+    @Order(21)
+    void refresh_connectivity_does_not_touch_a_suspended_printer() throws Exception {
+        // A suspended printer's lastError/suspended pair belongs exclusively to job execution and
+        // admin resume/discard (PrinterQueueHandle's torn-state invariant) — the targeted refresh
+        // must leave it alone even though the double now reports the printer back online.
+        printerBridgeDouble.register("bridge-refresh-3", "Imprimante Suspendue Pour Refresh Cible", "NETWORK", "ONLINE");
+        Long printerId = createPrinter("Imprimante Suspendue Pour Refresh Cible", "bridge-refresh-3", PrinterStatus.ONLINE);
+        printQueueService.submit(printerId, printer -> {
+            throw new RuntimeException("bourrage papier");
+        });
+        waitUntil(() -> printQueueService.getHandle(printerId).isSuspended());
+
+        PrinterSummaryDto refreshed = refreshConnectivity(printerId);
+        assertThat(refreshed.connected()).isFalse();
+        assertThat(printQueueService.getHandle(printerId).isSuspended()).isTrue();
+        assertThat(printQueueService.getHandle(printerId).getLastError()).contains("bourrage papier");
+    }
+
+    @Test
+    @Order(22)
+    void refresh_connectivity_returns_404_for_an_unknown_printer() throws Exception {
+        mockMvc.perform(post("/api/admin/printers/999999/refresh-connectivity")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("/printer-not-found")));
+    }
+
+    @Test
+    @Order(23)
+    void refresh_connectivity_is_forbidden_for_a_volunteer_session() throws Exception {
+        mockMvc.perform(post("/api/admin/printers/1/refresh-connectivity")
+                        .session(volunteerSession).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Order(24)
+    void a_printer_seeded_from_an_unknown_status_starts_pending_verification_instead_of_confidently_connected() throws Exception {
+        // discover() never individually tests Bluetooth printers — status is always UNKNOWN
+        // (Dev Notes); the PrinterType is irrelevant to this behavior (registerPrinter(Printer,
+        // PrinterStatus) branches only on the status), so NETWORK is used here to reuse createPrinter().
+        // Registering with an UNKNOWN status must not read as confidently "connected" (code review
+        // finding, story 3.15): pendingVerification distinguishes it until a real check runs.
+        printerBridgeDouble.register("bridge-unknown-1", "Imprimante Statut Inconnu", "NETWORK", "UNKNOWN");
+        pendingVerificationPrinterId = createPrinter("Imprimante Statut Inconnu", "bridge-unknown-1", PrinterStatus.UNKNOWN);
+
+        PrinterSummaryDto summary = findSummary(pendingVerificationPrinterId);
+        assertThat(summary.connected()).isTrue();
+        assertThat(summary.pendingVerification()).isTrue();
+    }
+
+    @Test
+    @Order(25)
+    void refreshing_a_pending_verification_printer_resolves_the_pending_flag() throws Exception {
+        // bridge-unknown-1 (Order 24) is still registered UNKNOWN on the double — a real check now
+        // reports it reachable, and the refresh must clear pendingVerification either way (success
+        // or failure), since the ambiguity it existed to flag has just been resolved.
+        printerBridgeDouble.register("bridge-unknown-1", "Imprimante Statut Inconnu", "NETWORK", "ONLINE");
+
+        PrinterSummaryDto refreshed = refreshConnectivity(pendingVerificationPrinterId);
+        assertThat(refreshed.connected()).isTrue();
+        assertThat(refreshed.pendingVerification()).isFalse();
+    }
+
+    @Test
+    @Order(26)
     void printerbridge_being_unreachable_is_reported_distinctly_from_a_printer_reporting_offline() throws Exception {
         // Deliberately the last test that needs a live double — stops it for good rather than
         // restarting it, avoiding a rebind race on the same ephemeral port. @AfterAll's
-        // printerBridgeDouble.stop() is a harmless no-op on an already-stopped server. Order 20
+        // printerBridgeDouble.stop() is a harmless no-op on an already-stopped server. Order 27
         // relies on the double staying down after this point.
         printerBridgeDouble.stop();
 
@@ -335,12 +438,12 @@ class PrinterRegistryIT extends IntegrationTest {
     }
 
     @Test
-    @Order(20)
+    @Order(27)
     void listing_ignored_printers_still_works_when_printerbridge_is_unreachable() throws Exception {
         // bridge-ignore-basic-1 (Order 13) and bridge-ignore-idempotent-1 (Order 14) were never
         // reactivated — the two entries left ignored, since bridge-ignore-reactivate-1 (Order 17)
         // was reactivated. Their names were captured at ignore time, before PrinterBridge went
-        // down in Order 19, and are still correctly returned here — proof that listIgnored()
+        // down in Order 26, and are still correctly returned here — proof that listIgnored()
         // never calls PrinterBridge itself.
         mockMvc.perform(get("/api/admin/printers/ignored").session(adminSession))
                 .andExpect(status().isOk())
@@ -350,10 +453,10 @@ class PrinterRegistryIT extends IntegrationTest {
     }
 
     @Test
-    @Order(21)
+    @Order(28)
     void concurrent_ignore_calls_on_the_same_printer_both_succeed() throws Exception {
         // ignore() doesn't call PrinterBridge at all — safe to run after the double is stopped
-        // (Order 19). Two threads race past the pre-existing findByPrinterBridgeId().isPresent()
+        // (Order 26). Two threads race past the pre-existing findByPrinterBridgeId().isPresent()
         // check simultaneously (both see "not yet ignored"), so the second insert hits the
         // unique constraint on printer_bridge_id — exercising the
         // catch (DataIntegrityViolationException) branch in PrinterService.ignore(), which the
@@ -385,8 +488,8 @@ class PrinterRegistryIT extends IntegrationTest {
                 .andExpect(jsonPath("$[?(@.printerBridgeId == 'bridge-ignore-concurrent-1')]").isNotEmpty());
     }
 
-    private Long createPrinter(String name, String printerBridgeId) throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, printerBridgeId);
+    private Long createPrinter(String name, String printerBridgeId, PrinterStatus status) throws Exception {
+        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, printerBridgeId, status);
         MvcResult result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -407,5 +510,24 @@ class PrinterRegistryIT extends IntegrationTest {
                 .filter(s -> s.id().equals(printerId))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Printer not found in listing: " + printerId));
+    }
+
+    private PrinterSummaryDto refreshConnectivity(Long printerId) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/admin/printers/" + printerId + "/refresh-connectivity")
+                        .session(adminSession).with(csrf()))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readValue(result.getResponse().getContentAsString(), PrinterSummaryDto.class);
+    }
+
+    private void waitUntil(BooleanSupplier condition) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 5000;
+        while (System.currentTimeMillis() < deadline) {
+            if (condition.getAsBoolean()) {
+                return;
+            }
+            Thread.sleep(20);
+        }
+        throw new AssertionError("Condition not met within timeout");
     }
 }

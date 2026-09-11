@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * {@code @Configuration} rather than on {@code PluribourseApplication} because that class also runs
  * as a CLI ({@code WebApplicationType.NONE}), where a scheduler has no place.
  * <p>
- * Two {@code @Scheduled} methods now exist, guarded differently:
+ * Three {@code @Scheduled} methods now exist, guarded differently:
  * <ul>
  *   <li>{@link org.pluribourse.domain.pos.service.BasketReaperService#reapInactiveBaskets()} —
  *       guarded by a class-level {@code @ConditionalOnProperty("pos.basket.reaper.enabled")}, so with
@@ -20,6 +20,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *       exist, so the {@code sse.keepalive.enabled} guard is inside the method. With the property
  *       {@code false} (the test profile) the scheduled trigger is still registered and fires, but
  *       the method returns immediately without touching any emitter.</li>
+ *   <li>{@link org.pluribourse.domain.print.service.PrinterConnectivityRefreshService#refreshAll()}
+ *       (story 3.15) — same family as {@code BasketReaperService}, guarded by a class-level
+ *       {@code @ConditionalOnProperty("printer.connectivity.refresh.enabled")}.</li>
  * </ul>
  * As a result a scheduler thread does run under {@code @SpringBootTest} (for the keepalive trigger),
  * but it does no observable work while {@code sse.keepalive.enabled=false}.

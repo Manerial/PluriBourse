@@ -3,6 +3,7 @@ package org.pluribourse.domain.print.service;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.pluribourse.domain.print.entity.Printer;
+import org.pluribourse.domain.print.entity.PrinterStatus;
 import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.exception.PrinterNotFoundException;
 import org.pluribourse.domain.print.repository.PrinterRepository;
@@ -60,6 +61,35 @@ public class PrintQueueService {
         handles.putIfAbsent(printer.getId(), createHandle(printer));
     }
 
+    /**
+     * Instantiates the queue and consumer thread for a printer just created via the registration
+     * form (story 3.15, AC1) — seeds {@code lastError} directly from the status {@code discover()}
+     * already reported, without a second, redundant PrinterBridge round-trip. {@code OFFLINE} seeds
+     * an explicit error message; {@code ONLINE} starts clean, the same fail-open stance as
+     * {@link #createHandle}. {@code UNKNOWN} (Bluetooth printers — {@code discover()} never tests
+     * them individually) also starts with no error, but is additionally flagged
+     * {@link PrinterQueueHandle#isPendingVerification() pendingVerification} so the admin UI never
+     * reports it as confidently connected before {@link #refreshOne} has actually checked it once
+     * (code review finding, story 3.15). Never calls {@link PrinterConnectivityChecker}.
+     */
+    public void registerPrinter(Printer printer, PrinterStatus knownStatus) {
+        PrinterQueueHandle handle = new PrinterQueueHandle(printer);
+        if (knownStatus == PrinterStatus.OFFLINE) {
+            handle.setLastError("Printer " + printer.getPrinterBridgeId() + " reported offline by PrinterBridge at discovery time");
+        } else if (knownStatus == PrinterStatus.UNKNOWN) {
+            handle.setPendingVerification(true);
+        }
+        handle.start();
+        // putIfAbsent (not containsKey then putIfAbsent) so the loss of a concurrent race on the
+        // same id is actually detected: the losing handle's consumer thread is stopped instead of
+        // being left orphaned (code review finding, story 3.15 — the previous containsKey guard
+        // still allowed both racing calls to start a thread before either touched the map).
+        PrinterQueueHandle existing = handles.putIfAbsent(printer.getId(), handle);
+        if (existing != null) {
+            handle.stop();
+        }
+    }
+
     public void submit(Long printerId, PrintJob job) {
         PrinterQueueHandle handle = handles.get(printerId);
         if (handle == null) {
@@ -108,21 +138,44 @@ public class PrintQueueService {
      * by a plain connectivity check.
      */
     public void refreshConnectivity() {
-        printerRepository.findAll().forEach(printer -> {
-            PrinterQueueHandle handle = handles.get(printer.getId());
-            if (handle == null || handle.isSuspended()) {
-                return;
-            }
-            PrinterConnectivityChecker checker = connectivityCheckersByType.get(printer.getType());
-            try {
-                checker.checkAccessibility(printer);
-                handle.setLastError(null);
-            } catch (RuntimeException e) {
-                String error = PrinterQueueHandle.describeError(e);
-                handle.setLastError(error);
-                log.warn("Printer {} is not accessible: {}", printer.getId(), error);
-            }
-        });
+        printerRepository.findAll().forEach(this::refreshOne);
+    }
+
+    /**
+     * Single-printer version of {@link #refreshConnectivity()} — the admin-triggered targeted
+     * refresh (story 3.15, AC4). Resolves the printer itself so a caller only needs the id, and
+     * returns it so {@link PrinterService#refreshConnectivity} doesn't need a second, redundant
+     * lookup of its own (code review finding, story 3.15).
+     */
+    public Printer refreshConnectivity(Long printerId) {
+        Printer printer = printerRepository.findById(printerId).orElseThrow(() -> new PrinterNotFoundException(printerId));
+        refreshOne(printer);
+        return printer;
+    }
+
+    /**
+     * Shared body of {@link #refreshConnectivity()} and {@link #refreshConnectivity(Long)} — skips a
+     * printer whose handle is absent or suspended (see {@link #refreshConnectivity()} Javadoc on the
+     * torn-state invariant this preserves).
+     */
+    private void refreshOne(Printer printer) {
+        PrinterQueueHandle handle = handles.get(printer.getId());
+        if (handle == null || handle.isSuspended()) {
+            return;
+        }
+        PrinterConnectivityChecker checker = connectivityCheckersByType.get(printer.getType());
+        try {
+            checker.checkAccessibility(printer);
+            handle.setLastError(null);
+        } catch (RuntimeException e) {
+            String error = PrinterQueueHandle.describeError(e);
+            handle.setLastError(error);
+            log.warn("Printer {} is not accessible: {}", printer.getId(), error);
+        }
+        // A real check just ran, either branch — resolves the "seeded from UNKNOWN, never actually
+        // tested" state a Bluetooth printer starts in at registration (see registerPrinter(Printer,
+        // PrinterStatus)). No-op once already false.
+        handle.setPendingVerification(false);
     }
 
     private PrinterQueueHandle createHandle(Printer printer) {

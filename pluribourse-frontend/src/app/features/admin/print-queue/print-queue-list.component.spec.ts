@@ -12,6 +12,7 @@ const CONNECTED_PRINTER: PrinterStatus = {
   name: 'Thermique Guichet',
   type: 'THERMAL',
   connected: true,
+  pendingVerification: false,
   queueDepth: 0,
   jobInProgress: false,
   lastError: null,
@@ -23,6 +24,7 @@ const FAILED_PRINTER: PrinterStatus = {
   name: 'A4 Bureau',
   type: 'A4',
   connected: false,
+  pendingVerification: false,
   queueDepth: 2,
   jobInProgress: false,
   lastError: 'bourrage papier',
@@ -34,10 +36,38 @@ const DISCONNECTED_PRINTER: PrinterStatus = {
   name: 'Thermique Reserve',
   type: 'THERMAL',
   connected: false,
+  pendingVerification: false,
   queueDepth: 0,
   jobInProgress: false,
   lastError: 'Cannot connect to 127.0.0.1:1',
   canRetry: false,
+};
+
+const PENDING_VERIFICATION_PRINTER: PrinterStatus = {
+  id: 4,
+  name: 'Imprimante Bluetooth',
+  type: 'THERMAL',
+  connected: true,
+  pendingVerification: true,
+  queueDepth: 0,
+  jobInProgress: false,
+  lastError: null,
+  canRetry: false,
+};
+
+// Torn-state fixture (story 3.15 code review, second review round): a background connectivity
+// check can clear lastError on a queue a concurrent failed job just suspended (unsynchronized
+// race, deferred) — connected therefore reads true even though canRetry is also true.
+const SUSPENDED_BUT_CONNECTED_PRINTER: PrinterStatus = {
+  id: 5,
+  name: 'Thermique Caisse 2',
+  type: 'THERMAL',
+  connected: true,
+  pendingVerification: false,
+  queueDepth: 1,
+  jobInProgress: false,
+  lastError: null,
+  canRetry: true,
 };
 
 describe('PrintQueueListComponent', () => {
@@ -46,7 +76,6 @@ describe('PrintQueueListComponent', () => {
 
   const printQueueServiceMock = {
     getStatuses: vi.fn().mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER])),
-    refreshStatuses: vi.fn().mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER])),
     resumeQueue: vi.fn().mockReturnValue(of(undefined)),
     discardFailedJob: vi.fn().mockReturnValue(of(undefined)),
   };
@@ -55,7 +84,6 @@ describe('PrintQueueListComponent', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     printQueueServiceMock.getStatuses.mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER]));
-    printQueueServiceMock.refreshStatuses.mockReturnValue(of([CONNECTED_PRINTER, FAILED_PRINTER, DISCONNECTED_PRINTER]));
     printQueueServiceMock.resumeQueue.mockReturnValue(of(undefined));
     printQueueServiceMock.discardFailedJob.mockReturnValue(of(undefined));
 
@@ -74,24 +102,10 @@ describe('PrintQueueListComponent', () => {
     await fixture.whenStable();
   });
 
-  it('loads printer statuses on init from the cached endpoint, not a live check', () => {
+  it('loads printer statuses on init from the cached endpoint', () => {
     expect(printQueueServiceMock.getStatuses).toHaveBeenCalledTimes(1);
-    expect(printQueueServiceMock.refreshStatuses).not.toHaveBeenCalled();
     expect(component.statuses().length).toBe(3);
     expect(component.error()).toBeNull();
-  });
-
-  it('sets a dedicated error key when refresh() fails', async () => {
-    printQueueServiceMock.refreshStatuses.mockReturnValue(throwError(() => new Error('network')));
-    await component.refresh();
-    expect(component.error()).toBe('admin.printQueue.error.refresh');
-  });
-
-  it('refresh() live-checks connectivity via refreshStatuses(), not the cached getStatuses()', async () => {
-    printQueueServiceMock.getStatuses.mockClear();
-    await component.refresh();
-    expect(printQueueServiceMock.refreshStatuses).toHaveBeenCalledOnce();
-    expect(printQueueServiceMock.getStatuses).not.toHaveBeenCalled();
   });
 
   it('renders one card per printer with the connection chip state', () => {
@@ -122,6 +136,14 @@ describe('PrintQueueListComponent', () => {
     expect(component.connectionState(DISCONNECTED_PRINTER)).toBe('disconnected');
   });
 
+  it('connectionState reports pendingVerification for a printer seeded from an UNKNOWN status, ahead of connected', () => {
+    expect(component.connectionState(PENDING_VERIFICATION_PRINTER)).toBe('pendingVerification');
+  });
+
+  it('connectionState reports jobError even when connected is also true (torn state, story 3.15 code review)', () => {
+    expect(component.connectionState(SUSPENDED_BUT_CONNECTED_PRINTER)).toBe('jobError');
+  });
+
   it('shows an inline error banner only for printers with a lastError', () => {
     fixture.detectChanges();
     const cards: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.printer-card');
@@ -139,8 +161,11 @@ describe('PrintQueueListComponent', () => {
   });
 
   it('shows an empty state when no printer is registered', async () => {
-    printQueueServiceMock.refreshStatuses.mockReturnValue(of([]));
-    await component.refresh();
+    printQueueServiceMock.getStatuses.mockReturnValue(of([]));
+    fixture = TestBed.createComponent(PrintQueueListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     expect(component.statuses().length).toBe(0);
   });

@@ -72,8 +72,16 @@ export class PrinterFormComponent {
         type: this.selectedType()!,
         printerBridgeId,
         widthMm: this.selectedType() === 'THERMAL' ? widthMm : null,
+        status: this.selectedPrinter()!.status,
       }));
-      this.dialogRef.close();
+      // Story 3.15 (Story 3.13 amended, AC6): stays open so the admin can register several
+      // detected printers in a row — same pattern as ignoreRow() just below. Closes only once
+      // every detected printer has been registered or ignored.
+      this.discoveredPrinters.update(list => list.filter(p => p.printerBridgeId !== printerBridgeId));
+      this.backToList();
+      if (this.discoveredPrinters().length === 0) {
+        this.dialogRef.close();
+      }
     } catch {
       this.error.set('admin.printers.error.create');
     } finally {

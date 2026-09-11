@@ -3,6 +3,7 @@ package org.pluribourse.domain.print.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.pluribourse.domain.print.entity.PrinterStatus;
 import org.pluribourse.domain.print.entity.PrinterType;
 
 public record CreatePrinterDto(
@@ -14,6 +15,8 @@ public record CreatePrinterDto(
         Integer widthMm,
         @NotBlank
         @Size(max = 32)
-        String printerBridgeId
+        String printerBridgeId,
+        @NotNull
+        PrinterStatus status
 ) {
 }

@@ -28,25 +28,28 @@ export class PrintQueueListComponent implements OnInit {
   private readonly printersWithActionInProgress = signal<ReadonlySet<number>>(new Set());
 
   async ngOnInit(): Promise<void> {
-    await this.load(true, false);
-  }
-
-  async refresh(): Promise<void> {
-    await this.load(true, true);
+    await this.load(true);
   }
 
   isActionInProgress(printerId: number): boolean {
     return this.printersWithActionInProgress().has(printerId);
   }
 
-  connectionState(printer: PrinterStatus): 'connected' | 'jobError' | 'disconnected' {
-    if (printer.connected) {
-      return 'connected';
+  connectionState(printer: PrinterStatus): 'connected' | 'pendingVerification' | 'jobError' | 'disconnected' {
+    // canRetry checked first, ahead of connected: a background connectivity check can clear
+    // lastError on a queue a concurrent failed job just suspended (unsynchronized race, story 3.15
+    // code review, deferred) — canRetry must still win so a suspended queue is never shown as
+    // "Connecté" (see story 3.7 review decision for the jobError state itself).
+    if (printer.canRetry) {
+      return 'jobError';
     }
-    // A suspended queue means a job failed on an otherwise-reachable printer (e.g. paper jam) —
-    // distinct from a printer that was never reachable at all, so it gets its own visual state
-    // instead of being shown as "Hors ligne" (see story 3.7 review decision).
-    return printer.canRetry ? 'jobError' : 'disconnected';
+    if (!printer.connected) {
+      return 'disconnected';
+    }
+    // A printer seeded from an UNKNOWN discover() status (Bluetooth, never individually tested)
+    // must not read as confidently "connected" until the first real check runs (story 3.15 code
+    // review decision).
+    return printer.pendingVerification ? 'pendingVerification' : 'connected';
   }
 
   async resume(printer: PrinterStatus): Promise<void> {
@@ -60,19 +63,15 @@ export class PrintQueueListComponent implements OnInit {
   // showLoadingState is false for the reload triggered right after a resume/discard action: that
   // reload must not blank the already-rendered grid behind the skeleton, and if it fails, the
   // previously fetched cards must stay visible instead of being replaced by a bare error banner.
-  // live selects refreshStatuses() (a real PrinterBridge ping per printer) over the fast cached
-  // getStatuses() — only the explicit "Actualiser" action needs that, not the initial load or the
-  // reload after resume/discard.
-  private async load(showLoadingState: boolean, live: boolean): Promise<void> {
+  private async load(showLoadingState: boolean): Promise<void> {
     if (showLoadingState) {
       this.isLoading.set(true);
     }
     this.error.set(null);
     try {
-      const statuses$ = live ? this.printQueueService.refreshStatuses() : this.printQueueService.getStatuses();
-      this.statuses.set(await firstValueFrom(statuses$));
+      this.statuses.set(await firstValueFrom(this.printQueueService.getStatuses()));
     } catch {
-      this.error.set(live ? 'admin.printQueue.error.refresh' : 'admin.printQueue.error.load');
+      this.error.set('admin.printQueue.error.load');
     } finally {
       if (showLoadingState) {
         this.isLoading.set(false);
@@ -91,7 +90,7 @@ export class PrintQueueListComponent implements OnInit {
       // Reload even on failure: a 422 here means another admin session already changed this
       // printer's state (e.g. resumed/discarded it first) — the card must reflect that, not the
       // stale state that led to this now-outdated action being offered.
-      await this.load(false, false);
+      await this.load(false);
       this.markActionInProgress(printerId, false);
     }
   }

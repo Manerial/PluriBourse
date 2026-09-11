@@ -39,9 +39,32 @@ export class PrinterListComponent implements OnInit {
   readonly discovering = signal(false);
   readonly ignoredPrinters = signal<IgnoredPrinter[]>([]);
   readonly reactivatingId = signal<string | null>(null);
+  readonly refreshingId = signal<number | null>(null);
 
   async ngOnInit(): Promise<void> {
     await this.load();
+  }
+
+  // A printer seeded from an UNKNOWN discover() status (Bluetooth, never individually tested)
+  // must not read as confidently "connected" until the first real check runs (story 3.15 code
+  // review decision) — a distinct 3rd badge state, checked before the plain connected/disconnected
+  // split.
+  connectionState(printer: PrinterSummary): 'connected' | 'pendingVerification' | 'disconnected' {
+    if (printer.pendingVerification) {
+      return 'pendingVerification';
+    }
+    return printer.connected ? 'connected' : 'disconnected';
+  }
+
+  connectionBadgeClass(printer: PrinterSummary): string {
+    switch (this.connectionState(printer)) {
+      case 'connected':
+        return 'badge--active';
+      case 'pendingVerification':
+        return 'badge--pending';
+      default:
+        return 'badge--inactive';
+    }
   }
 
   async testPrint(printer: PrinterSummary): Promise<void> {
@@ -57,6 +80,19 @@ export class PrinterListComponent implements OnInit {
       this.toast.showError(this.translate.instant('admin.printers.error.testPrint'));
     } finally {
       this.testingId.set(null);
+    }
+  }
+
+  async refreshConnectivity(printer: PrinterSummary): Promise<void> {
+    this.refreshingId.set(printer.id);
+    try {
+      const updated = await firstValueFrom(this.printerRegistryService.refreshConnectivity(printer.id));
+      this.printers.update(list => list.map(p => p.id === printer.id ? updated : p));
+      this.toast.showSuccess(this.translate.instant('admin.printers.success.refreshConnectivity'));
+    } catch {
+      this.toast.showError(this.translate.instant('admin.printers.error.refreshConnectivity'));
+    } finally {
+      this.refreshingId.set(null);
     }
   }
 

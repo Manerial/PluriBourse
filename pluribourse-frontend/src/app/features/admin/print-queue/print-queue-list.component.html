@@ -1,10 +1,6 @@
 <div class="card card--list">
   <div class="card__header">
     <h1 class="card__title">{{ 'admin.printQueue.title' | translate }}</h1>
-    <button type="button" mat-button (click)="refresh()" [disabled]="isLoading()">
-      <mat-icon>refresh</mat-icon>
-      {{ 'admin.printQueue.refresh' | translate }}
-    </button>
   </div>
 
   @if (isLoading()) {
@@ -30,6 +26,7 @@
 
             <span
               class="connection-chip"
+              [class.connection-chip--pending-verification]="connectionState(printer) === 'pendingVerification'"
               [class.connection-chip--job-error]="connectionState(printer) === 'jobError'"
               [class.connection-chip--offline]="connectionState(printer) === 'disconnected'">
               <span class="connection-chip__dot" aria-hidden="true"></span>

@@ -24,6 +24,7 @@ import org.pluribourse.domain.print.dto.CreatePrinterDto;
 import org.pluribourse.domain.print.dto.PrinterDto;
 import org.pluribourse.domain.print.entity.Printer;
 import org.pluribourse.domain.print.entity.PrintContentType;
+import org.pluribourse.domain.print.entity.PrinterStatus;
 import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.service.DailyReportRenderer;
 import org.pluribourse.domain.print.service.DepositSlipRenderer;
@@ -235,7 +236,7 @@ class DailyReportPrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "A4 Rapport Test", PrinterType.A4, null, "bridge-daily-report-a4"))))
+                                "A4 Rapport Test", PrinterType.A4, null, "bridge-daily-report-a4", PrinterStatus.ONLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         a4PrinterId = objectMapper.readValue(a4Result.getResponse().getContentAsString(), PrinterDto.class).id();

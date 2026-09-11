@@ -176,7 +176,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "A4 Bordereau Test", PrinterType.A4, null, "bridge-slip-a4"))))
+                                "A4 Bordereau Test", PrinterType.A4, null, "bridge-slip-a4", PrinterStatus.ONLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         a4PrinterId = objectMapper.readValue(a4Result.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -308,7 +308,7 @@ class DepositSlipPrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "A4 Bordereau Autre", PrinterType.A4, null, otherBridgeId))))
+                                "A4 Bordereau Autre", PrinterType.A4, null, otherBridgeId, PrinterStatus.ONLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long otherPrinterId = objectMapper.readValue(otherResult.getResponse().getContentAsString(), PrinterDto.class).id();

@@ -89,7 +89,7 @@ class PrinterSelectionIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "Imprimante Disponible", PrinterType.A4, null, "bridge-available"))))
+                                "Imprimante Disponible", PrinterType.A4, null, "bridge-available", PrinterStatus.ONLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         availableA4PrinterId = objectMapper.readValue(available.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -98,7 +98,7 @@ class PrinterSelectionIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "Imprimante Indisponible", PrinterType.A4, null, "bridge-unavailable"))))
+                                "Imprimante Indisponible", PrinterType.A4, null, "bridge-unavailable", PrinterStatus.OFFLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         unavailableA4PrinterId = objectMapper.readValue(unavailable.getResponse().getContentAsString(), PrinterDto.class).id();

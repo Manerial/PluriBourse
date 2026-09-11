@@ -26,11 +26,6 @@ public class PrintQueueController {
         return service.listStatuses();
     }
 
-    @PostMapping("/refresh")
-    public List<PrinterStatusDto> refreshStatuses() {
-        return service.refreshStatuses();
-    }
-
     @PostMapping("/{printerId}/resume")
     public ResponseEntity<Void> resume(@PathVariable Long printerId) {
         service.resumeQueue(printerId);

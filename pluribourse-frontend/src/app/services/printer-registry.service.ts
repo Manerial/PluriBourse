@@ -35,6 +35,10 @@ export class PrinterRegistryService {
     return this.http.post<PrintResult>(`/api/admin/printers/${id}/test-print`, {});
   }
 
+  refreshConnectivity(id: number): Observable<PrinterSummary> {
+    return this.http.post<PrinterSummary>(`/api/admin/printers/${id}/refresh-connectivity`, {});
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`/api/admin/printers/${id}`);
   }

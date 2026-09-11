@@ -7,6 +7,7 @@ public record PrinterStatusDto(
         String name,
         PrinterType type,
         boolean connected,
+        boolean pendingVerification,
         int queueDepth,
         boolean jobInProgress,
         String lastError,

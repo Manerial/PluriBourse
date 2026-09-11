@@ -644,7 +644,6 @@
     },
     "printQueue": {
       "title": "File d'impression",
-      "refresh": "Actualiser",
       "columns": {
         "queueDepth": "Jobs en attente",
         "jobInProgress": "Job en cours",
@@ -653,6 +652,7 @@
       },
       "status": {
         "connected": "Connectée",
+        "pendingVerification": "Vérification en attente",
         "jobError": "En erreur",
         "disconnected": "Hors ligne"
       },
@@ -671,7 +671,6 @@
       },
       "error": {
         "load": "Impossible de charger l'état des imprimantes.",
-        "refresh": "Impossible de vérifier l'état des imprimantes.",
         "resume": "Impossible de relancer la file.",
         "discard": "Impossible d'ignorer le job en erreur."
       }
@@ -750,6 +749,7 @@
       },
       "status": {
         "connected": "Connectée",
+        "pendingVerification": "Vérification en attente",
         "disconnected": "Hors ligne"
       },
       "type": {
@@ -764,7 +764,8 @@
       "actions": {
         "create": "Ajouter une imprimante",
         "delete": "Supprimer",
-        "testPrint": "Tester l'impression"
+        "testPrint": "Tester l'impression",
+        "refreshConnectivity": "Vérifier la connectivité"
       },
       "create": {
         "title": "Ajouter une imprimante",
@@ -796,7 +797,8 @@
         "delete": "Imprimante supprimée.",
         "testPrint": "Impression de test envoyée.",
         "ignore": "Imprimante ignorée.",
-        "reactivate": "Imprimante réactivée."
+        "reactivate": "Imprimante réactivée.",
+        "refreshConnectivity": "Connectivité vérifiée."
       },
       "error": {
         "load": "Impossible de charger le registre des imprimantes.",
@@ -805,7 +807,8 @@
         "testPrint": "Échec de l'impression de test.",
         "discoveryUnavailable": "Le service PrinterBridge ne répond pas sur ce poste. Vérifiez qu'il est lancé.",
         "ignore": "Impossible d'ignorer l'imprimante.",
-        "reactivate": "Impossible de réactiver l'imprimante."
+        "reactivate": "Impossible de réactiver l'imprimante.",
+        "refreshConnectivity": "Impossible de vérifier la connectivité de l'imprimante."
       }
     },
     "archivedCatalog": {

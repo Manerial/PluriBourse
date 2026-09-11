@@ -20,6 +20,7 @@ import org.pluribourse.domain.pos.dto.ValidateBasketDto;
 import org.pluribourse.domain.pos.entity.PaymentMethod;
 import org.pluribourse.domain.print.dto.CreatePrinterDto;
 import org.pluribourse.domain.print.dto.PrinterDto;
+import org.pluribourse.domain.print.entity.PrinterStatus;
 import org.pluribourse.domain.print.entity.PrinterType;
 import org.pluribourse.domain.print.service.PrintQueueService;
 import org.pluribourse.domain.print.service.SettlementReportRenderer;
@@ -278,7 +279,7 @@ class BulkSettlementReportPrintingIT extends IntegrationTest {
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreatePrinterDto(
-                                "A4 Bilan Groupe Test", PrinterType.A4, null, "bridge-bulk-report-a4"))))
+                                "A4 Bilan Groupe Test", PrinterType.A4, null, "bridge-bulk-report-a4", PrinterStatus.ONLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         a4PrinterId = objectMapper.readValue(a4Result.getResponse().getContentAsString(), PrinterDto.class).id();

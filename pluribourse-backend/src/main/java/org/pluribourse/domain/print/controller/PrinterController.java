@@ -68,6 +68,11 @@ public class PrinterController {
         return service.testPrint(id);
     }
 
+    @PostMapping("/{id}/refresh-connectivity")
+    public PrinterSummaryDto refreshConnectivity(@PathVariable Long id) {
+        return service.refreshConnectivity(id);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);

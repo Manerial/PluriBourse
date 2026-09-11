@@ -184,6 +184,11 @@ html {
     color: var(--mat-sys-on-surface-variant);
   }
 
+  &--pending {
+    background: var(--pb-warning-container);
+    color: var(--pb-on-warning-container);
+  }
+
   &--admin {
     background: var(--mat-sys-primary-container);
     color: var(--mat-sys-on-primary-container);

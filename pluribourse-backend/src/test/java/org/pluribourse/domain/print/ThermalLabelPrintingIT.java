@@ -289,16 +289,16 @@ class ThermalLabelPrintingIT extends IntegrationTest {
     @Test
     @Order(12)
     void register_thermal_printer_and_select_it_despite_being_unavailable() throws Exception {
-        // Never registered in printerBridgeDouble — PrinterBridgeClient.checkStatus() gets a 404,
-        // translated to OFFLINE, so this printer starts "in error", same intent as the previous
-        // "no real serial hardware" gap (story 3.4/3.9). Bypassing PrinterSelectionService's own
-        // availability gate by writing the session attribute directly simulates a printer that
-        // *was* available at selection time (story 3.9) and has since become unavailable (AC3 of
-        // this story).
+        // Never registered in printerBridgeDouble, and creation no longer performs a live check
+        // (story 3.15) — status=OFFLINE is seeded straight from the payload, so this printer
+        // starts "in error", same intent as the previous "no real serial hardware" gap (story
+        // 3.4/3.9). Bypassing PrinterSelectionService's own availability gate by writing the
+        // session attribute directly simulates a printer that *was* available at selection time
+        // (story 3.9) and has since become unavailable (AC3 of this story).
         MvcResult printerResult = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreatePrinterDto("Thermique Test", PrinterType.THERMAL, 57, "bridge-thermal-never-registered"))))
+                        .content(objectMapper.writeValueAsString(new CreatePrinterDto("Thermique Test", PrinterType.THERMAL, 57, "bridge-thermal-never-registered", PrinterStatus.OFFLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         unavailablePrinterId = objectMapper.readValue(printerResult.getResponse().getContentAsString(), PrinterDto.class).id();

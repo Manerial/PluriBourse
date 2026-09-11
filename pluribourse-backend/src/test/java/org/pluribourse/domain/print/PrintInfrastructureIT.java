@@ -83,7 +83,7 @@ class PrintInfrastructureIT extends IntegrationTest {
         // printerBridgeId is unconditionally required (@NotBlank on CreatePrinterDto) — enforced
         // by Bean Validation before the controller method runs, hence 400, not the service-level
         // 422 used for widthMm (which is only conditionally required, for THERMAL).
-        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Invalide", PrinterType.A4, null, "");
+        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Invalide", PrinterType.A4, null, "", PrinterStatus.ONLINE);
         mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -95,7 +95,7 @@ class PrintInfrastructureIT extends IntegrationTest {
     @Test
     @Order(2)
     void create_printer_thermal_without_width_is_rejected_with_422() throws Exception {
-        CreatePrinterDto payload = new CreatePrinterDto("Thermique Invalide", PrinterType.THERMAL, null, "bridge-id-1");
+        CreatePrinterDto payload = new CreatePrinterDto("Thermique Invalide", PrinterType.THERMAL, null, "bridge-id-1", PrinterStatus.ONLINE);
         mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -108,7 +108,7 @@ class PrintInfrastructureIT extends IntegrationTest {
     @Order(3)
     void create_printer_as_volunteer_is_forbidden() throws Exception {
         String bridgeId = registerFakePrinter("ONLINE");
-        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Benevole", PrinterType.A4, null, bridgeId);
+        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Benevole", PrinterType.A4, null, bridgeId, PrinterStatus.ONLINE);
         mockMvc.perform(post("/api/admin/printers")
                         .session(volunteerSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -120,7 +120,7 @@ class PrintInfrastructureIT extends IntegrationTest {
     @Order(4)
     void create_printer_a4_returns_created_without_runtime_status_fields() throws Exception {
         String bridgeId = registerFakePrinter("ONLINE");
-        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Guichet", PrinterType.A4, null, bridgeId);
+        CreatePrinterDto payload = new CreatePrinterDto("Imprimante Guichet", PrinterType.A4, null, bridgeId, PrinterStatus.ONLINE);
         mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -136,13 +136,18 @@ class PrintInfrastructureIT extends IntegrationTest {
 
     @Test
     @Order(5)
-    void create_printer_with_unreachable_target_still_succeeds_and_is_marked_in_error() throws Exception {
+    void create_printer_seeds_the_known_status_without_a_new_printerbridge_call() throws Exception {
+        // Story 3.15: creation no longer performs a live connectivity check — the status already
+        // known from discover() is seeded straight into lastError. The double is depopulated for
+        // this bridgeId right before the POST, so no live check could resolve it to OFFLINE by
+        // itself: only the seeded status in the payload can produce the error asserted below.
         String bridgeId = registerFakePrinter("OFFLINE");
+        printerBridgeDouble.unregister(bridgeId);
         MvcResult result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreatePrinterDto("Imprimante Hors Ligne", PrinterType.A4, null, bridgeId))))
+                                new CreatePrinterDto("Imprimante Hors Ligne", PrinterType.A4, null, bridgeId, PrinterStatus.OFFLINE))))
                 .andExpect(status().isCreated())
                 .andReturn();
         Long printerId = objectMapper.readValue(result.getResponse().getContentAsString(), PrinterDto.class).id();
@@ -251,7 +256,7 @@ class PrintInfrastructureIT extends IntegrationTest {
 
     private Long createReachablePrinter(String name) throws Exception {
         String bridgeId = registerFakePrinter("ONLINE");
-        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, bridgeId);
+        CreatePrinterDto payload = new CreatePrinterDto(name, PrinterType.A4, null, bridgeId, PrinterStatus.ONLINE);
         MvcResult result = mockMvc.perform(post("/api/admin/printers")
                         .session(adminSession).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

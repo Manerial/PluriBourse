@@ -30,6 +30,16 @@ public class PrinterQueueHandle {
     @Getter
     private volatile boolean jobInProgress = false;
 
+    /**
+     * True from registration until the first real connectivity check runs for this printer —
+     * distinct from {@code connected} (story 3.15 code review decision): a printer seeded with
+     * {@code PrinterStatus.UNKNOWN} (Bluetooth, never tested by {@code discover()}) starts with no
+     * {@code lastError} exactly like a genuinely reachable one, so the UI needs this flag to avoid
+     * showing it as confidently "connected" before it has actually been checked once.
+     */
+    @Getter
+    private volatile boolean pendingVerification = false;
+
     public PrinterQueueHandle(Printer printer) {
         this.printer = printer;
         this.consumerThread = new Thread(this::consume, "print-queue-" + printer.getId());
@@ -38,6 +48,10 @@ public class PrinterQueueHandle {
 
     void setLastError(String lastError) {
         this.lastError = lastError;
+    }
+
+    void setPendingVerification(boolean pendingVerification) {
+        this.pendingVerification = pendingVerification;
     }
 
     /**

@@ -1409,9 +1409,14 @@ afin que le backend n'ait plus jamais à ouvrir lui-même une connexion matérie
 **Quand** le formulaire est soumis
 **Alors** le type (THERMAL/A4) est dérivé automatiquement de l'imprimante sélectionnée — plus de sélecteur manuel — et l'imprimante est enregistrée avec un identifiant opaque `printerBridgeId` (fini port série/IP+port)
 
-**Étant donné** qu'une imprimante enregistrée doit être vérifiée (démarrage du serveur ou création)
+**Étant donné** qu'une imprimante enregistrée doit être vérifiée au démarrage du serveur
 **Quand** la vérification de connectivité s'exécute
 **Alors** elle interroge le statut PrinterBridge de l'imprimante plutôt que d'ouvrir une socket/port série ; une erreur PrinterBridge injoignable est distinguée d'une imprimante spécifiquement signalée hors ligne
+
+**Étant donné** que l'admin enregistre une nouvelle imprimante depuis une imprimante détectée par `discover()`
+**Quand** la création est soumise
+**Alors** le statut déjà renvoyé par `discover()` (réseau : statut réel ; Bluetooth : `UNKNOWN`, PrinterBridge ne le teste jamais à ce niveau) est utilisé directement pour initialiser l'état de connectivité de l'imprimante — aucun nouvel appel à PrinterBridge n'est déclenché à la création
+*(Amendé — voir sprint-change-proposal-2026-09-11.md)*
 
 **Étant donné** qu'une imprimante est enregistrée
 **Quand** l'admin clique sur "Tester l'impression"
@@ -1474,6 +1479,46 @@ afin qu'elle cesse d'encombrer la liste de découverte à chaque scan.
 **Étant donné** qu'un bénévole tente d'accéder à une route liée aux imprimantes ignorées
 **Quand** la route est chargée
 **Alors** l'accès est refusé avec un 403 — vue admin uniquement (cohérent avec Story 3.8)
+
+**Étant donné** que l'admin vient d'enregistrer une imprimante depuis le dialog "Ajouter une imprimante"
+**Quand** l'enregistrement réussit
+**Alors** le dialog reste ouvert sur la liste des imprimantes détectées, l'imprimante qui vient d'être enregistrée est retirée de cette liste (sans nouvel appel à `discover()`) — l'admin peut enchaîner l'enregistrement d'une autre imprimante détectée sans rouvrir le dialog
+**Et** le dialog ne se ferme que sur "Annuler", ou automatiquement si la liste des imprimantes détectées devient vide après un enregistrement
+*(Ajouté — voir sprint-change-proposal-2026-09-11.md)*
+
+### Story 3.15 : Vérification de connectivité asynchrone et rafraîchissement ciblé
+
+> **Story ajoutée après coup (2026-09-11)** — implémente le correctif issu du correct-course sur les Stories 3.7, 3.11, 3.13 (voir `sprint-change-proposal-2026-09-11.md`) : suppression du check de connectivité bloquant à la création d'une imprimante, vérification périodique en tâche de fond, rafraîchissement manuel ciblé par imprimante.
+
+En tant qu'administrateur,
+je veux que l'ajout d'une imprimante soit immédiat et que la connectivité reste à jour sans action bloquante de ma part,
+afin de pouvoir enregistrer plusieurs imprimantes rapidement et diagnostiquer une imprimante précise sans attendre.
+
+**Critères d'acceptation :**
+
+**Étant donné** que l'admin enregistre une imprimante détectée par `discover()`
+**Quand** la création est soumise
+**Alors** elle est persistée et son état de connectivité initialisé immédiatement à partir du statut déjà connu de `discover()`, sans nouvel appel à PrinterBridge (Story 3.11 amendée)
+
+**Étant donné** que le serveur est démarré
+**Quand** le délai configuré (`printer.connectivity.refresh.interval`, modèle `pos.basket.reaper.interval`) s'écoule
+**Alors** toutes les imprimantes enregistrées non suspendues sont revérifiées auprès de PrinterBridge en tâche de fond, sans action de l'admin (FR-079 amendé)
+
+**Étant donné** qu'un job d'impression est en cours sur une imprimante au moment où le scheduler l'atteint
+**Quand** la vérification de connectivité s'exécute
+**Alors** aucune interférence n'est introduite — délégué à PrinterBridge (`PrinterLocks.tryLock()` non bloquant côté PrinterBridge)
+
+**Étant donné** que l'admin consulte `/admin/printers`
+**Quand** il déclenche le rafraîchissement d'une imprimante précise
+**Alors** seule cette imprimante est revérifiée en direct auprès de PrinterBridge, sans affecter les autres
+
+**Étant donné** les boutons "Actualiser" globaux existants sur `/admin/printers` et `/admin/print-queue`
+**Quand** cette story est livrée
+**Alors** ils sont retirés, ainsi que l'endpoint `POST /admin/print-queue/refresh` et les tests qui l'exercent exclusivement
+
+**Étant donné** le dialog "Ajouter une imprimante"
+**Quand** un enregistrement réussit
+**Alors** le comportement suit l'AC amendée de la Story 3.13 (retrait local de la liste détectée, pas de fermeture du dialog)
 
 ---
 

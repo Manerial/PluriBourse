@@ -130,9 +130,9 @@ describe('PrinterFormComponent', () => {
     expect(printerRegistryServiceMock.create).not.toHaveBeenCalled();
   });
 
-  it('calls create with the derived THERMAL payload on valid submit and closes the dialog', async () => {
+  it('calls create with the derived THERMAL payload, including the known status, on valid submit', async () => {
+    component.selectRow(MOCK_DISCOVERED[0]);
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.printerBridgeId.setValue('bridge-thermal-1');
     component.form.controls.widthMm.setValue(80);
 
     await component.onSubmit();
@@ -142,14 +142,14 @@ describe('PrinterFormComponent', () => {
       type: 'THERMAL',
       printerBridgeId: 'bridge-thermal-1',
       widthMm: 80,
+      status: 'ONLINE',
     });
-    expect(dialogRefMock.close).toHaveBeenCalledOnce();
     expect(component.loading()).toBe(false);
   });
 
-  it('calls create with the derived A4 payload on valid submit', async () => {
+  it('calls create with the derived A4 payload, including the known status, on valid submit', async () => {
+    component.selectRow(MOCK_DISCOVERED[1]);
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.printerBridgeId.setValue('bridge-a4-1');
 
     await component.onSubmit();
 
@@ -158,13 +158,37 @@ describe('PrinterFormComponent', () => {
       type: 'A4',
       printerBridgeId: 'bridge-a4-1',
       widthMm: null,
+      status: 'OFFLINE',
     });
+  });
+
+  it('a successful submit does not close the dialog while other discovered printers remain', async () => {
+    component.selectRow(MOCK_DISCOVERED[0]);
+    component.form.controls.name.setValue('Guichet');
+    component.form.controls.widthMm.setValue(80);
+
+    await component.onSubmit();
+
+    expect(component.discoveredPrinters()).toEqual([MOCK_DISCOVERED[1]]);
+    expect(component.selectedPrinter()).toBeNull();
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
+  });
+
+  it('a successful submit closes the dialog once the discovered list becomes empty', async () => {
+    await createComponent({ discoveredPrinters: [MOCK_DISCOVERED[0]], discoveryError: false });
+    component.selectRow(MOCK_DISCOVERED[0]);
+    component.form.controls.name.setValue('Guichet');
+    component.form.controls.widthMm.setValue(80);
+
+    await component.onSubmit();
+
+    expect(component.discoveredPrinters()).toEqual([]);
     expect(dialogRefMock.close).toHaveBeenCalledOnce();
   });
 
   it('sets error key and stops loading when create fails', async () => {
+    component.selectRow(MOCK_DISCOVERED[0]);
     component.form.controls.name.setValue('Guichet');
-    component.form.controls.printerBridgeId.setValue('bridge-thermal-1');
     component.form.controls.widthMm.setValue(80);
     printerRegistryServiceMock.create.mockReturnValue(throwError(() => new Error('server')));
 

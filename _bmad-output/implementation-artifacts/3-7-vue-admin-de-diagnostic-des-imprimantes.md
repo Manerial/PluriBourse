@@ -148,7 +148,8 @@ Claude Sonnet 5 (claude-sonnet-5)
 
 ### Completion Notes List
 
-- Implémentation strictement conforme au périmètre des ACs de l'épic : pas de SSE, pas d'historique de jobs individuels (voir Dev Notes § Périmètre : temps réel) — rafraîchissement manuel via bouton "Actualiser" uniquement. **Signalé en review** : si la richesse complète décrite par `EXPERIENCE.md` (SSE, historique de jobs) est souhaitée, proposer une story dédiée plutôt que l'ajouter ici — non tranché, resté hors scope.
+- Implémentation strictement conforme au périmètre des ACs de l'épic : pas de SSE, pas d'historique de jobs individuels (voir Dev Notes § Périmètre : temps réel). **Signalé en review** : si la richesse complète décrite par `EXPERIENCE.md` (SSE, historique de jobs) est souhaitée, proposer une story dédiée plutôt que l'ajouter ici — non tranché, resté hors scope.
+- **Amendé — voir sprint-change-proposal-2026-09-11.md** : le bouton "Actualiser" (rafraîchissement live de toutes les imprimantes à la demande) est retiré de `/admin/print-queue`. La connectivité est désormais maintenue à jour par un scheduler de fond (Story 3.15) ; `GET /admin/print-queue` continue d'afficher l'état déjà connu en mémoire (`listStatuses()`, inchangé), sans déclencher de nouveau check live.
 - Actions "Relancer"/"Ignorer" implémentées en clic direct + toast succès/erreur, sans `ConfirmDialogService` (voir Dev Notes § Confirmation Relancer/Ignorer). Non remis en question lors de la review.
 - Nav "File d'impression" ajoutée dans la section `nav.sections.management` existante (pas de section "Ventes" dédiée pour l'instant, cohérent avec Dev Notes § Emplacement nav — à revoir naturellement quand l'Épic 4 POS sera implémenté).
 - `getHandle()` de `PrintQueueService` reste inchangé (aucune modification requise), son JavaDoc mentionnait déjà cette story comme foundation.

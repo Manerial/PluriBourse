@@ -48,7 +48,7 @@ public class PrinterService {
             throw new InvalidPrinterConfigurationException(
                     "A printer named '" + dto.name() + "' already exists.");
         }
-        printQueueService.registerPrinter(printer);
+        printQueueService.registerPrinter(printer, dto.status());
         return mapper.toDto(printer);
     }
 
@@ -63,12 +63,28 @@ public class PrinterService {
      */
     public List<PrinterSummaryDto> list() {
         return repository.findAll().stream()
-                .map(printer -> {
-                    PrinterQueueHandle handle = printQueueService.getHandle(printer.getId());
-                    boolean connected = handle != null && handle.getLastError() == null;
-                    return new PrinterSummaryDto(printer.getId(), printer.getName(), printer.getType(), connected);
-                })
+                .map(this::toSummaryDto)
                 .toList();
+    }
+
+    private PrinterSummaryDto toSummaryDto(Printer printer) {
+        PrinterQueueHandle handle = printQueueService.getHandle(printer.getId());
+        boolean connected = handle != null && handle.getLastError() == null;
+        boolean pendingVerification = handle != null && handle.isPendingVerification();
+        return new PrinterSummaryDto(printer.getId(), printer.getName(), printer.getType(), connected, pendingVerification);
+    }
+
+    /**
+     * Admin-triggered targeted connectivity refresh (story 3.15, AC4) — re-checks a single printer
+     * against PrinterBridge without touching any other registered printer. The 404 case and the
+     * printer lookup both live in {@link PrintQueueService#refreshConnectivity(Long)} — a single
+     * query instead of resolving the printer twice (code review finding, story 3.15). The result is
+     * read back straight after (that call is synchronous), so the returned summary already reflects
+     * the refreshed state.
+     */
+    public PrinterSummaryDto refreshConnectivity(Long id) {
+        Printer printer = printQueueService.refreshConnectivity(id);
+        return toSummaryDto(printer);
     }
 
     /**

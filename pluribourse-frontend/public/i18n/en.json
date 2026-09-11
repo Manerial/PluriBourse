@@ -644,7 +644,6 @@
     },
     "printQueue": {
       "title": "Print queue",
-      "refresh": "Refresh",
       "columns": {
         "queueDepth": "Jobs waiting",
         "jobInProgress": "Job in progress",
@@ -653,6 +652,7 @@
       },
       "status": {
         "connected": "Connected",
+        "pendingVerification": "Verification pending",
         "jobError": "Job error",
         "disconnected": "Offline"
       },
@@ -671,7 +671,6 @@
       },
       "error": {
         "load": "Failed to load printer statuses.",
-        "refresh": "Failed to check printer statuses.",
         "resume": "Failed to resume the queue.",
         "discard": "Failed to discard the failed job."
       }
@@ -750,6 +749,7 @@
       },
       "status": {
         "connected": "Connected",
+        "pendingVerification": "Verification pending",
         "disconnected": "Offline"
       },
       "type": {
@@ -764,7 +764,8 @@
       "actions": {
         "create": "Add a printer",
         "delete": "Delete",
-        "testPrint": "Test print"
+        "testPrint": "Test print",
+        "refreshConnectivity": "Check connectivity"
       },
       "create": {
         "title": "Add a printer",
@@ -796,7 +797,8 @@
         "delete": "Printer deleted.",
         "testPrint": "Test print sent.",
         "ignore": "Printer ignored.",
-        "reactivate": "Printer reactivated."
+        "reactivate": "Printer reactivated.",
+        "refreshConnectivity": "Connectivity checked."
       },
       "error": {
         "load": "Failed to load the printer registry.",
@@ -805,7 +807,8 @@
         "testPrint": "Test print failed.",
         "discoveryUnavailable": "The PrinterBridge service is not responding on this machine. Check that it is running.",
         "ignore": "Failed to ignore the printer.",
-        "reactivate": "Failed to reactivate the printer."
+        "reactivate": "Failed to reactivate the printer.",
+        "refreshConnectivity": "Failed to check the printer's connectivity."
       }
     },
     "archivedCatalog": {

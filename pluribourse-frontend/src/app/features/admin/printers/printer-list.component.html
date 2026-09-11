@@ -43,13 +43,17 @@
               <td>{{ printer.name }}</td>
               <td>{{ ('admin.printers.type.' + printer.type) | translate }}</td>
               <td>
-                <span class="badge" [class]="printer.connected ? 'badge--active' : 'badge--inactive'">
+                <span class="badge" [class]="connectionBadgeClass(printer)">
                   <span class="badge__dot" aria-hidden="true"></span>
-                  {{ (printer.connected ? 'admin.printers.status.connected' : 'admin.printers.status.disconnected') | translate }}
+                  {{ ('admin.printers.status.' + connectionState(printer)) | translate }}
                 </span>
               </td>
               <td>
                 <div class="actions-cell">
+                  <button type="button" mat-button (click)="refreshConnectivity(printer)" [disabled]="refreshingId() === printer.id">
+                    <mat-icon>refresh</mat-icon>
+                    {{ 'admin.printers.actions.refreshConnectivity' | translate }}
+                  </button>
                   <button type="button" mat-button (click)="testPrint(printer)" [disabled]="testingId() === printer.id">
                     <mat-icon>print</mat-icon>
                     {{ 'admin.printers.actions.testPrint' | translate }}

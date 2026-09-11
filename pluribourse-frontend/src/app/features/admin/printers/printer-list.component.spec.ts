@@ -12,8 +12,8 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
 import { PrinterFormComponent } from './printer-form.component';
 
 const MOCK_PRINTERS: PrinterSummary[] = [
-  { id: 1, name: 'Guichet Thermique', type: 'THERMAL', connected: true },
-  { id: 2, name: 'Guichet A4', type: 'A4', connected: false },
+  { id: 1, name: 'Guichet Thermique', type: 'THERMAL', connected: true, pendingVerification: false },
+  { id: 2, name: 'Guichet A4', type: 'A4', connected: false, pendingVerification: false },
 ];
 
 const MOCK_DISCOVERED: DiscoveredPrinter[] = [
@@ -35,6 +35,7 @@ describe('PrinterListComponent', () => {
     discover: vi.fn().mockReturnValue(of(MOCK_DISCOVERED)),
     listIgnored: vi.fn().mockReturnValue(of(MOCK_IGNORED)),
     reactivate: vi.fn().mockReturnValue(of(undefined)),
+    refreshConnectivity: vi.fn().mockReturnValue(of(MOCK_PRINTERS[0])),
   };
 
   const toastMock = {
@@ -57,6 +58,7 @@ describe('PrinterListComponent', () => {
     printerRegistryServiceMock.discover.mockReturnValue(of(MOCK_DISCOVERED));
     printerRegistryServiceMock.listIgnored.mockReturnValue(of(MOCK_IGNORED));
     printerRegistryServiceMock.reactivate.mockReturnValue(of(undefined));
+    printerRegistryServiceMock.refreshConnectivity.mockReturnValue(of(MOCK_PRINTERS[0]));
     dialogMock.open.mockReturnValue({ closed: of(undefined) });
     confirmDialogMock.open.mockReturnValue(of(false));
 
@@ -169,6 +171,30 @@ describe('PrinterListComponent', () => {
     await component.testPrint(MOCK_PRINTERS[0]);
     expect(toastMock.showError).toHaveBeenCalledWith('admin.printers.error.testPrint');
     expect(component.testingId()).toBeNull();
+  });
+
+  it('refreshConnectivity updates the affected row and shows a success toast', async () => {
+    const updated: PrinterSummary = { id: 1, name: 'Guichet Thermique', type: 'THERMAL', connected: false, pendingVerification: false };
+    printerRegistryServiceMock.refreshConnectivity.mockReturnValueOnce(of(updated));
+    await component.refreshConnectivity(MOCK_PRINTERS[0]);
+    expect(printerRegistryServiceMock.refreshConnectivity).toHaveBeenCalledWith(1);
+    expect(component.printers().find(p => p.id === 1)).toEqual(updated);
+    expect(toastMock.showSuccess).toHaveBeenCalledOnce();
+    expect(component.refreshingId()).toBeNull();
+  });
+
+  it('refreshConnectivity shows an error toast and clears the refreshing state when the call fails', async () => {
+    printerRegistryServiceMock.refreshConnectivity.mockReturnValueOnce(throwError(() => new Error('network')));
+    await component.refreshConnectivity(MOCK_PRINTERS[0]);
+    expect(toastMock.showError).toHaveBeenCalledOnce();
+    expect(toastMock.showSuccess).not.toHaveBeenCalled();
+    expect(component.refreshingId()).toBeNull();
+  });
+
+  it('connectionState reports pendingVerification for a printer seeded from an UNKNOWN status, ahead of connected', () => {
+    const pending: PrinterSummary = { id: 3, name: 'Imprimante Bluetooth', type: 'THERMAL', connected: true, pendingVerification: true };
+    expect(component.connectionState(pending)).toBe('pendingVerification');
+    expect(component.connectionBadgeClass(pending)).toBe('badge--pending');
   });
 
   it('loads the ignored printers section on init', () => {
