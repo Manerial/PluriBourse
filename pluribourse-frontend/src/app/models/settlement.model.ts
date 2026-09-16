@@ -10,6 +10,7 @@ export interface SettlementDto {
   lastName: string;
   phone: string;
   email: string;
+  // amountDue/amountPaid below: number, not BigDecimal string — see item.model.ts for why.
   amountDue: number;
   amountPaid: number | null;
   status: SettlementStatus;

@@ -17,6 +17,14 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit-level (no Spring context) coverage of {@link AdminPasswordResetRunner}, the
+ * {@code --reset-admin-password} CLI runner. Exception to the "E2E via controllers only" rule,
+ * same rationale as {@code PrinterBridgeClientTest}/{@code SseEmitterRegistryKeepaliveTest}: this
+ * is a boundary with the outside world (the command line at startup, not an HTTP request), not an
+ * internal layer — resetting the admin password out-of-band exists precisely for when no
+ * authenticated controller path is usable (lost credentials).
+ */
 @ExtendWith(MockitoExtension.class)
 class AdminPasswordResetRunnerTest {
 

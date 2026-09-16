@@ -20,7 +20,7 @@ import { ConfirmDialogService } from '../../shared/components/confirm-dialog/con
 import { SkeletonRowComponent } from '../../shared/components/skeleton-row/skeleton-row.component';
 import { NotificationInlineComponent } from '../../shared/components/notification-inline/notification-inline.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { extractErrorType } from '../../shared/http-error.util';
+import { extractErrorType, isErrorType } from '../../shared/http-error.util';
 
 @Component({
   selector: 'app-settlement-list',
@@ -272,7 +272,7 @@ export class SettlementListComponent implements OnInit {
       await firstValueFrom(this.settlementService.printReport(settlement.sellerId));
       this.toast.showSuccess(this.translate.instant('settlement.success.printReport'));
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('settlement.error.printerUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('settlement.error.printReport'));
@@ -295,7 +295,7 @@ export class SettlementListComponent implements OnInit {
       await firstValueFrom(this.settlementService.printReport(sellerId));
       this.toast.showSuccess(this.translate.instant('settlement.success.printReport'));
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('settlement.error.printerUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('settlement.error.printReport'));
@@ -321,7 +321,7 @@ export class SettlementListComponent implements OnInit {
         this.toast.showSuccess(this.translate.instant('settlement.success.printAll', { count: result.succeededCount }));
       }
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('settlement.error.printerUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('settlement.error.printAll'));

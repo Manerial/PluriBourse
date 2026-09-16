@@ -1,5 +1,10 @@
 import { PageResponse } from './seller.model';
 
+// `price` (and every other monetary field across the DTOs in this directory) is a plain `number`,
+// not a numeric string: Jackson serializes the backend's `BigDecimal` straight to a JSON number,
+// and the frontend only ever displays/forwards these values — it never performs arithmetic on
+// them, so the float-precision risk of `number` never materializes. CLAUDE.md's BigDecimal-only
+// rule is scoped to backend calculations, not to how amounts travel over the wire.
 export interface ItemDto {
   id: number;
   sellerProfileId: number;

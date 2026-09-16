@@ -15,6 +15,13 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit-level (no Spring context) coverage of {@link AdminCreateRunner}, the {@code --create-admin}
+ * CLI bootstrap runner. Exception to the "E2E via controllers only" rule, same rationale as
+ * {@code PrinterBridgeClientTest}/{@code SseEmitterRegistryKeepaliveTest}: this is a boundary with
+ * the outside world (the command line at startup, not an HTTP request), not an internal layer —
+ * creating the very first admin account can't require an authenticated controller to already exist.
+ */
 @ExtendWith(MockitoExtension.class)
 class AdminCreateRunnerTest {
 

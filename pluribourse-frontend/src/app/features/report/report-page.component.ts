@@ -5,7 +5,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule, MatSelectChange } from '@angular/material/select';
-import { HttpErrorResponse } from '@angular/common/http';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { DailySalesReportDto } from '../../models/daily-sales-report.model';
@@ -19,7 +18,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../shared/components/skeleton-row/skeleton-row.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { NotificationInlineComponent } from '../../shared/components/notification-inline/notification-inline.component';
-import { extractErrorType } from '../../shared/http-error.util';
+import { isErrorType } from '../../shared/http-error.util';
 
 // An edition is "reportable" once its sale phase has ended: the financial summary and CSV
 // exports only make sense from Post-vente onward (see AdminReportController.getEditionReport,
@@ -159,7 +158,7 @@ export class ReportPageComponent {
       await firstValueFrom(this.reportService.printDailyReport());
       this.toast.showSuccess(this.translate.instant('admin.reports.success.print'));
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('admin.reports.error.printerUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('admin.reports.error.print'));

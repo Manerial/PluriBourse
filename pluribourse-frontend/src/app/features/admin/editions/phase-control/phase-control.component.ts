@@ -2,7 +2,6 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { firstValueFrom } from 'rxjs';
@@ -12,11 +11,12 @@ import { EditionService } from '../../../../services/edition.service';
 import { SettlementService } from '../../../../services/settlement.service';
 import { ReportService } from '../../../../services/report.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../../../shared/components/skeleton-row/skeleton-row.component';
 import { NotificationInlineComponent } from '../../../../shared/components/notification-inline/notification-inline.component';
 import { DialogShellComponent } from '../../../../shared/components/dialog-shell/dialog-shell.component';
-import { extractErrorType } from '../../../../shared/http-error.util';
+import { isErrorType } from '../../../../shared/http-error.util';
 import { ALL_PHASES } from '../../../../models/active-phase.enum';
 
 export interface PhaseControlDialogData {
@@ -115,6 +115,22 @@ export class PhaseControlComponent implements OnInit {
     return idx > 0 ? ALL_PHASES[idx - 1] : null;
   }
 
+  /**
+   * Shared plumbing for every confirm-then-call-the-API action below: opens the dialog, and on
+   * cancellation resets {@link isSubmitting} and stops there. Each caller still owns its own
+   * try/catch/finally in {@link action} — the branching on the API outcome differs per action
+   * (error mapping, side effects, whether {@link isSubmitting} is reset inside a nested step).
+   */
+  private confirmAndRun(data: ConfirmDialogData, action: () => Promise<void>): void {
+    this.confirmDialog.open(data).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((confirmed) => {
+      if (!confirmed) {
+        this.isSubmitting.set(false);
+        return;
+      }
+      void action();
+    });
+  }
+
   confirmAdvance(): void {
     const e = this.edition();
     if (!e || !this.canAdvance() || this.isSubmitting()) {
@@ -129,32 +145,28 @@ export class PhaseControlComponent implements OnInit {
       ? this.translate.instant('phase.advance.dialog.warningNoItems')
       : this.translate.instant('phase.advance.dialog.description.' + e.phase);
     this.isSubmitting.set(true);
-    this.confirmDialog.open({
-      title: this.translate.instant('phase.advance.dialog.title', { nextPhase: nextLabel }),
-      description,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
-      if (!confirmed) {
-        this.isSubmitting.set(false);
-        return;
-      }
-      try {
-        this.edition.set(await firstValueFrom(this.editionService.advancePhase(e.id)));
-        this.toast.showSuccess(this.translate.instant('phase.advance.success'));
-        this.dialogRef.close();
-      } catch (err: unknown) {
-        if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/no-categories-configured')) {
-          this.toast.showError(this.translate.instant('phase.advance.error.noCategoriesConfigured'));
-        } else if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/no-volunteer-configured')) {
-          this.toast.showError(this.translate.instant('phase.advance.error.noVolunteerConfigured'));
-        } else if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/edition-already-active')) {
-          this.toast.showError(this.translate.instant('phase.advance.error.editionAlreadyActive'));
-        } else {
-          this.toast.showError(this.translate.instant('phase.advance.error.generic'));
+    this.confirmAndRun(
+      { title: this.translate.instant('phase.advance.dialog.title', { nextPhase: nextLabel }), description },
+      async () => {
+        try {
+          this.edition.set(await firstValueFrom(this.editionService.advancePhase(e.id)));
+          this.toast.showSuccess(this.translate.instant('phase.advance.success'));
+          this.dialogRef.close();
+        } catch (err: unknown) {
+          if (isErrorType(err, 422, '/no-categories-configured')) {
+            this.toast.showError(this.translate.instant('phase.advance.error.noCategoriesConfigured'));
+          } else if (isErrorType(err, 422, '/no-volunteer-configured')) {
+            this.toast.showError(this.translate.instant('phase.advance.error.noVolunteerConfigured'));
+          } else if (isErrorType(err, 422, '/edition-already-active')) {
+            this.toast.showError(this.translate.instant('phase.advance.error.editionAlreadyActive'));
+          } else {
+            this.toast.showError(this.translate.instant('phase.advance.error.generic'));
+          }
+        } finally {
+          this.isSubmitting.set(false);
         }
-      } finally {
-        this.isSubmitting.set(false);
       }
-    });
+    );
   }
 
   confirmRollback(): void {
@@ -165,24 +177,23 @@ export class PhaseControlComponent implements OnInit {
     const prev = this.prevPhase()!;
     const prevLabel = this.translate.instant('edition.phase.' + prev);
     this.isSubmitting.set(true);
-    this.confirmDialog.open({
-      title: this.translate.instant('phase.rollback.dialog.title', { prevPhase: prevLabel }),
-      description: this.translate.instant('phase.rollback.dialog.description.' + e.phase),
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
-      if (!confirmed) {
-        this.isSubmitting.set(false);
-        return;
+    this.confirmAndRun(
+      {
+        title: this.translate.instant('phase.rollback.dialog.title', { prevPhase: prevLabel }),
+        description: this.translate.instant('phase.rollback.dialog.description.' + e.phase),
+      },
+      async () => {
+        try {
+          this.edition.set(await firstValueFrom(this.editionService.rollbackPhase(e.id)));
+          this.toast.showSuccess(this.translate.instant('phase.rollback.success'));
+          this.dialogRef.close();
+        } catch {
+          this.toast.showError(this.translate.instant('phase.rollback.error'));
+        } finally {
+          this.isSubmitting.set(false);
+        }
       }
-      try {
-        this.edition.set(await firstValueFrom(this.editionService.rollbackPhase(e.id)));
-        this.toast.showSuccess(this.translate.instant('phase.rollback.success'));
-        this.dialogRef.close();
-      } catch {
-        this.toast.showError(this.translate.instant('phase.rollback.error'));
-      } finally {
-        this.isSubmitting.set(false);
-      }
-    });
+    );
   }
 
   async confirmClose(): Promise<void> {
@@ -212,33 +223,29 @@ export class PhaseControlComponent implements OnInit {
       return;
     }
 
-    this.confirmDialog.open({
-      title: this.translate.instant('phase.close.dialog.title'),
-      description,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
-      if (!confirmed) {
-        this.isSubmitting.set(false);
-        return;
+    this.confirmAndRun(
+      { title: this.translate.instant('phase.close.dialog.title'), description },
+      async () => {
+        try {
+          this.edition.set(await firstValueFrom(this.editionService.closeEdition(e.id)));
+          this.toast.showSuccess(this.translate.instant('phase.close.success'));
+          this.dialogRef.close();
+        } catch {
+          this.toast.showError(this.translate.instant('phase.close.error.generic'));
+          this.isSubmitting.set(false);
+          return;
+        }
+        // Best-effort (AC 4): the closure above already succeeded and the dialog is already closed —
+        // a printing failure here is reported separately and never undoes the closure.
+        try {
+          await firstValueFrom(this.reportService.printEditionReportClosure(e.id));
+        } catch {
+          this.toast.showError(this.translate.instant('phase.close.error.printReport'));
+        } finally {
+          this.isSubmitting.set(false);
+        }
       }
-      try {
-        this.edition.set(await firstValueFrom(this.editionService.closeEdition(e.id)));
-        this.toast.showSuccess(this.translate.instant('phase.close.success'));
-        this.dialogRef.close();
-      } catch {
-        this.toast.showError(this.translate.instant('phase.close.error.generic'));
-        this.isSubmitting.set(false);
-        return;
-      }
-      // Best-effort (AC 4): the closure above already succeeded and the dialog is already closed —
-      // a printing failure here is reported separately and never undoes the closure.
-      try {
-        await firstValueFrom(this.reportService.printEditionReportClosure(e.id));
-      } catch {
-        this.toast.showError(this.translate.instant('phase.close.error.printReport'));
-      } finally {
-        this.isSubmitting.set(false);
-      }
-    });
+    );
   }
 
   confirmArchive(): void {
@@ -247,24 +254,23 @@ export class PhaseControlComponent implements OnInit {
       return;
     }
     this.isSubmitting.set(true);
-    this.confirmDialog.open({
-      title: this.translate.instant('phase.archive.dialog.title'),
-      description: this.translate.instant('phase.archive.dialog.description'),
-      confirmVariant: 'error',
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (confirmed) => {
-      if (!confirmed) {
-        this.isSubmitting.set(false);
-        return;
+    this.confirmAndRun(
+      {
+        title: this.translate.instant('phase.archive.dialog.title'),
+        description: this.translate.instant('phase.archive.dialog.description'),
+        confirmVariant: 'error',
+      },
+      async () => {
+        try {
+          this.edition.set(await firstValueFrom(this.editionService.archiveEdition(e.id)));
+          this.toast.showSuccess(this.translate.instant('phase.archive.success'));
+          this.dialogRef.close();
+        } catch {
+          this.toast.showError(this.translate.instant('phase.archive.error'));
+        } finally {
+          this.isSubmitting.set(false);
+        }
       }
-      try {
-        this.edition.set(await firstValueFrom(this.editionService.archiveEdition(e.id)));
-        this.toast.showSuccess(this.translate.instant('phase.archive.success'));
-        this.dialogRef.close();
-      } catch {
-        this.toast.showError(this.translate.instant('phase.archive.error'));
-      } finally {
-        this.isSubmitting.set(false);
-      }
-    });
+    );
   }
 }

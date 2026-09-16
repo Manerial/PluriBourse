@@ -11,7 +11,7 @@ import { PosService } from '../../../services/pos.service';
 import { SseService } from '../../../services/sse.service';
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { extractConflictingItems, extractErrorType } from '../../../shared/http-error.util';
+import { extractConflictingItems, extractErrorType, isErrorType } from '../../../shared/http-error.util';
 import { PaymentDialogService } from './payment-dialog.service';
 import { ScannerInputComponent } from './scanner-input.component';
 
@@ -236,7 +236,7 @@ export class PosPageComponent implements OnInit {
       if (this.basketCancelled()) {
         return;
       }
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('volunteer.pos.invoice.error.a4PrinterUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('volunteer.pos.invoice.error.generic'));

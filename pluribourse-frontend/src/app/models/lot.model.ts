@@ -1,5 +1,7 @@
 import { ItemDto } from './item.model';
 
+// `globalPrice` below: number, not BigDecimal string — see item.model.ts for why.
+
 export interface CreateLotItemRequest {
   name: string;
   incomplete: boolean;

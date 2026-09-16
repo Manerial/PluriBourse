@@ -45,7 +45,7 @@
 
   &__price {
     font-size: 14px;
-    color: var(--mat-sys-on-surface-variant);
+    color: var(--mat-sys-primary);
     white-space: nowrap;
   }
 
@@ -94,7 +94,7 @@
   &__subtotal {
     font-size: 15px;
     font-weight: 700;
-    color: var(--mat-sys-on-surface);
+    color: var(--mat-sys-primary);
     white-space: nowrap;
   }
 
@@ -115,8 +115,8 @@
 .basket-total {
   margin-top: var(--pb-space-md);
   font-size: 16px;
-  font-weight: 700;
-  color: var(--mat-sys-on-surface);
+  font-weight: 600;
+  color: var(--mat-sys-primary);
   text-align: right;
 }
 

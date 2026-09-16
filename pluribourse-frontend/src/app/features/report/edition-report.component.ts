@@ -1,7 +1,6 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { HttpErrorResponse } from '@angular/common/http';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { EditionSummaryReportDto } from '../../models/edition-summary-report.model';
@@ -10,7 +9,7 @@ import { ReportEditionScopeService } from './report-edition-scope.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { SkeletonRowComponent } from '../../shared/components/skeleton-row/skeleton-row.component';
 import { NotificationInlineComponent } from '../../shared/components/notification-inline/notification-inline.component';
-import { extractErrorType } from '../../shared/http-error.util';
+import { isErrorType } from '../../shared/http-error.util';
 
 @Component({
   selector: 'app-edition-report',
@@ -80,7 +79,7 @@ export class EditionReportComponent {
       await firstValueFrom(this.reportService.printEditionReport(editionId));
       this.toast.showSuccess(this.translate.instant('admin.reports.success.print'));
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('admin.reports.error.printerUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('admin.reports.error.print'));

@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,7 +20,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/skeleton-row.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { extractErrorType } from '../../../shared/http-error.util';
+import { isErrorType } from '../../../shared/http-error.util';
 import { ItemFormComponent } from './item-form.component';
 import { LotFormComponent } from './lot-form.component';
 import { SellerSearchComponent } from './seller-search.component';
@@ -191,7 +190,7 @@ export class DepositPageComponent {
         await this.loadItems(seller.id);
       }
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/item-modification-locked')) {
+      if (isErrorType(err, 422, '/item-modification-locked')) {
         this.toast.showError(this.translate.instant('volunteer.deposit.item.error.deleteLotPhaseLocked'));
       } else {
         this.toast.showError(this.translate.instant('volunteer.deposit.item.error.deleteLot'));
@@ -239,7 +238,7 @@ export class DepositPageComponent {
       await firstValueFrom(this.depositService.reprintLabels(seller.id));
       this.toast.showSuccess(this.translate.instant('volunteer.deposit.success.reprintLabels'));
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('volunteer.deposit.error.thermalPrinterUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('volunteer.deposit.error.reprintLabels'));
@@ -268,7 +267,7 @@ export class DepositPageComponent {
       await firstValueFrom(this.depositService.reprintDepositSlip(seller.id));
       this.toast.showSuccess(this.translate.instant('volunteer.deposit.success.reprintSlip'));
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('volunteer.deposit.error.a4PrinterUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('volunteer.deposit.error.reprintSlip'));
@@ -330,7 +329,7 @@ export class DepositPageComponent {
         await this.loadItems(seller.id);
       }
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/item-modification-locked')) {
+      if (isErrorType(err, 422, '/item-modification-locked')) {
         this.toast.showError(this.translate.instant('volunteer.deposit.item.error.phaseLocked'));
       } else {
         this.toast.showError(this.translate.instant('volunteer.deposit.item.error.delete'));

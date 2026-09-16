@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code audit of 2026-09-16 (/code-audit all)
+
+- **Contrôleur de pagination/filtre dupliqué sur 3 écrans cœur** — `pluribourse-frontend/src/app/features/catalog/item-catalog.component.ts`, `pluribourse-frontend/src/app/features/admin/archived-catalog/archived-catalog.component.ts`, `pluribourse-frontend/src/app/features/volunteer/sales/sales-list.component.ts` — les 3 composants réimplémentent indépendamment le même mécanisme (signals `pageIndex`/`totalElements`/`isLoading`/`error`, garde anti-réponses-obsolètes par `requestSequence`, `buildSort()` identique) — ~150-180 lignes dupliquées au total, dont une copie explicitement assumée (`sales-list.component.ts` se documente lui-même comme « Structural copy of ItemCatalogComponent »). Décision Manerial (2026-09-16) : trop impactant pour un fix à la volée — une factorisation propre toucherait la logique **et** les templates HTML **et** les specs des 3 écrans, sur des flux utilisés en continu par les bénévoles pendant une bourse. Nécessite une story dédiée, non rédigée à ce jour.
+
 ## Deferred from: code review of 3-15-verification-connectivite-asynchrone-et-rafraichissement-cible (2026-09-11, revue complémentaire)
 
 - **Race `refreshOne()`/`consume()` (torn state)** — `PrintQueueService.java:160-178` (`refreshOne`), `PrinterQueueHandle.java` (`setLastError`/`setPendingVerification`, écritures `volatile` hors `synchronized`, contrairement à `consume()`/`errorSnapshot()`) — reconfirmée en lecture de code indépendante. Décision Manerial déjà actée dans la story (deferred) ; précision apportée par cette revue : une fois le patch de `connectionState()` appliqué (voir Review Findings de la story), l'impact réel se limite bien à un texte d'erreur vide sur une file correctement affichée "En erreur" avec Relancer/Ignorer fonctionnels.

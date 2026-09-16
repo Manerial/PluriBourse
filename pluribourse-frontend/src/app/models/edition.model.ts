@@ -17,6 +17,7 @@ export interface EditionDto {
   id: number;
   name: string;
   phase: PhaseType;
+  // number, not BigDecimal string — see item.model.ts for why.
   commissionRate: number;
   documentLanguage: Language;
   createdAt: string; // ISO 8601 date string "YYYY-MM-DD"

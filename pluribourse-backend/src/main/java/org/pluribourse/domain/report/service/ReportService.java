@@ -50,25 +50,14 @@ public class ReportService {
         List<Item> soldItemsToday = itemRepository.findAllSoldByEditionIdAndSoldAtBetween(edition.getId(), dayStart, dayEnd);
         List<Item> unsoldItems = itemRepository.findAllUnsoldByEditionId(edition.getId());
 
-        BigDecimal cash = BigDecimal.ZERO;
-        BigDecimal check = BigDecimal.ZERO;
-        BigDecimal card = BigDecimal.ZERO;
-        for (Sale sale : todaysSales) {
-            switch (sale.getPaymentMethod()) {
-                case CASH -> cash = cash.add(sale.getTotal());
-                case CHECK -> check = check.add(sale.getTotal());
-                case CARD -> card = card.add(sale.getTotal());
-                default -> throw new IllegalStateException("Unhandled payment method: " + sale.getPaymentMethod());
-            }
-        }
-        BigDecimal grossRevenue = cash.add(check).add(card).setScale(2, RoundingMode.HALF_UP);
+        PaymentTotals totals = aggregateByPaymentMethod(todaysSales);
+        BigDecimal grossRevenue = totals.grossRevenue();
         BigDecimal commission = ItemPricing.computeCommission(grossRevenue, edition.getCommissionRate()).setScale(2, RoundingMode.HALF_UP);
         long soldItemCount = ItemPricing.distinctByLot(soldItemsToday).size();
         long unsoldItemCount = ItemPricing.distinctByLot(unsoldItems).size();
 
         return new DailySalesReportDto(today, soldItemCount, unsoldItemCount, grossRevenue, commission,
-                cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP),
-                edition.getCurrency());
+                totals.cash(), totals.check(), totals.card(), edition.getCurrency());
     }
 
     /**
@@ -88,18 +77,8 @@ public class ReportService {
         List<Item> soldItems = itemRepository.findAllByEditionIdAndSoldTrue(edition.getId());
         List<Item> unsoldItems = itemRepository.findAllUnsoldByEditionId(edition.getId());
 
-        BigDecimal cash = BigDecimal.ZERO;
-        BigDecimal check = BigDecimal.ZERO;
-        BigDecimal card = BigDecimal.ZERO;
-        for (Sale sale : allSales) {
-            switch (sale.getPaymentMethod()) {
-                case CASH -> cash = cash.add(sale.getTotal());
-                case CHECK -> check = check.add(sale.getTotal());
-                case CARD -> card = card.add(sale.getTotal());
-                default -> throw new IllegalStateException("Unhandled payment method: " + sale.getPaymentMethod());
-            }
-        }
-        BigDecimal grossRevenue = cash.add(check).add(card).setScale(2, RoundingMode.HALF_UP);
+        PaymentTotals totals = aggregateByPaymentMethod(allSales);
+        BigDecimal grossRevenue = totals.grossRevenue();
         BigDecimal commission = ItemPricing.computeCommission(grossRevenue, edition.getCommissionRate()).setScale(2, RoundingMode.HALF_UP);
         long soldItemCount = ItemPricing.distinctByLot(soldItems).size();
         long unsoldItemCount = ItemPricing.distinctByLot(unsoldItems).size();
@@ -111,8 +90,36 @@ public class ReportService {
         BigDecimal associationRevenueTotal = commission.add(settlementService.getAssociationRetainedTotal(edition, soldItems)).setScale(2, RoundingMode.HALF_UP);
 
         return new EditionSummaryReportDto(soldItemCount, unsoldItemCount, grossRevenue, commission,
-                cash.setScale(2, RoundingMode.HALF_UP), check.setScale(2, RoundingMode.HALF_UP), card.setScale(2, RoundingMode.HALF_UP),
-                netPayoutTotal, associationRevenueTotal, edition.getCurrency());
+                totals.cash(), totals.check(), totals.card(), netPayoutTotal, associationRevenueTotal, edition.getCurrency());
+    }
+
+    /**
+     * Sums a list of sales by payment method, each total (and the grand total) pre-rounded to the
+     * currency's 2 decimals — shared by {@link #getDailyReport} and {@link #getEditionReport}, which
+     * differ only in which sales they pass in (today's vs the edition's whole lifetime).
+     */
+    private PaymentTotals aggregateByPaymentMethod(List<Sale> sales) {
+        BigDecimal cash = BigDecimal.ZERO;
+        BigDecimal check = BigDecimal.ZERO;
+        BigDecimal card = BigDecimal.ZERO;
+        for (Sale sale : sales) {
+            switch (sale.getPaymentMethod()) {
+                case CASH -> cash = cash.add(sale.getTotal());
+                case CHECK -> check = check.add(sale.getTotal());
+                case CARD -> card = card.add(sale.getTotal());
+                default -> throw new IllegalStateException("Unhandled payment method: " + sale.getPaymentMethod());
+            }
+        }
+        return new PaymentTotals(
+                cash.setScale(2, RoundingMode.HALF_UP),
+                check.setScale(2, RoundingMode.HALF_UP),
+                card.setScale(2, RoundingMode.HALF_UP));
+    }
+
+    private record PaymentTotals(BigDecimal cash, BigDecimal check, BigDecimal card) {
+        BigDecimal grossRevenue() {
+            return cash.add(check).add(card).setScale(2, RoundingMode.HALF_UP);
+        }
     }
 
     /**

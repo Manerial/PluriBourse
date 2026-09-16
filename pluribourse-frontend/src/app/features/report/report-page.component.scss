@@ -12,16 +12,19 @@
   flex-direction: column;
   gap: var(--pb-space-xs);
   padding: var(--pb-space-md);
-  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-variant);
   border-radius: var(--pb-rounded-lg);
 
   &__value {
-    font-size: 28px;
+    font-size: 18px;
     font-weight: 600;
+    color: var(--mat-sys-primary);
   }
 
   &__label {
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
     color: var(--mat-sys-on-surface-variant);
   }
 }

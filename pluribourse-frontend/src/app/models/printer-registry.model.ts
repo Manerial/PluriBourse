@@ -29,5 +29,6 @@ export interface PrintResult {
 export interface IgnoredPrinter {
   printerBridgeId: string;
   name: string | null;
+  /** ISO-8601 date (yyyy-MM-dd), serialized from the backend's {@code LocalDate}. */
   ignoredAt: string;
 }

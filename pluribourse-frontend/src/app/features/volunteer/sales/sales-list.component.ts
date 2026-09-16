@@ -18,7 +18,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { NotificationInlineComponent } from '../../../shared/components/notification-inline/notification-inline.component';
 import { SkeletonRowComponent } from '../../../shared/components/skeleton-row/skeleton-row.component';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { extractErrorType } from '../../../shared/http-error.util';
+import { extractErrorType, isErrorType } from '../../../shared/http-error.util';
 
 const DEFAULT_PAGE_SIZE = 50;
 
@@ -135,7 +135,7 @@ export class SalesListComponent implements OnInit {
       await firstValueFrom(this.posService.printInvoice(saleId));
       this.toast.showSuccess(this.translate.instant('volunteer.pos.invoice.success'));
     } catch (err: unknown) {
-      if (err instanceof HttpErrorResponse && err.status === 422 && extractErrorType(err)?.endsWith('/invalid-printer-selection')) {
+      if (isErrorType(err, 422, '/invalid-printer-selection')) {
         this.toast.showError(this.translate.instant('volunteer.pos.invoice.error.a4PrinterUnavailable'));
       } else {
         this.toast.showError(this.translate.instant('volunteer.pos.invoice.error.generic'));

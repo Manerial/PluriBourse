@@ -1,5 +1,8 @@
 import { PageResponse } from './seller.model';
 
+// Every monetary field below (price, globalPrice, total, amountGiven, changeDue, ...): number,
+// not BigDecimal string — see item.model.ts for why.
+
 export interface ScanResult {
   itemId: number;
   name: string;
@@ -51,6 +54,7 @@ export interface Sale {
 /** One row of the "sales list" screen (story 4.7, FR-108). */
 export interface SaleListItem {
   id: number;
+  /** ISO-8601 date-time (no offset), serialized from the backend's {@code LocalDateTime}. */
   soldAt: string;
   cashier: string;
   paymentMethod: PaymentMethod;
