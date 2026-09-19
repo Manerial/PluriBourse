@@ -3,13 +3,15 @@ import { provideRouter, Router } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { Component, signal, WritableSignal } from '@angular/core';
 import { vi } from 'vitest';
-import { of, EMPTY } from 'rxjs';
+import { of, EMPTY, throwError } from 'rxjs';
 import { AppLayoutComponent } from './app-layout.component';
 import { AuthService, CurrentUser } from '../../services/auth.service';
 import { Language } from '../../models/language.enum';
 import { EditionDto } from '../../models/edition.model';
+import { PrinterSelectionStatus } from '../../models/printer.model';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { SseService } from '../../services/sse.service';
+import { PrintService } from '../../services/print.service';
 
 @Component({ standalone: true, template: '' })
 class StubComponent {}
@@ -47,6 +49,7 @@ describe('AppLayoutComponent', () => {
   let mockCurrentUser: WritableSignal<CurrentUser | null>;
   let mockEdition: WritableSignal<EditionDto | null>;
   let mockCurrentEditionService: { currentEdition: WritableSignal<EditionDto | null>; loadEdition: ReturnType<typeof vi.fn>; updateFromEvent: ReturnType<typeof vi.fn> };
+  let mockPrintService: { getSelection: ReturnType<typeof vi.fn> };
   const mockLogout = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(async () => {
@@ -58,6 +61,9 @@ describe('AppLayoutComponent', () => {
       loadEdition: vi.fn().mockReturnValue(of(undefined)),
       updateFromEvent: vi.fn(),
     };
+    // Default return value is irrelevant for every existing (admin-role) test below — ngOnInit
+    // only calls getSelection() when isVolunteer() is true. Printer-warning tests reconfigure it.
+    mockPrintService = { getSelection: vi.fn().mockReturnValue(of({ done: true, thermalPrinterId: 1, a4PrinterId: 2 })) };
     vi.clearAllMocks();
 
     await TestBed.configureTestingModule({
@@ -82,12 +88,20 @@ describe('AppLayoutComponent', () => {
         { provide: AuthService, useValue: { currentUser: mockCurrentUser, logout: mockLogout } },
         { provide: CurrentEditionService, useValue: mockCurrentEditionService },
         { provide: SseService, useValue: { phaseChanges: () => EMPTY } },
+        { provide: PrintService, useValue: mockPrintService },
       ],
     }).compileComponents();
 
     TestBed.inject(TranslateService).setTranslation('en', {
       edition: { phase: { PREPARATION: 'Preparation' } },
-      nav: { phase: { none: 'No active edition' } },
+      nav: {
+        phase: { none: 'No active edition' },
+        printerWarning: {
+          thermalMissing: 'Thermal printer missing. Select it from the user menu.',
+          a4Missing: 'A4 printer missing. Select it from the user menu.',
+          bothMissing: 'Thermal and A4 printers missing. Select them from the user menu.',
+        },
+      },
     });
 
     fixture = TestBed.createComponent(AppLayoutComponent);
@@ -194,6 +208,90 @@ describe('AppLayoutComponent', () => {
       fixture.detectChanges();
       const link: HTMLAnchorElement | null = document.querySelector('a[href="/account"]');
       expect(link).toBeTruthy();
+    });
+  });
+
+  describe('printer selection warning (topbar)', () => {
+    // isVolunteer() is only read once, inside ngOnInit — mirrors real usage (the role never
+    // changes under a live layout instance) and requires setting it before the very first
+    // detectChanges(), not reusing the fixture the outer beforeEach already initialized as admin.
+    function createFixtureAsVolunteer(status: PrinterSelectionStatus | null, shouldFail = false): void {
+      mockCurrentUser.set(volunteerUser);
+      mockPrintService.getSelection.mockReturnValue(
+        shouldFail ? throwError(() => new Error('network error')) : of(status)
+      );
+      fixture = TestBed.createComponent(AppLayoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+    }
+
+    it('shows no warning icon when both printers are selected', () => {
+      createFixtureAsVolunteer({ done: true, thermalPrinterId: 1, a4PrinterId: 2 });
+      expect(fixture.nativeElement.querySelector('.printer-warning')).toBeFalsy();
+    });
+
+    it('shows a warning icon with a thermal-specific tooltip when only the thermal printer is missing', () => {
+      createFixtureAsVolunteer({ done: true, thermalPrinterId: null, a4PrinterId: 2 });
+      const warning: HTMLElement = fixture.nativeElement.querySelector('.printer-warning');
+      expect(warning).toBeTruthy();
+      expect(warning.getAttribute('aria-label')).toBe('Thermal printer missing. Select it from the user menu.');
+    });
+
+    it('shows a warning icon with an A4-specific tooltip when only the A4 printer is missing', () => {
+      createFixtureAsVolunteer({ done: true, thermalPrinterId: 1, a4PrinterId: null });
+      const warning: HTMLElement = fixture.nativeElement.querySelector('.printer-warning');
+      expect(warning).toBeTruthy();
+      expect(warning.getAttribute('aria-label')).toBe('A4 printer missing. Select it from the user menu.');
+    });
+
+    it('shows a warning icon with a combined tooltip when both printers are missing', () => {
+      createFixtureAsVolunteer({ done: false, thermalPrinterId: null, a4PrinterId: null });
+      const warning: HTMLElement = fixture.nativeElement.querySelector('.printer-warning');
+      expect(warning).toBeTruthy();
+      expect(warning.getAttribute('aria-label')).toBe('Thermal and A4 printers missing. Select them from the user menu.');
+    });
+
+    it('shows no warning icon for an admin, even with an incomplete selection', () => {
+      mockCurrentUser.set(adminUser);
+      mockPrintService.getSelection.mockReturnValue(of({ done: false, thermalPrinterId: null, a4PrinterId: null }));
+      fixture = TestBed.createComponent(AppLayoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.printer-warning')).toBeFalsy();
+      expect(mockPrintService.getSelection).not.toHaveBeenCalled();
+    });
+
+    it('shows no warning icon while the selection status has not resolved yet (avoids a flash at boot)', () => {
+      mockCurrentUser.set(volunteerUser);
+      mockPrintService.getSelection.mockReturnValue(EMPTY);
+      fixture = TestBed.createComponent(AppLayoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.printer-warning')).toBeFalsy();
+    });
+
+    it('shows no warning icon when the selection request fails (fail-open)', () => {
+      createFixtureAsVolunteer(null, true);
+      expect(fixture.nativeElement.querySelector('.printer-warning')).toBeFalsy();
+    });
+
+    it('clears the warning after a navigation once the selection becomes complete', async () => {
+      mockCurrentUser.set(volunteerUser);
+      mockPrintService.getSelection
+        .mockReturnValueOnce(of({ done: false, thermalPrinterId: null, a4PrinterId: null }))
+        .mockReturnValue(of({ done: true, thermalPrinterId: 1, a4PrinterId: 2 }));
+      fixture = TestBed.createComponent(AppLayoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.printer-warning')).toBeTruthy();
+
+      const router = TestBed.inject(Router);
+      await router.navigateByUrl('/volunteer/catalog');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.printer-warning')).toBeFalsy();
     });
   });
 

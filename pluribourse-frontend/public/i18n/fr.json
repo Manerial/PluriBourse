@@ -79,6 +79,11 @@
     "phase": {
       "none": "Aucune édition en cours"
     },
+    "printerWarning": {
+      "thermalMissing": "Imprimante thermique manquante. Sélectionnez-la depuis le menu utilisateur.",
+      "a4Missing": "Imprimante A4 manquante. Sélectionnez-la depuis le menu utilisateur.",
+      "bothMissing": "Imprimantes thermique et A4 manquantes. Sélectionnez-les depuis le menu utilisateur."
+    },
     "role": {
       "admin": "Admin",
       "volunteer": "Bénévole"

@@ -11,6 +11,10 @@ export class PrintService {
     return this.http.get<AvailablePrinter[]>('/api/printers/available');
   }
 
+  getSelection(): Observable<PrinterSelectionStatus> {
+    return this.http.get<PrinterSelectionStatus>('/api/printers/selection');
+  }
+
   submitSelection(thermalPrinterId: number | null, a4PrinterId: number | null): Observable<PrinterSelectionStatus> {
     return this.http.post<PrinterSelectionStatus>('/api/printers/selection', { thermalPrinterId, a4PrinterId });
   }

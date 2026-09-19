@@ -58,6 +58,28 @@
 }
 
 // ── Phase chip ────────────────────────────────────────────────────────────────
+.phase-chip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+// Anchored to the top-right corner of the phase chip, like a notification badge.
+.printer-warning {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 1;
+  display: inline-flex;
+  color: var(--pb-on-warning-container);
+  cursor: default;
+
+  .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .phase-chip {
   display: inline-flex;
   align-items: center;

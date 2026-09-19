@@ -79,6 +79,11 @@
     "phase": {
       "none": "No active edition"
     },
+    "printerWarning": {
+      "thermalMissing": "Thermal printer missing. Select it from the user menu.",
+      "a4Missing": "A4 printer missing. Select it from the user menu.",
+      "bothMissing": "Thermal and A4 printers missing. Select them from the user menu."
+    },
     "role": {
       "admin": "Admin",
       "volunteer": "Volunteer"

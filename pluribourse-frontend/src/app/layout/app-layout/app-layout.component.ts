@@ -1,16 +1,19 @@
 import { Component, computed, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, filter, of, startWith, switchMap } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ToastContainerComponent } from '../../shared/components/toast/toast-container.component';
 import { CurrentEditionService } from '../../services/current-edition.service';
 import { SseService } from '../../services/sse.service';
+import { PrintService } from '../../services/print.service';
 import { PhaseType } from '../../models/edition.model';
+import { PrinterSelectionStatus } from '../../models/printer.model';
 import { resolveVolunteerLandingPath } from '../../models/active-phase.enum';
 
 const SIDEBAR_COLLAPSED_KEY_PREFIX = 'pluribourse.sidebarCollapsed.';
@@ -48,6 +51,7 @@ export class AppLayoutComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly currentEditionService = inject(CurrentEditionService);
   private readonly sseService = inject(SseService);
+  private readonly printService = inject(PrintService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
 
@@ -55,6 +59,29 @@ export class AppLayoutComponent implements OnInit {
   readonly isVolunteer = computed(() => this.auth.currentUser()?.role === 'VOLUNTEER');
   readonly currentEdition = this.currentEditionService.currentEdition;
   readonly sidebarCollapsed = signal(readSidebarCollapsed(this.auth.currentUser()?.username ?? ''));
+
+  // null = not loaded yet (nothing shown, avoids a flash of the warning at boot); once loaded,
+  // a null id on the DTO itself means that printer type is genuinely missing from the session.
+  readonly printerSelectionStatus = signal<PrinterSelectionStatus | null>(null);
+  readonly missingThermalPrinter = computed(() => this.printerSelectionStatus()?.thermalPrinterId === null);
+  readonly missingA4Printer = computed(() => this.printerSelectionStatus()?.a4PrinterId === null);
+
+  // i18n key for the topbar printer warning tooltip, or null when nothing is missing — keeps the
+  // three-way message choice (thermal / A4 / both) out of the template.
+  readonly printerWarningKey = computed<string | null>(() => {
+    const thermalMissing = this.missingThermalPrinter();
+    const a4Missing = this.missingA4Printer();
+    if (thermalMissing && a4Missing) {
+      return 'nav.printerWarning.bothMissing';
+    }
+    if (thermalMissing) {
+      return 'nav.printerWarning.thermalMissing';
+    }
+    if (a4Missing) {
+      return 'nav.printerWarning.a4Missing';
+    }
+    return null;
+  });
 
   constructor() {
     // Skips the effect's own initial run (fired at construction, before ngOnInit's loadEdition()
@@ -102,6 +129,24 @@ export class AppLayoutComponent implements OnInit {
     this.sseService.phaseChanges().pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(event => this.currentEditionService.updateFromEvent(event));
+
+    if (this.isVolunteer()) {
+      // startWith(null) triggers the initial load through the same pipeline as the refetch-on-
+      // navigation below; switchMap cancels any still-in-flight request when a new one starts, so
+      // a slow response to an earlier navigation can never resolve after (and overwrite) a faster
+      // one to a later navigation — same class of race CurrentEditionService.loadEdition() guards
+      // against with its own sequence counter, solved here with the rxjs-native equivalent.
+      this.router.events.pipe(
+        filter((navigationEvent): navigationEvent is NavigationEnd => navigationEvent instanceof NavigationEnd),
+        startWith(null),
+        switchMap(() => this.printService.getSelection().pipe(
+          // Fail-open, same posture as CurrentEditionService.loadEdition(): a network hiccup here
+          // must not surface as a blocking error for a purely informational warning.
+          catchError(() => of(null))
+        )),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe(status => this.printerSelectionStatus.set(status));
+    }
   }
 
   async logout(): Promise<void> {

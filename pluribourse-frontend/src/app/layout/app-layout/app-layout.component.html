@@ -9,23 +9,36 @@
     </div>
 
     <div class="topbar__center">
-      @if (currentEdition(); as edition) {
-        @if (isAdmin()) {
-          <a routerLink="/admin/editions" class="phase-chip">
-            <span class="phase-chip__dot" aria-hidden="true">●</span>
-            {{ ('edition.phase.' + edition.phase) | translate }}
-          </a>
+      <div class="phase-chip-wrap">
+        @if (currentEdition(); as edition) {
+          @if (isAdmin()) {
+            <a routerLink="/admin/editions" class="phase-chip">
+              <span class="phase-chip__dot" aria-hidden="true">●</span>
+              {{ ('edition.phase.' + edition.phase) | translate }}
+            </a>
+          } @else {
+            <span class="phase-chip">
+              <span class="phase-chip__dot" aria-hidden="true">●</span>
+              {{ ('edition.phase.' + edition.phase) | translate }}
+            </span>
+          }
         } @else {
-          <span class="phase-chip">
-            <span class="phase-chip__dot" aria-hidden="true">●</span>
-            {{ ('edition.phase.' + edition.phase) | translate }}
+          <span class="phase-chip phase-chip--inactive" [attr.aria-label]="'nav.phase.none' | translate">
+            {{ 'nav.phase.none' | translate }}
           </span>
         }
-      } @else {
-        <span class="phase-chip phase-chip--inactive" [attr.aria-label]="'nav.phase.none' | translate">
-          {{ 'nav.phase.none' | translate }}
-        </span>
-      }
+
+        @if (isVolunteer() && printerWarningKey(); as warningKey) {
+          <span
+            class="printer-warning"
+            role="img"
+            tabindex="0"
+            [matTooltip]="warningKey | translate"
+            [attr.aria-label]="warningKey | translate">
+            <mat-icon aria-hidden="true">warning</mat-icon>
+          </span>
+        }
+      </div>
     </div>
 
     <div class="topbar__actions">

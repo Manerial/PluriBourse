@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of spec-printer-selection-warning-topbar (2026-09-19, bmad-quick-dev)
+
+- **Les IDs d'imprimante sélectionnés ne sont jamais revalidés contre le registre courant** — `PrinterSelectionService.getStatus()`/`getSelectedPrinterId()` (session-only, story 3.9) — si une imprimante sélectionnée est supprimée côté serveur en cours de session, `thermalPrinterId`/`a4PrinterId` restent non-null en session et le nouveau warning topbar (spec `spec-printer-selection-warning-topbar.md`) reste silencieux alors que l'imprimante n'est plus utilisable. Lacune préexistante de tout le sous-système de sélection (pas introduite par cette spec, qui ne fait qu'afficher un statut dérivé de données potentiellement déjà obsolètes pour d'autres raisons) — relevée incidemment par la revue Edge Case Hunter de cette spec.
+
 ## Deferred from: code audit of 2026-09-16 (/code-audit all)
 
 - **Contrôleur de pagination/filtre dupliqué sur 3 écrans cœur** — `pluribourse-frontend/src/app/features/catalog/item-catalog.component.ts`, `pluribourse-frontend/src/app/features/admin/archived-catalog/archived-catalog.component.ts`, `pluribourse-frontend/src/app/features/volunteer/sales/sales-list.component.ts` — les 3 composants réimplémentent indépendamment le même mécanisme (signals `pageIndex`/`totalElements`/`isLoading`/`error`, garde anti-réponses-obsolètes par `requestSequence`, `buildSort()` identique) — ~150-180 lignes dupliquées au total, dont une copie explicitement assumée (`sales-list.component.ts` se documente lui-même comme « Structural copy of ItemCatalogComponent »). Décision Manerial (2026-09-16) : trop impactant pour un fix à la volée — une factorisation propre toucherait la logique **et** les templates HTML **et** les specs des 3 écrans, sur des flux utilisés en continu par les bénévoles pendant une bourse. Nécessite une story dédiée, non rédigée à ce jour.
