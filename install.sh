@@ -20,7 +20,13 @@ set -euo pipefail
 INSTALL_DIR="/opt/pluribourse"
 REPO_URL="https://github.com/Manerial/PluriBourse.git"
 PRINTERBRIDGE_REPO="Manerial/PrinterBridge"
-COMPOSE_NETWORK="pluribourse_default"
+# Le "bridge" par défaut de Docker (pas "pluribourse_default", le réseau propre au projet Compose) —
+# constaté en pratique : `host.docker.internal` (extra_hosts: host-gateway, docker-compose.yml) résout
+# TOUJOURS vers la passerelle de ce bridge par défaut, quel que soit le réseau auquel le conteneur est
+# réellement connecté. Un `curl`/`wget` depuis le conteneur backend vers host.docker.internal a montré
+# qu'il résolvait vers l'IP de "bridge", pas celle de "pluribourse_default", malgré backend attaché à
+# ce dernier — un comportement Docker global à la machine, pas par réseau.
+DOCKER_DEFAULT_NETWORK="bridge"
 
 UPDATE_MODE=false
 for arg in "$@"; do
@@ -163,7 +169,7 @@ log "Démarrage de PluriBourse (docker compose pull && up)..."
 log "PluriBourse est démarré."
 
 # --- 6. Détecter la passerelle du réseau Docker ---
-GATEWAY="$(docker network inspect "${COMPOSE_NETWORK}" --format '{{(index .IPAM.Config 0).Gateway}}')"
+GATEWAY="$(docker network inspect "${DOCKER_DEFAULT_NETWORK}" --format '{{(index .IPAM.Config 0).Gateway}}')"
 log "Adresse de la passerelle Docker détectée : ${GATEWAY}"
 
 # --- 7. Installer/mettre à jour PrinterBridge ---

@@ -1,0 +1,5 @@
+# Scripts destinés à tourner sous Linux : forcer LF, quelle que soit la config Git locale.
+# Un \r en fin de ligne casse les heredocs et peut corrompre le shebang ("bad interpreter"),
+# constaté sur le projet PrinterBridge (cf. son CLAUDE.md) — même risque ici, écrit depuis Windows.
+*.sh text eol=lf
+install.sh text eol=lf

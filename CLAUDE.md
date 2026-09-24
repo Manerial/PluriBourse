@@ -110,9 +110,20 @@ Décisions et bugs trouvés en le testant de bout en bout (24 septembre 2026, su
   `install.sh` (choix explicite : éviter la duplication/l'ordre de dépendance entre deux fichiers pour
   un gain nul, `install.sh` étant de toute façon le seul point d'entrée réel).
 - **Adresse réseau de PrinterBridge** — PrinterBridge ne connaît rien à Docker (choix côté
-  PrinterBridge, voir son CLAUDE.md) ; c'est `install.sh` qui détecte la passerelle du réseau Docker
-  (`docker network inspect pluribourse_default`, nom de réseau fixé par `name: pluribourse` dans
-  `docker-compose.yml`) et l'écrit dans une surcharge systemd (`PRINTERBRIDGE_EXTRA_BIND_ADDRESSES`).
-- **Validé** : installation de bout en bout sur une Ubuntu neuve (Docker, PluriBourse, PrinterBridge,
-  démarrage). **Reste à faire** : test d'une vraie impression via PrinterBridge une fois raccordé à
-  une imprimante réelle — pas encore fait à ce stade.
+  PrinterBridge, voir son CLAUDE.md) ; c'est `install.sh` qui détecte la passerelle Docker et l'écrit
+  dans une surcharge systemd (`PRINTERBRIDGE_EXTRA_BIND_ADDRESSES`).
+  **Correctif (24 septembre 2026)** : la première version inspectait `pluribourse_default` (le réseau
+  propre au projet Compose, nom fixé par `name: pluribourse`) — logique en apparence, mais faux en
+  pratique. Constaté par un `wget` réel depuis le conteneur `backend` vers `host.docker.internal` :
+  cette adresse résout **toujours** vers la passerelle du bridge Docker **par défaut** (`docker network
+  inspect bridge`), quel que soit le réseau auquel le conteneur est réellement connecté — un
+  comportement global à la machine, pas propre à chaque réseau Compose. `extra_hosts:
+  host.docker.internal:host-gateway` (déjà dans `docker-compose.yml`) ne fait donc pas ce qu'on
+  supposait initialement ; corrigé en inspectant `bridge` au lieu de `pluribourse_default`.
+- **Validé de bout en bout (24 septembre 2026, Ubuntu neuve via WSL2)** : `install.sh` exécuté du
+  début à la fin (Docker, clone, `.env`, `docker compose up`, détection de la passerelle, installation
+  de PrinterBridge, surcharge systemd, démarrage), puis confirmé depuis l'intérieur du conteneur
+  `backend` : `wget http://host.docker.internal:7420/printers` répond `200 OK`. Résout définitivement
+  le rapport terrain initial sur `e6320` ("le service PrinterBridge ne répond pas"). **Non revalidé sur
+  `e6320` lui-même** avec cette version du script. **Reste à faire** : test d'une vraie impression via
+  PrinterBridge une fois raccordé à une imprimante réelle — pas encore fait à ce stade.
