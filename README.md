@@ -21,6 +21,26 @@ L'accent est mis sur une expérience utilisateur fluide.
 *   **Frontend :** Angular avec TypeScript, utilisant des fonctionnalités modernes comme les "standalone components" et les "signals".
 *   **Déploiement :** L'application est packagée en conteneurs Docker et gérée avec Docker Compose pour une installation et des mises à jour simplifiées.
 
+## Installation
+
+Sur une machine Debian/Ubuntu neuve (poste de bureau de l'association), une seule commande installe
+tout (Docker, PluriBourse, PrinterBridge) :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Manerial/PluriBourse/main/install.sh | sudo bash
+```
+
+À lancer depuis le compte utilisateur habituel de l'admin (pas en root direct) : PrinterBridge tourne
+comme service de ce compte, pas de root. Le script est idempotent — le relancer ne recommence pas ce
+qui est déjà en place. Pour récupérer les dernières versions (PluriBourse et PrinterBridge) :
+
+```bash
+sudo /opt/pluribourse/install.sh --update
+```
+
+Ne touche jamais aux données existantes (mots de passe, base MariaDB), avec ou sans `--update`. Voir
+`install.sh` pour le détail des étapes.
+
 ## Utilisation de BMAD
 
 Ce projet a été généré et spécifié à l'aide de l'outil BMAD. Vous trouverez ci-dessous un résumé du projet basé sur les documents générés.
@@ -28,7 +48,8 @@ Ce projet a été généré et spécifié à l'aide de l'outil BMAD. Vous trouve
 ## PrinterBridge
 
 Afin de faciliter l'utilisation des imprimantes à travers l'outil instancié dans Docker, un petit logiciel de gestion d'imprimantes a été implémenté.
-Il est disponible à cette adresse : https://github.com/Manerial/PrinterBridge/releases/
+Installé et configuré automatiquement par `install.sh` ci-dessus (dépôt séparé :
+https://github.com/Manerial/PrinterBridge).
 
 ## MKDocs
 

@@ -83,3 +83,36 @@ Stack : Spring Boot (backend) + Angular (frontend), déployé via Docker Compose
 - Tous les calculs financiers (commission, reversements) : utiliser `BigDecimal` — jamais `float` ou `double`
 - Tous les textes de l'interface doivent passer par le système i18n (ngx-translate) — pas de chaînes codées en dur dans les templates ou les composants
 - Pas de données personnelles (nom du vendeur, email, numéro de téléphone) dans les logs applicatifs
+
+## Installation (`install.sh`)
+
+Script unique à la racine, pensé pour un admin non technique : `curl -fsSL .../install.sh | sudo bash`
+sur une machine Debian/Ubuntu neuve installe Docker, clone PluriBourse dans `/opt/pluribourse`, lance
+`docker compose`, puis installe/configure PrinterBridge (dépôt séparé). Idempotent ; `--update` récupère
+les dernières versions sans jamais toucher au `.env` (mots de passe) ni aux volumes Docker (données
+MariaDB) — voir les commentaires du script pour le détail de chaque étape.
+
+Décisions et bugs trouvés en le testant de bout en bout (24 septembre 2026, sur une VM Ubuntu neuve) :
+- **Dépôt Docker Debian vs Ubuntu** — le dépôt APT officiel de Docker est différent pour Debian et
+  Ubuntu (noms de code différents : `bookworm`/`trixie` côté Debian, `jammy`/`noble`/... côté Ubuntu).
+  Pointer sur le mauvais donne `does not have a Release file`, quelle que soit la distro réellement
+  utilisée. Le script détecte `$ID` dans `/etc/os-release` et choisit le bon dépôt.
+- **Nettoyage défensif du dépôt Docker** — si une exécution précédente a laissé un `docker.list` cassé
+  (mauvais dépôt, coupure réseau en plein milieu), **tout** `apt-get update` suivant échoue à cause de
+  lui, y compris pour des paquets sans rapport (`curl`/`git`) — bien après que le script lui-même ait
+  été corrigé. Le script le supprime au démarrage si Docker n'est pas déjà fonctionnel.
+- **`systemctl --user` exige une vraie session active** pour l'utilisateur admin (cf. CLAUDE.md de
+  PrinterBridge, incident "Failed to connect to bus") — le script vérifie `/run/user/<uid>` et échoue
+  clairement si absent, plutôt que de laisser une erreur D-Bus cryptique plus loin. Doit être lancé
+  avec `sudo` depuis le compte de l'admin (pas en root direct, pas depuis un SSH brut sans session).
+- **Un seul script, pas deux** — un script séparé pour l'installation de Docker existait avant
+  (`.docker/install-docker-debian.sh`) et était appelé par `install.sh` ; supprimé et fusionné dans
+  `install.sh` (choix explicite : éviter la duplication/l'ordre de dépendance entre deux fichiers pour
+  un gain nul, `install.sh` étant de toute façon le seul point d'entrée réel).
+- **Adresse réseau de PrinterBridge** — PrinterBridge ne connaît rien à Docker (choix côté
+  PrinterBridge, voir son CLAUDE.md) ; c'est `install.sh` qui détecte la passerelle du réseau Docker
+  (`docker network inspect pluribourse_default`, nom de réseau fixé par `name: pluribourse` dans
+  `docker-compose.yml`) et l'écrit dans une surcharge systemd (`PRINTERBRIDGE_EXTRA_BIND_ADDRESSES`).
+- **Validé** : installation de bout en bout sur une Ubuntu neuve (Docker, PluriBourse, PrinterBridge,
+  démarrage). **Reste à faire** : test d'une vraie impression via PrinterBridge une fois raccordé à
+  une imprimante réelle — pas encore fait à ce stade.
