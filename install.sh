@@ -173,12 +173,15 @@ GATEWAY="$(docker network inspect "${DOCKER_DEFAULT_NETWORK}" --format '{{(index
 log "Adresse de la passerelle Docker détectée : ${GATEWAY}"
 
 # --- 7. Installer/mettre à jour PrinterBridge ---
+# dpkg --print-architecture donne directement le suffixe utilisé par jpackage pour nommer le .deb
+# (amd64/arm64) — pas besoin de traduire depuis `uname -m` (x86_64/aarch64/...).
+DEB_ARCH="$(dpkg --print-architecture)"
 RELEASE_JSON="$(curl -fsSL "https://api.github.com/repos/${PRINTERBRIDGE_REPO}/releases/latest")"
-DEB_URL="$(echo "${RELEASE_JSON}" | jq -r '.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url')"
+DEB_URL="$(echo "${RELEASE_JSON}" | jq -r --arg suffix "_${DEB_ARCH}.deb" '.assets[] | select(.name | endswith($suffix)) | .browser_download_url')"
 LATEST_VERSION="$(echo "${RELEASE_JSON}" | jq -r '.tag_name' | sed 's/^v//')"
 
 if [[ -z "${DEB_URL}" || "${DEB_URL}" == "null" ]]; then
-    echo "Impossible de trouver le .deb de PrinterBridge dans la dernière release GitHub." >&2
+    echo "Impossible de trouver le .deb de PrinterBridge pour l'architecture ${DEB_ARCH} dans la dernière release GitHub." >&2
     exit 1
 fi
 
