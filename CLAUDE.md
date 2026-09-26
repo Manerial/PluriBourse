@@ -124,6 +124,21 @@ Décisions et bugs trouvés en le testant de bout en bout (24 septembre 2026, su
   début à la fin (Docker, clone, `.env`, `docker compose up`, détection de la passerelle, installation
   de PrinterBridge, surcharge systemd, démarrage), puis confirmé depuis l'intérieur du conteneur
   `backend` : `wget http://host.docker.internal:7420/printers` répond `200 OK`. Résout définitivement
-  le rapport terrain initial sur `e6320` ("le service PrinterBridge ne répond pas"). **Non revalidé sur
-  `e6320` lui-même** avec cette version du script. **Reste à faire** : test d'une vraie impression via
-  PrinterBridge une fois raccordé à une imprimante réelle — pas encore fait à ce stade.
+  le rapport terrain initial sur `e6320` ("le service PrinterBridge ne répond pas").
+- **`install.sh` corrigé sur `e6320` lui-même (25-26 septembre 2026)** : bit d'exécution manquant sur
+  `install.sh` dans le repo (créé depuis un environnement Windows, cf. `.gitattributes` — commit
+  `1c32892`) faisait échouer `./install.sh` avec "Permission non accordée" ; contournable sans attendre
+  le correctif via `sudo bash install.sh`.
+- **Imprimante thermique sur `e6320` : pas de Bluetooth sur cette machine, tentative filaire/USB
+  infructueuse.** L'imprimante s'énumère bien en USB (`lsusb` : "Winbond Electronics Corp. Virtual Com
+  Port", donc un port série virtuel — même famille que le RFCOMM Bluetooth), mais **aucun nœud
+  `/dev/ttyACM*`/`/dev/ttyUSB*` n'a été créé** par le noyau (pilote `cdc_acm` non lié à ce périphérique
+  précis — cause exacte non investiguée, diagnostic `dmesg` interrompu). De toute façon, même si le
+  port était apparu, **PrinterBridge ne le verrait pas** : son filtre Linux n'accepte que les ports
+  nommés `rfcommN`, un `ttyACM`/`ttyUSB` est explicitement exclu (choix voulu côté PrinterBridge, pour
+  ne pas faire remonter n'importe quel port série — Arduino, modem — comme fausse imprimante ; aucun
+  support de code pour une imprimante thermique filaire à ce stade). **Décision** : achat d'une clé
+  USB Bluetooth plutôt que de creuser le filaire — le chemin Bluetooth est celui réellement supporté et
+  déjà validé. Voir la section "Ajouter une imprimante thermique Bluetooth" du `README.md` (le `rfcomm
+  bind` explicite requis sur Linux, contrairement à Windows). **Reste à faire** : recevoir/appairer la
+  clé Bluetooth, puis tester une vraie impression via PrinterBridge — pas encore fait à ce stade.

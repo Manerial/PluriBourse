@@ -51,6 +51,26 @@ Afin de faciliter l'utilisation des imprimantes à travers l'outil instancié da
 Installé et configuré automatiquement par `install.sh` ci-dessus (dépôt séparé :
 https://github.com/Manerial/PrinterBridge).
 
+### Ajouter une imprimante thermique Bluetooth
+
+PrinterBridge ne gère aujourd'hui les imprimantes thermiques **que par Bluetooth** — pas de connexion
+filaire/USB pour l'instant (constaté sur le terrain : une imprimante branchée en USB s'énumère bien
+comme périphérique, mais rien ne garantit qu'un port série utilisable soit créé sur la machine ; pas de
+support de code pour ce cas de toute façon, cf. CLAUDE.md). Il faut donc une machine avec Bluetooth
+(adaptateur intégré ou clé USB Bluetooth).
+
+Sur Linux, contrairement à Windows, l'**appairage seul ne suffit pas** — il faut en plus un `rfcomm
+bind` explicite pour qu'un port utilisable apparaisse :
+
+```bash
+bluetoothctl pair XX:XX:XX:XX:XX:XX
+sudo rfcomm bind 0 XX:XX:XX:XX:XX:XX
+ls /dev/rfcomm0
+```
+
+Sans cette étape, l'imprimante n'apparaîtra pas dans la liste de PrinterBridge (`GET /printers`),
+silencieusement — pas d'erreur explicite pour le signaler.
+
 ## MKDocs
 
 MKdocs est utilisé pour relire la documentation générée par BMAD.

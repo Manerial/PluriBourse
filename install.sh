@@ -240,3 +240,7 @@ fi
 log "Installation terminée."
 log "PluriBourse : http://localhost/"
 log "PrinterBridge : actif sur 127.0.0.1 et ${GATEWAY} (port 7420)"
+log ""
+log "Imprimante thermique : Bluetooth uniquement pour l'instant (pas de support filaire/USB)."
+log "Sur Linux, l'appairage seul ne suffit pas, il faut aussi 'sudo rfcomm bind 0 <MAC>' — voir la"
+log "section \"Ajouter une imprimante thermique Bluetooth\" du README."
