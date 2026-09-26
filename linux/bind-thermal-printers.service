@@ -1,0 +1,12 @@
+[Unit]
+Description=Lie les imprimantes thermiques Bluetooth a des ports RFCOMM
+After=bluetooth.service
+Requires=bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/bind-thermal-printers.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
