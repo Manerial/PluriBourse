@@ -187,18 +187,25 @@ fi
 
 INSTALLED_VERSION="$(dpkg-query -W -f='${Version}' printerbridge 2>/dev/null || true)"
 
+# Suit si le .deb vient d'être (ré)installé, pour forcer un redémarrage plus bas — un `apt install`
+# remplace le jar sur disque mais ne redémarre pas un service déjà actif, qui continue de tourner
+# sur l'ancien code en mémoire tant que personne ne le relance explicitement.
+PACKAGE_UPDATED=false
+
 if [[ -z "${INSTALLED_VERSION}" ]]; then
     log "Installation de PrinterBridge ${LATEST_VERSION}..."
     TMP_DEB="$(mktemp --suffix=.deb)"
     curl -fsSL "${DEB_URL}" -o "${TMP_DEB}"
     apt-get install -y "${TMP_DEB}"
     rm -f "${TMP_DEB}"
+    PACKAGE_UPDATED=true
 elif [[ "${UPDATE_MODE}" == "true" && "${INSTALLED_VERSION}" != "${LATEST_VERSION}" ]]; then
     log "Mise à jour de PrinterBridge ${INSTALLED_VERSION} -> ${LATEST_VERSION}..."
     TMP_DEB="$(mktemp --suffix=.deb)"
     curl -fsSL "${DEB_URL}" -o "${TMP_DEB}"
     apt-get install -y "${TMP_DEB}"
     rm -f "${TMP_DEB}"
+    PACKAGE_UPDATED=true
 else
     log "PrinterBridge déjà installé (${INSTALLED_VERSION}, dernière version : ${LATEST_VERSION})."
 fi
@@ -229,8 +236,8 @@ fi
 run_as_admin systemctl --user daemon-reload
 
 if run_as_admin systemctl --user is-active --quiet printerbridge; then
-    if [[ "${CONFIG_CHANGED}" == "true" ]]; then
-        log "Redémarrage de PrinterBridge pour appliquer la nouvelle configuration réseau..."
+    if [[ "${CONFIG_CHANGED}" == "true" || "${PACKAGE_UPDATED}" == "true" ]]; then
+        log "Redémarrage de PrinterBridge pour appliquer la mise à jour..."
         run_as_admin systemctl --user restart printerbridge
     else
         log "PrinterBridge déjà actif."
