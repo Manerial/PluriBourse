@@ -182,6 +182,31 @@ if [[ "${SKIP_INSTALL_STEPS}" != "true" ]]; then
 
     log "Vérification des autres prérequis (jq, openssl, dbus-user-session)..."
     apt-get install -y -qq jq openssl dbus-user-session
+
+    # --- 3bis. Service de liaison Bluetooth (imprimantes thermiques) ---
+    # rfcomm bind ne survit pas à un redémarrage (cf. CLAUDE.md de PrinterBridge) — sans ça, l'admin
+    # devrait relier chaque imprimante à la main après chaque reboot, en plus une par une. Le fichier
+    # de config (une MAC par ligne) n'est copié qu'une fois, jamais régénéré ni écrasé : c'est à
+    # l'admin de le remplir avec ses propres imprimantes, ce script ne peut pas les deviner. Le script
+    # et l'unité systemd eux-mêmes vivent dans linux/ (fichiers versionnés, pas de heredoc ici).
+    log "Configuration du service de liaison Bluetooth (imprimantes thermiques)..."
+    BLUETOOTH_PRINTERS_CONF="/etc/printerbridge/bluetooth-printers.conf"
+
+    install -d /etc/printerbridge
+    if [[ -f "${BLUETOOTH_PRINTERS_CONF}" ]]; then
+        log "Config des imprimantes Bluetooth déjà présente, conservée telle quelle."
+    else
+        install -m 0644 "${INSTALL_DIR}/linux/bluetooth-printers.conf.example" "${BLUETOOTH_PRINTERS_CONF}"
+    fi
+
+    install -m 0755 "${INSTALL_DIR}/linux/bind-thermal-printers.sh" /usr/local/sbin/bind-thermal-printers.sh
+    install -m 0644 "${INSTALL_DIR}/linux/bind-thermal-printers.service" /etc/systemd/system/bind-thermal-printers.service
+    # add-printer.sh (assistant d'ajout, cf. CLAUDE.md) est interactif — pas quelque chose à lancer
+    # automatiquement ici, juste rendu disponible sur le PATH pour que l'admin le lance quand il veut.
+    install -m 0755 "${INSTALL_DIR}/linux/add-printer.sh" /usr/local/sbin/add-printer.sh
+
+    systemctl daemon-reload
+    systemctl enable --now bind-thermal-printers.service
 else
     log "--start : étapes de prérequis/dépôt/Docker Engine ignorées, passage direct au démarrage."
     if [[ ! -d "${INSTALL_DIR}/.git" ]]; then
@@ -322,5 +347,4 @@ log "PluriBourse : http://localhost/"
 log "PrinterBridge : actif sur 127.0.0.1 et ${GATEWAY} (port 7420)"
 log ""
 log "Imprimante thermique : Bluetooth uniquement pour l'instant (pas de support filaire/USB)."
-log "Sur Linux, l'appairage seul ne suffit pas, il faut aussi 'sudo rfcomm bind 0 <MAC>' — voir la"
-log "section \"Ajouter une imprimante thermique Bluetooth\" du README."
+log "Pour en ajouter une : sudo add-printer.sh (assistant guidé, appairage compris)."
