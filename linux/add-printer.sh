@@ -55,12 +55,15 @@ else
     if [[ "${ALREADY_PAIRED}" == "true" ]]; then
         log "${MAC} est deja appairee, pas besoin de repasser par bluetoothctl."
     else
-        bluetoothctl power on
-        bluetoothctl agent KeyboardOnly
-        bluetoothctl default-agent
-
+        # Chaque `bluetoothctl <commande>` lance un process a part qui se termine aussitot -- un
+        # agent enregistre dans l'un disparait avec lui, donc "power on"/"agent"/"default-agent"
+        # doivent etre tapes DANS la meme session interactive que "pair", pas en pre-commandes
+        # separees (constate en pratique : "No agent is registered" sinon).
         echo ""
         log "Ouverture de bluetoothctl en interactif — a l'interieur, tape dans l'ordre :"
+        log "  power on"
+        log "  agent KeyboardOnly"
+        log "  default-agent"
         log "  pair ${MAC}"
         log "  (entre le code PIN de l'imprimante si demande — voir sa notice, souvent 0000 ou 1234)"
         log "  trust ${MAC}"
