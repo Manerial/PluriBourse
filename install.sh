@@ -63,6 +63,31 @@ log() {
     echo "==> $*"
 }
 
+# `restart: unless-stopped` fait que Docker relance tous les containers en parallèle dès que le
+# daemon démarre, sans respecter l'ordre `depends_on` (appliqué uniquement par `docker compose up`
+# lui-même, pas par la politique de redémarrage native de Docker) — juste après un boot, backend
+# peut donc tenter de se connecter à la base avant qu'elle ait fini de démarrer et planter presque
+# instantanément (constaté en pratique : échec en ~1.3s, résolu tout seul en attendant ~1 minute).
+# Un nouvel essai après un court délai laisse le temps à la base de finir son initialisation.
+COMPOSE_UP_MAX_ATTEMPTS=5
+COMPOSE_UP_RETRY_DELAY_SECONDS=15
+
+compose_up_with_retry() {
+    local attempt=1
+    while true; do
+        if docker compose up -d; then
+            return 0
+        fi
+        if (( attempt >= COMPOSE_UP_MAX_ATTEMPTS )); then
+            echo "docker compose up a échoué après ${COMPOSE_UP_MAX_ATTEMPTS} tentatives." >&2
+            return 1
+        fi
+        log "docker compose up a échoué (tentative ${attempt}/${COMPOSE_UP_MAX_ATTEMPTS}), nouvel essai dans ${COMPOSE_UP_RETRY_DELAY_SECONDS}s..."
+        sleep "${COMPOSE_UP_RETRY_DELAY_SECONDS}"
+        attempt=$((attempt + 1))
+    done
+}
+
 if [[ "${EUID}" -ne 0 ]]; then
     echo "Ce script doit être lancé avec sudo : sudo bash install.sh" >&2
     exit 1
@@ -194,10 +219,10 @@ fi
 # redémarrer ce qui est déjà présent localement.
 if [[ "${SKIP_INSTALL_STEPS}" == "true" ]]; then
     log "Démarrage de PluriBourse (docker compose up)..."
-    (cd "${COMPOSE_DIR}" && docker compose up -d)
+    (cd "${COMPOSE_DIR}" && compose_up_with_retry)
 else
     log "Démarrage de PluriBourse (docker compose pull && up)..."
-    (cd "${COMPOSE_DIR}" && docker compose pull && docker compose up -d)
+    (cd "${COMPOSE_DIR}" && docker compose pull && compose_up_with_retry)
 fi
 log "PluriBourse est démarré."
 
