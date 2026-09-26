@@ -70,6 +70,14 @@ else
         log "  exit"
         echo ""
         bluetoothctl
+
+        # bluetoothctl rend la main que l'appairage ait reussi ou non (PIN faux, sortie prematuree
+        # de "exit"...) -- sans cette verification, une tentative ratee finissait quand meme
+        # enregistree dans bluetooth-printers.conf (constate en pratique).
+        if ! bluetoothctl info "${MAC}" 2>/dev/null | grep -q "Paired: yes"; then
+            echo "${MAC} n'est pas appairee (l'appairage a du echouer ou etre interrompu) — rien n'est enregistre. Relance add-printer.sh pour reessayer." >&2
+            exit 1
+        fi
     fi
 
     read -rp "Canal RFCOMM (defaut 1, presque toujours le bon) : " CHANNEL
