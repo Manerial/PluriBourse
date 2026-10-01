@@ -346,5 +346,4 @@ fi
 log "PluriBourse : http://localhost/"
 log "PrinterBridge : actif sur 127.0.0.1 et ${GATEWAY} (port 7420)"
 log ""
-log "Imprimante thermique : Bluetooth uniquement pour l'instant (pas de support filaire/USB)."
-log "Pour en ajouter une : sudo add-printer.sh (assistant guidé, appairage compris)."
+log "Pour ajouter une imprimante (thermique Bluetooth ou réseau/A4) : sudo add-printer.sh"
