@@ -16,13 +16,42 @@ if [[ "${EUID}" -ne 0 ]]; then
     exit 1
 fi
 
+list_configured_bluetooth_printers() {
+    # Reprend la meme numerotation sequentielle que bind-thermal-printers.sh (ligne N du fichier ->
+    # rfcommN) pour savoir, imprimante par imprimante, si elle est actuellement liee -- repond
+    # directement a "qu'est-ce qui est deja configure/attache", plutot que de laisser l'admin
+    # deviner depuis une liste generique bluetoothctl (constate en pratique : confusion sur l'etat
+    # reel, cf. CLAUDE.md).
+    if ! grep -q "^[^#[:space:]]" "${BLUETOOTH_CONFIG_FILE}" 2>/dev/null; then
+        log "Aucune imprimante Bluetooth configuree pour l'instant."
+        return
+    fi
+    log "Imprimantes Bluetooth deja configurees :"
+    local device_num=0
+    local line mac channel
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%%#*}"
+        read -r mac channel <<< "$line"
+        [[ -z "${mac:-}" ]] && continue
+        if [[ -e "/dev/rfcomm${device_num}" ]]; then
+            log "  ${mac} (canal ${channel:-1}) -> /dev/rfcomm${device_num} (liee)"
+        else
+            log "  ${mac} (canal ${channel:-1}) -> /dev/rfcomm${device_num} (NON liee actuellement)"
+        fi
+        device_num=$((device_num + 1))
+    done < "${BLUETOOTH_CONFIG_FILE}"
+}
+
 add_bluetooth_printer() {
     if [[ ! -f "${BLUETOOTH_CONFIG_FILE}" ]]; then
         echo "${BLUETOOTH_CONFIG_FILE} n'existe pas — lance d'abord pluribourse-install.sh pour mettre en place le service de liaison Bluetooth." >&2
         exit 1
     fi
 
-    log "Appareils Bluetooth deja connus :"
+    list_configured_bluetooth_printers
+
+    echo ""
+    log "Autres appareils Bluetooth appaires (pas forcement des imprimantes) :"
     bluetoothctl devices || true
 
     echo ""
