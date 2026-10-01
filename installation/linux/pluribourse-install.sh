@@ -151,15 +151,15 @@ install -d /etc/printerbridge
 if [[ -f "${BLUETOOTH_PRINTERS_CONF}" ]]; then
     log "Config des imprimantes Bluetooth déjà présente, conservée telle quelle."
 else
-    install -m 0644 "${INSTALL_DIR}/linux/bluetooth-printers.conf.example" "${BLUETOOTH_PRINTERS_CONF}"
+    install -m 0644 "${INSTALL_DIR}/installation/linux/bluetooth-printers.conf.example" "${BLUETOOTH_PRINTERS_CONF}"
 fi
 
-install -m 0755 "${INSTALL_DIR}/linux/bind-thermal-printers.sh" /usr/local/sbin/bind-thermal-printers.sh
-install -m 0644 "${INSTALL_DIR}/linux/bind-thermal-printers.service" /etc/systemd/system/bind-thermal-printers.service
-install -m 0755 "${INSTALL_DIR}/linux/add-printer.sh" /usr/local/sbin/add-printer.sh
-install -m 0755 "${INSTALL_DIR}/linux/pluribourse-start.sh" /usr/local/sbin/pluribourse-start.sh
-install -m 0755 "${INSTALL_DIR}/linux/pluribourse-update.sh" /usr/local/sbin/pluribourse-update.sh
-install -m 0755 "${INSTALL_DIR}/pluribourse-install.sh" /usr/local/sbin/pluribourse-install.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/bind-thermal-printers.sh" /usr/local/sbin/bind-thermal-printers.sh
+install -m 0644 "${INSTALL_DIR}/installation/linux/bind-thermal-printers.service" /etc/systemd/system/bind-thermal-printers.service
+install -m 0755 "${INSTALL_DIR}/installation/linux/add-printer.sh" /usr/local/sbin/add-printer.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/pluribourse-start.sh" /usr/local/sbin/pluribourse-start.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/pluribourse-update.sh" /usr/local/sbin/pluribourse-update.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/pluribourse-install.sh" /usr/local/sbin/pluribourse-install.sh
 
 systemctl daemon-reload
 systemctl enable --now bind-thermal-printers.service

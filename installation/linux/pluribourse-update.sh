@@ -58,12 +58,12 @@ chown -R "${ADMIN_USER}:${ADMIN_USER}" "${INSTALL_DIR}"
 
 # --- 2. Scripts utilitaires (peuvent avoir ete corriges entre deux versions, cf. CLAUDE.md) ---
 log "Mise à jour des scripts utilitaires..."
-install -m 0755 "${INSTALL_DIR}/linux/bind-thermal-printers.sh" /usr/local/sbin/bind-thermal-printers.sh
-install -m 0644 "${INSTALL_DIR}/linux/bind-thermal-printers.service" /etc/systemd/system/bind-thermal-printers.service
-install -m 0755 "${INSTALL_DIR}/linux/add-printer.sh" /usr/local/sbin/add-printer.sh
-install -m 0755 "${INSTALL_DIR}/linux/pluribourse-start.sh" /usr/local/sbin/pluribourse-start.sh
-install -m 0755 "${INSTALL_DIR}/linux/pluribourse-update.sh" /usr/local/sbin/pluribourse-update.sh
-install -m 0755 "${INSTALL_DIR}/pluribourse-install.sh" /usr/local/sbin/pluribourse-install.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/bind-thermal-printers.sh" /usr/local/sbin/bind-thermal-printers.sh
+install -m 0644 "${INSTALL_DIR}/installation/linux/bind-thermal-printers.service" /etc/systemd/system/bind-thermal-printers.service
+install -m 0755 "${INSTALL_DIR}/installation/linux/add-printer.sh" /usr/local/sbin/add-printer.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/pluribourse-start.sh" /usr/local/sbin/pluribourse-start.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/pluribourse-update.sh" /usr/local/sbin/pluribourse-update.sh
+install -m 0755 "${INSTALL_DIR}/installation/linux/pluribourse-install.sh" /usr/local/sbin/pluribourse-install.sh
 systemctl daemon-reload
 systemctl restart bind-thermal-printers.service
 
