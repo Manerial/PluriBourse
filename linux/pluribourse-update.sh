@@ -62,6 +62,7 @@ install -m 0755 "${INSTALL_DIR}/linux/bind-thermal-printers.sh" /usr/local/sbin/
 install -m 0644 "${INSTALL_DIR}/linux/bind-thermal-printers.service" /etc/systemd/system/bind-thermal-printers.service
 install -m 0755 "${INSTALL_DIR}/linux/add-printer.sh" /usr/local/sbin/add-printer.sh
 install -m 0755 "${INSTALL_DIR}/linux/pluribourse-start.sh" /usr/local/sbin/pluribourse-start.sh
+install -m 0755 "${INSTALL_DIR}/linux/pluribourse-update.sh" /usr/local/sbin/pluribourse-update.sh
 systemctl daemon-reload
 systemctl restart bind-thermal-printers.service
 

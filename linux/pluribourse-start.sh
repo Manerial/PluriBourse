@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Démarrage rapide quotidien de PluriBourse + PrinterBridge, sur une install déjà en place —
-# remplace l'ancien `pluribourse-install.sh --start`. Propose de (re)connecter le Pi à un réseau
-# WiFi (utile en changeant de lieu d'événement), rappelle l'existence de `pluribourse-update.sh`
-# pour une mise à jour, puis démarre les containers Docker, met à jour la configuration réseau de
-# PrinterBridge et le (re)lance — sans repasser par aucune vérification de prérequis/dépôt/paquets.
-# Pas un substitut à une première installation.
+# Démarrage rapide quotidien de PluriBourse + PrinterBridge, sur une install déjà en place. Propose
+# de (re)connecter le Pi à un réseau WiFi, rappelle l'existence de `pluribourse-update.sh`, démarre
+# les containers et (re)lance PrinterBridge — sans vérification de prérequis/dépôt/paquets. Pas un
+# substitut à une première installation.
 #
 # Usage : sudo pluribourse-start.sh
 
@@ -12,8 +10,7 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/pluribourse"
 COMPOSE_DIR="${INSTALL_DIR}/.docker"
-# Voir pluribourse-install.sh pour le détail de ce choix (le bridge Docker par défaut, pas le réseau propre au
-# projet Compose — host.docker.internal résout toujours vers celui-ci, cf. CLAUDE.md de PrinterBridge).
+# Voir pluribourse-install.sh pour le détail (le bridge Docker par défaut, pas le réseau Compose).
 DOCKER_DEFAULT_NETWORK="bridge"
 
 log() {
@@ -82,9 +79,8 @@ fi
 log "Rappel : pour mettre PluriBourse/PrinterBridge à jour, lance 'sudo pluribourse-update.sh' séparément (ce script ne vérifie aucune nouvelle version)."
 
 # --- 3. docker compose up ---
-# `depends_on: condition: service_healthy` (docker-compose.yml) fait déjà attendre que db/backend
-# soient healthy avant de démarrer ce qui en dépend. Ne re-pull pas les images (le rôle de
-# pluribourse-update.sh) — juste redémarrer ce qui est déjà présent localement.
+# Ne re-pull pas les images (le rôle de pluribourse-update.sh) — juste redémarrer ce qui est déjà
+# présent localement.
 COMPOSE_UP_MAX_ATTEMPTS=5
 COMPOSE_UP_RETRY_DELAY_SECONDS=15
 

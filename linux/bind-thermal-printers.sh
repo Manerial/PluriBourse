@@ -5,10 +5,8 @@ set -euo pipefail
 CONFIG_FILE="/etc/printerbridge/bluetooth-printers.conf"
 [[ -f "${CONFIG_FILE}" ]] || exit 0
 
-# `Requires=bluetooth.service` (bind-thermal-printers.service) garantit que le service est demarre,
-# pas que l'adaptateur a fini son initialisation (meme lecon que la course docker compose up au boot,
-# cf. pluribourse-start.sh) -- on attend qu'il soit vraiment pret (present ET allume) avant de tenter les
-# liaisons.
+# `Requires=bluetooth.service` garantit que le service est demarre, pas que l'adaptateur a fini son
+# initialisation -- on attend qu'il soit vraiment pret (present ET allume) avant de tenter les liaisons.
 DEADLINE=$((SECONDS + 30))
 until bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; do
     if (( SECONDS >= DEADLINE )); then

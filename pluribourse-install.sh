@@ -26,23 +26,18 @@ fi
 INSTALL_DIR="/opt/pluribourse"
 REPO_URL="https://github.com/Manerial/PluriBourse.git"
 PRINTERBRIDGE_REPO="Manerial/PrinterBridge"
-# Le "bridge" par défaut de Docker (pas "pluribourse_default", le réseau propre au projet Compose) —
-# constaté en pratique : `host.docker.internal` (extra_hosts: host-gateway, docker-compose.yml) résout
-# TOUJOURS vers la passerelle de ce bridge par défaut, quel que soit le réseau auquel le conteneur est
-# réellement connecté. Un `curl`/`wget` depuis le conteneur backend vers host.docker.internal a montré
-# qu'il résolvait vers l'IP de "bridge", pas celle de "pluribourse_default", malgré backend attaché à
-# ce dernier — un comportement Docker global à la machine, pas par réseau.
+# Le "bridge" par défaut de Docker, pas "pluribourse_default" (le réseau propre au projet Compose) —
+# constaté en pratique : host.docker.internal résout toujours vers la passerelle de ce bridge par
+# défaut, quel que soit le réseau auquel le conteneur est réellement connecté.
 DOCKER_DEFAULT_NETWORK="bridge"
 
 log() {
     echo "==> $*"
 }
 
-# `restart: unless-stopped` fait que Docker relance tous les containers en parallèle dès que le
-# daemon démarre, sans respecter l'ordre `depends_on` (appliqué uniquement par `docker compose up`
-# lui-même) — backend peut donc tenter de se connecter à la base avant qu'elle ait fini de démarrer
-# et planter presque instantanément. Un nouvel essai après un court délai laisse le temps à la base
-# de finir son initialisation.
+# `restart: unless-stopped` relance les containers sans respecter l'ordre `depends_on` (appliqué
+# seulement par `docker compose up` lui-même) — backend peut tenter de se connecter à la base avant
+# qu'elle ait fini de démarrer et planter presque instantanément. Un nouvel essai absorbe ça.
 COMPOSE_UP_MAX_ATTEMPTS=5
 COMPOSE_UP_RETRY_DELAY_SECONDS=15
 
@@ -76,9 +71,8 @@ ADMIN_USER="${SUDO_USER}"
 ADMIN_UID="$(id -u "${ADMIN_USER}")"
 ADMIN_HOME="$(getent passwd "${ADMIN_USER}" | cut -d: -f6)"
 
-# systemctl --user a besoin d'une vraie session utilisateur active (voir CLAUDE.md de PrinterBridge,
-# "Failed to connect to bus") — sans /run/user/<uid>, aucune chance que ça marche, autant le dire
-# clairement plutôt que de laisser échouer avec une erreur D-Bus cryptique plus loin.
+# systemctl --user a besoin d'une vraie session utilisateur active (cf. CLAUDE.md de PrinterBridge,
+# "Failed to connect to bus").
 if [[ ! -d "/run/user/${ADMIN_UID}" ]]; then
     echo "Aucune session active trouvée pour ${ADMIN_USER} (/run/user/${ADMIN_UID} n'existe pas)." >&2
     echo "Lance ce script depuis une session de bureau ou un terminal ouvert en tant que ${ADMIN_USER}," >&2
@@ -90,20 +84,15 @@ run_as_admin() {
     sudo -u "${ADMIN_USER}" XDG_RUNTIME_DIR="/run/user/${ADMIN_UID}" "$@"
 }
 
-# Nettoyage défensif : un docker.list laissé par un run précédent interrompu (ex. mauvais dépôt,
-# panne réseau en plein milieu) fait échouer TOUT apt-get update qui suit — y compris pour des
-# paquets sans rapport comme curl/git plus bas — bien après que ce script ait par ailleurs été
-# corrigé. On ne le touche que si Docker n'est pas déjà fonctionnel : un fichier qui marche déjà
-# n'a pas besoin d'être régénéré.
+# Un docker.list laissé par un run précédent interrompu (mauvais dépôt, coupure réseau) fait échouer
+# TOUT apt-get update qui suit, y compris pour des paquets sans rapport — on ne le touche que si
+# Docker n'est pas déjà fonctionnel.
 if [[ -f /etc/apt/sources.list.d/docker.list ]] \
         && ! (command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1); then
     rm -f /etc/apt/sources.list.d/docker.list
 fi
 
 # --- 1. Prérequis minimaux pour pouvoir cloner PluriBourse (curl/git) ---
-# git n'est pas garanti présent sur une install Debian/Ubuntu minimale ; curl l'est presque toujours
-# (nécessaire pour même récupérer ce script via `curl | sudo bash`), mais on le redemande explicitement
-# par sécurité plutôt que de supposer.
 log "Vérification des prérequis (curl, git)..."
 apt-get update -qq
 apt-get install -y -qq curl git
@@ -152,11 +141,9 @@ log "Vérification des autres prérequis (jq, openssl, dbus-user-session)..."
 apt-get install -y -qq jq openssl dbus-user-session
 
 # --- 3bis. Service de liaison Bluetooth (imprimantes thermiques) + scripts utilitaires ---
-# rfcomm bind ne survit pas à un redémarrage (cf. CLAUDE.md de PrinterBridge) — sans ça, l'admin
-# devrait relier chaque imprimante à la main après chaque reboot, en plus une par une. Le fichier
-# de config (une MAC par ligne) n'est copié qu'une fois, jamais régénéré ni écrasé : c'est à
-# l'admin de le remplir avec ses propres imprimantes, ce script ne peut pas les deviner. Le script
-# et l'unité systemd eux-mêmes vivent dans linux/ (fichiers versionnés, pas de heredoc ici).
+# rfcomm bind ne survit pas à un redémarrage (cf. CLAUDE.md de PrinterBridge) — ce service le refait
+# automatiquement à chaque boot. Le fichier de config (une MAC par ligne) n'est copié qu'une fois,
+# jamais régénéré ni écrasé : c'est à l'admin de le remplir avec ses propres imprimantes.
 log "Configuration du service de liaison Bluetooth (imprimantes thermiques)..."
 BLUETOOTH_PRINTERS_CONF="/etc/printerbridge/bluetooth-printers.conf"
 
@@ -169,8 +156,6 @@ fi
 
 install -m 0755 "${INSTALL_DIR}/linux/bind-thermal-printers.sh" /usr/local/sbin/bind-thermal-printers.sh
 install -m 0644 "${INSTALL_DIR}/linux/bind-thermal-printers.service" /etc/systemd/system/bind-thermal-printers.service
-# add-printer.sh, pluribourse-start.sh et pluribourse-update.sh (cf. CLAUDE.md) sont a lancer
-# explicitement par l'admin — pas automatiquement ici, juste rendus disponibles sur le PATH.
 install -m 0755 "${INSTALL_DIR}/linux/add-printer.sh" /usr/local/sbin/add-printer.sh
 install -m 0755 "${INSTALL_DIR}/linux/pluribourse-start.sh" /usr/local/sbin/pluribourse-start.sh
 install -m 0755 "${INSTALL_DIR}/linux/pluribourse-update.sh" /usr/local/sbin/pluribourse-update.sh
@@ -199,10 +184,6 @@ EOF
 fi
 
 # --- 5. docker compose up ---
-# `depends_on: condition: service_healthy` (docker-compose.yml) fait déjà attendre que
-# db/backend soient healthy avant de démarrer ce qui en dépend — si un service ne devient jamais
-# healthy, `docker compose up` remonte une erreur (set -e arrête le script ici, pas de boucle
-# d'attente à réinventer).
 log "Démarrage de PluriBourse (docker compose pull && up)..."
 (cd "${COMPOSE_DIR}" && docker compose pull && compose_up_with_retry)
 log "PluriBourse est démarré."

@@ -17,11 +17,9 @@ if [[ "${EUID}" -ne 0 ]]; then
 fi
 
 list_configured_bluetooth_printers() {
-    # Reprend la meme numerotation sequentielle que bind-thermal-printers.sh (ligne N du fichier ->
-    # rfcommN) pour savoir, imprimante par imprimante, si elle est actuellement liee -- repond
-    # directement a "qu'est-ce qui est deja configure/attache", plutot que de laisser l'admin
-    # deviner depuis une liste generique bluetoothctl (constate en pratique : confusion sur l'etat
-    # reel, cf. CLAUDE.md).
+    # Reprend la meme numerotation sequentielle que bind-thermal-printers.sh (ligne N -> rfcommN)
+    # pour montrer directement ce qui est deja configure/attache, plutot que de laisser l'admin
+    # deviner depuis une liste generique bluetoothctl.
     if ! grep -q "^[^#[:space:]]" "${BLUETOOTH_CONFIG_FILE}" 2>/dev/null; then
         log "Aucune imprimante Bluetooth configuree pour l'instant."
         return
@@ -81,10 +79,9 @@ add_bluetooth_printer() {
         if [[ "${ALREADY_PAIRED}" == "true" ]]; then
             log "${MAC} est deja appairee, pas besoin de repasser par bluetoothctl."
         else
-            # Chaque `bluetoothctl <commande>` lance un process a part qui se termine aussitot --
-            # un agent enregistre dans l'un disparait avec lui, donc "power on"/"agent"/
-            # "default-agent" doivent etre tapes DANS la meme session interactive que "pair", pas
-            # en pre-commandes separees (constate en pratique : "No agent is registered" sinon).
+            # Chaque `bluetoothctl <commande>` lance un process a part qui se termine aussitot, donc
+            # l'agent doit etre enregistre DANS la meme session interactive que "pair", pas en
+            # pre-commande separee (sinon : "No agent is registered").
             echo ""
             log "Ouverture de bluetoothctl en interactif — a l'interieur, tape dans l'ordre :"
             log "  power on"
@@ -97,9 +94,8 @@ add_bluetooth_printer() {
             echo ""
             bluetoothctl
 
-            # bluetoothctl rend la main que l'appairage ait reussi ou non (PIN faux, sortie
-            # prematuree de "exit"...) -- sans cette verification, une tentative ratee finissait
-            # quand meme enregistree dans bluetooth-printers.conf (constate en pratique).
+            # bluetoothctl rend la main que l'appairage ait reussi ou non -- sans cette verification,
+            # une tentative ratee finissait quand meme enregistree dans bluetooth-printers.conf.
             if ! bluetoothctl info "${MAC}" 2>/dev/null | grep -q "Paired: yes"; then
                 echo "${MAC} n'est pas appairee (l'appairage a du echouer ou etre interrompu) — rien n'est enregistre. Relance add-printer.sh pour reessayer." >&2
                 exit 1
@@ -121,15 +117,10 @@ add_bluetooth_printer() {
 }
 
 add_network_printer() {
-    # lpadmin/lpinfo viennent du paquet cups (cups-client). cups-bsd (lpr/lpq) est un paquet
-    # separe, absent par defaut -- mais javax.print (PrinterBridge) shelle en interne `lpr` pour
-    # soumettre un job sur Linux (detail d'implementation de sun.print.PSPrinterJob, pas configurable).
-    # Sans cups-bsd, impression impossible via PrinterBridge meme si `lp`/CUPS fonctionnent tres
-    # bien par ailleurs (constate en pratique : "Cannot run program /usr/bin/lpr", cf. CLAUDE.md).
-    # avahi-daemon (mDNS/Bonjour) est necessaire pour que `lpinfo`/CUPS detectent reellement une
-    # imprimante sur le reseau -- sans lui, lpinfo ne liste que les backends generiques disponibles
-    # (`network socket`, `network ipp`, sans URI complete), jamais un vrai appareil, quoi qu'il
-    # arrive (constate en pratique, cf. CLAUDE.md). Absent par defaut sur une install minimale.
+    # cups-bsd (lpr) est requis car javax.print (PrinterBridge) shelle `lpr` en interne sur Linux --
+    # sans lui, l'impression echoue meme si `lp`/CUPS marchent (constate : "Cannot run program
+    # /usr/bin/lpr"). avahi-daemon est requis pour que lpinfo detecte un vrai appareil reseau plutot
+    # que la seule liste de backends generiques disponibles.
     if ! command -v lpadmin >/dev/null 2>&1 || ! command -v lpr >/dev/null 2>&1 || ! dpkg -s avahi-daemon >/dev/null 2>&1; then
         log "CUPS, cups-bsd (lpr) et/ou avahi-daemon manquant(s), installation..."
         apt-get update -qq
@@ -155,11 +146,9 @@ add_network_printer() {
     fi
 
     log "Imprimantes reseau detectees :"
-    # `lpinfo -v` liste toujours les backends reseau generiques disponibles (`network socket`,
-    # `network ipp`, ...) meme quand aucun appareil reel n'est trouve -- un vrai appareil detecte a
-    # une URI complete (`network socket://192.168.1.20`, avec `://`), pas juste le nom du protocole.
-    # Filtrer seulement sur "^network" les comptait a tort comme une detection (constate en pratique,
-    # cf. CLAUDE.md).
+    # Un vrai appareil detecte a une URI complete (`network socket://192.168.1.20`) -- filtrer sur
+    # "^network" seul compte aussi les backends generiques toujours listes (`network socket` sans
+    # adresse), meme sans aucun appareil reel trouve.
     DETECTED_PRINTERS="$(lpinfo -v | grep "^network .*://" || true)"
     if [[ -z "${DETECTED_PRINTERS}" ]]; then
         echo "Aucune imprimante reseau detectee automatiquement -- verifie qu'elle est allumee et sur le meme reseau, puis relance add-printer.sh." >&2
@@ -179,11 +168,9 @@ add_network_printer() {
         exit 1
     fi
 
-    # Le pilote "everywhere" (IPP Everywhere, sans PPD specifique) exige une connexion IPP -- il est
-    # incompatible avec une URI socket:// (port JetDirect brut), contrairement a ce qu'on avait
-    # d'abord code ici (constate en pratique : "IPP Everywhere driver requires an ipp connection").
-    # Fonctionne pour la quasi-totalite des imprimantes recentes (AirPrint/IPP Everywhere) ; repli en
-    # JetDirect brut + pilote generique pour les plus anciennes qui ne le supportent pas.
+    # Le pilote "everywhere" exige une connexion IPP, incompatible avec une URI socket:// (constate :
+    # "IPP Everywhere driver requires an ipp connection"). Repli en JetDirect brut + pilote generique
+    # pour les imprimantes trop anciennes pour IPP Everywhere.
     log "Tentative via IPP Everywhere (pilote generique, imprimantes recentes)..."
     if lpadmin -p "${PRINTER_NAME}" -E -v "ipp://${PRINTER_IP}/ipp/print" -m everywhere 2>/dev/null; then
         log "${PRINTER_NAME} (${PRINTER_IP}) ajoutee a CUPS via IPP Everywhere."
