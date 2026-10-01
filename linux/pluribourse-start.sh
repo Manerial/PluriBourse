@@ -152,3 +152,5 @@ fi
 log "Démarrage terminé."
 log "PluriBourse : http://localhost/"
 log "PrinterBridge : actif sur 127.0.0.1 et ${GATEWAY} (port 7420)"
+log ""
+log "Pour ajouter une imprimante (thermique Bluetooth ou réseau/A4) : sudo add-printer.sh"

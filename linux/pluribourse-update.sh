@@ -157,3 +157,5 @@ else
 fi
 
 log "Mise à jour terminée."
+log ""
+log "Pour ajouter une imprimante (thermique Bluetooth ou réseau/A4) : sudo add-printer.sh"
