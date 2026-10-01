@@ -126,11 +126,16 @@ add_network_printer() {
     # soumettre un job sur Linux (detail d'implementation de sun.print.PSPrinterJob, pas configurable).
     # Sans cups-bsd, impression impossible via PrinterBridge meme si `lp`/CUPS fonctionnent tres
     # bien par ailleurs (constate en pratique : "Cannot run program /usr/bin/lpr", cf. CLAUDE.md).
-    if ! command -v lpadmin >/dev/null 2>&1 || ! command -v lpr >/dev/null 2>&1; then
-        log "CUPS et/ou cups-bsd (lpr) manquant(s), installation..."
+    # avahi-daemon (mDNS/Bonjour) est necessaire pour que `lpinfo`/CUPS detectent reellement une
+    # imprimante sur le reseau -- sans lui, lpinfo ne liste que les backends generiques disponibles
+    # (`network socket`, `network ipp`, sans URI complete), jamais un vrai appareil, quoi qu'il
+    # arrive (constate en pratique, cf. CLAUDE.md). Absent par defaut sur une install minimale.
+    if ! command -v lpadmin >/dev/null 2>&1 || ! command -v lpr >/dev/null 2>&1 || ! dpkg -s avahi-daemon >/dev/null 2>&1; then
+        log "CUPS, cups-bsd (lpr) et/ou avahi-daemon manquant(s), installation..."
         apt-get update -qq
-        apt-get install -y -qq cups cups-bsd
+        apt-get install -y -qq cups cups-bsd avahi-daemon
     fi
+    systemctl enable --now avahi-daemon >/dev/null 2>&1 || true
 
     echo ""
     EXISTING_PRINTERS="$(lpstat -v 2>/dev/null || true)"
@@ -150,7 +155,12 @@ add_network_printer() {
     fi
 
     log "Imprimantes reseau detectees :"
-    DETECTED_PRINTERS="$(lpinfo -v | grep "^network" || true)"
+    # `lpinfo -v` liste toujours les backends reseau generiques disponibles (`network socket`,
+    # `network ipp`, ...) meme quand aucun appareil reel n'est trouve -- un vrai appareil detecte a
+    # une URI complete (`network socket://192.168.1.20`, avec `://`), pas juste le nom du protocole.
+    # Filtrer seulement sur "^network" les comptait a tort comme une detection (constate en pratique,
+    # cf. CLAUDE.md).
+    DETECTED_PRINTERS="$(lpinfo -v | grep "^network .*://" || true)"
     if [[ -z "${DETECTED_PRINTERS}" ]]; then
         echo "Aucune imprimante reseau detectee automatiquement -- verifie qu'elle est allumee et sur le meme reseau, puis relance add-printer.sh." >&2
         exit 1
