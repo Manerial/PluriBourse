@@ -123,8 +123,23 @@ add_network_printer() {
         exit 1
     fi
 
-    lpadmin -p "${PRINTER_NAME}" -E -v "socket://${PRINTER_IP}:9100" -m everywhere
-    log "${PRINTER_NAME} (${PRINTER_IP}) ajoutee a CUPS."
+    # Le pilote "everywhere" (IPP Everywhere, sans PPD specifique) exige une connexion IPP -- il est
+    # incompatible avec une URI socket:// (port JetDirect brut), contrairement a ce qu'on avait
+    # d'abord code ici (constate en pratique : "IPP Everywhere driver requires an ipp connection").
+    # Fonctionne pour la quasi-totalite des imprimantes recentes (AirPrint/IPP Everywhere) ; repli en
+    # JetDirect brut + pilote generique pour les plus anciennes qui ne le supportent pas.
+    log "Tentative via IPP Everywhere (pilote generique, imprimantes recentes)..."
+    if lpadmin -p "${PRINTER_NAME}" -E -v "ipp://${PRINTER_IP}/ipp/print" -m everywhere 2>/dev/null; then
+        log "${PRINTER_NAME} (${PRINTER_IP}) ajoutee a CUPS via IPP Everywhere."
+    else
+        log "IPP Everywhere a echoue (imprimante plus ancienne ?) -- tentative en JetDirect brut..."
+        if lpadmin -p "${PRINTER_NAME}" -E -v "socket://${PRINTER_IP}:9100" -m drv:///sample.drv/generic.ppd; then
+            log "${PRINTER_NAME} (${PRINTER_IP}) ajoutee a CUPS avec un pilote generique (JetDirect)."
+        else
+            echo "Impossible d'ajouter l'imprimante automatiquement. Utilise l'interface web CUPS (https://<ip-du-pi>:631 -> Administration -> Add Printer), qui detecte mieux le bon pilote pour ce modele." >&2
+            exit 1
+        fi
+    fi
     log "Termine. PrinterBridge la verra automatiquement au prochain GET /printers, sans redemarrage necessaire."
 }
 
