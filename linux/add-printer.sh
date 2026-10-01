@@ -133,6 +133,15 @@ add_network_printer() {
     fi
 
     echo ""
+    EXISTING_PRINTERS="$(lpstat -v 2>/dev/null || true)"
+    if [[ -z "${EXISTING_PRINTERS}" ]]; then
+        log "Aucune imprimante réseau/A4 configurée pour l'instant."
+    else
+        log "Imprimantes réseau/A4 déjà configurées :"
+        echo "${EXISTING_PRINTERS}"
+    fi
+
+    echo ""
     read -rp "Autoriser l'administration CUPS a distance (interface web depuis un autre PC) ? [o/N] " DO_REMOTE_ADMIN
     if [[ "${DO_REMOTE_ADMIN,,}" == "o" ]]; then
         cupsctl --remote-admin --remote-any
@@ -141,7 +150,12 @@ add_network_printer() {
     fi
 
     log "Imprimantes reseau detectees :"
-    lpinfo -v | grep "^network" || log "(aucune detection automatique — tu peux quand meme entrer l'IP a la main ci-dessous)"
+    DETECTED_PRINTERS="$(lpinfo -v | grep "^network" || true)"
+    if [[ -z "${DETECTED_PRINTERS}" ]]; then
+        echo "Aucune imprimante reseau detectee automatiquement -- verifie qu'elle est allumee et sur le meme reseau, puis relance add-printer.sh." >&2
+        exit 1
+    fi
+    echo "${DETECTED_PRINTERS}"
 
     echo ""
     read -rp "Nom a donner a cette imprimante (sans espace) : " PRINTER_NAME
