@@ -92,12 +92,15 @@ add_bluetooth_printer() {
 }
 
 add_network_printer() {
-    # lpadmin/lpinfo viennent du paquet cups (cups-client) -- installes ensemble, pas de paquet
-    # separe a gerer.
-    if ! command -v lpadmin >/dev/null 2>&1; then
-        log "CUPS n'est pas installe, installation..."
+    # lpadmin/lpinfo viennent du paquet cups (cups-client). cups-bsd (lpr/lpq) est un paquet
+    # separe, absent par defaut -- mais javax.print (PrinterBridge) shelle en interne `lpr` pour
+    # soumettre un job sur Linux (detail d'implementation de sun.print.PSPrinterJob, pas configurable).
+    # Sans cups-bsd, impression impossible via PrinterBridge meme si `lp`/CUPS fonctionnent tres
+    # bien par ailleurs (constate en pratique : "Cannot run program /usr/bin/lpr", cf. CLAUDE.md).
+    if ! command -v lpadmin >/dev/null 2>&1 || ! command -v lpr >/dev/null 2>&1; then
+        log "CUPS et/ou cups-bsd (lpr) manquant(s), installation..."
         apt-get update -qq
-        apt-get install -y -qq cups
+        apt-get install -y -qq cups cups-bsd
     fi
 
     echo ""
