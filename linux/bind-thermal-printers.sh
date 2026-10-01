@@ -7,7 +7,7 @@ CONFIG_FILE="/etc/printerbridge/bluetooth-printers.conf"
 
 # `Requires=bluetooth.service` (bind-thermal-printers.service) garantit que le service est demarre,
 # pas que l'adaptateur a fini son initialisation (meme lecon que la course docker compose up au boot,
-# cf. install.sh) -- on attend qu'il soit vraiment pret (present ET allume) avant de tenter les
+# cf. pluribourse-start.sh) -- on attend qu'il soit vraiment pret (present ET allume) avant de tenter les
 # liaisons.
 DEADLINE=$((SECONDS + 30))
 until bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; do

@@ -27,19 +27,28 @@ Sur une machine Debian/Ubuntu neuve (poste de bureau de l'association), une seul
 tout (Docker, PluriBourse, PrinterBridge) :
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Manerial/PluriBourse/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Manerial/PluriBourse/main/pluribourse-install.sh | sudo bash
 ```
 
 À lancer depuis le compte utilisateur habituel de l'admin (pas en root direct) : PrinterBridge tourne
 comme service de ce compte, pas de root. Le script est idempotent — le relancer ne recommence pas ce
-qui est déjà en place. Pour récupérer les dernières versions (PluriBourse et PrinterBridge) :
+qui est déjà en place, mais ne sert qu'à une première installation (il ne prend plus d'argument).
+
+Pour récupérer les dernières versions (PluriBourse et PrinterBridge) :
 
 ```bash
-sudo /opt/pluribourse/install.sh --update
+sudo pluribourse-update.sh
 ```
 
-Ne touche jamais aux données existantes (mots de passe, base MariaDB), avec ou sans `--update`. Voir
-`install.sh` pour le détail des étapes.
+Pour un démarrage rapide au quotidien (après un redémarrage de la machine, changement de réseau
+WiFi...) :
+
+```bash
+sudo pluribourse-start.sh
+```
+
+Ne touche jamais aux données existantes (mots de passe, base MariaDB). Voir `pluribourse-install.sh`,
+`linux/pluribourse-update.sh` et `linux/pluribourse-start.sh` pour le détail des étapes.
 
 ## Utilisation de BMAD
 
@@ -48,7 +57,7 @@ Ce projet a été généré et spécifié à l'aide de l'outil BMAD. Vous trouve
 ## PrinterBridge
 
 Afin de faciliter l'utilisation des imprimantes à travers l'outil instancié dans Docker, un petit logiciel de gestion d'imprimantes a été implémenté.
-Installé et configuré automatiquement par `install.sh` ci-dessus (dépôt séparé :
+Installé et configuré automatiquement par `pluribourse-install.sh` ci-dessus (dépôt séparé :
 https://github.com/Manerial/PrinterBridge).
 
 ### Ajouter une imprimante thermique Bluetooth
@@ -60,16 +69,17 @@ support de code pour ce cas de toute façon, cf. CLAUDE.md). Il faut donc une ma
 (adaptateur intégré ou clé USB Bluetooth).
 
 Sur Linux, contrairement à Windows, l'**appairage seul ne suffit pas** — il faut en plus un `rfcomm
-bind` explicite pour qu'un port utilisable apparaisse :
+bind` explicite pour qu'un port utilisable apparaisse, et le lier à nouveau à chaque redémarrage.
+`pluribourse-install.sh` met en place un assistant qui gère tout ça (appairage compris) et persiste la liaison
+au démarrage :
 
 ```bash
-bluetoothctl pair XX:XX:XX:XX:XX:XX
-sudo rfcomm bind 0 XX:XX:XX:XX:XX:XX
-ls /dev/rfcomm0
+sudo add-printer.sh
 ```
 
-Sans cette étape, l'imprimante n'apparaîtra pas dans la liste de PrinterBridge (`GET /printers`),
-silencieusement — pas d'erreur explicite pour le signaler.
+Choisis "Thermique Bluetooth", laisse-toi guider (y compris pour le code PIN). Sans ça, l'imprimante
+n'apparaîtra pas dans la liste de PrinterBridge (`GET /printers`), silencieusement — pas d'erreur
+explicite pour le signaler.
 
 ## MKDocs
 

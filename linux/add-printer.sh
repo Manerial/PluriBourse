@@ -18,7 +18,7 @@ fi
 
 add_bluetooth_printer() {
     if [[ ! -f "${BLUETOOTH_CONFIG_FILE}" ]]; then
-        echo "${BLUETOOTH_CONFIG_FILE} n'existe pas — lance d'abord install.sh (sans --start) pour mettre en place le service de liaison Bluetooth." >&2
+        echo "${BLUETOOTH_CONFIG_FILE} n'existe pas — lance d'abord pluribourse-install.sh pour mettre en place le service de liaison Bluetooth." >&2
         exit 1
     fi
 
@@ -31,7 +31,7 @@ add_bluetooth_printer() {
         log "Scan en cours (15s)..."
         bluetoothctl --timeout 15 scan on || true
         log "Appareils apres scan :"
-        bluetoothctl devices
+        bluetoothctl devices || true
     fi
 
     echo ""
